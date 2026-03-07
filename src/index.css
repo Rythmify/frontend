@@ -1,7 +1,99 @@
 
 @import "tailwindcss";
 @plugin './hero.ts';
-/* Note  You may need to change the path to fit your project structure */
+/* Note: You may need to change the path to fit your project structure */
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 @custom variant dark (&:is(.dark *));
 
+/* ══════════════════════════════════════════════
+   Rhythmify — Design Tokens
+   Base = Light values | .dark class = Dark values
+   App defaults to dark via theme store
+   ══════════════════════════════════════════════ */
+
+@theme {
+  /* Brand  */
+  --color-accent: #ff5500;
+  --color-accent-hover: #e64a00;
+
+  /* Backgrounds  */
+  --color-bg: #ffffff;
+  --color-input-bg: #f3f3f3;
+
+  /* Borders  */
+  --color-border: #e0e0e0;
+  --color-border-light: #cccccc;
+
+  /* Text */
+  --color-text: #333333;
+  --color-text-secondary: #999999;
+  --color-text-muted:#666666;
+  --color-text-link:#0a6e8a;
+  --color-text-link-hover: #085a72;
+
+  /*  Semantic  */
+  --color-error: #cf4a4a;
+  --color-success: #2d8f4e;
+  --color-warning: #d4a017;
+
+  /* Font  */
+  --font-sans: "Overpass", "Lucida Grande", "Lucida Sans Unicode",
+  "Lucida Sans", "Garuda", "Verdana", "Tahoma", sans-serif;
+
+  /* Layout * */
+  --container-max: 1240px;
+
+  /* Radius */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadows  */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 
+   Dark Theme Overrides
+ */
+
+@layer base {
+  .dark {
+    --color-bg: #121212;
+    --color-input-bg:#303030;
+
+    --color-border: #333333;
+    --color-border-light: #444444;
+
+    --color-text:#999999;
+    --color-text-hover: #ffffff;
+    --color-text-muted: #666666;
+    --color-text-link: #699FFF;
+    
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Base Styles*/
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+  }
+}
+
+/* Container Utility */
+
+@utility container {
+  max-width: var(--container-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
