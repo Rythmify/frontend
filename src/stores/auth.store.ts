@@ -7,8 +7,10 @@ export interface User {
   displayName: string;
   email: string;
   avatar?: string;
+  coverUrl?: string;
   role: "listener" | "artist" | "admin";
   isPro: boolean;
+  location?: string;
 }
 
 interface AuthStore {
