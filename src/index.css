@@ -29,17 +29,14 @@
   --color-text-muted: #666666;
   --color-text-link: #0a6e8a;
   --color-text-link-hover: #085a72;
+  --color-text-hover:#000000;
 
   /*  Semantic  */
   --color-error: #cf4a4a;
   --color-success: #2d8f4e;
   --color-warning: #d4a017;
 
-  /* Font  */
-  --font-sans:
-    "Overpass", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Garuda",
-    "Verdana", "Tahoma", sans-serif;
-
+  
   /* Layout * */
   --container-max: 1240px;
 
@@ -83,16 +80,18 @@
   body {
     background-color: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-sans);
+    font-family: "Inter", sans-serif;
+    
   }
 }
 
 /* Container Utility */
 
-@utility container {
-  max-width: var(--container-max);
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-}
+
+@layer utilities {
+
+    .container{
+       @apply mx-auto px-4 md:px-8 lg:px-20;
+
+    }
+  }

@@ -1,24 +1,24 @@
 import { useState, useRef, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
+import { Bell, Mail, ChevronDown, MoreHorizontal, Menu, X, Search } from "lucide-react";
 
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  // Dropdown states
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
-  // Refs for click outside
   const avatarRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const msgRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
 
-  // Close all dropdowns
   const closeAll = () => {
     setShowAvatarMenu(false);
     setShowNotifications(false);
@@ -26,13 +26,11 @@ const MainNavbar = () => {
     setShowMoreMenu(false);
   };
 
-  // Toggle a specific dropdown, close others
   const toggle = (setter: React.Dispatch<React.SetStateAction<boolean>>) => {
     closeAll();
     setter((prev) => !prev);
   };
 
-  // Click outside handler
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -54,71 +52,67 @@ const MainNavbar = () => {
     navigate("/logout");
   };
 
-  // Nav link style helper
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-sm font-medium px-1 py-1 border-b-2 transition-colors ${
+    `text-md font-bold px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
       isActive
-        ? "text-text border-text"
-        : "text-text-secondary border-transparent hover:text-text"
+        ? "text-text-hover border-text-hover"
+        : "text-text-secondary border-transparent"
+    }`;
+
+  const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `block px-4 py-3 text-md font-bold transition-colors ${
+      isActive ? "text-tex-hover" : "text-text-secondary hover:text-white"
     }`;
 
   return (
-   <nav className="sticky top-0 z-50 bg-bg border-b border-border">
-     <div className="w-full px-8 flex items-center justify-between h-[46px]">
+    <nav className="sticky top-1 z-50 flex h-[46px] w-full items-center bg-bg">
 
+      {/* Main navbar row */}
+      <div className="container grid grid-cols-[auto_1fr_auto] items-center h-13">
 
         {/* Left: Logo + Nav Links */}
-        <div className="flex items-center gap-6">
-          {/* Logo */}
-          <Link to="/discover" className="flex items-center gap-1">
-            <i className="fa-solid fa-wave-square text-accent text-xl" />
+        <div className="flex items-center gap-6 shrink-0">
+          <Link to="/discover" className="flex items-center gap-1 text-4xl">
+            <i className="fa-brands fa-soundcloud text-text-hover" />
           </Link>
 
-          {/* Nav Links */}
-          <div className="flex items-center gap-4">
+          {/* Nav links — tablet+ */}
+          <div className="hidden md:flex items-center gap-6">
             <NavLink to="/discover" className={navLinkClass}>Home</NavLink>
             <NavLink to="/feed" className={navLinkClass}>Feed</NavLink>
             <NavLink to="/you/library" className={navLinkClass}>Library</NavLink>
           </div>
         </div>
 
-        {/* Center: Search Bar */}
-        <div className="flex-1 max-w-[560px] mx-6">
-          <div className="relative">
+        {/* Center: Search Bar — tablet+ */}
+        <div className="hidden md:flex flex-1 justify-center">
+          <div className="w-full max-w-[500px] relative">
             <input
               type="text"
               placeholder="Search"
-              className="w-full bg-input-bg text-text text-sm rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-border outline-none placeholder:text-text-muted"
+              className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
             />
             <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <i className="fa-solid fa-magnifying-glass text-sm" />
+              <i className="fa-solid fa-magnifying-glass text-base  font-bold" />
+
             </button>
           </div>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-4">
-          {/* Try Artist Pro */}
-          <Link
-            to="/creator/checkout"
-            className="text-accent text-sm font-medium hover:text-accent-hover transition-colors"
-          >
+        {/* Spacer — mobile only */}
+        <div className="flex-1 md:hidden" />
+
+        {/* Right: Actions — tablet+ */}
+        <div className="hidden md:flex items-center gap-4 shrink-0">
+
+          {/* Text links — desktop only */}
+          <Link to="/creator/checkout" className="hidden lg:block text-accent text-md font-bold hover:text-accent-hover transition-colors">
             Try Artist Pro
           </Link>
-
-          {/* For Artists */}
-          <Link
-            to="/artists"
-            className="text-text-secondary text-sm font-medium hover:text-text transition-colors"
-          >
+          <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text transition-colors">
             For Artists
           </Link>
-
-          {/* Upload */}
-          <Link
-            to="/upload"
-            className="text-text-secondary text-sm font-medium hover:text-text transition-colors"
-          >
+          <Link to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text transition-colors">
             Upload
           </Link>
 
@@ -129,11 +123,14 @@ const MainNavbar = () => {
               className="flex items-center gap-1 hover:opacity-80 transition-opacity"
             >
               {user?.avatar ? (
-                <img src={user.avatar} alt="" className="w-[26px] h-[26px] rounded-full object-cover" />
+                <img src={user.avatar} alt="" className="w-[30px] h-[30px] rounded-full object-cover" />
               ) : (
-                <div className="w-[26px] h-[26px] rounded-full bg-text-muted" />
+                <div className="w-[30px] h-[30px] rounded-full bg-text-muted" />
               )}
-              <i className={`fa-solid fa-chevron-down text-[10px] text-text-secondary transition-transform ${showAvatarMenu ? "rotate-180" : ""}`} />
+              <ChevronDown
+                size={25}
+                className={`mx-2 text-text-secondary transition-transform ${showAvatarMenu ? "rotate-180" : ""}`}
+              />
             </button>
 
             {showAvatarMenu && (
@@ -144,10 +141,7 @@ const MainNavbar = () => {
                 <DropdownLink icon="fa-solid fa-tower-broadcast" label="Stations" to="/you/stations" onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-user-plus" label="Following" to="/you/following" onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-users" label="Who to follow" to="/people" onClick={closeAll} />
-
-                <div className="border-t border-border my-1" />
-
-                <DropdownLink icon="fa-solid fa-circle-plus" label="Try Artist Pro" to="/creator/checkout" onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-circle-plus" label="Try Artist Pro" to="/creator/checkout" onClick={closeAll} iconClassName="text-accent" />
                 <DropdownLink icon="fa-solid fa-chart-simple" label="Tracks" to={`/${user?.username}/tracks`} onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-chart-line" label="Insights" to="/you/insights" onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-arrow-up-from-bracket" label="Distribute" to="/artists/distribution" onClick={closeAll} />
@@ -159,41 +153,24 @@ const MainNavbar = () => {
           <div ref={notifRef} className="relative">
             <button
               onClick={() => toggle(setShowNotifications)}
-              className="text-text-secondary hover:text-text transition-colors relative"
+              className="text-text-secondary hover:text-text transition-colors"
             >
-              <i className="fa-solid fa-bell text-lg" />
-              {/* Notification badge - uncomment when notification count is available */}
-              {/* <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full text-[8px] text-white flex items-center justify-center">3</span> */}
+              <Bell size={22} className="hover:text-text-hover mt-2" />
             </button>
 
             {showNotifications && (
               <div className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50">
-                {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <h3 className="text-sm font-bold text-text">Notifications</h3>
-                  <Link
-                    to="/settings/notifications"
-                    className="text-xs text-text-secondary hover:text-text"
-                    onClick={closeAll}
-                  >
+                  <h3 className="text-md font-bold text-text">Notifications</h3>
+                  <Link to="/settings/notifications" className="text-xs text-text-secondary hover:text-text" onClick={closeAll}>
                     Settings
                   </Link>
                 </div>
-
-                {/* Notification items - placeholder */}
                 <div className="py-2 max-h-[300px] overflow-y-auto">
-                  <div className="px-4 py-3 text-sm text-text-muted text-center">
-                    No new notifications
-                  </div>
+                  <div className="px-4 py-3 text-md text-text-muted text-center">No new notifications</div>
                 </div>
-
-                {/* Footer */}
                 <div className="border-t border-border px-4 py-2">
-                  <Link
-                    to="/notifications"
-                    className="text-xs font-bold text-text hover:text-text-secondary block text-center"
-                    onClick={closeAll}
-                  >
+                  <Link to="/notifications" className="text-xs font-bold text-text hover:text-text-secondary block text-center" onClick={closeAll}>
                     View all notifications
                   </Link>
                 </div>
@@ -207,30 +184,19 @@ const MainNavbar = () => {
               onClick={() => toggle(setShowMessages)}
               className="text-text-secondary hover:text-text transition-colors"
             >
-              <i className="fa-solid fa-envelope text-lg" />
+              <Mail size={22} className="mt-2" />
             </button>
 
             {showMessages && (
               <div className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50">
-                {/* Header */}
                 <div className="px-4 py-3 border-b border-border">
-                  <h3 className="text-sm font-bold text-text">Messages</h3>
+                  <h3 className="text-md font-bold text-text">Messages</h3>
                 </div>
-
-                {/* Message items - placeholder */}
                 <div className="py-2 max-h-[300px] overflow-y-auto">
-                  <div className="px-4 py-3 text-sm text-text-muted text-center">
-                    No new messages
-                  </div>
+                  <div className="px-4 py-3 text-md text-text-muted text-center">No new messages</div>
                 </div>
-
-                {/* Footer */}
                 <div className="border-t border-border px-4 py-2">
-                  <Link
-                    to="/messages"
-                    className="text-xs font-bold text-text hover:text-text-secondary block text-center"
-                    onClick={closeAll}
-                  >
+                  <Link to="/messages" className="text-xs font-bold text-text hover:text-text-secondary block text-center" onClick={closeAll}>
                     View all messages
                   </Link>
                 </div>
@@ -238,34 +204,34 @@ const MainNavbar = () => {
             )}
           </div>
 
-          {/* More Menu (three dots) */}
+          {/* More Menu */}
           <div ref={moreRef} className="relative">
             <button
               onClick={() => toggle(setShowMoreMenu)}
               className="text-text-secondary hover:text-text transition-colors"
             >
-              <i className="fa-solid fa-ellipsis text-lg" />
+              <MoreHorizontal size={22} className="mt-2" />
             </button>
 
             {showMoreMenu && (
               <div className="absolute right-0 top-full mt-2 w-[200px] bg-bg border border-border rounded-sm shadow-md py-1 z-50 max-h-[400px] overflow-y-auto">
+                <div className="lg:hidden">
+                  <DropdownLink label="Upload" to="/upload" onClick={closeAll} />
+                  <div className="border-t border-border my-1" />
+                </div>
                 <DropdownLink label="About us" to="/pages/contact" onClick={closeAll} />
                 <DropdownLink label="Legal" to="/terms-of-use" onClick={closeAll} />
                 <DropdownLink label="Copyright" to="/pages/copyright" onClick={closeAll} />
                 <DropdownLink label="Mobile apps" to="/download" onClick={closeAll} />
                 <DropdownLink label="Artist Membership" to="/creator/checkout" onClick={closeAll} />
-
                 <div className="border-t border-border my-1" />
-
                 <DropdownLink label="Keyboard shortcuts" to="#" onClick={closeAll} />
                 <DropdownLink label="Subscription" to="/settings" onClick={closeAll} />
                 <DropdownLink label="Settings" to="/settings" onClick={closeAll} />
-
                 <div className="border-t border-border my-1" />
-
                 <button
                   onClick={handleSignOut}
-                  className="w-full text-left px-4 py-2 text-sm text-text-secondary hover:bg-input-bg hover:text-text transition-colors"
+                  className="w-full text-left px-4 py-2 text-md text-text-hover hover:text-text-secondary transition-colors"
                 >
                   Sign out
                 </button>
@@ -273,19 +239,84 @@ const MainNavbar = () => {
             )}
           </div>
         </div>
+
+        {/* Mobile: search icon + hamburger */}
+        <div className="flex md:hidden items-center gap-3">
+          <button
+            onClick={() => setIsMobileSearchOpen((prev) => !prev)}
+            className="text-text-secondary hover:text-text transition-colors"
+          >
+            <Search size={22} />
+          </button>
+          <button
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            className="text-text-secondary hover:text-text transition-colors"
+          >
+            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
+
       </div>
+
+      {/* Mobile search row */}
+      {isMobileSearchOpen && (
+        <div className="flex md:hidden items-center gap-2 px-4 py-2 border-t border-border">
+          <div className="flex-1 relative">
+            <input
+              autoFocus
+              type="text"
+              placeholder="Search"
+              className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
+            />
+            <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
+              <Search size={16} />
+            </button>
+          </div>
+          <button onClick={() => setIsMobileSearchOpen(false)} className="text-text-secondary hover:text-text transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+      )}
+
+      {/* Mobile menu drawer */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-bg border-t border-border">
+          <NavLink to="/discover" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Home</NavLink>
+          <NavLink to="/feed" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Feed</NavLink>
+          <NavLink to="/you/library" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Library</NavLink>
+          <div className="border-t border-border my-1" />
+          <Link to="/creator/checkout" className="block px-4 py-3 text-md font-bold text-accent hover:text-accent-hover transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+            Try Artist Pro
+          </Link>
+          <Link to="/artists" className="block px-4 py-3 text-md font-bold text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+            For Artists
+          </Link>
+          <Link to="/upload" className="block px-4 py-3 text-md font-bold text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+            Upload
+          </Link>
+          <div className="border-t border-border my-1" />
+          <button
+            onClick={handleSignOut}
+            className="w-full text-left px-4 py-3 text-md font-bold text-text-secondary hover:text-white transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+
     </nav>
   );
 };
 
-// Reusable dropdown link component
 const DropdownLink = ({
   icon,
+  iconClassName,
   label,
   to,
   onClick,
 }: {
   icon?: string;
+  iconClassName?: string;
   label: string;
   to: string;
   onClick: () => void;
@@ -293,9 +324,9 @@ const DropdownLink = ({
   <Link
     to={to}
     onClick={onClick}
-    className="flex items-center gap-3 px-4 py-2 text-sm text-text-secondary hover:bg-input-bg hover:text-text transition-colors"
+    className="flex items-center gap-3 px-4 py-2 text-md text-text-hover hover:text-text-secondary transition-colors"
   >
-    {icon && <i className={`${icon} w-4 text-center text-xs`} />}
+    {icon && <i className={`${icon} w-4 text-center text-base ${iconClassName ?? ""}`} />}
     <span>{label}</span>
   </Link>
 );
