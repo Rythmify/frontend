@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import ProfileHeader from "../../components/ProfileHeader/ProfileHeader";
 import ProfileTabs from "../../components/ProfileTabs/ProfileTabs";
+import ProfileSidebar from "../../components/ProfileSidebar/ProfileSidebar";
 import { useAuthStore } from "@/stores/auth.store";
 
 function getEmptyState(tab: string, isOwner: boolean) {
@@ -55,7 +56,7 @@ export default function UsernamePage() {
         />
       </div>
 
-      <div className="flex gap-6 px-6 py-6">
+      <div className="flex gap-6 px-6 py-6 items-start">
         <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
           <p className="text-white font-extrabold text-17px">{message}</p>
           {showUpload && (
@@ -63,6 +64,9 @@ export default function UsernamePage() {
               Upload now
             </button>
           )}
+        </div>
+        <div className="w-[370px] flex-shrink-0">
+          <ProfileSidebar user={user} isOwner={isOwner} />
         </div>
       </div>
     </div>
