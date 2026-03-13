@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find 'c:\\\\Users\\\\Nour Abosaif\\\\OneDrive\\\\Desktop\\\\Frontend-Rythmify\\\\frontend' -maxdepth 2 -name tailwind.config.* -type f)"
+    ]
+  }
+}
