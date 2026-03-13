@@ -16,19 +16,18 @@ const UploadLayout = () => {
             
             {/*Page Title */}
             <div className="flex items-center gap-6 h-full">
-              <h2 className="text-text font-medium text-sm tracking-wide">
+              <h2 className="text-text-upload font-bold text-sm tracking-wide">
                 Upload
               </h2>
             </div>
           </div>
 
-          {/*Close upload page*/}
+         {/*Close upload page*/}
           <div className="flex items-center gap-6">
             {/* Close Button to exit upload & go to artists page */}
             <button 
               onClick={() => navigate('/artists')}
-              className="text-text-secondary hover:text-text transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-input-bg cursor-pointer"
-              aria-label="Exit upload"
+className="flex items-center justify-center p-2 rounded-full bg-input-bg text-text hover:bg-border transition-all duration-300 cursor-pointer"              aria-label="Exit upload"
             >
               <i className="fa-solid fa-xmark text-lg" />
             </button>
