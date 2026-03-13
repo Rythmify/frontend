@@ -1,19 +1,72 @@
-import React from 'react'
-import { useParams } from 'react-router-dom'
+import React, { useState } from "react";
 import ProfileHeader from "../../components/ProfileHeader/ProfileHeader";
-import { useAuthStore } from '@/stores/auth.store';
+import ProfileTabs from "../../components/ProfileTabs/ProfileTabs";
+import { useAuthStore } from "@/stores/auth.store";
+
+function getEmptyState(tab: string, isOwner: boolean) {
+  switch (tab) {
+    case "All":
+      return {
+        message: "Seems a little quiet over here",
+        showUpload: isOwner,
+      };
+    case "Popular tracks":
+      return { message: "Seems a little quiet over here", showUpload: isOwner };
+    case "Tracks":
+      return {
+        message: "Seems a little quiet over here",
+        showUpload: isOwner,
+      };
+    case "Albums":
+      return {
+        message: "Seems a little quiet over here",
+        showUpload: isOwner,
+      };
+    case "Playlists":
+      return {
+        message: "You haven't created any playlists.",
+        showUpload: false,
+      };
+    case "Reposts":
+      return { message: "You haven't reposted any sounds.", showUpload: false };
+    default:
+      return { message: "No content yet.", showUpload: false };
+  }
+}
 
 export default function UsernamePage() {
-  const { username } = useParams<{ username: string }>();
   const { user: currentUser } = useAuthStore();
+  const [selectedTab, setSelectedTab] = useState("All");
 
-  // TODO: fetch the profile user by username from your API/store
-  // For now, if viewing own profile:
-  const user = currentUser; // replace with actual fetch by username
+  const user = currentUser;
+  if (!user || !currentUser) return null;
 
-  if (!user || !currentUser) return null; // or a <Spinner />
+  const isOwner = user.id === currentUser.id;
+  const { message, showUpload } = getEmptyState(selectedTab, isOwner);
 
   return (
-    <ProfileHeader user={user} isOwner={user.id === currentUser.id} />
-  )
+    <div className="w-full">
+      <ProfileHeader user={user} isOwner={isOwner} />
+      <div className=" max-w-[99%] mx-auto ">
+        <ProfileTabs
+          isOwner={isOwner}
+          selectedTab={selectedTab}
+          onTabChange={setSelectedTab}
+        />
+      </div>
+
+      <div className="flex gap-6 px-6 py-6">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
+          <p className="text-RGB(18, 18, 18) font-extrabold text-17px">
+            {message}
+          </p>
+          {showUpload && (
+            <button className="px-3.5 py-1.5 text-md bg-black text-white  font-extrabold rounded">
+              Upload now
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -15,9 +15,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const [showImageMenu, setShowImageMenu] = useState(false);
 
   return (
-    <div className="w-full max-w-[96%] mx-auto">
+    <div className=" max-w-[95%] mx-auto sc-px-2x">
       <div
-        className="w-full h-[255px] bg-center bg-cover relative"
+        className="w-full h-[255px] bg-center bg-cover relative mb-4"
         style={
           coverUrl
             ? { backgroundImage: `url('${coverUrl}')` }
@@ -26,13 +26,13 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       >
         {/* Upload header button */}
         {isOwner && (
-          <button className="absolute top-8 right-6 px-4 py-1.5 bg-white text-black text-sm font-bold rounded">
+          <button className="absolute top-8 right-6 px-3 py-1.5 bg-white text-black text-sm font-bold rounded">
             Upload header image
           </button>
         )}
 
         {/* Avatar , name row */}
-        <div className="absolute inset-0 flex items-center px-6 gap-6">
+        <div className="absolute inset-0 flex items-center px-6 gap-6 ">
           {/* Avatar wrapper */}
           <div className="relative flex-shrink-0">
             <div
@@ -100,11 +100,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               {displayName || username}
             </h1>
             <div className="flex flex-col gap-1">
-              <p className="text-gray-300 font-bold text-sm px-2 py-1 bg-black/70 self-start">
+              <p className="text-gray-400 font-bold text-sm px-2 py-1 bg-black/70 self-start">
                 {username}
               </p>
               {location && (
-                <p className="text-gray-300 font-bold text-sm px-2 py-1 bg-black/70 self-start">
+                <p className="text-gray-400 font-bold text-sm px-2 py-1 bg-black/70 self-start">
                   {location}
                 </p>
               )}
