@@ -47,7 +47,7 @@ export default function UsernamePage() {
   return (
     <div className="w-full">
       <ProfileHeader user={user} isOwner={isOwner} />
-      <div className=" max-w-[99%] mx-auto ">
+      <div className=" max-w-[98%] mx-auto ">
         <ProfileTabs
           isOwner={isOwner}
           selectedTab={selectedTab}

@@ -36,7 +36,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           {/* Avatar wrapper */}
           <div className="relative flex-shrink-0">
             <div
-              className="w-[200px] h-[200px] rounded-full overflow-hidden flex items-center justify-center bg-green-600 cursor-pointer"
+              className="w-[200px] h-[200px] rounded-full overflow-hidden flex items-center justify-center bg-[#68A039] cursor-pointer"
               onMouseEnter={() => setHoveringAvatar(true)}
               onMouseLeave={() => {
                 if (!showImageMenu) setHoveringAvatar(false);
