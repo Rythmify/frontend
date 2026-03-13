@@ -93,7 +93,7 @@ const MainNavbar = () => {
               className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
             />
             <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <i className="fa-solid fa-magnifying-glass text-base  font-bold" />
+              <i className="fa-solid fa-magnifying-glass text-lg  font-bold" />
 
             </button>
           </div>
@@ -106,13 +106,13 @@ const MainNavbar = () => {
         <div className="hidden md:flex items-center gap-4 shrink-0">
 
           {/* Text links — desktop only */}
-          <Link to="/creator/checkout" className="hidden lg:block text-accent text-md font-bold hover:text-accent-hover transition-colors">
+          <Link to="/creator/checkout" className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors">
             Try Artist Pro
           </Link>
-          <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text transition-colors">
+          <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text-hover transition-colors">
             For Artists
           </Link>
-          <Link to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text transition-colors">
+          <Link to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text-hover transition-colors">
             Upload
           </Link>
 
@@ -129,7 +129,7 @@ const MainNavbar = () => {
               )}
               <ChevronDown
                 size={25}
-                className={`mx-2 text-text-secondary transition-transform ${showAvatarMenu ? "rotate-180" : ""}`}
+                className={`mx-2 text-text-secondary hover:text-text-hover`}
               />
             </button>
 
@@ -184,7 +184,7 @@ const MainNavbar = () => {
               onClick={() => toggle(setShowMessages)}
               className="text-text-secondary hover:text-text transition-colors"
             >
-              <Mail size={22} className="mt-2" />
+              <Mail size={22} className="mt-2 hover:text-text-hover" />
             </button>
 
             {showMessages && (
@@ -210,7 +210,7 @@ const MainNavbar = () => {
               onClick={() => toggle(setShowMoreMenu)}
               className="text-text-secondary hover:text-text transition-colors"
             >
-              <MoreHorizontal size={22} className="mt-2" />
+              <MoreHorizontal size={22} className="mt-2 hover:text-text-hover" />
             </button>
 
             {showMoreMenu && (
