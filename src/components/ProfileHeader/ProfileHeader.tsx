@@ -15,7 +15,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const [showImageMenu, setShowImageMenu] = useState(false);
 
   return (
-    <div className=" max-w-[95%] mx-auto sc-px-2x">
+    <div className=" container">
       <div
         className="w-full h-[255px] bg-center bg-cover relative mb-4"
         style={
@@ -26,7 +26,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       >
         {/* Upload header button */}
         {isOwner && (
-          <button className="absolute top-8 right-6 px-3 py-1.5 bg-white text-black text-sm font-bold rounded">
+          <button className="absolute top-8 right-6 px-3 py-1.5 bg-black text-white  text-sm font-bold rounded hover:text-[#aaaaaa] transition-colors">
             Upload header image
           </button>
         )}
@@ -61,7 +61,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <div className="absolute inset-0 bg-black/50 flex items-end justify-center pb-8 rounded-full">
                   <div className="relative">
                     <button
-                      className={`bg-white rounded text-sm hover:bg-gray-100" font-semibold px-4 py-1.5 ${showImageMenu ? "text-accent" : "text-black"}`}
+                      className={`bg-black rounded text-sm hover:text-[#737272] font-semibold px-4 py-1.5 ${showImageMenu ? "text-accent" : "text-white"}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowImageMenu((prev) => !prev);
@@ -73,17 +73,17 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                     {/* Dropdown  */}
                     {showImageMenu && (
                       <div
-                        className="absolute top-full left-0  bg-white shadow-lg z-50 rounded "
+                        className="absolute top-full left-0  bg-black shadow-lg z-50 rounded "
                         onMouseEnter={() => setHoveringAvatar(true)}
                         onMouseLeave={() => {
                           setShowImageMenu(false);
                           setHoveringAvatar(false);
                         }}
                       >
-                        <button className="block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-black hover:bg-gray-100 rounded">
+                        <button className="block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded">
                           Replace image
                         </button>
-                        <button className="block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-black hover:bg-gray-100 rounded">
+                        <button className="block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded">
                           Delete image
                         </button>
                       </div>
