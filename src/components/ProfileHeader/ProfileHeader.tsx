@@ -26,7 +26,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       >
         {/* Upload header button */}
         {isOwner && (
-          <button className="absolute top-8 right-6 px-3 py-1.5 bg-black text-white  text-sm font-bold rounded hover:text-[#aaaaaa] transition-colors">
+          <button className=" cursor-pointer absolute top-8 right-6 px-3 py-1.5 bg-black text-white  text-sm font-bold rounded hover:text-[#aaaaaa] transition-colors">
             Upload header image
           </button>
         )}
@@ -61,7 +61,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <div className="absolute inset-0 bg-black/50 flex items-end justify-center pb-8 rounded-full">
                   <div className="relative">
                     <button
-                      className={`bg-black rounded text-sm hover:text-[#737272] font-semibold px-4 py-1.5 ${showImageMenu ? "text-accent" : "text-white"}`}
+                      className={`cursor-pointer bg-black rounded text-sm hover:text-[#737272] font-semibold px-4 py-1.5 ${showImageMenu ? "text-accent" : "text-white"}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowImageMenu((prev) => !prev);
@@ -80,10 +80,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                           setHoveringAvatar(false);
                         }}
                       >
-                        <button className="block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded">
+                        <button className=" cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded">
                           Replace image
                         </button>
-                        <button className="block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded">
+                        <button className=" cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded">
                           Delete image
                         </button>
                       </div>

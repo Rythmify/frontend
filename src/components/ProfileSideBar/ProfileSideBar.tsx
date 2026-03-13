@@ -52,7 +52,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           ].map(({ label, value }) => (
             <button
               key={label}
-              className="flex flex-col items-start hover:opacity-70 transition-opacity"
+              className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
             >
               <span className="text-sm font-extrabold text-text-secondary">
                 {label}

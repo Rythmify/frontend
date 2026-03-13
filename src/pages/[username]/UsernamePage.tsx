@@ -60,7 +60,7 @@ export default function UsernamePage() {
         <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
           <p className="text-white font-extrabold text-17px">{message}</p>
           {showUpload && (
-            <button className="px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-extrabold rounded">
+            <button className=" cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-extrabold rounded">
               Upload now
             </button>
           )}
