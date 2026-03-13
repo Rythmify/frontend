@@ -18,6 +18,7 @@
 
   /* Backgrounds  */
   --color-bg: #ffffff;
+  --color-bg-inverted:#121212;
   --color-input-bg: #f3f3f3;
 
   /* Borders  */
@@ -31,6 +32,7 @@
   --color-text-link: #0a6e8a;
   --color-text-link-hover: #085a72;
   --color-text-hover:#000000;
+  --color-text-upload: #000000de;
 
   /*  Semantic  */
   --color-error: #cf4a4a;
@@ -60,6 +62,7 @@
 @layer base {
   .dark {
     --color-bg: #121212;
+    --color-bg-inverted:#ffffff;
     --color-input-bg: #303030;
 
     --color-border: #333333;
@@ -69,6 +72,8 @@
     --color-text-hover: #ffffff;
     --color-text-muted: #666666;
     --color-text-link: #699fff;
+    --color-text-upload: #ffffffff;
+
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
