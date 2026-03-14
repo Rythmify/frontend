@@ -2,6 +2,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import UploadGuestPage from "./UploadGuestPage";
 import { useState, useRef } from "react";
 import CloudUploadIcon from "./CloudUploadIcon";
+import UploadQuotaBar from "./UploadQuotaBar";
 
 const UploadPage = () => {
   const { isAuthenticated } = useAuthStore();
@@ -37,8 +38,10 @@ const UploadPage = () => {
   };
 
   return (
-    <div className="container pt-8 px-8 pb-40 mt-12 text-left antialiased">
-      
+    <div className="container text-left antialiased">
+      <div className="mb-8">
+      <UploadQuotaBar />
+      </div>
       {/* main upload title */}
       <h1 className="text-[28px] font-bold text-text-upload mb-6 mt-6">
         Upload your audio files.
