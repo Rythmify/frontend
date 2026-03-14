@@ -1,3 +1,7 @@
+import React from "react";
+
+export default function SigninPage() {
+  return <div>SigninPage</div>;
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";

@@ -106,6 +106,37 @@
 
 /* Container Utility */
 
+@utility container {
+  max-width: var(--container-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* Nudge Animation */
+@keyframes nudge {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(var(--nudge-distance));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@layer utilities {
+  .nudge-right {
+    --nudge-distance: 8px;
+    animation: nudge 0.4s ease-in-out;
+  }
+  .nudge-left {
+    --nudge-distance: -8px;
+    animation: nudge 0.4s ease-in-out;
+  }
+}
 
 @layer utilities {
 
