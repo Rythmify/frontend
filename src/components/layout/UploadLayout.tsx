@@ -10,13 +10,13 @@ const UploadLayout = () => {
           
           {/*Left side: Logo and page title */}
           <div className="flex items-center gap-6">
-            <Link to="/discover" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <i className="fa-solid fa-wave-square text-accent text-xl" />
+            <Link to="/discover" className="flex items-center text-4xl gap-2 hover:opacity-80 transition-opacity">
+              <i className="fa-brands fa-soundcloud text-text-hover" />
             </Link>
             
             {/*Page Title */}
             <div className="flex items-center gap-6 h-full">
-              <h2 className="text-text-upload font-bold text-sm tracking-wide">
+              <h2 className="text-text-upload font-bold text- tracking-wide">
                 Upload
               </h2>
             </div>
@@ -27,7 +27,9 @@ const UploadLayout = () => {
             {/* Close Button to exit upload & go to artists page */}
             <button 
               onClick={() => navigate('/artists')}
-className="flex items-center justify-center p-2 rounded-full bg-input-bg text-text hover:bg-border transition-all duration-300 cursor-pointer"              aria-label="Exit upload"
+              className="flex items-center justify-center p-2 rounded-full 
+              bg-bg-inverted text-text hover:bg-bg transition-all duration-300 cursor-pointer"              
+              aria-label="Exit upload"
             >
               <i className="fa-solid fa-xmark text-lg" />
             </button>
