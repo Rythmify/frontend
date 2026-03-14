@@ -68,11 +68,11 @@ const MainNavbar = () => {
     <nav className="sticky top-1 z-50 flex h-[46px] w-full items-center bg-bg">
 
       {/* Main navbar row */}
-      <div className="container grid grid-cols-[auto_1fr_auto] items-center h-13">
+      <div className="container px-4 md:px-8 lg:px-20 grid grid-cols-[auto_1fr_auto] items-center h-13">
 
         {/* Left: Logo + Nav Links */}
         <div className="flex items-center gap-6 shrink-0">
-          <Link to="/discover" className="flex items-center gap-1 text-4xl">
+          <Link data-test="link-logo" to="/discover" className="flex items-center gap-1 text-4xl">
             <i className="fa-brands fa-soundcloud text-text-hover" />
           </Link>
 
@@ -88,6 +88,7 @@ const MainNavbar = () => {
         <div className="hidden md:flex flex-1 justify-center">
           <div className="w-full max-w-[500px] relative">
             <input
+              data-test="input-search"
               type="text"
               placeholder="Search"
               className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
@@ -112,13 +113,14 @@ const MainNavbar = () => {
           <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text-hover transition-colors">
             For Artists
           </Link>
-          <Link to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text-hover transition-colors">
+          <Link data-test="link-upload" to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text-hover transition-colors">
             Upload
           </Link>
 
           {/* Avatar + Dropdown */}
           <div ref={avatarRef} className="relative">
             <button
+              data-test="btn-avatar-menu"
               onClick={() => toggle(setShowAvatarMenu)}
               className="flex items-center gap-1 hover:opacity-80 transition-opacity"
             >
@@ -152,6 +154,7 @@ const MainNavbar = () => {
           {/* Notifications */}
           <div ref={notifRef} className="relative">
             <button
+              data-test="btn-notifications"
               onClick={() => toggle(setShowNotifications)}
               className="text-text-secondary hover:text-text transition-colors"
             >
@@ -181,6 +184,7 @@ const MainNavbar = () => {
           {/* Messages */}
           <div ref={msgRef} className="relative">
             <button
+              data-test="btn-messages"
               onClick={() => toggle(setShowMessages)}
               className="text-text-secondary hover:text-text transition-colors"
             >
@@ -230,6 +234,7 @@ const MainNavbar = () => {
                 <DropdownLink label="Settings" to="/settings" onClick={closeAll} />
                 <div className="border-t border-border my-1" />
                 <button
+                  data-test="btn-signout"
                   onClick={handleSignOut}
                   className="w-full text-left px-4 py-2 text-md text-text-hover hover:text-text-secondary transition-colors"
                 >
@@ -243,12 +248,14 @@ const MainNavbar = () => {
         {/* Mobile: search icon + hamburger */}
         <div className="flex md:hidden items-center gap-3">
           <button
+            data-test="btn-search-toggle"
             onClick={() => setIsMobileSearchOpen((prev) => !prev)}
             className="text-text-secondary hover:text-text transition-colors"
           >
             <Search size={22} />
           </button>
           <button
+            data-test="btn-menu-toggle"
             onClick={() => setIsMobileMenuOpen((prev) => !prev)}
             className="text-text-secondary hover:text-text transition-colors"
           >
