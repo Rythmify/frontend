@@ -5,7 +5,7 @@ const UploadLayout = () => {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen flex flex-col bg-bg">
-      <header className="sticky top-0 z-50 bg-bg border-b border-border">
+      <header className="sticky top-0 z-50 bg-bg ">
         <div className="w-full px-8 flex items-center justify-between h-[46px]">
           
           {/*Left side: Logo and page title */}
@@ -16,9 +16,9 @@ const UploadLayout = () => {
             
             {/*Page Title */}
             <div className="flex items-center gap-6 h-full">
-              <h2 className="text-text-upload font-bold text- tracking-wide">
+              <h6 className="text-text-upload font-bold text-md tracking-wide">
                 Upload
-              </h2>
+              </h6>
             </div>
           </div>
 

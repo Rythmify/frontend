@@ -21,6 +21,9 @@
   --color-bg-inverted:#121212;
   --color-input-bg: #f3f3f3;
 
+  /*Artist and upload page specific*/
+  --color-bg-upload: #fafafafa;
+
   /* Borders  */
   --color-border: #e0e0e0;
   --color-border-light: #cccccc;
@@ -32,6 +35,8 @@
   --color-text-link: #0a6e8a;
   --color-text-link-hover: #085a72;
   --color-text-hover:#000000;
+  --color-text-hover:#000000;
+  /* Upload Page Specific */
   --color-text-upload: #000000de;
 
   /*  Semantic  */
@@ -64,6 +69,9 @@
     --color-bg: #121212;
     --color-bg-inverted:#ffffff;
     --color-input-bg: #303030;
+
+  /*Artist and upload page specific*/
+  --color-bg-upload: #212121;
 
     --color-border: #333333;
     --color-border-light: #444444;
