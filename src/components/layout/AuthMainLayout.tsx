@@ -3,10 +3,10 @@ import MainNavbar from "./MainNavbar";
 
 const AuthMainLayout = () => (
   
-    <div className=" min-h-screen flex flex-col">
+    <div className="flex flex-col items-start min-h-screen ">
     <MainNavbar />
 
-    <main className="flex-1">
+    <main className="container flex-1">
       <Outlet />
     </main>
   </div>
