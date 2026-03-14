@@ -1,7 +1,5 @@
-import React from 'react'
+import React from "react";
 
 export default function SigninPage() {
-  return (
-    <div>SigninPage</div>
-  )
+  return <div>SigninPage</div>;
 }
