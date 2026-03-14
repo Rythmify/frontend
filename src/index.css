@@ -29,17 +29,14 @@
   --color-text-muted: #666666;
   --color-text-link: #0a6e8a;
   --color-text-link-hover: #085a72;
+  --color-text-hover:#000000;
 
   /*  Semantic  */
   --color-error: #cf4a4a;
   --color-success: #2d8f4e;
   --color-warning: #d4a017;
 
-  /* Font  */
-  --font-sans:
-    "Overpass", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "Garuda",
-    "Verdana", "Tahoma", sans-serif;
-
+  
   /* Layout * */
   --container-max: 1240px;
 
@@ -75,6 +72,25 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   }
+
+  h1{
+    @apply text-4xl font-bold
+   }
+   h2{
+    @apply text-3xl font-bold
+   }
+   h3{
+    @apply text-2xl font-bold
+   }
+   h4{
+    @apply text-xl font-semibold
+   }
+   h5{
+    @apply text-lg font-semibold
+   }
+   h6{
+    @apply text-base font-semibold
+   }
 }
 
 /* Base Styles*/
@@ -83,7 +99,8 @@
   body {
     background-color: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-sans);
+    font-family: "Inter", sans-serif;
+    
   }
 }
 
@@ -120,3 +137,11 @@
     animation: nudge 0.4s ease-in-out;
   }
 }
+
+@layer utilities {
+
+    .container{
+       @apply mx-auto ;
+
+    }
+  }
