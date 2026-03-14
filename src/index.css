@@ -72,6 +72,25 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   }
+
+  h1{
+    @apply text-4xl font-bold
+   }
+   h2{
+    @apply text-3xl font-bold
+   }
+   h3{
+    @apply text-2xl font-bold
+   }
+   h4{
+    @apply text-xl font-semibold
+   }
+   h5{
+    @apply text-lg font-semibold
+   }
+   h6{
+    @apply text-base font-semibold
+   }
 }
 
 /* Base Styles*/
@@ -91,7 +110,7 @@
 @layer utilities {
 
     .container{
-       @apply mx-auto px-4 md:px-8 lg:px-20;
+       @apply mx-auto ;
 
     }
   }

@@ -68,7 +68,7 @@ const MainNavbar = () => {
     <nav className="sticky top-1 z-50 flex h-[46px] w-full items-center bg-bg">
 
       {/* Main navbar row */}
-      <div className="container grid grid-cols-[auto_1fr_auto] items-center h-13">
+      <div className="container px-4 md:px-8 lg:px-20 grid grid-cols-[auto_1fr_auto] items-center h-13">
 
         {/* Left: Logo + Nav Links */}
         <div className="flex items-center gap-6 shrink-0">
