@@ -35,7 +35,7 @@ const NoAuthNavbar = () => {
     <nav className="sticky top-1 z-50 w-full bg-bg ">
 
       {/* Main navbar row */}
-      <div className="container grid grid-cols-[auto_1fr_auto] items-center h-11.5">
+      <div className="container px-4 md:px-8 lg:px-20 grid grid-cols-[auto_1fr_auto] items-center h-11.5">
 
         {/* Left: Logo + Nav Links */}
         <div className="flex items-center gap-6 shrink-0">
