@@ -3,21 +3,64 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
 import { Button } from "@heroui/react";
 import SigninEmailStep from "./SigninEmailStep";
+import SigninPasswordLoginStep from "./SigninPasswordLoginStep";
+import SigninPasswordRegisterStep from "./SigninPasswordRegisterStep";
+
+type Step = "main" | "email" | "login" | "register";
 
 export default function SigninPage() {
-  const [showEmailStep, setShowEmailStep] = useState(false);
+  const [step, setStep] = useState<Step>("main");
+  const [email, setEmail] = useState("");
 
-  if (showEmailStep) {
+  function handleEmailContinue(resolvedEmail: string, exists: boolean) {
+    setEmail(resolvedEmail);
+    setStep(exists ? "login" : "register");
+  }
+
+  if (step === "email") {
     return (
       <div className="mt-20 container grid gap-7 bg-bg border-2 rounded-md border-input-bg w-lg p-8">
-        <SigninEmailStep onBack={() => setShowEmailStep(false)} />
+        <SigninEmailStep
+          onBack={() => setStep("main")}
+          onContinue={handleEmailContinue}
+        />
+      </div>
+    );
+  }
+
+  if (step === "login") {
+    return (
+      <div className="mt-20 container grid gap-7 bg-bg border-2 rounded-md border-input-bg w-lg p-8">
+        <SigninPasswordLoginStep
+          email={email}
+          onBack={() => setStep("email")}
+          onContinue={(password) => {
+            //  call login API with email + password
+            console.log("login", { email, password });
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (step === "register") {
+    return (
+      <div className="mt-20 container grid gap-7 bg-bg border-2 rounded-md border-input-bg w-lg p-8">
+        <SigninPasswordRegisterStep
+          email={email}
+          onBack={() => setStep("email")}
+          onContinue={(password) => {
+            //  call register API with email + password
+            console.log("register", { email, password });
+          }}
+        />
       </div>
     );
   }
 
   return (
     <div className="mt-20 container grid gap-7 bg-bg border-2 rounded-md border-input-bg w-lg p-8">
-      <h1 className="text-text-hover">Sign in or create an account</h1>
+      <h1 className="text-text-hover max-w-sm">Sign in or create an account</h1>
 
       <p className="text-md font-bold text-text-secondary w-full">
         By clicking on any of the "Continue" buttons below, you agree to
@@ -55,10 +98,13 @@ export default function SigninPage() {
           type="email"
           placeholder="Your email address or profile URL"
           className="w-full bg-input-bg text-text text-md px-4 py-4 rounded-sm border border-transparent outline-none placeholder:text-text-muted cursor-pointer"
-          onFocus={() => setShowEmailStep(true)}
+          onFocus={() => setStep("email")}
           readOnly
         />
-        <button className="w-full bg-text-secondary text-bg text-md font-bold py-4 rounded-sm hover:opacity-90 transition-opacity">
+        <button
+          onClick={() => setStep("email")}
+          className="w-full bg-text-secondary text-bg text-md font-bold py-4 rounded-sm hover:opacity-90 transition-opacity"
+        >
           Continue
         </button>
         <a href="/help" className="text-text-link hover:text-text-link-hover text-md">
