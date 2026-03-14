@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react"
+import { Modal } from "../../../components/MessagingComponents/Modal";
 const MessagesPage = () => {
         const [isOpen, setIsOpen] = useState(false)
 
@@ -19,6 +20,11 @@ const MessagesPage = () => {
         >
           New
         </button>
+        <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <h2>New message</h2>
+        <input placeholder="To" />
+        <textarea placeholder="Write your message..." />
+      </Modal>
       </div>
 
       {/* Empty state */}
