@@ -37,7 +37,7 @@ const UploadPage = () => {
   };
 
   return (
-    <div className="max-w-6xl w-full pt-8 px-8 pb-40 mx-auto px-4 mt-12 text-left">
+    <div className="container pt-8 px-8 pb-40 mt-12 text-left antialiased">
       
       {/* main upload title */}
       <h1 className="text-[28px] font-bold text-text-upload mb-6 mt-6">
@@ -61,6 +61,7 @@ const UploadPage = () => {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()} 
       >
         
         {/* Hidden File Input */}
@@ -72,8 +73,9 @@ const UploadPage = () => {
           multiple
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFiles(e.target.files)}
         />
+
         {/* Cloud Upload Icon */}
-        <CloudUploadIcon className="mb-6 text-text-upload" size={80} />
+        <CloudUploadIcon className="mb-6 text-text-upload" />
 
         {/* Dropzone Content */}
         <p className="m-0 text-text-upload font-sans font-bold text-base mb-6">
