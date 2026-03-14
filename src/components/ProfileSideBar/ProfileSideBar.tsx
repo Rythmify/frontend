@@ -64,6 +64,73 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           ))}
         </div>
       </div>
+
+      {likedTracks.length > 0 && (
+        <>
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold text-text">
+                {likedTracks.length} LIKES
+              </span>
+              <button className="  text-xs text-text-secondary hover:text-text">
+                View all
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {likedTracks.map((track) => (
+                <div key={track.id} className="flex gap-3">
+                  <div className="w-14 h-14 flex-shrink-0 bg-border rounded overflow-hidden">
+                    {track.coverUrl ? (
+                      <img
+                        src={track.coverUrl}
+                        alt={track.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-border" />
+                    )}
+                  </div>
+                  <div className="flex flex-col justify-center min-w-0">
+                    <p className="text-xs text-text-secondary truncate">
+                      {track.artist}
+                    </p>
+                    <p className="text-sm font-bold text-text truncate">
+                      {track.title}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-text-secondary">
+                      {track.plays !== undefined && (
+                        <span className="flex items-center gap-1">
+                          <i className="fa-solid fa-play text-[10px]" />{" "}
+                          {(track.plays / 1e6).toFixed(1)}M
+                        </span>
+                      )}
+                      {track.likes !== undefined && (
+                        <span className="flex items-center gap-1">
+                          <i className="fa-solid fa-heart text-[10px]" />{" "}
+                          {(track.likes / 1e6).toFixed(2)}M
+                        </span>
+                      )}
+                      {track.reposts !== undefined && (
+                        <span className="flex items-center gap-1">
+                          <i className="fa-solid fa-retweet text-[10px]" />{" "}
+                          {(track.reposts / 1000).toFixed(1)}K
+                        </span>
+                      )}
+                      {track.comments !== undefined && (
+                        <span className="flex items-center gap-1">
+                          <i className="fa-solid fa-comment text-[10px]" />{" "}
+                          {track.comments.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

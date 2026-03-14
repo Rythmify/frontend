@@ -26,7 +26,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       >
         {/* Upload header button */}
         {isOwner && (
-          <button className=" cursor-pointer absolute top-8 right-6 px-3 py-1.5 bg-black text-white  text-sm font-bold rounded hover:text-[#aaaaaa] transition-colors">
+          <button className="cursor-pointer absolute top-8 right-6 px-3 py-1.5 bg-black text-white text-sm font-bold rounded hover:text-[#aaaaaa] transition-colors">
             Upload header image
           </button>
         )}

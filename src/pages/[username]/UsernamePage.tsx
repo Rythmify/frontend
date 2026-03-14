@@ -35,6 +35,29 @@ function getEmptyState(tab: string, isOwner: boolean) {
   }
 }
 
+const mockLikedTracks = [
+  {
+    id: "1",
+    title: "Green & Purple f/Playboi Carti",
+    artist: "Travis Scott",
+    coverUrl: "https://i1.sndcdn.com/artworks-000225111730-qbt7bb-t500x500.jpg",
+    plays: 66900000,
+    likes: 1040000,
+    reposts: 69500,
+    comments: 9166,
+  },
+  {
+    id: "2",
+    title: "SICKO MODE",
+    artist: "Travis Scott",
+    coverUrl: "https://i1.sndcdn.com/artworks-000225111730-qbt7bb-t500x500.jpg",
+    plays: 120000000,
+    likes: 2500000,
+    reposts: 150000,
+    comments: 15000,
+  },
+];
+
 export default function UsernamePage() {
   const { user: currentUser } = useAuthStore();
   const [selectedTab, setSelectedTab] = useState("All");
@@ -48,7 +71,7 @@ export default function UsernamePage() {
   return (
     <div className="w-full">
       <ProfileHeader user={user} isOwner={isOwner} />
-      <div className=" max-w-[98%] mx-auto ">
+      <div className=" max-w-[100%] mx-auto ">
         <ProfileTabs
           isOwner={isOwner}
           selectedTab={selectedTab}
@@ -66,7 +89,11 @@ export default function UsernamePage() {
           )}
         </div>
         <div className="w-[370px] flex-shrink-0">
-          <ProfileSidebar user={user} isOwner={isOwner} />
+          <ProfileSidebar
+            user={user}
+            isOwner={isOwner}
+            likedTracks={mockLikedTracks}
+          />
         </div>
       </div>
     </div>
