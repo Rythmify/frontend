@@ -53,14 +53,14 @@ const MainNavbar = () => {
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-md font-bold px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
+    `text-md font-medium px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
       isActive
         ? "text-text-hover border-text-hover"
         : "text-text-secondary border-transparent"
     }`;
 
   const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `block px-4 py-3 text-md font-bold transition-colors ${
+    `block px-4 py-3 text-md font-medium transition-colors ${
       isActive ? "text-tex-hover" : "text-text-secondary hover:text-white"
     }`;
 
@@ -94,7 +94,7 @@ const MainNavbar = () => {
               className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
             />
             <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <i className="fa-solid fa-magnifying-glass text-lg  font-bold" />
+              <i className="fa-solid fa-magnifying-glass text-lg  font-medium" />
 
             </button>
           </div>
@@ -107,13 +107,13 @@ const MainNavbar = () => {
         <div className="hidden md:flex items-center gap-4 shrink-0">
 
           {/* Text links — desktop only */}
-          <Link to="/creator/checkout" className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors">
+          <Link to="/creator/checkout" className="hidden lg:block text-accent text-md font-medium hover:text-text-hover transition-colors">
             Try Artist Pro
           </Link>
-          <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text-hover transition-colors">
+          <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-medium hover:text-text-hover transition-colors">
             For Artists
           </Link>
-          <Link data-test="link-upload" to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text-hover transition-colors">
+          <Link data-test="link-upload" to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-medium hover:text-text-hover transition-colors">
             Upload
           </Link>
 
@@ -164,7 +164,7 @@ const MainNavbar = () => {
             {showNotifications && (
               <div className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <h3 className="text-md font-bold text-text">Notifications</h3>
+                  <h3 className="text-md font-medium text-text">Notifications</h3>
                   <Link to="/settings/notifications" className="text-xs text-text-secondary hover:text-text" onClick={closeAll}>
                     Settings
                   </Link>
@@ -173,7 +173,7 @@ const MainNavbar = () => {
                   <div className="px-4 py-3 text-md text-text-muted text-center">No new notifications</div>
                 </div>
                 <div className="border-t border-border px-4 py-2">
-                  <Link to="/notifications" className="text-xs font-bold text-text hover:text-text-secondary block text-center" onClick={closeAll}>
+                  <Link to="/notifications" className="text-xs font-medium text-text hover:text-text-secondary block text-center" onClick={closeAll}>
                     View all notifications
                   </Link>
                 </div>
@@ -194,13 +194,13 @@ const MainNavbar = () => {
             {showMessages && (
               <div className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50">
                 <div className="px-4 py-3 border-b border-border">
-                  <h3 className="text-md font-bold text-text">Messages</h3>
+                  <h3 className="text-md font-medium text-text">Messages</h3>
                 </div>
                 <div className="py-2 max-h-[300px] overflow-y-auto">
                   <div className="px-4 py-3 text-md text-text-muted text-center">No new messages</div>
                 </div>
                 <div className="border-t border-border px-4 py-2">
-                  <Link to="/messages" className="text-xs font-bold text-text hover:text-text-secondary block text-center" onClick={closeAll}>
+                  <Link to="/messages" className="text-xs font-medium text-text hover:text-text-secondary block text-center" onClick={closeAll}>
                     View all messages
                   </Link>
                 </div>
@@ -292,19 +292,19 @@ const MainNavbar = () => {
           <NavLink to="/feed" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Feed</NavLink>
           <NavLink to="/you/library" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Library</NavLink>
           <div className="border-t border-border my-1" />
-          <Link to="/creator/checkout" className="block px-4 py-3 text-md font-bold text-accent hover:text-accent-hover transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+          <Link to="/creator/checkout" className="block px-4 py-3 text-md font-medium text-accent hover:text-accent-hover transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
             Try Artist Pro
           </Link>
-          <Link to="/artists" className="block px-4 py-3 text-md font-bold text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+          <Link to="/artists" className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
             For Artists
           </Link>
-          <Link to="/upload" className="block px-4 py-3 text-md font-bold text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+          <Link to="/upload" className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
             Upload
           </Link>
           <div className="border-t border-border my-1" />
           <button
             onClick={handleSignOut}
-            className="w-full text-left px-4 py-3 text-md font-bold text-text-secondary hover:text-white transition-colors"
+            className="w-full text-left px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors"
           >
             Sign out
           </button>
