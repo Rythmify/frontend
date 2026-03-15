@@ -20,14 +20,14 @@ const NoAuthNavbar = () => {
   }, []);
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-md font-bold px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
+    `text-md font-medium px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
       isActive
         ? "text-text-hover border-text-hover"
         : "text-text-secondary border-transparent"
     }`;
 
   const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `block px-4 py-3 text-md font-bold transition-colors ${
+    `block px-4 py-3 text-md font-medium transition-colors ${
       isActive ? "text-text-hover" : "text-text-secondary hover:text-text-hover"
     }`;
 
@@ -41,7 +41,7 @@ const NoAuthNavbar = () => {
         <div className="flex items-center gap-6 shrink-0">
           <Link data-test="link-logo" to="/" className="flex items-center gap-2 text-4xl">
             <i className="fa-brands fa-soundcloud text-text-hover" />
-            <span className="text-xl ms-1 font-bold tracking-widest uppercase text-text-hover">Rythmify</span>
+            <span className="text-xl ms-1 font-medium tracking-widest uppercase text-text-hover">Rythmify</span>
           </Link>
 
           {/* Nav links — tablet+ */}
@@ -62,7 +62,7 @@ const NoAuthNavbar = () => {
               className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-1.5 pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
             />
             <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <i className="fa-solid fa-magnifying-glass text-lg font-bold" />
+              <i className="fa-solid fa-magnifying-glass text-lg font-medium" />
             </button>
           </div>
         </div>
@@ -75,7 +75,7 @@ const NoAuthNavbar = () => {
           <Link
             data-test="link-signin"
             to="/signin"
-            className="text-md font-bold text-text-hover hover:text-text-secondary transition-colors"
+            className="text-md font-medium text-text-hover hover:text-text-secondary transition-colors"
           >
             Sign in
           </Link>
@@ -91,7 +91,7 @@ const NoAuthNavbar = () => {
           <Link
             data-test="link-upload"
             to="/upload"
-            className="hidden lg:block text-md font-bold text-text-secondary hover:text-text-hover transition-colors"
+            className="hidden lg:block text-md font-medium text-text-secondary hover:text-text-hover transition-colors"
           >
             Upload
           </Link>
@@ -178,21 +178,21 @@ const NoAuthNavbar = () => {
           <div className="border-t border-border my-1" />
           <Link
             to="/signin"
-            className="block px-4 py-3 text-md font-bold text-text-secondary hover:text-text-hover transition-colors"
+            className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-text-hover transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Sign in
           </Link>
           <Link
             to="/register"
-            className="block px-4 py-3 text-md font-bold text-text-hover hover:text-text-secondary transition-colors"
+            className="block px-4 py-3 text-md font-medium text-text-hover hover:text-text-secondary transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Create account
           </Link>
           <Link
             to="/upload"
-            className="block px-4 py-3 text-md font-bold text-text-secondary hover:text-text-hover transition-colors"
+            className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-text-hover transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Upload
