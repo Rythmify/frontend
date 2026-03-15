@@ -3,6 +3,7 @@ import UploadGuestPage from "./UploadGuestPage";
 import { useState, useRef } from "react";
 import CloudUploadIcon from "./CloudUploadIcon";
 import UploadQuotaBar from "./UploadQuotaBar";
+import RecordSection from "./RecordSection";
 
 const UploadPage = () => {
   const { isAuthenticated } = useAuthStore();
@@ -38,7 +39,7 @@ const UploadPage = () => {
   };
 
   return (
-    <div className="container text-left antialiased">
+    <div className="container text-left pb-40 antialiased">
       <div className="mb-8">
       <UploadQuotaBar />
       </div>
@@ -93,8 +94,8 @@ const UploadPage = () => {
         >
           Choose files
         </button>
-
       </div>
+      <RecordSection />
     </div>
   );
 };
