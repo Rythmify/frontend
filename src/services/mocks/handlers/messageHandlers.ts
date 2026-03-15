@@ -127,7 +127,7 @@ const mockConversationDetail: ConversationDetailResponse = {
 type MockScenario = 'success' | 'empty' | 'error' | 'loading';
 
 export const mockConfig = {
-  conversations: 'empty' as MockScenario,
+  conversations: 'success' as MockScenario,
   conversationDetail: 'success' as MockScenario,
 };
 
