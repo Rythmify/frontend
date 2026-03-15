@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { fetchConversations } from '../../../api/messaging/conversationApi';
-import type { Conversation } from '../../../api/messaging/conversationApi';
+import { fetchConversations } from '../../../services/api/messaging/conversationApi';
+import type { Conversation } from '../../../services/api/messaging/conversationApi';
 import EmptyMessagesPage from './emptyMessagesPage';
 import Spinner from '../../../components/UI/Spinner';
 
