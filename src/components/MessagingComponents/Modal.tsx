@@ -21,11 +21,11 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex  justify-center bg-[#717171]/50 flex-col"
+      className="fixed inset-0 z-50 flex   bg-[white]/40 flex-col "
       onClick={onClose}   // clicking backdrop closes it
     >
-<div className="relative">
-  <button className="bg-[#303030] p-1 rounded-full absolute top-0 right-0" onClick={onClose}>
+<div className="relative mt-10 mr-10">
+  <button className="bg-[#303030]  w-10 h-10 rounded-full absolute top-0 right-0 flex items-center justify-center " onClick={onClose}>
   <svg
   color="white"
     viewBox="0 0 16 16"
@@ -41,7 +41,7 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 </button>
 </div>
       <div
-        className="self-center w-full max-w-2xl p-6 bg-black "
+        className="self-center w-full max-w-2xl p-6 mt-10 bg-black"
         onClick={e => e.stopPropagation()}  // prevent backdrop click
       >
         {children}
