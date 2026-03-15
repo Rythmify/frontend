@@ -1,7 +1,3 @@
-import React from "react";
-
-export default function SigninPage() {
-  return <div>SigninPage</div>;
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
@@ -46,7 +42,7 @@ function SigninFlow() {
           email={email}
           onBack={() => setStep("email")}
           onContinue={(pw) => {
-            // TODO: call login API with email + pw
+            // call login API with email + pw
             console.log("login", { email, pw });
           }}
           onForgotPassword={() => setStep("forgot-password")}
@@ -100,7 +96,7 @@ function SigninFlow() {
           email={email}
           onBack={() => setStep("register")}
           onContinue={(data) => {
-            // TODO: call register API
+            //  call register API
             console.log("register", {
               email,
               password,
@@ -122,7 +118,7 @@ function SigninFlow() {
         <VerifyEmail
           email={email}
           onSendAgain={() => {
-            // TODO: call resend verification email API
+            // call resend verification email API
             console.log("resend verification email", { email });
           }}
           onBackToLogin={() => setStep("main")}
