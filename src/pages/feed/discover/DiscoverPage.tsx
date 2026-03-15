@@ -1,7 +1,7 @@
-import React from 'react'
+import DiscoverPageAuth from "./DiscoverPageAuth";
 
-export default function DiscoverPage() {
-  return (
-    <div>DiscoverPage</div>
-  )
-}
+const DiscoverPage = () => {
+  return <DiscoverPageAuth />;
+};
+
+export default DiscoverPage;
