@@ -17,6 +17,11 @@ interface HandleRecordingProps {
   currentSegmentStart: number;
   setCurrentSegmentStart: React.Dispatch<React.SetStateAction<number>>;
   onFinish: (data: Blob) => void;
+  mediaRecorderRef: React.RefObject<MediaRecorder | null>;
+  audioSegments: Blob[];
+  setAudioSegments: React.Dispatch<React.SetStateAction<Blob[]>>;
+  redoAudioStack: Blob[];
+  setRedoAudioStack: React.Dispatch<React.SetStateAction<Blob[]>>;
 }
 
 const HandleRecording = ({
@@ -36,6 +41,11 @@ const HandleRecording = ({
   currentSegmentStart,
   setCurrentSegmentStart,
   onFinish,
+  mediaRecorderRef,
+  audioSegments,
+  setAudioSegments,
+  redoAudioStack,
+  setRedoAudioStack,
 }: HandleRecordingProps) => {
   useEffect(() => {
     let interval: any;
@@ -60,22 +70,51 @@ const HandleRecording = ({
     setSeconds,
   ]);
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const segmentBlob = new Blob(chunks, {
+          type: "audio/ogg; codecs=opus",
+        });
+        setAudioSegments((prev) => [...prev, segmentBlob]);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+    } catch (err) {
+      console.error("Microphone access denied", err);
+    }
+  };
+
   const handleRecordToggle = () => {
     if (isRecordingFinished) {
       handleRestart();
       setIsRecording(true);
+      startRecording(); // Start recording
     } else if (!isRecording) {
       setCurrentSegmentStart(seconds);
       setIsRecording(true);
-      setRedoStack([]); // clear rdo segments
+      setRedoStack([]);
+      setRedoAudioStack([]); // Reset redo stack
+      startRecording(); // Start recording
     } else {
       if (!isPaused) {
+        mediaRecorderRef.current?.stop();
         const segmentDuration = seconds - currentSegmentStart;
         if (segmentDuration > 0) {
           setHistory([...history, segmentDuration]);
         }
       } else {
         setCurrentSegmentStart(seconds);
+        startRecording();
       }
       setIsPaused(!isPaused);
     }
@@ -83,40 +122,56 @@ const HandleRecording = ({
 
   //undo icon function to undo the last segment
   const handleUndo = () => {
-    if (history.length === 0) return;
+    if (history.length === 0 || audioSegments.length === 0) return;
 
-    const lastSegment = history[history.length - 1];
-    const newHistory = history.slice(0, -1);
+    // undo time
+    const lastTime = history[history.length - 1];
+    setHistory(history.slice(0, -1));
+    setRedoStack([...redoStack, lastTime]);
 
-    setHistory(newHistory);
-    setRedoStack([...redoStack, lastSegment]);
-    setSeconds((prev) => Math.max(0, prev - lastSegment));
+    // remove audio segment
+    const lastAudio = audioSegments[audioSegments.length - 1];
+    setAudioSegments(audioSegments.slice(0, -1));
+    setRedoAudioStack([...redoAudioStack, lastAudio]);
+
+    setSeconds((prev) => Math.max(0, prev - lastTime));
   };
 
   //redo icon function to redo the last segment
   const handleRedo = () => {
-    if (redoStack.length === 0) return;
+    if (redoStack.length === 0 || redoAudioStack.length === 0) return;
 
     const segmentToRestore = redoStack[redoStack.length - 1];
-    const newRedoStack = redoStack.slice(0, -1);
-
-    setRedoStack(newRedoStack);
+    setRedoStack(redoStack.slice(0, -1));
     setHistory([...history, segmentToRestore]);
+
+    const audioToRestore = redoAudioStack[redoAudioStack.length - 1];
+    setRedoAudioStack(redoAudioStack.slice(0, -1));
+    setAudioSegments([...audioSegments, audioToRestore]);
+
     setSeconds((prev) => Math.min(60, prev + segmentToRestore));
   };
 
   //stop icon function to stop the recording and save it without deleting it
   const handleStop = () => {
     if (isRecording || isPaused) {
+      // If we stop while recording, stop the recorder first to trigger onstop
       if (isRecording && !isPaused) {
+        mediaRecorderRef.current?.stop();
         const segmentDuration = seconds - currentSegmentStart;
         if (segmentDuration > 0) {
           setHistory([...history, segmentDuration]);
         }
       }
-      setIsRecording(false);
-      setIsPaused(false);
-      setIsRecordingFinished(true);
+
+      // timeout to ensure the last segment is pushed to audioSegments
+      setTimeout(() => {
+        const finalBlob = new Blob(audioSegments, { type: "audio/wav" });
+        setIsRecording(false);
+        setIsPaused(false);
+        setIsRecordingFinished(true);
+        onFinish(finalBlob);
+      }, 100);
     }
   };
 
@@ -126,6 +181,11 @@ const HandleRecording = ({
     setIsRecording(false);
     setIsPaused(false);
     setIsRecordingFinished(false);
+    setAudioSegments([]);
+    setRedoAudioStack([]);
+    setHistory([]);
+    setRedoStack([]);
+    mediaRecorderRef.current?.stop();
   };
 
   return (

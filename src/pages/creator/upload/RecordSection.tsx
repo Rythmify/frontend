@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import HandleRecording from "./HandleRecording";
 import MicSelector from "./MicSelector";
 
@@ -9,10 +9,12 @@ const RecordSection = ({ onFinish }: { onFinish: (data: Blob) => void }) => {
   const [isRecordingFinished, setIsRecordingFinished] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [selectedMicId, setSelectedMicId] = useState("default");
-  const [history, setHistory] = useState<number[]>([]); 
-  const [redoStack, setRedoStack] = useState<number[]>([]); 
-  const [currentSegmentStart, setCurrentSegmentStart] = useState(0); 
-
+  const [history, setHistory] = useState<number[]>([]);
+  const [redoStack, setRedoStack] = useState<number[]>([]);
+  const [currentSegmentStart, setCurrentSegmentStart] = useState(0);
+  const [audioSegments, setAudioSegments] = useState<Blob[]>([]);
+  const [redoAudioStack, setRedoAudioStack] = useState<Blob[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const formatTime = (s: number) => {
     const mins = Math.floor(s / 60);
     const secs = s % 60;
@@ -87,6 +89,11 @@ const RecordSection = ({ onFinish }: { onFinish: (data: Blob) => void }) => {
           currentSegmentStart={currentSegmentStart}
           setCurrentSegmentStart={setCurrentSegmentStart}
           onFinish={onFinish}
+          audioSegments={audioSegments}
+          setAudioSegments={setAudioSegments}
+          mediaRecorderRef={mediaRecorderRef}
+          redoAudioStack={redoAudioStack}
+          setRedoAudioStack={setRedoAudioStack}
         />
       </div>
     </div>
