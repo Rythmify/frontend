@@ -5,11 +5,9 @@ const UploadQuotaBar = ({ usedMinutes = 80, totalMinutes = 120 }) => {
   const displayPercentage = percentage.toFixed(2);
 
   return (
-    <div className="w-full bg-bg-upload border border-transparent rounded-sm p-4 flex items-center justify-between antialiased">
-      
+    <div className="container bg-bg-upload border border-transparent rounded-sm p-4 flex items-center justify-between antialiased">
       {/* Cloud Icon + Text + Bar Section */}
       <div className="flex max-w-133 items-center gap-4 grow mr-8">
-        
         {/* Photo/Icon */}
         <SmallCloudIcon className="text-text-upload shrink-0" size={24} />
 
@@ -19,31 +17,31 @@ const UploadQuotaBar = ({ usedMinutes = 80, totalMinutes = 120 }) => {
         </span>
 
         {/*Progress bar*/}
-        <div className="relative h-1.5 grow border-border bg-[#424242] overflow-hidden min-w-[100px]">
-          <div 
+        <div className="relative h-1.5 grow border-border bg-[#424242] overflow-hidden min-w-25">
+          <div
             className="absolute top-0 left-0 h-full bg-[#388E3C] transition-all duration-700 ease-out"
             style={{ width: `${displayPercentage}%` }}
           />
         </div>
 
         {/* Minutes */}
-        <span className="text-sm font-bold text-text-upload whitespace-nowrap">
+        <span className="text-sm font-[500] text-text-upload whitespace-nowrap">
           {usedMinutes} of {totalMinutes} minutes
         </span>
       </div>
 
       {/*Button*/}
-      <button 
+      <button
         type="button"
         className="
             shrink-0 flex items-center justify-center bg-bg py-2.5 px-6
-            outline-[#383838] outline-[0.2px] hover:bg-white/[0.05] text-white text-sm font-bold
+            outline-[#383838] outline-[0.2px] hover:bg-[#353535] text-white text-sm font-bold
             outline-offset-[-1.5px] rounded-full transition-all whitespace-nowrap cursor-pointer
             
-        ">
+        "
+      >
         Get unlimited uploads
-        </button>
-
+      </button>
     </div>
   );
 };

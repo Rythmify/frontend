@@ -3,11 +3,12 @@ import Footer from "./Footer";
 
 const UploadLayout = () => {
   const navigate = useNavigate();
+
   return (
-    <div className="min-h-screen flex flex-col bg-bg">
+    <div className="min-h-screen flex py-2.5 flex-col bg-bg transition-colors duration-300">
       <header className="sticky top-0 z-50 bg-bg ">
-        <div className="w-full px-8 flex items-center justify-between h-[46px]">
-          {/*Left side: Logo and page title */}
+        <div className="w-full px-8 flex items-center justify-between h-11.5">
+          {/* Left side: Logo and page title */}
           <div className="flex items-center gap-6">
             <Link
               to="/discover"
@@ -26,14 +27,14 @@ const UploadLayout = () => {
 
           {/*Close upload page*/}
           <div className="flex items-center gap-6">
-            {/* Close Button to exit upload & go to artists page */}
             <button
               onClick={() => navigate("/artists")}
-              className="flex items-center justify-center p-2 rounded-full 
-              bg-bg-inverted text-text hover:bg-bg transition-all duration-300 cursor-pointer"
+              className="flex items-center justify-center h-6 w-6 p-5 rounded-full 
+              bg-input-bg hover:bg-[dcdcdc] text-text-upload dark:hover:bg-[#353535]
+              transition-all duration-300 cursor-pointer"
               aria-label="Exit upload"
             >
-              <i className="fa-solid fa-xmark text-lg" />
+              <i className="fa-solid fa-xmark text-md" />
             </button>
           </div>
         </div>
