@@ -1,4 +1,5 @@
 import { useState } from "react";
+import HandleRecording from "./HandleRecording";
 
 const RecordSection = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -16,9 +17,9 @@ const RecordSection = () => {
   const progressTransform = -100 + (seconds / 60) * 100;
 
   return (
-    <div className="relative w-full bg-bg-upload border border-border rounded-sm mt-8 overflow-hidden font-['sohne',_sans-serif]">
+    <div className="relative w-full bg-bg-upload border border-border rounded-sm mt-8 overflow-hidden ">
       
-      {/* --- Top Header Area --- */}
+      {/* Top Header Area*/}
       <div className="p-6 flex items-center justify-between relative">
         <div className="flex items-center gap-1 text-white">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -43,7 +44,7 @@ const RecordSection = () => {
       {/* --- Expanded Section --- */}
       <div className={`transition-all duration-300 ${isExpanded ? "max-h-50" : "max-h-0"} overflow-hidden`}>
         
-        {/* Progress Bar Track  */}
+        {/* Progress Bar Track*/}
         <div className="px-6 relative h-0.5">
           <div className="absolute inset-x-6 h-full bg-[#333]" />
           {(isRecording || isRecordingFinished || isPaused) && (
@@ -54,6 +55,14 @@ const RecordSection = () => {
           )}
         </div>
 
+        {/* Calling handle record component*/}
+        <HandleRecording 
+          isRecording={isRecording} setIsRecording={setIsRecording}
+          isPaused={isPaused} setIsPaused={setIsPaused}
+          isRecordingFinished={isRecordingFinished} setIsRecordingFinished={setIsRecordingFinished}
+          seconds={seconds} setSeconds={setSeconds}
+          formatTime={formatTime}
+        />
       </div>
     </div>
   );
