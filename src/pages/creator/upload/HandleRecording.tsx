@@ -13,13 +13,16 @@ interface HandleRecordingProps {
 }
 
 const HandleRecording = ({
-  isRecording, setIsRecording,
-  isPaused, setIsPaused,
-  isRecordingFinished, setIsRecordingFinished,
-  seconds, setSeconds,
-  formatTime
+  isRecording,
+  setIsRecording,
+  isPaused,
+  setIsPaused,
+  isRecordingFinished,
+  setIsRecordingFinished,
+  seconds,
+  setSeconds,
+  formatTime,
 }: HandleRecordingProps) => {
-
   useEffect(() => {
     let interval: any;
     if (isRecording && !isPaused && seconds < 60) {
@@ -33,7 +36,15 @@ const HandleRecording = ({
       clearInterval(interval);
     }
     return () => clearInterval(interval);
-  }, [isRecording, isPaused, seconds, setIsRecording, setIsPaused, setIsRecordingFinished, setSeconds]);
+  }, [
+    isRecording,
+    isPaused,
+    seconds,
+    setIsRecording,
+    setIsPaused,
+    setIsRecordingFinished,
+    setSeconds,
+  ]);
 
   const handleRecordToggle = () => {
     if (isRecordingFinished) {
@@ -48,7 +59,7 @@ const HandleRecording = ({
     }
   };
 
-	//stop icon function to stop the recording and save it without deleting it
+  //stop icon function to stop the recording and save it without deleting it
   const handleStop = () => {
     if (isRecording || isPaused) {
       setIsRecording(false);
@@ -56,7 +67,7 @@ const HandleRecording = ({
       setIsRecordingFinished(true);
     }
   };
- //delete icon function to reset the recording and start over again
+  //delete icon function to reset the recording and start over again
   const handleRestart = () => {
     setSeconds(0);
     setIsRecording(false);
@@ -65,56 +76,78 @@ const HandleRecording = ({
   };
 
   return (
-  /* Action buttons + Record button + timer*/
-  <div className="p-6 flex items-center justify-center relative">
-    
-    {/* action buttons */}
-    <div className="flex items-center gap-1 absolute left-6">
-      {[
-        { path: "M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z", action: handleStop },
-        { path: "M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8"
-					, action: undefined },
-        { path: "M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7z"
-					, action: undefined },
-        { path: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8zm7.5-5-1-1h-5l-1 1H5v2h14V4z", action: handleRestart }
-      ].map((btn, i) => (
-        <button 
-          key={i} 
-          onClick={btn.action}
-          className={`p-2 rounded-full transition-colors ${
-            (isRecordingFinished || isPaused) ? "text-white hover:bg-white/10 cursor-pointer" : "text-white/20 cursor-default"
-          }`}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d={btn.path} /></svg>
-        </button>
-      ))}
-    </div>
+    /* Action buttons + Record button + timer*/
+    <div className="p-6 flex items-center justify-center relative">
+      {/* action buttons */}
+      <div className="flex items-center gap-1 absolute left-6">
+        {[
+          {
+            path: "M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+            action: handleStop,
+          },
+          {
+            path: "M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8",
+            action: undefined,
+          },
+          {
+            path: "M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7z",
+            action: undefined,
+          },
+          {
+            path: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8zm7.5-5-1-1h-5l-1 1H5v2h14V4z",
+            action: handleRestart,
+          },
+        ].map((btn, i) => (
+          <button
+            key={i}
+            onClick={btn.action}
+            className={`p-2 rounded-full transition-colors ${
+              isRecordingFinished || isPaused
+                ? "text-white hover:bg-white/10 cursor-pointer"
+                : "text-white/20 cursor-default"
+            }`}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d={btn.path} />
+            </svg>
+          </button>
+        ))}
+      </div>
 
-    {/* Record/ pause / resume button*/}
-    <button 
-      onClick={handleRecordToggle}
-      className="flex items-center gap-2 bg-[#565656] hover:bg-[#8b8b8b] text-white px-4 py-2.5 rounded-full font-bold 
+      {/* Record/ pause / resume button*/}
+      <button
+        onClick={handleRecordToggle}
+        className="flex items-center gap-2 bg-[#565656] hover:bg-[#8b8b8b] text-white px-4 py-2.5 rounded-full font-bold 
       text-sm cursor-pointer transition-all justify-center z-10"
-    >
-      <svg 
-        className={`shrink-0 text-[#FB2C36] ${isRecording && !isPaused ? "animate-pulse" : ""}`} 
-        width="24" height="24" viewBox="0 0 24 24" fill="#E64A19"
       >
-        <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5m0-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 
-				2m0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8" />
-      </svg>
+        <svg
+          className={`shrink-0 text-[#FB2C36] ${isRecording && !isPaused ? "animate-pulse" : ""}`}
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="#E64A19"
+        >
+          <path
+            d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5m0-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 
+				2m0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8"
+          />
+        </svg>
 
-      <span>
-        {!isRecording ? "Start recording" : isPaused ? "Resume recording" : "Pause recording"}
-      </span>
-    </button>
+        <span>
+          {!isRecording
+            ? "Start recording"
+            : isPaused
+              ? "Resume recording"
+              : "Pause recording"}
+        </span>
+      </button>
 
-    {/* 4. Timer Section stays absolute right */}
-    <div className="text-white font-bold text-sm min-w-10 text-right absolute right-6">
-      {formatTime(seconds)}
+      {/*Timer Section stays absolute right */}
+      <div className="text-text-upload font-bold text-[11px] min-w-10 text-right absolute right-6">
+        {formatTime(seconds)}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default HandleRecording;
