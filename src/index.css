@@ -68,8 +68,8 @@
     --color-bg-inverted:#ffffff;
     --color-input-bg: #303030;
 
-  /*Artist and upload page specific*/
-  --color-bg-upload: #212121;
+    /*Artist and upload page specific*/
+    --color-bg-upload: #212121;
 
     --color-border: #333333;
     --color-border-light: #444444;

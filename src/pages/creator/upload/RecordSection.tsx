@@ -9,6 +9,9 @@ const RecordSection = () => {
   const [isRecordingFinished, setIsRecordingFinished] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [selectedMicId, setSelectedMicId] = useState("default");
+  const [history, setHistory] = useState<number[]>([]); 
+  const [redoStack, setRedoStack] = useState<number[]>([]); 
+  const [currentSegmentStart, setCurrentSegmentStart] = useState(0); 
 
   const formatTime = (s: number) => {
     const mins = Math.floor(s / 60);
@@ -26,7 +29,7 @@ const RecordSection = () => {
         />
 
         <div className="text-center absolute left-1/2 -translate-x-1/2 pointer-events-none">
-          <h4 className="text-white font-bold text-base m-0">
+          <h4 className="text-text-upload font-bold text-base m-0">
             Or record with a microphone
           </h4>
           <p className="text-text-upload text-xs m-0 mt-1">
@@ -52,13 +55,13 @@ const RecordSection = () => {
       >
         {/* Progress Bar Track*/}
         <div className="px-10 relative h-0.5">
-          <div className="absolute inset-x-6 h-full bg-[#333]" />
+          <div className="absolute inset-x-6 h-full bg-[#757575]" />
           {(isRecording || isRecordingFinished || isPaused) && (
             <div
               className="absolute left-6 h-full bg-accent transition-all duration-1000 ease-linear rounded-full"
               style={{
                 width: `calc(${(seconds / 60) * 100}% - 48px)`,
-                maxWidth: "calc(100% - 48px)",
+                maxWidth: "calc(100% - 48px)", //24px from each side
                 transitionProperty: isPaused ? "none" : "all", //to smoothly pause
                 minWidth: seconds > 0 ? "4px" : "0px", //show small progress at beginning
               }}
@@ -77,6 +80,12 @@ const RecordSection = () => {
           seconds={seconds}
           setSeconds={setSeconds}
           formatTime={formatTime}
+          history={history}
+          setHistory={setHistory}
+          redoStack={redoStack}
+          setRedoStack={setRedoStack}
+          currentSegmentStart={currentSegmentStart}
+          setCurrentSegmentStart={setCurrentSegmentStart}
         />
       </div>
     </div>
