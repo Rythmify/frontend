@@ -2,7 +2,7 @@ import { useState } from "react";
 import HandleRecording from "./HandleRecording";
 import MicSelector from "./MicSelector";
 
-const RecordSection = () => {
+const RecordSection = ({ onFinish }: { onFinish: (data: Blob) => void }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -86,6 +86,7 @@ const RecordSection = () => {
           setRedoStack={setRedoStack}
           currentSegmentStart={currentSegmentStart}
           setCurrentSegmentStart={setCurrentSegmentStart}
+          onFinish={onFinish}
         />
       </div>
     </div>

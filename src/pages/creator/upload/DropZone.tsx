@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import CloudUploadIcon from "./CloudUploadIcon";
 
-const DropZone = () => {
+const DropZone = ({ onUpload }: { onUpload: (file: File) => void }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -9,6 +9,11 @@ const DropZone = () => {
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
+  };
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    onUpload(files[0]); // Send the first file to the parent
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
@@ -24,11 +29,6 @@ const DropZone = () => {
     if (files.length > 0) {
       handleFiles(files);
     }
-  };
-
-  const handleFiles = (files: FileList | null) => {
-    if (!files) return;
-    console.log("Files selected:", files);
   };
 
   return (
@@ -60,6 +60,7 @@ const DropZone = () => {
       >
         {/* Cloud Upload Icon */}
         <CloudUploadIcon className="mb-6 text-text-upload" />
+
         {/* Hidden File Input */}
         <input
           type="file"

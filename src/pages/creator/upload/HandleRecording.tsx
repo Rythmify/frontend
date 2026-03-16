@@ -16,6 +16,7 @@ interface HandleRecordingProps {
   setRedoStack: React.Dispatch<React.SetStateAction<number[]>>;
   currentSegmentStart: number;
   setCurrentSegmentStart: React.Dispatch<React.SetStateAction<number>>;
+  onFinish: (data: Blob) => void;
 }
 
 const HandleRecording = ({
@@ -34,6 +35,7 @@ const HandleRecording = ({
   setRedoStack,
   currentSegmentStart,
   setCurrentSegmentStart,
+  onFinish,
 }: HandleRecordingProps) => {
   useEffect(() => {
     let interval: any;
