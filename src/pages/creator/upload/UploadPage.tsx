@@ -39,7 +39,7 @@ const UploadPage = () => {
   };
 
   return (
-    <div className="container text-left pb-40 antialiased">
+    <div className="container text-left max-w-6xl pb-40 antialiased">
       <div className="mb-8">
       <UploadQuotaBar />
       </div>
