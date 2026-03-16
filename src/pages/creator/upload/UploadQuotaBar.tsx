@@ -5,10 +5,10 @@ const UploadQuotaBar = ({ usedMinutes = 80, totalMinutes = 120 }) => {
   const displayPercentage = percentage.toFixed(2);
 
   return (
-    <div className="w-full bg-bg-upload border border-transparent rounded-[4px] p-4 flex items-center justify-between antialiased">
+    <div className="w-full bg-bg-upload border border-transparent rounded-sm p-4 flex items-center justify-between antialiased">
       
       {/* Cloud Icon + Text + Bar Section */}
-      <div className="flex max-w-[532px] items-center gap-4 grow mr-8">
+      <div className="flex max-w-133 items-center gap-4 grow mr-8">
         
         {/* Photo/Icon */}
         <SmallCloudIcon className="text-text-upload shrink-0" size={24} />
