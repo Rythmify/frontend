@@ -11,4 +11,5 @@ export interface Track {
   duration: string;
   postedAt: string;
   waveformData: number[];
+  audioUrl: string;
 }
