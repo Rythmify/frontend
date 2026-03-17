@@ -1,25 +1,35 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import WaveSurfer from "wavesurfer.js";
 import type { Track } from "../../../../types/track"; 
 
-export default function TrackWaveform({ track }: { track: Track }) {
+export interface TrackWaveformHandle {
+  playPause: () => void;
+}
+
+const TrackWaveform = forwardRef<TrackWaveformHandle, { track: Track }>(
+  ({ track }, ref) => {
   const waveformRef = useRef<HTMLDivElement | null>(null);
   const timeRef = useRef<HTMLDivElement | null>(null);
   const durationRef = useRef<HTMLDivElement | null>(null);
   const waveSurferRef = useRef<WaveSurfer | null>(null);
 
-  // Hover state for overlay opacity
   const [isHover, setIsHover] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    playPause: () => {
+      const ws = waveSurferRef.current;
+      if (!ws) return;
+      ws.playPause();
+    },
+  }));
 
   useEffect(() => {
     if (!waveformRef.current) return;
 
-    // Create canvas for gradients
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Wave gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, 100);
     gradient.addColorStop(0, "#656666");
     gradient.addColorStop(0.7, "#656666");
@@ -28,7 +38,6 @@ export default function TrackWaveform({ track }: { track: Track }) {
     gradient.addColorStop(0.73, "#B1B1B1");
     gradient.addColorStop(1, "#B1B1B1");
 
-    // Progress gradient
     const progressGradient = ctx.createLinearGradient(0, 0, 0, 100);
     progressGradient.addColorStop(0, "#F6B094");
     progressGradient.addColorStop(0.7, "#F6B094");
@@ -49,27 +58,20 @@ export default function TrackWaveform({ track }: { track: Track }) {
 
     waveSurferRef.current = ws;
 
-    // for now (Mock)
     ws.load(track.audioUrl);
 
-    // future (Backend)
-    // ws.load(track.audioUrl, track.waveformData);
-
-    // Format time helper
     const formatTime = (seconds: number) => {
       const minutes = Math.floor(seconds / 60);
       const sec = Math.round(seconds) % 60;
       return `${minutes}:${sec.toString().padStart(2, "0")}`;
     };
 
-    // Set duration
     ws.on("decode", (duration) => {
       if (durationRef.current) {
         durationRef.current.textContent = formatTime(duration);
       }
     });
 
-    // Update current time
     ws.on("timeupdate", (currentTime) => {
       if (timeRef.current) {
         timeRef.current.textContent = formatTime(currentTime);
@@ -89,28 +91,24 @@ export default function TrackWaveform({ track }: { track: Track }) {
 
   return (
     <div>
-      <h3>{track.title}</h3>
-      <p>{track.artistName}</p>
-
+    
       <div
         style={{
           position: "relative",
           cursor: "pointer",
           width: "100%",
         }}
-        onClick={handlePlayPause}
+        // onClick={handlePlayPause}
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
       >
-        {/* Waveform container flipped */}
         <div
           ref={waveformRef}
           style={{
-            transform: "scaleY(-1)", // Flip waveform
+            transform: "scaleY(-1)",
           }}
         />
 
-        {/* Overlay above waveform only */}
         <div
           style={{
             position: "absolute",
@@ -118,16 +116,15 @@ export default function TrackWaveform({ track }: { track: Track }) {
             top: 0,
             height: "100%",
             width: "100%",
-            background: "rgba(255,255,255,0.08)", // default light overlay
+            background: "rgba(255,255,255,0.08)",
             pointerEvents: "none",
-            opacity: isHover ? 0.15 : 0.5, // hover effect
+            opacity: isHover ? 0.15 : 0.5,
             transition: "opacity 0.1s ease",
             zIndex: 5,
             borderRadius: "2px",
           }}
         />
 
-        {/* Current Time */}
         <div
           ref={timeRef}
           style={{
@@ -145,7 +142,6 @@ export default function TrackWaveform({ track }: { track: Track }) {
           0:00
         </div>
 
-        {/* Duration */}
         <div
           ref={durationRef}
           style={{
@@ -165,4 +161,8 @@ export default function TrackWaveform({ track }: { track: Track }) {
       </div>
     </div>
   );
-}
+});
+
+TrackWaveform.displayName = "TrackWaveform";
+
+export default TrackWaveform;
