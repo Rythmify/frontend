@@ -3,7 +3,7 @@ import ProfileHeader from "../../components/ProfileHeader/ProfileHeader";
 import ProfileTabs from "../../components/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
-import ShareModal from "../../components/ProfileHeader/ShareModal/ShareModal";
+import ShareModal from "../../components/ShareModal/ShareModal";
 
 function getEmptyState(tab: string, isOwner: boolean) {
   switch (tab) {

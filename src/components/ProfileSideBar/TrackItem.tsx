@@ -31,13 +31,13 @@ const TrackItem: React.FC<TrackItemProps> = ({
         )}
       </div>
       <div className="flex flex-col justify-center min-w-0">
-        <p className="text-xs text-text-secondary text-left truncate">
+        <p className="text-xs font-semibold text-text-secondary text-left truncate">
           {artist}
         </p>
         <p className="text-sm font-semibold text-white text-left truncate">
           {title}
         </p>
-        <div className="flex items-center gap-3 mt-1 text-xs text-text-secondary">
+        <div className="flex items-center gap-2  text-xs text-text-secondary">
           {plays !== undefined && (
             <span className="flex items-center gap-1">
               <i className="fa-solid fa-play text-[10px]" />

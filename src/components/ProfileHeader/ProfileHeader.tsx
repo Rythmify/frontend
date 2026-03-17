@@ -96,15 +96,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
           {/* Name , username , location */}
           <div className="flex flex-col gap-0">
-            <h1 className="text-white font-bold text-2xl px-2 py-1 bg-black/70 self-start">
+            <h1 className="text-white font-bold text-2xl px-2 py-1 bg-black self-start">
               {displayName || username}
             </h1>
             <div className="flex flex-col gap-1">
-              <p className="text-gray-400 font-bold text-sm px-2 py-1 bg-black/70 self-start">
+              <p className="text-gray-400 font-bold text-sm px-2 py-1 bg-black self-start">
                 {username}
               </p>
               {location && (
-                <p className="text-gray-400 font-bold text-sm px-2 py-1 bg-black/70 self-start">
+                <p className="text-gray-400 font-bold text-sm px-2 py-1 bg-black self-start">
                   {location}
                 </p>
               )}

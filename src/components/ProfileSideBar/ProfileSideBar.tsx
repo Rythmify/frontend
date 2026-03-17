@@ -43,9 +43,9 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   following = [],
 }) => {
   return (
-    <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1">
+    <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1 ">
       <div className="flex gap-8">
-        <div className="flex gap-13 ">
+        <div className="flex  gap-13 ">
           {[
             { label: "Followers", value: stats.followers },
             { label: "Following", value: stats.following },
@@ -53,7 +53,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           ].map(({ label, value }) => (
             <button
               key={label}
-              className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
+              className="cursor-pointer flex flex-col  items-start hover:opacity-70 transition-opacity"
             >
               <span className="text-sm font-extrabold text-text-secondary">
                 {label}
@@ -141,13 +141,14 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           </div>
         </>
       )} */}
-
-      {likedTracks.map((track) => (
-        <TrackItem key={track.id} {...track} />
-      ))}
+      <div className="flex flex-col gap-4">
+        {likedTracks.map((track) => (
+          <TrackItem key={track.id} {...track} />
+        ))}
+      </div>
 
       {isOwner && (
-        <div className="flex flex-col gap-3  ">
+        <div className="flex flex-col gap-2  ">
           <div className="flex items-center gap-2">
             <i className="fa-solid fa-ticket text-text-secondary" />
             <span className="text-xs font-bold text-white">ON TOUR</span>
