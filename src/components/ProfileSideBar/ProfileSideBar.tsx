@@ -146,22 +146,24 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         <TrackItem key={track.id} {...track} />
       ))}
 
-      <div className="flex flex-col gap-3  ">
-        <div className="flex items-center gap-2">
-          <i className="fa-solid fa-ticket text-text-secondary" />
-          <span className="text-xs font-bold text-white">ON TOUR</span>
-          <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
+      {isOwner && (
+        <div className="flex flex-col gap-3  ">
+          <div className="flex items-center gap-2">
+            <i className="fa-solid fa-ticket text-text-secondary" />
+            <span className="text-xs font-bold text-white">ON TOUR</span>
+            <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
+          </div>
+
+          <p className="text-xs text-left text-white border-t pt-4 border-white w-[320px]">
+            With an Artist Pro account, you can create ticketed live events on
+            Rythmify, and list existing events.
+          </p>
+
+          <button className="w-[320px] py-3 bg-white text-black font-semibold  text-sm rounded-full hover:bg-gray-200 transition-colors">
+            Upgrade to Artist Pro
+          </button>
         </div>
-
-        <p className="text-xs text-left text-white border-t pt-4 border-white w-[320px]">
-          With an Artist Pro account, you can create ticketed live events on
-          SoundCloud, and list existing events.
-        </p>
-
-        <button className="w-[320px] py-3 bg-white text-black font-semibold  text-sm rounded-full hover:bg-gray-200 transition-colors">
-          Upgrade to Artist Pro
-        </button>
-      </div>
+      )}
       {/* Following section */}
       {following.length > 0 && (
         <div className="flex flex-col gap-4 w-[320px]">

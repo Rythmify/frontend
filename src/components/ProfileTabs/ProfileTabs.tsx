@@ -34,12 +34,14 @@ interface ProfileTabsProps {
   isOwner?: boolean;
   onTabChange?: (tab: string) => void;
   selectedTab?: string;
+  onShare?: () => void;
 }
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({
   isOwner = false,
   onTabChange,
   selectedTab = "All",
+  onShare,
 }) => {
   return (
     <div className=" flex  justify-between px-0.5 ">
@@ -57,7 +59,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
 
       {isOwner && (
         <div className="flex items-center gap-3">
-          <button className=" cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030]  rounded text-sm font-bold text-white hover:text-[#737272] transition-colors">
+          <button
+            onClick={onShare}
+            className=" cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030]  rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
+          >
             <i className="fa-solid fa-arrow-up-from-bracket" />
             Share
           </button>

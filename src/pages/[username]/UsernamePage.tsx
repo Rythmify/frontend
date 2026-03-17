@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ProfileHeader from "../../components/ProfileHeader/ProfileHeader";
 import ProfileTabs from "../../components/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
+import ShareModal from "../../components/ProfileHeader/ShareModal/ShareModal";
 
 function getEmptyState(tab: string, isOwner: boolean) {
   switch (tab) {
@@ -92,6 +93,7 @@ const mockFollowing = [
 export default function UsernamePage() {
   const { user: currentUser } = useAuthStore();
   const [selectedTab, setSelectedTab] = useState("All");
+  const [showShare, setShowShare] = useState(false);
 
   const user = currentUser;
   if (!user || !currentUser) return null;
@@ -107,6 +109,7 @@ export default function UsernamePage() {
         isOwner={isOwner}
         selectedTab={selectedTab}
         onTabChange={setSelectedTab}
+        onShare={() => setShowShare(true)}
       />
 
       <div className=" flex gap-6  py-6 items-start">
@@ -124,9 +127,20 @@ export default function UsernamePage() {
             isOwner={isOwner}
             likedTracks={mockLikedTracks}
             following={mockFollowing}
+            stats={{
+              followers: 0,
+              following: mockFollowing.length,
+              tracks: 0,
+            }}
           />
         </div>
       </div>
+      {showShare && (
+        <ShareModal
+          url={`https://rythmify.com/${user.username}`}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </div>
   );
 }
