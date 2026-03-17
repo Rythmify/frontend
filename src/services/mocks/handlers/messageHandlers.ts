@@ -10,6 +10,7 @@ import type {
   ResolvedResource,
   FollowingSearchResponse,
   TrackResponse,
+  GlobalSearchResponse,
 } from '../../api/messaging/conversationApi';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
@@ -40,6 +41,23 @@ const mockParticipant2 = {
   gender: 'female',
   role: 'listener',
   profile_picture: 'https://i.pravatar.cc/150?img=5',
+  cover_photo: '',
+  is_private: false,
+  is_verified: false,
+  followers_count: 40,
+  following_count: 10,
+  created_at: '2025-02-01T10:00:00Z',
+};
+
+const mockParticipant3 = {
+  id: 'c3d4d4e5-f6a7-8901-bcde-f12345678901',
+  username: 'felfela_beats',
+  display_name: 'farah medhat',
+  bio: 'Music lover.',
+  location: 'Cairo, EG',
+  gender: 'female',
+  role: 'listener',
+  profile_picture: 'https://i.pravatar.cc/150?img=2',
   cover_photo: '',
   is_private: false,
   is_verified: false,
@@ -121,6 +139,51 @@ const mockConversationDetail: ConversationDetailResponse = {
     },
   },
 };
+
+// Pool used by the following search handler
+const mockFollowingPool = [
+  {
+    id: mockParticipant.id,
+    username: mockParticipant.username,
+    display_name: mockParticipant.display_name,
+    profile_picture: mockParticipant.profile_picture,
+    is_verified: mockParticipant.is_verified,
+  },
+  {
+    id: mockParticipant2.id,
+    username: mockParticipant2.username,
+    display_name: mockParticipant2.display_name,
+    profile_picture: mockParticipant2.profile_picture,
+    is_verified: mockParticipant2.is_verified,
+  },
+];
+
+// Pool used by the global search handler — includes everyone on the platform.
+// mockParticipant3 is intentionally NOT in the following pool above so it only
+// ever appears in the "Other people" section of the dropdown.
+const mockGlobalUserPool = [
+  {
+    id: mockParticipant.id,
+    username: mockParticipant.username,
+    display_name: mockParticipant.display_name,
+    profile_picture: mockParticipant.profile_picture,
+    score: 0.95,
+  },
+  {
+    id: mockParticipant2.id,
+    username: mockParticipant2.username,
+    display_name: mockParticipant2.display_name,
+    profile_picture: mockParticipant2.profile_picture,
+    score: 0.90,
+  },
+  {
+    id: mockParticipant3.id,
+    username: mockParticipant3.username,
+    display_name: mockParticipant3.display_name,
+    profile_picture: mockParticipant3.profile_picture,
+    score: 0.80,
+  },
+];
 
 // ─── Scenario Config ──────────────────────────────────────────────────────────
 
@@ -270,33 +333,79 @@ export const messageHandlers = [
   }),
 
   // GET /users/me/following/search
-  http.get('*/users/me/following/search', () => {
+  // Filters by q param against display_name and username, matching real API behaviour.
+  http.get('*/users/me/following/search', ({ request }) => {
+    const url = new URL(request.url);
+    const q = url.searchParams.get('q') ?? '';
+
+    const filtered = q.trim()
+      ? mockFollowingPool.filter(
+          u =>
+            u.display_name.toLowerCase().includes(q.toLowerCase()) ||
+            u.username.toLowerCase().includes(q.toLowerCase())
+        )
+      : mockFollowingPool;
+
     return HttpResponse.json({
       success: true,
       data: {
-        items: [
-          {
-            id: mockParticipant.id,
-            username: mockParticipant.username,
-            display_name: mockParticipant.display_name,
-            profile_picture: mockParticipant.profile_picture,
-            is_verified: mockParticipant.is_verified,
-          },
-          {
-            id: mockParticipant2.id,
-            username: mockParticipant2.username,
-            display_name: mockParticipant2.display_name,
-            profile_picture: mockParticipant2.profile_picture,
-            is_verified: mockParticipant2.is_verified,
-          },
-        ],
+        items: filtered,
         pagination: {
-          page: 1, per_page: 10,
-          total_items: 2, total_pages: 1,
-          has_next: false, has_prev: false,
+          page: 1,
+          per_page: 10,
+          total_items: filtered.length,
+          total_pages: 1,
+          has_next: false,
+          has_prev: false,
         },
       },
     } satisfies FollowingSearchResponse);
+  }),
+
+  // GET /search
+  // Filters the global user pool by q param.
+  // Respects the `type` param — when type=users only users are returned (tracks/playlists empty).
+  // Requires q to be at least 2 chars per the API spec; returns empty results if shorter.
+  http.get('*/search', ({ request }) => {
+    const url    = new URL(request.url);
+    const q      = url.searchParams.get('q') ?? '';
+    const type   = url.searchParams.get('type');
+
+    // Enforce the API's 2-char minimum
+    if (q.trim().length < 2) {
+      return HttpResponse.json({
+        data: { tracks: [], users: [], playlists: [] },
+        pagination: {
+          page: 1, per_page: 20,
+          total_items: 0, total_pages: 0,
+          has_next: false, has_prev: false,
+        },
+      } satisfies GlobalSearchResponse);
+    }
+
+    const matchedUsers = (!type || type === 'users')
+      ? mockGlobalUserPool.filter(
+          u =>
+            u.display_name.toLowerCase().includes(q.toLowerCase()) ||
+            u.username.toLowerCase().includes(q.toLowerCase())
+        )
+      : [];
+
+    return HttpResponse.json({
+      data: {
+        tracks:    [],
+        users:     matchedUsers,
+        playlists: [],
+      },
+      pagination: {
+        page: 1,
+        per_page: 20,
+        total_items: matchedUsers.length,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false,
+      },
+    } satisfies GlobalSearchResponse);
   }),
 
   // GET /tracks/:trackId

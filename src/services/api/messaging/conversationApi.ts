@@ -143,6 +143,37 @@ export interface TrackResponse {
   data: Track;
 }
 
+// ─── Global Search Types (added) ──────────────────────────────────────────────
+
+export interface TrackSearchResult {
+  id: string;
+  title: string;
+  score: number;
+  // extend as needed
+}
+
+export interface UserSearchResult {
+  id: string;
+  username: string;
+  display_name: string;
+  score: number;
+}
+
+export interface PlaylistSearchResult {
+  id: string;
+  title: string;
+  score: number;
+}
+
+export interface GlobalSearchResponse {
+  data: {
+    tracks: TrackSearchResult[];
+    users: UserSearchResult[];
+    playlists: PlaylistSearchResult[];
+  };
+  pagination: Pagination;
+}
+
 // ─── Request Types ────────────────────────────────────────────────────────────
 
 export interface SendMessageRequest {
@@ -227,12 +258,14 @@ export const deleteMessage = async (
 };
 
 // POST /messages/new
+// Returns ConversationCreatedResponse (201) if new conversation,
+// or MessageCreatedResponse (200) if conversation already exists.
 export const startConversation = async (
   payload: StartConversationRequest
 ): Promise<ConversationCreatedResponse | MessageCreatedResponse> => {
-  const response = await axiosInstance.post
-   < ConversationCreatedResponse | MessageCreatedResponse>
-  ('/messages/new', payload);
+  const response = await axiosInstance.post<
+    ConversationCreatedResponse | MessageCreatedResponse
+  >('/messages/new', payload);
   return response.data;
 };
 
@@ -285,5 +318,21 @@ export const fetchTrack = async (trackId: string): Promise<TrackResponse> => {
   const response = await axiosInstance.get<TrackResponse>(
     `/tracks/${trackId}`
   );
+  return response.data;
+};
+
+// GET /search  (global search — added)
+export const globalSearch = async (
+  q: string,
+  options?: {
+    type?: 'tracks' | 'users' | 'playlists';
+    sort?: 'relevance' | 'newest' | 'plays';
+    page?: number;
+    limit?: number;
+  }
+): Promise<GlobalSearchResponse> => {
+  const response = await axiosInstance.get<GlobalSearchResponse>('/search', {
+    params: { q, ...options },
+  });
   return response.data;
 };

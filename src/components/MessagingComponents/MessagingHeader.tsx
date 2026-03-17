@@ -13,7 +13,7 @@ function MessagingHeader() {
 
         <button 
          
-          className=" p-2 text-sm font-bold text-black border bg-text-hover  rounded-[5px] w-14 "
+          className=" p-2 text-sm font-bold text-black border bg-text-hover  rounded-[5px] w-14 hover:text-grey-300 "
           onClick={() => setIsOpen(true)}
         >
           New

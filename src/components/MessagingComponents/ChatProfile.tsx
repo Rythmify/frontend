@@ -1,4 +1,3 @@
-// ConversationItem.tsx
 interface ConversationItemProps {
   photo: string
   name: string
@@ -23,14 +22,12 @@ export function ChatProfile({
         isActive ? "bg-[black]" : "hover:bg-[#303030]"
       }`}
     >
-      {/* Avatar */}
       <img
         src={photo}
         alt={name}
         className="object-cover rounded-full w-11 h-11 shrink-0"
       />
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-0.5">
           <span className="text-sm font-semibold text-white truncate">{name}</span>
@@ -41,3 +38,4 @@ export function ChatProfile({
     </div>
   )
 }
+
