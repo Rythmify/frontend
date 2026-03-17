@@ -49,7 +49,7 @@ const UploadLayout = () => {
                 </div>
                 <button
                   onClick={() => setIsDetailsMode(false)}
-                  className="text-text-upload text-xs font-bold hover:underline cursor-pointer"
+                  className="text-text-upload text-sm font-bold hover:underline cursor-pointer"
                 >
                   Replace track
                 </button>
