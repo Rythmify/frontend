@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ProfileHeader from "../../components/ProfileHeader/ProfileHeader";
 import ProfileTabs from "../../components/ProfileTabs/ProfileTabs";
-import ProfileSidebar from "../../components/ProfileSidebar/ProfileSidebar";
+import ProfileSidebar from "../../components/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
 
 function getEmptyState(tab: string, isOwner: boolean) {
@@ -69,26 +69,25 @@ export default function UsernamePage() {
   const { message, showUpload } = getEmptyState(selectedTab, isOwner);
 
   return (
-    <div className="w-full">
+    <div className="container px-4 md:px-8 lg:px-20">
       <ProfileHeader user={user} isOwner={isOwner} />
-      <div className=" max-w-[100%] mx-auto ">
-        <ProfileTabs
-          isOwner={isOwner}
-          selectedTab={selectedTab}
-          onTabChange={setSelectedTab}
-        />
-      </div>
 
-      <div className="flex gap-6 px-6 py-6 items-start">
+      <ProfileTabs
+        isOwner={isOwner}
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+      />
+
+      <div className=" flex gap-6  py-6 items-start">
         <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
-          <p className="text-white font-extrabold text-17px">{message}</p>
+          <p className="text-white font-bold text-17px">{message}</p>
           {showUpload && (
-            <button className=" cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-extrabold rounded">
+            <button className=" cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded">
               Upload now
             </button>
           )}
         </div>
-        <div className="w-[370px] flex-shrink-0">
+        <div>
           <ProfileSidebar
             user={user}
             isOwner={isOwner}

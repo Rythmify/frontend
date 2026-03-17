@@ -42,9 +42,9 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   following = [],
 }) => {
   return (
-    <div className="w-[380px] flex-shrink-0 flex flex-col gap-9 pt-2">
+    <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1">
       <div className="flex gap-8">
-        <div className="flex gap-9">
+        <div className="flex gap-13">
           {[
             { label: "Followers", value: stats.followers },
             { label: "Following", value: stats.following },
@@ -68,11 +68,17 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       {likedTracks.length > 0 && (
         <>
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-text">
+            <div className="flex items-center justify-between mb-4 w-full ">
+              <button
+                data-test="likes-button"
+                className="text-xs font-bold text-white "
+              >
                 {likedTracks.length} LIKES
-              </span>
-              <button className="  text-xs text-text-secondary hover:text-text">
+              </button>
+              <button
+                data-test="view-all-button"
+                className="  text-xs text-text-secondary hover:text-text"
+              >
                 View all
               </button>
             </div>

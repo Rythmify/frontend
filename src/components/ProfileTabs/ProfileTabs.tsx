@@ -12,8 +12,8 @@ function TabButton({ children, onSelect, isSelected }: TabButtonProps) {
       onClick={onSelect}
       className={` cursor-pointer pb-2.5 pt-3 px-1.5 text-sm transition-colors border-b-[2px] ${
         isSelected
-          ? "text-white font-extrabold border-white"
-          : "font-extrabold border-transparent text-[#858687]  hover:text-white"
+          ? "text-white font-bold border-white"
+          : "font-semibold border-transparent text-[#858687]  hover:text-white"
       }`}
     >
       {children}
@@ -42,7 +42,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   selectedTab = "All",
 }) => {
   return (
-    <div className="container flex  justify-between px-6 ">
+    <div className=" flex  justify-between px-0.5 ">
       <div className="flex items-center gap-3 ">
         {tabs.map((tab) => (
           <TabButton

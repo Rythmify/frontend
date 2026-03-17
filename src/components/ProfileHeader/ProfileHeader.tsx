@@ -15,9 +15,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const [showImageMenu, setShowImageMenu] = useState(false);
 
   return (
-    <div className=" container">
+    <div>
       <div
-        className="w-full h-[255px] bg-center bg-cover relative mb-4"
+        className=" h-[255px] bg-center bg-cover relative mb-4"
         style={
           coverUrl
             ? { backgroundImage: `url('${coverUrl}')` }
@@ -31,9 +31,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </button>
         )}
 
-        {/* Avatar , name row */}
+        {/* profile picture , name row */}
         <div className="absolute inset-0 flex items-center px-6 gap-6 ">
-          {/* Avatar wrapper */}
+          {/* profile picture wrapper */}
           <div className="relative flex-shrink-0">
             <div
               className="w-[200px] h-[200px] rounded-full overflow-hidden flex items-center justify-center bg-[#68A039] cursor-pointer"
