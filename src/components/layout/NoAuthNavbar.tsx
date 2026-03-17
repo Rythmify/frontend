@@ -20,14 +20,14 @@ const NoAuthNavbar = () => {
   }, []);
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-md font-bold px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
+    `text-md font-medium px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
       isActive
         ? "text-text-hover border-text-hover"
         : "text-text-secondary border-transparent"
     }`;
 
   const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `block px-4 py-3 text-md font-bold transition-colors ${
+    `block px-4 py-3 text-md font-medium transition-colors ${
       isActive ? "text-text-hover" : "text-text-secondary hover:text-text-hover"
     }`;
 
@@ -35,13 +35,13 @@ const NoAuthNavbar = () => {
     <nav className="sticky top-1 z-50 w-full bg-bg ">
 
       {/* Main navbar row */}
-      <div className="container grid grid-cols-[auto_1fr_auto] items-center h-11.5">
+      <div className="container px-4 md:px-8 lg:px-20 grid grid-cols-[auto_1fr_auto] items-center h-11.5">
 
         {/* Left: Logo + Nav Links */}
         <div className="flex items-center gap-6 shrink-0">
-          <Link to="/" className="flex items-center gap-2 text-4xl">
+          <Link data-test="link-logo" to="/" className="flex items-center gap-2 text-4xl">
             <i className="fa-brands fa-soundcloud text-text-hover" />
-            <span className="text-xl ms-1 font-bold tracking-widest uppercase text-text-hover">Rythmify</span>
+            <span className="text-xl ms-1 font-medium tracking-widest uppercase text-text-hover">Rythmify</span>
           </Link>
 
           {/* Nav links — tablet+ */}
@@ -57,11 +57,12 @@ const NoAuthNavbar = () => {
           <div className="w-full max-w-125 relative">
             <input
               type="text"
-              placeholder="Search artists, bands, tracks, podcasts"
+              data-test="input-search"
+            placeholder="Search artists, bands, tracks, podcasts"
               className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-1.5 pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
             />
             <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <i className="fa-solid fa-magnifying-glass text-lg font-bold" />
+              <i className="fa-solid fa-magnifying-glass text-lg font-medium" />
             </button>
           </div>
         </div>
@@ -72,13 +73,15 @@ const NoAuthNavbar = () => {
         {/* Right: Auth actions + more — tablet+ */}
         <div className="hidden md:flex items-center gap-3 shrink-0">
           <Link
+            data-test="link-signin"
             to="/signin"
-            className="text-md font-bold text-text-hover hover:text-text-secondary transition-colors"
+            className="text-md font-medium text-text-hover hover:text-text-secondary transition-colors"
           >
             Sign in
           </Link>
 
           <Link
+            data-test="link-create-account"
             to="/signin"
             className="text-md font-extrabold bg-text-hover mx-3 ms-4 text-bg  px-3 py-1.25 rounded-sm hover:text-text-secondary "
           >
@@ -86,8 +89,9 @@ const NoAuthNavbar = () => {
           </Link>
 
           <Link
+            data-test="link-upload"
             to="/upload"
-            className="hidden lg:block text-md font-bold text-text-secondary hover:text-text-hover transition-colors"
+            className="hidden lg:block text-md font-medium text-text-secondary hover:text-text-hover transition-colors"
           >
             Upload
           </Link>
@@ -125,12 +129,14 @@ const NoAuthNavbar = () => {
         {/* Mobile: search icon */}
         <div className="flex md:hidden items-center gap-3">
           <button
+            data-test="btn-search-toggle"
             onClick={() => setIsMobileSearchOpen((prev) => !prev)}
             className="text-text-secondary hover:text-text-hover transition-colors"
           >
             <Search size={22} />
           </button>
           <button
+            data-test="btn-menu-toggle"
             onClick={() => setIsMobileMenuOpen((prev) => !prev)}
             className="text-text-secondary hover:text-text-hover transition-colors"
           >
@@ -172,21 +178,21 @@ const NoAuthNavbar = () => {
           <div className="border-t border-border my-1" />
           <Link
             to="/signin"
-            className="block px-4 py-3 text-md font-bold text-text-secondary hover:text-text-hover transition-colors"
+            className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-text-hover transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Sign in
           </Link>
           <Link
             to="/register"
-            className="block px-4 py-3 text-md font-bold text-text-hover hover:text-text-secondary transition-colors"
+            className="block px-4 py-3 text-md font-medium text-text-hover hover:text-text-secondary transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Create account
           </Link>
           <Link
             to="/upload"
-            className="block px-4 py-3 text-md font-bold text-text-secondary hover:text-text-hover transition-colors"
+            className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-text-hover transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Upload
