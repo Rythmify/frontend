@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useAuthStore } from "@/stores/auth.store";
 import HelpIcon from "./HelpIcon";
 import UploadCoverImage from "./UploadCoverImage";
 
@@ -13,6 +14,9 @@ const UploadDetailsForm = ({ audioData, onCancel }: Props) => {
       ? audioData.name.split(".").slice(0, -1).join(".")
       : "Recorded Audio";
 
+  const { user } = useAuthStore();
+  const username = user?.username || "username";
+
   return (
     <div className="mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col lg:flex-row gap-12 items-start">
@@ -20,7 +24,7 @@ const UploadDetailsForm = ({ audioData, onCancel }: Props) => {
         {/* Form Section for metadata */}
         <div className="flex-1 w-full space-y-8 text-xs text-text-upload">
           <div>
-            <label className="block text-xs font-bold  mb-1 tracking-wide">
+            <label className="flex items-center text-xs font-bold  mb-1 tracking-wide">
               Track title <span className="text-[#ec5261]">*</span>
               <HelpIcon />
             </label>
@@ -36,7 +40,7 @@ const UploadDetailsForm = ({ audioData, onCancel }: Props) => {
               Track link
             </label>
             <div className="flex items-center text-sm text-text-upload/60 border-b border-border py-2">
-              <span>https://soundcloud.com/[username]/</span>
+              <span>https://soundcloud.com/{username}/</span>
               <input
                 type="text"
                 defaultValue={initialTitle.toLowerCase().replace(/\s+/g, "-")}
@@ -46,13 +50,13 @@ const UploadDetailsForm = ({ audioData, onCancel }: Props) => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold  mb-1 tracking-wide">
+            <label className="flex items-center text-xs font-bold  mb-1 tracking-wide">
               Main Artist(s)
               <HelpIcon />
             </label>
             <input
               type="text"
-              defaultValue={initialTitle}
+              defaultValue={username}
               className="w-full bg-transparent text-sm border-b border-border py-2 outline-none transition-colors"
             />
             <p className="text-[12px] text-[#616161] mt-1">
@@ -60,7 +64,7 @@ const UploadDetailsForm = ({ audioData, onCancel }: Props) => {
             </p>
           </div>
           <div>
-            <label className="block text-xs font-bold  mb-1 tracking-wide">
+            <label className="flex items-center text-xs font-bold  mb-1 tracking-wide">
               Tags
               <HelpIcon />
             </label>
