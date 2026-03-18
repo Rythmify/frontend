@@ -37,6 +37,12 @@ interface ProfileSideBarProps {
   onTabChange?: (tab: string) => void;
 }
 
+const formatCount = (n: number = 0) => {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return n.toString();
+};
+
 const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   user,
   isOwner = false,
@@ -51,25 +57,25 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       <div className="flex gap-13">
         <button
           className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
-          onClick={() => navigate("/you/follower")}
+          onClick={() => navigate(`/${user.username}/follower`)}
         >
           <span className="text-sm font-extrabold text-text-secondary">
             Followers
           </span>
           <span className="text-3xl font-bold py-1.5 text-white">
-            {stats.followers}
+            {formatCount(stats.followers)}
           </span>
         </button>
 
         <button
           className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
-          onClick={() => navigate("/you/following")}
+          onClick={() => navigate(`/${user.username}/following`)}
         >
           <span className="text-sm font-extrabold text-text-secondary">
             Following
           </span>
           <span className="text-3xl font-bold py-1.5 text-white">
-            {stats.following}
+            {formatCount(stats.following)}
           </span>
         </button>
 
@@ -81,7 +87,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             Tracks
           </span>
           <span className="text-3xl font-bold py-1.5 text-white">
-            {stats.tracks}
+            {formatCount(stats.tracks)}
           </span>
         </button>
       </div>

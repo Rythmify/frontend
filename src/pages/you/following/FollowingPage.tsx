@@ -2,39 +2,26 @@ import React, { useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate } from "react-router-dom";
 import { mockFollowing } from "@/components/Profile/MockData/mock";
-
-// const mockFollowing = [
-//   { username: "Alyaa Mohamed", followers: 4, avatar: "", isVerified: false },
-//   { username: "Alyaa Mohamed", followers: 4, avatar: "", isVerified: false },
-//   {
-//     username: "The Weeknd",
-//     followers: 8490000,
-//     avatar: "https://i1.sndcdn.com/avatars-000049954431-e7s5e2-t500x500.jpg",
-//     isVerified: true,
-//   },
-//   {
-//     username: "Travis Scott",
-//     followers: 6150000,
-//     avatar: "https://i1.sndcdn.com/avatars-000049954431-e7s5e2-t500x500.jpg",
-//     isVerified: true,
-//   },
-//   { username: "NourAbosaif04", followers: 3, avatar: "", isVerified: false },
-//   { username: "Farah medhat", followers: 6, avatar: "", isVerified: false },
-//   { username: "Mariam Ramy", followers: 3, avatar: "", isVerified: false },
-// ];
+import { useParams } from "react-router-dom";
 
 const tabs = ["Likes", "Following", "Followers"];
 
 export default function FollowingPage() {
-  const { user } = useAuthStore();
   const navigate = useNavigate();
+  const { username } = useParams();
+  const { user: currentUser } = useAuthStore();
+  const isOwner = !username || username === currentUser?.username;
+  const user = isOwner
+    ? currentUser
+    : { username, displayName: username, avatar: "" };
 
   if (!user) return null;
 
   const handleTabChange = (tab: string) => {
-    if (tab === "Likes") navigate("/you/likes");
-    if (tab === "Following") navigate("/you/following");
-    if (tab === "Followers") navigate("/you/follower");
+    const base = isOwner ? "/you" : `/${username}`;
+    if (tab === "Likes") navigate(`${base}/likes`);
+    if (tab === "Following") navigate(`${base}/following`);
+    if (tab === "Followers") navigate(`${base}/follower`);
   };
 
   return (
@@ -88,7 +75,7 @@ export default function FollowingPage() {
             className="flex flex-col  items-center gap-2 group"
           >
             <div
-              className="w-full aspect-square rounded-full overflow-hidden bg-text-muted"
+              className="w-full cursor-pointer aspect-square rounded-full overflow-hidden bg-text-muted"
               onClick={() =>
                 navigate(`/${u.username.toLowerCase().replace(/\s+/g, "-")}`)
               }
@@ -103,14 +90,21 @@ export default function FollowingPage() {
                 <div className="w-full h-full bg-text-muted" />
               )}
             </div>
-            <span className="text-white text-sm font-bold text-center">
+            <span className="text-white cursor-pointer text-sm font-bold text-center">
               {u.username + " "}
               {u.isVerified && (
                 <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
               )}
             </span>
 
-            <span className="text-text-secondary text-xs flex items-center gap-1">
+            <span
+              className="text-text-secondary cursor-pointer text-xs flex items-center gap-1"
+              onClick={() =>
+                navigate(
+                  `/${u.username.toLowerCase().replace(/\s+/g, "-")}/follower`,
+                )
+              }
+            >
               <i className="fa-solid fa-user text-[10px]" />
               {u.followers >= 1e6
                 ? `${(u.followers / 1e6).toFixed(2)}M`
