@@ -55,7 +55,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
           <i className="fa-solid fa-xmark" />
         </button>
         <div
-          className="bg-[#1a1a1a] rounded-lg p-6 w-[570px]"
+          className="bg-[#1a1a1a] rounded-sm p-6 w-[570px]"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex gap-6 border-b border-border mb-6">

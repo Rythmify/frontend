@@ -4,6 +4,7 @@ import ProfileTabs from "../../components/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/ShareModal/ShareModal";
+import EditProfileModal from "../../components/EditProfileModal/EditProfileModal";
 
 function getEmptyState(tab: string, isOwner: boolean) {
   switch (tab) {
@@ -94,6 +95,7 @@ export default function UsernamePage() {
   const { user: currentUser } = useAuthStore();
   const [selectedTab, setSelectedTab] = useState("All");
   const [showShare, setShowShare] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   const user = currentUser;
   if (!user || !currentUser) return null;
@@ -110,6 +112,7 @@ export default function UsernamePage() {
         selectedTab={selectedTab}
         onTabChange={setSelectedTab}
         onShare={() => setShowShare(true)}
+        onEdit={() => setShowEdit(true)}
       />
 
       <div className=" flex gap-6  py-6 items-start">
@@ -139,6 +142,16 @@ export default function UsernamePage() {
         <ShareModal
           url={`https://rythmify.com/${user.username}`}
           onClose={() => setShowShare(false)}
+        />
+      )}
+      {showEdit && (
+        <EditProfileModal
+          user={user}
+          onClose={() => setShowEdit(false)}
+          onSave={(data) => {
+            console.log(data);
+            setShowEdit(false);
+          }}
         />
       )}
     </div>

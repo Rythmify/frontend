@@ -35,6 +35,7 @@ interface ProfileTabsProps {
   onTabChange?: (tab: string) => void;
   selectedTab?: string;
   onShare?: () => void;
+  onEdit?: () => void;
 }
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({
@@ -42,6 +43,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   onTabChange,
   selectedTab = "All",
   onShare,
+  onEdit,
 }) => {
   return (
     <div className=" flex  justify-between px-0.5 ">
@@ -66,7 +68,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             <i className="fa-solid fa-arrow-up-from-bracket" />
             Share
           </button>
-          <button className="cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030]  rounded text-sm font-bold text-white hover:text-[#737272] transition-colors">
+          <button
+            onClick={onEdit}
+            className="cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030]  rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
+          >
             <i className="fa-solid fa-pencil" />
             Edit
           </button>

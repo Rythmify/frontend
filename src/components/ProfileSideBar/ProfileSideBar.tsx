@@ -142,7 +142,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </>
       )} */}
       <div className="flex flex-col gap-4">
-        {likedTracks.map((track) => (
+        {likedTracks.slice(0, 3).map((track) => (
           <TrackItem key={track.id} {...track} />
         ))}
       </div>
