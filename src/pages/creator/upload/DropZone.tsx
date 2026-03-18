@@ -4,8 +4,11 @@ import CloudUploadIcon from "./CloudUploadIcon";
 const DropZone = ({ onUpload }: { onUpload: (file: File) => void }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  {/*Drag and Drop Handlers */}
+  {
+    /*Drag and Drop Handlers */
+  }
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
@@ -13,7 +16,16 @@ const DropZone = ({ onUpload }: { onUpload: (file: File) => void }) => {
 
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    onUpload(files[0]); // Send the first file to the parent
+
+    const file = files[0];
+
+    if (!file.type.startsWith("audio/")) {
+      setError("File type is not supported.");
+      return;
+    }
+
+    setError(null);
+    onUpload(file);
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
@@ -60,7 +72,6 @@ const DropZone = ({ onUpload }: { onUpload: (file: File) => void }) => {
       >
         {/* Cloud Upload Icon */}
         <CloudUploadIcon className="mb-6 text-text-upload" />
-
         {/* Hidden File Input */}
         <input
           type="file"
@@ -72,10 +83,21 @@ const DropZone = ({ onUpload }: { onUpload: (file: File) => void }) => {
             handleFiles(e.target.files)
           }
         />
-        {/* Dropzone Content */}
-        <p className="m-0 text-text-upload font-sans font-bold text-base mb-6">
-          Drag and drop audio files to get started
-        </p>
+
+        {error ? (
+          <>
+            <p className="m-0 text-[#FB2C36] font-bold font-sans text-base mb-6">
+              {error}
+            </p>
+          </>
+        ) : (
+          <>
+            {/* Dropzone Content */}
+            <p className="m-0 text-text-upload font-sans font-bold text-base mb-6">
+              Drag and drop audio files to get started
+            </p>
+          </>
+        )}
 
         {/*The button for uploading audio*/}
         <button
