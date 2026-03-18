@@ -1,6 +1,6 @@
 import React from "react";
 import type { User } from "@/stores/auth.store";
-import TrackItem from "../ProfileSideBar/TrackItem";
+import TrackItem from "./TrackItem";
 import { useNavigate } from "react-router-dom";
 
 interface FollowingUser {
