@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
-import { mockFollowers } from "@/components/Profile/MockData/mock";
+import {
+  mockFollowers,
+  mockUserFollowers,
+} from "@/components/Profile/MockData/mock";
 
 const tabs = ["Likes", "Following", "Followers"];
 
@@ -14,6 +17,10 @@ export default function FollowerPage() {
   const user = isOwner
     ? currentUser
     : { username, displayName: username, avatar: "" };
+
+  const followerList = isOwner
+    ? mockFollowers
+    : (mockUserFollowers[username || ""] ?? []);
 
   if (!user) return null;
 
@@ -69,7 +76,7 @@ export default function FollowerPage() {
 
       {/* Grid */}
       <div className="grid grid-cols-6 gap-6">
-        {mockFollowers.map((u) => (
+        {followerList.map((u) => (
           <div
             key={u.username}
             className="flex flex-col  items-center gap-2 group"
@@ -121,7 +128,7 @@ export default function FollowerPage() {
         ))}
         {Array.from({
           length:
-            mockFollowers.length % 6 === 0 ? 0 : 6 - (mockFollowers.length % 6),
+            followerList.length % 6 === 0 ? 0 : 6 - (followerList.length % 6),
         }).map((_, i) => (
           <div
             key={`empty-${i}`}

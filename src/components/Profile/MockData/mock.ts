@@ -134,3 +134,15 @@ export const mockUserProfiles: Record<string, {
     likedTracks: [],
   },
 };
+
+export const mockUserFollowing: Record<string, typeof mockFollowing> = {
+  "travis-scott": mockFollowing,
+  "nourabosaif04": [],
+  "farah-medhat": [],
+};
+
+export const mockUserFollowers: Record<string, typeof mockFollowers> = {
+  "travis-scott": mockFollowers,
+  "nourabosaif04": mockFollowers.slice(0, 1),
+  "farah-medhat": mockFollowers.slice(0, 2),
+};
