@@ -1,17 +1,20 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Footer from "./Footer";
+import Modal from "@/components/UI/Modal";
 
 const UploadLayout = () => {
   const navigate = useNavigate();
   const [isDetailsMode, setIsDetailsMode] = useState(false);
   const [trackName, setTrackName] = useState("");
+  const [showQuitModal, setShowQuitModal] = useState(false);
 
   const handleExit = () => {
     if (isDetailsMode) {
-      return;
+      setShowQuitModal(true);
+    } else {
+      navigate("/artists");
     }
-    navigate("/artists");
   };
 
   return (
@@ -68,6 +71,36 @@ const UploadLayout = () => {
             </button>
           </div>
         </div>
+        <Modal isOpen={showQuitModal} onClose={() => setShowQuitModal(false)}>
+          <div className="flex items-left py-4">
+            <h2 className="text-text-upload text-xl font-bold mb-3">
+              Are you sure you want to quit?
+            </h2>
+          </div>
+          <div className="flex items-left py-5">
+            <p className="text-[#efefef] text-[16px] mb-8">
+              Your changes will not be saved.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-4">
+            <button
+              onClick={() => setShowQuitModal(false)}
+              className="text-white text-sm font-bold hover:opacity-70 transition-opacity"
+            >
+              Back to upload
+            </button>
+            <button
+              onClick={() => {
+                setShowQuitModal(false);
+                navigate("/artists");
+              }}
+              className="bg-[#EC5261] hover:bg-[#f78ca1] text-white text-sm font-bold px-6 py-2.5 rounded-full transition-colors"
+            >
+              Quit upload
+            </button>
+          </div>
+        </Modal>
       </header>
 
       <main className="flex-1 bg-bg pt-8">
