@@ -92,7 +92,11 @@ export function BlockUserModal({
           Cancel
         </button>
         <button
-          onClick={handleBlock}
+          onClick={() => {handleBlock();
+              onClose?.();
+          }
+            
+          }
           disabled={loading}
           className="px-5 py-2 text-sm font-semibold text-black transition-colors bg-white rounded-sm hover:bg-gray-200 disabled:opacity-50"
         >
