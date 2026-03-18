@@ -25,22 +25,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-<<<<<<< HEAD
-    "@tailwindcss/postcss": "^4.2.2",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-=======
     "@tailwindcss/postcss": "^4.2.1",
->>>>>>> d150af1978ec6a3509a9aca68be1584f4653daac
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
-<<<<<<< HEAD
-    "@vitest/coverage-v8": "^4.1.0",
-=======
->>>>>>> d150af1978ec6a3509a9aca68be1584f4653daac
     "autoprefixer": "^10.4.27",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
