@@ -41,7 +41,7 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 </button>
 </div>
       <div
-        className="self-center w-full max-w-2xl p-6 mt-10 bg-black"
+        className="self-center inline-block max-w-2xl p-6 mt-10 bg-black"
         onClick={e => e.stopPropagation()}  // prevent backdrop click
       >
         {children}

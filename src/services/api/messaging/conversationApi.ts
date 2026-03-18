@@ -19,6 +19,14 @@ export interface Participant {
   created_at: string;
 }
 
+export interface UserSearchResult {
+  id: string;
+  username: string;
+  display_name: string;
+  profile_picture: string | null;
+  score: number;
+}
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -143,19 +151,11 @@ export interface TrackResponse {
   data: Track;
 }
 
-// ─── Global Search Types (added) ──────────────────────────────────────────────
+// ─── Global Search Types ──────────────────────────────────────────────────────
 
 export interface TrackSearchResult {
   id: string;
   title: string;
-  score: number;
-  // extend as needed
-}
-
-export interface UserSearchResult {
-  id: string;
-  username: string;
-  display_name: string;
   score: number;
 }
 
@@ -172,6 +172,52 @@ export interface GlobalSearchResponse {
     playlists: PlaylistSearchResult[];
   };
   pagination: Pagination;
+}
+
+// ─── Block Types ──────────────────────────────────────────────────────────────
+
+export interface BlockData {
+  blocker_id: string;
+  blocked_id: string;
+  created_at: string;
+}
+
+/** 201 — user was blocked successfully */
+export interface BlockCreatedResponse {
+  data: BlockData;
+  message: string;
+}
+
+/** 200 — user was already blocked, no change */
+export interface BlockAlreadyExistsResponse {
+  message: string;
+}
+
+// ─── Report Types ─────────────────────────────────────────────────────────────
+
+export type ReportResourceType = 'track' | 'user';
+export type ReportReason = 'copyright' | 'inappropriate' | 'spam' | 'impersonation';
+
+export interface ReportRequest {
+  resource_type: ReportResourceType;
+  resource_id: string;
+  reason: ReportReason;
+  description?: string;
+}
+
+export interface Report {
+  id: string;
+  resource_type: ReportResourceType;
+  resource_id: string;
+  reason: ReportReason;
+  description: string | null;
+  status: 'pending' | 'reviewed' | 'resolved';
+  created_at: string;
+}
+
+export interface ReportCreatedResponse {
+  data: Report;
+  message: string;
 }
 
 // ─── Request Types ────────────────────────────────────────────────────────────
@@ -258,8 +304,6 @@ export const deleteMessage = async (
 };
 
 // POST /messages/new
-// Returns ConversationCreatedResponse (201) if new conversation,
-// or MessageCreatedResponse (200) if conversation already exists.
 export const startConversation = async (
   payload: StartConversationRequest
 ): Promise<ConversationCreatedResponse | MessageCreatedResponse> => {
@@ -321,7 +365,7 @@ export const fetchTrack = async (trackId: string): Promise<TrackResponse> => {
   return response.data;
 };
 
-// GET /search  (global search — added)
+// GET /search
 export const globalSearch = async (
   q: string,
   options?: {
@@ -334,5 +378,31 @@ export const globalSearch = async (
   const response = await axiosInstance.get<GlobalSearchResponse>('/search', {
     params: { q, ...options },
   });
+  return response.data;
+};
+
+// POST /users/:userId/block
+export const blockUser = async (
+  userId: string
+): Promise<BlockCreatedResponse | BlockAlreadyExistsResponse> => {
+  const response = await axiosInstance.post<
+    BlockCreatedResponse | BlockAlreadyExistsResponse
+  >(`/users/${userId}/block`);
+  return response.data;
+};
+
+// DELETE /users/:userId/block
+export const unblockUser = async (userId: string): Promise<void> => {
+  await axiosInstance.delete(`/users/${userId}/block`);
+};
+
+// POST /reports
+export const submitReport = async (
+  payload: ReportRequest
+): Promise<ReportCreatedResponse> => {
+  const response = await axiosInstance.post<ReportCreatedResponse>(
+    '/reports',
+    payload
+  );
   return response.data;
 };

@@ -11,6 +11,10 @@ import type {
   FollowingSearchResponse,
   TrackResponse,
   GlobalSearchResponse,
+  BlockCreatedResponse,
+  BlockAlreadyExistsResponse,
+  ReportCreatedResponse,
+  ReportRequest,
 } from '../../api/messaging/conversationApi';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
@@ -140,7 +144,6 @@ const mockConversationDetail: ConversationDetailResponse = {
   },
 };
 
-// Pool used by the following search handler
 const mockFollowingPool = [
   {
     id: mockParticipant.id,
@@ -158,9 +161,6 @@ const mockFollowingPool = [
   },
 ];
 
-// Pool used by the global search handler — includes everyone on the platform.
-// mockParticipant3 is intentionally NOT in the following pool above so it only
-// ever appears in the "Other people" section of the dropdown.
 const mockGlobalUserPool = [
   {
     id: mockParticipant.id,
@@ -189,9 +189,22 @@ const mockGlobalUserPool = [
 
 type MockScenario = 'success' | 'empty' | 'error' | 'loading';
 
+// Scenario config for block endpoint lets you simulate edge-cases in tests.
+type BlockScenario = 'success' | 'already_blocked' | 'block_self' | 'not_found';
+
+// Scenario config for report endpoint.
+type ReportScenario =
+  | 'success'
+  | 'validation_error'
+  | 'not_found'
+  | 'already_reported'
+  | 'rate_limited';
+
 export const mockConfig = {
   conversations: 'success' as MockScenario,
   conversationDetail: 'success' as MockScenario,
+  block: 'success' as BlockScenario,
+  report: 'success' as ReportScenario,
 };
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
@@ -333,7 +346,6 @@ export const messageHandlers = [
   }),
 
   // GET /users/me/following/search
-  // Filters by q param against display_name and username, matching real API behaviour.
   http.get('*/users/me/following/search', ({ request }) => {
     const url = new URL(request.url);
     const q = url.searchParams.get('q') ?? '';
@@ -363,15 +375,11 @@ export const messageHandlers = [
   }),
 
   // GET /search
-  // Filters the global user pool by q param.
-  // Respects the `type` param — when type=users only users are returned (tracks/playlists empty).
-  // Requires q to be at least 2 chars per the API spec; returns empty results if shorter.
   http.get('*/search', ({ request }) => {
-    const url    = new URL(request.url);
-    const q      = url.searchParams.get('q') ?? '';
-    const type   = url.searchParams.get('type');
+    const url  = new URL(request.url);
+    const q    = url.searchParams.get('q') ?? '';
+    const type = url.searchParams.get('type');
 
-    // Enforce the API's 2-char minimum
     if (q.trim().length < 2) {
       return HttpResponse.json({
         data: { tracks: [], users: [], playlists: [] },
@@ -425,5 +433,138 @@ export const messageHandlers = [
         created_at: '2025-01-01T00:00:00Z',
       },
     } satisfies TrackResponse);
+  }),
+
+  // ─── Block ─────────────────────────────────────────────────────────────────
+
+  // POST /users/:user_id/block
+  // Switch on mockConfig.block to simulate different scenarios in tests.
+  http.post('*/users/:user_id/block', ({ params }) => {
+    const userId = params.user_id as string;
+
+    switch (mockConfig.block) {
+      case 'already_blocked':
+        return HttpResponse.json(
+          { message: 'User is already blocked.' } satisfies BlockAlreadyExistsResponse,
+          { status: 200 }
+        );
+
+      case 'block_self':
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'BLOCK_SELF',
+              message: 'You cannot block yourself.',
+            },
+          },
+          { status: 400 }
+        );
+
+      case 'not_found':
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'NOT_FOUND',
+              message: 'User not found.',
+            },
+          },
+          { status: 404 }
+        );
+
+      default: // 'success'
+        return HttpResponse.json(
+          {
+            data: {
+              blocker_id: 'current-user-id',
+              blocked_id: userId,
+              created_at: new Date().toISOString(),
+            },
+            message: 'User has been blocked.',
+          } satisfies BlockCreatedResponse,
+          { status: 201 }
+        );
+    }
+  }),
+
+  // DELETE /users/:user_id/block
+  http.delete('*/users/:user_id/block', () => {
+    // 204 No Content — no body per spec.
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // ─── Reports ───────────────────────────────────────────────────────────────
+
+  // POST /reports
+  http.post('*/reports', async ({ request }) => {
+    const body = await request.json() as ReportRequest;
+
+    switch (mockConfig.report) {
+      case 'validation_error':
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'VALIDATION_FAILED',
+              message: 'Validation failed',
+              details: [
+                {
+                  field: 'reason',
+                  issue: 'Copyright reason is only valid for track reports.',
+                },
+              ],
+            },
+          },
+          { status: 400 }
+        );
+
+      case 'not_found':
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'RESOURCE_NOT_FOUND',
+              message: 'The reported resource was not found',
+            },
+          },
+          { status: 404 }
+        );
+
+      case 'already_reported':
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'RESOURCE_ALREADY_EXISTS',
+              message: 'You have already reported this resource',
+            },
+          },
+          { status: 409 }
+        );
+
+      case 'rate_limited':
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'RATE_LIMITED',
+              message: 'Too many reports. Please try again later.',
+            },
+          },
+          { status: 429 }
+        );
+
+      default: // 'success'
+        return HttpResponse.json(
+          {
+            data: {
+              id: crypto.randomUUID(),
+              resource_type: body.resource_type,
+              resource_id: body.resource_id,
+              reason: body.reason,
+              description: body.description ?? null,
+              status: 'pending',
+              created_at: new Date().toISOString(),
+            },
+            message: 'Report submitted successfully. Our team will review it shortly.',
+          } satisfies ReportCreatedResponse,
+          { status: 201 }
+        );
+    }
   }),
 ];
