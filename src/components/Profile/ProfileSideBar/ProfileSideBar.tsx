@@ -98,12 +98,14 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             <div className="flex items-center justify-between  w-full hover:opacity-70 transition-opacity ">
               <button
                 data-test="likes-button"
+                onClick={() => navigate(`/${user.username}/likes`)}
                 className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
               >
                 {likedTracks.length} LIKES
               </button>
               <button
                 data-test="view-all-button"
+                onClick={() => navigate(`/${user.username}/likes`)}
                 className="  text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
               >
                 View all
@@ -113,60 +115,6 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </>
       )}
 
-      {/*<div className="flex flex-col gap-4">
-              {likedTracks.map((track) => (
-                <div key={track.id} className="flex gap-3">
-                  <div className="w-14 h-14 flex-shrink-0 bg-border rounded overflow-hidden">
-                    {track.coverUrl ? (
-                      <img
-                        src={track.coverUrl}
-                        alt={track.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-border" />
-                    )}
-                  </div>
-                  <div className="flex flex-col justify-center min-w-0">
-                    <p className="text-xs text-text-secondary truncate">
-                      {track.artist}
-                    </p>
-                    <p className="text-sm font-bold text-text truncate">
-                      {track.title}
-                    </p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-text-secondary">
-                      {track.plays !== undefined && (
-                        <span className="flex items-center gap-1">
-                          <i className="fa-solid fa-play text-[10px]" />{" "}
-                          {(track.plays / 1e6).toFixed(1)}M
-                        </span>
-                      )}
-                      {track.likes !== undefined && (
-                        <span className="flex items-center gap-1">
-                          <i className="fa-solid fa-heart text-[10px]" />{" "}
-                          {(track.likes / 1e6).toFixed(2)}M
-                        </span>
-                      )}
-                      {track.reposts !== undefined && (
-                        <span className="flex items-center gap-1">
-                          <i className="fa-solid fa-retweet text-[10px]" />{" "}
-                          {(track.reposts / 1000).toFixed(1)}K
-                        </span>
-                      )}
-                      {track.comments !== undefined && (
-                        <span className="flex items-center gap-1">
-                          <i className="fa-solid fa-comment text-[10px]" />{" "}
-                          {track.comments.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )} */}
       <div className="flex flex-col gap-4">
         {likedTracks.slice(0, 3).map((track) => (
           <TrackItem key={track.id} {...track} />
@@ -198,10 +146,16 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       {following.length > 0 && (
         <div className="flex flex-col gap-4 w-[320px]">
           <div className="flex items-center justify-between hover:opacity-70 transition-opacity">
-            <button className="text-xs font-semibold text-white">
+            <button
+              onClick={() => navigate(`/${user.username}/following`)}
+              className="text-xs cursor-pointer font-semibold text-white"
+            >
               {following.length} FOLLOWING
             </button>
-            <button className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text">
+            <button
+              onClick={() => navigate(`/${user.username}/following`)}
+              className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
+            >
               View all
             </button>
           </div>

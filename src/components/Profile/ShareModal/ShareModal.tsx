@@ -58,7 +58,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
           className="bg-[#1a1a1a] rounded-sm p-6 w-[570px]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex gap-6 border-b border-border mb-6">
+          <div className="flex gap-6  mb-6">
             <button
               onClick={() => setActiveTab("share")}
               className={`font-bold pb-3 border-b-2 ${activeTab === "share" ? "text-white border-white" : "text-text-secondary border-transparent hover:text-white"}`}

@@ -205,6 +205,7 @@ export const router = createBrowserRouter([
           { path: "reposts", element: <Lazy component={RepostsPage} /> },
           { path: "follower", element: <Lazy component={FollowerPage} /> },
           { path: "following", element: <Lazy component={FollowingPage} /> },
+          { path: "likes", element: <Lazy component={LikesPage} /> },
           {
             path: "popular-tracks",
             element: <Lazy component={PopularTracksPage} />,
