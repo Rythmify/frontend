@@ -1,6 +1,7 @@
 import React from "react";
 import type { User } from "@/stores/auth.store";
 import TrackItem from "../ProfileSideBar/TrackItem";
+import { useNavigate } from "react-router-dom";
 
 interface FollowingUser {
   username: string;
@@ -33,6 +34,7 @@ interface ProfileSideBarProps {
   };
   likedTracks?: LikedTracks[];
   following?: FollowingUser[];
+  onTabChange?: (tab: string) => void;
 }
 
 const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
@@ -41,29 +43,47 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   stats = { followers: 0, following: 0, tracks: 0 },
   likedTracks = [],
   following = [],
+  onTabChange,
 }) => {
+  const navigate = useNavigate();
   return (
     <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1 ">
-      <div className="flex gap-8">
-        <div className="flex  gap-13 ">
-          {[
-            { label: "Followers", value: stats.followers },
-            { label: "Following", value: stats.following },
-            { label: "Tracks", value: stats.tracks },
-          ].map(({ label, value }) => (
-            <button
-              key={label}
-              className="cursor-pointer flex flex-col  items-start hover:opacity-70 transition-opacity"
-            >
-              <span className="text-sm font-extrabold text-text-secondary">
-                {label}
-              </span>
-              <span className="text-3xl font-bold py-1.5 text-white">
-                {value}
-              </span>
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-13">
+        <button
+          className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
+          onClick={() => navigate("/you/follower")}
+        >
+          <span className="text-sm font-extrabold text-text-secondary">
+            Followers
+          </span>
+          <span className="text-3xl font-bold py-1.5 text-white">
+            {stats.followers}
+          </span>
+        </button>
+
+        <button
+          className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
+          onClick={() => navigate("/you/following")}
+        >
+          <span className="text-sm font-extrabold text-text-secondary">
+            Following
+          </span>
+          <span className="text-3xl font-bold py-1.5 text-white">
+            {stats.following}
+          </span>
+        </button>
+
+        <button
+          className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
+          onClick={() => onTabChange?.("Tracks")}
+        >
+          <span className="text-sm font-extrabold text-text-secondary">
+            Tracks
+          </span>
+          <span className="text-3xl font-bold py-1.5 text-white">
+            {stats.tracks}
+          </span>
+        </button>
       </div>
 
       {likedTracks.length > 0 && (
@@ -160,7 +180,10 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             Rythmify, and list existing events.
           </p>
 
-          <button className="w-[320px] py-3 bg-white text-black font-semibold  text-sm rounded-full hover:bg-gray-200 transition-colors">
+          <button
+            onClick={() => navigate("/creator/checkout")}
+            className="w-[320px] py-3 bg-white text-black font-semibold  text-sm rounded-full hover:bg-gray-200 transition-colors"
+          >
             Upgrade to Artist Pro
           </button>
         </div>

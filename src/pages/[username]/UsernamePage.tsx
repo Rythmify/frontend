@@ -5,6 +5,7 @@ import ProfileSidebar from "../../components/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/ShareModal/ShareModal";
 import EditProfileModal from "../../components/EditProfileModal/EditProfileModal";
+import { useNavigate } from "react-router-dom";
 
 function getEmptyState(tab: string, isOwner: boolean) {
   switch (tab) {
@@ -96,6 +97,7 @@ export default function UsernamePage() {
   const [selectedTab, setSelectedTab] = useState("All");
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const navigate = useNavigate();
 
   const user = currentUser;
   if (!user || !currentUser) return null;
@@ -119,7 +121,10 @@ export default function UsernamePage() {
         <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
           <p className="text-white font-bold text-17px">{message}</p>
           {showUpload && (
-            <button className=" cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded">
+            <button
+              onClick={() => navigate("/upload")}
+              className=" cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
+            >
               Upload now
             </button>
           )}
@@ -135,6 +140,7 @@ export default function UsernamePage() {
               following: mockFollowing.length,
               tracks: 0,
             }}
+            onTabChange={setSelectedTab}
           />
         </div>
       </div>
