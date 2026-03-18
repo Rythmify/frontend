@@ -2,6 +2,7 @@ import React from "react";
 import type { User } from "@/stores/auth.store";
 import TrackItem from "./TrackItem";
 import { useNavigate } from "react-router-dom";
+import FollowButton from "../../../components/Profile/FollowButton";
 
 interface FollowingUser {
   username: string;
@@ -202,9 +203,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                   </div>
                 </div>
               </div>
-              <button className="px-3 py-1 bg-[#313030] text-white text-xs font-bold rounded hover:opacity-70">
-                Following
-              </button>
+              <FollowButton username={user.username} />
             </div>
           ))}
         </div>

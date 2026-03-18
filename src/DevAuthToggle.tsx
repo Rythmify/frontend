@@ -21,6 +21,7 @@ const DevAuthToggle = () => {
           city: "Cairo",
           country: "Egypt",
           location: "Cairo, Egypt",
+          following_ids: ["farah-medhat", "mariam-ramy"],
         },
         "fake-token-123",
       );

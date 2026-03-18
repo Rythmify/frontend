@@ -6,6 +6,7 @@ import {
   mockUserFollowing,
 } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
+import FollowButton from "@/components/Profile/FollowButton";
 
 const tabs = ["Likes", "Following", "Followers"];
 
@@ -19,7 +20,9 @@ export default function FollowingPage() {
     : { username, displayName: username, avatar: "" };
 
   const followingList = isOwner
-    ? mockFollowing
+    ? mockFollowing.filter((u) =>
+        currentUser?.following_ids?.includes(u.username),
+      )
     : (mockUserFollowing[username || ""] ?? []);
 
   if (!user) return null;
@@ -120,9 +123,9 @@ export default function FollowingPage() {
             </span>
 
             <div className="h-8 flex items-center justify-center">
-              <button className=" cursor-pointer hidden group-hover:block px-4 py-1.5 bg-input-bg text-bg-inverted text-xs font-bold rounded hover:opacity-70">
-                Following
-              </button>
+              <div className="hidden group-hover:block">
+                <FollowButton username={u.username} />
+              </div>
             </div>
           </div>
         ))}

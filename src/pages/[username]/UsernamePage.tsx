@@ -57,25 +57,29 @@ export default function UsernamePage() {
   if (!currentUser) return null;
 
   const isOwner = !username || username === currentUser.username;
-  // const user = isOwner
-  //   ? currentUser
-  //   : {
-  //       ...currentUser,
-  //       username: username || currentUser.username,
-  //       displayName: username || currentUser.username,
-  //       avatar: "",
-  //       coverUrl: "",
-  //     };
+  useEffect(() => {
+    if (
+      currentUser &&
+      (!currentUser.following_ids || currentUser.following_ids.length === 0)
+    ) {
+      setUser({
+        ...currentUser,
+        following_ids: mockFollowing.map((u) => u.username),
+      });
+    }
+  }, []);
   const { message, showUpload } = getEmptyState(selectedTab, isOwner);
   const profile = isOwner ? null : mockUserProfiles[username || ""];
   const likedTracks = isOwner ? mockLikedTracks : (profile?.likedTracks ?? []);
   const following = isOwner
-    ? mockFollowing
+    ? mockFollowing.filter((u) =>
+        currentUser?.following_ids?.includes(u.username),
+      )
     : (mockUserFollowing[username || ""] ?? []);
   const stats = isOwner
     ? {
         followers: mockFollowers.length,
-        following: mockFollowing.length,
+        following: currentUser?.following_ids?.length ?? 0,
         tracks: 0,
       }
     : {

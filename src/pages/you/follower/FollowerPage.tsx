@@ -5,6 +5,7 @@ import {
   mockFollowers,
   mockUserFollowers,
 } from "@/components/Profile/MockData/mock";
+import FollowButton from "@/components/Profile/FollowButton";
 
 const tabs = ["Likes", "Following", "Followers"];
 
@@ -12,7 +13,7 @@ export default function FollowerPage() {
   //const { user } = useAuthStore();
   const navigate = useNavigate();
   const { username } = useParams();
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, toggleFollow } = useAuthStore();
   const isOwner = !username || username === currentUser?.username;
   const user = isOwner
     ? currentUser
@@ -120,9 +121,9 @@ export default function FollowerPage() {
             </span>
 
             <div className="h-8 flex items-center justify-center">
-              <button className=" cursor-pointer hidden group-hover:block px-4 py-1.5 bg-input-bg text-bg-inverted text-xs font-bold rounded hover:opacity-70">
-                Following
-              </button>
+              <div className="hidden group-hover:block">
+                <FollowButton username={u.username} />
+              </div>
             </div>
           </div>
         ))}
