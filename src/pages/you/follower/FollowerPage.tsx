@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
-import { useNavigate } from "react-router-dom";
-import { mockFollowing } from "@/components/Profile/MockData/mock";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { mockFollowers } from "@/components/Profile/MockData/mock";
 
 const tabs = ["Likes", "Following", "Followers"];
 
-export default function FollowingPage() {
+export default function FollowerPage() {
+  //const { user } = useAuthStore();
   const navigate = useNavigate();
   const { username } = useParams();
   const { user: currentUser } = useAuthStore();
@@ -46,7 +46,7 @@ export default function FollowingPage() {
           className="text-white cursor-pointer text-2xl font-bold"
           onClick={() => navigate(`/${user.username}`)}
         >
-          {user.displayName || user.username} is following
+          Followers of {user.displayName || user.username}
         </h1>
       </div>
 
@@ -57,7 +57,7 @@ export default function FollowingPage() {
             key={tab}
             onClick={() => handleTabChange(tab)}
             className={`pb-2 pt-3 px-1 text-sm font-bold cursor-pointer  border-b-[2px] ${
-              tab === "Following"
+              tab === "Followers"
                 ? "text-bg-inverted border-bg-inverted"
                 : "text-text-secondary border-transparent hover:text-bg-inverted"
             }`}
@@ -69,7 +69,7 @@ export default function FollowingPage() {
 
       {/* Grid */}
       <div className="grid grid-cols-6 gap-6">
-        {mockFollowing.map((u) => (
+        {mockFollowers.map((u) => (
           <div
             key={u.username}
             className="flex flex-col  items-center gap-2 group"
@@ -121,7 +121,7 @@ export default function FollowingPage() {
         ))}
         {Array.from({
           length:
-            mockFollowing.length % 6 === 0 ? 0 : 6 - (mockFollowing.length % 6),
+            mockFollowers.length % 6 === 0 ? 0 : 6 - (mockFollowers.length % 6),
         }).map((_, i) => (
           <div
             key={`empty-${i}`}

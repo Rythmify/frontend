@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
-import ProfileHeader from "../../components/ProfileHeader/ProfileHeader";
-import ProfileTabs from "../../components/ProfileTabs/ProfileTabs";
-import ProfileSidebar from "../../components/ProfileSideBar/ProfileSideBar";
+import ProfileHeader from "../../components/Profile/ProfileHeader/ProfileHeader";
+import ProfileTabs from "../../components/Profile/ProfileTabs/ProfileTabs";
+import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
-import ShareModal from "../../components/ShareModal/ShareModal";
-import EditProfileModal from "../../components/EditProfileModal/EditProfileModal";
+import ShareModal from "../../components/Profile/ShareModal/ShareModal";
+import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
+import { useNavigate } from "react-router-dom";
+import { mockLikedTracks } from "@/components/Profile/MockData/mock";
+import { mockFollowing } from "@/components/Profile/MockData/mock";
+import { useParams } from "react-router-dom";
+import { mockFollowers } from "@/components/Profile/MockData/mock";
+import { mockUserProfiles } from "@/components/Profile/MockData/mock";
 
 function getEmptyState(tab: string, isOwner: boolean) {
   switch (tab) {
@@ -37,71 +43,52 @@ function getEmptyState(tab: string, isOwner: boolean) {
   }
 }
 
-const mockLikedTracks = [
-  {
-    id: "1",
-    title: "Green & Purple f/Playboi Carti",
-    artist: "Travis Scott",
-    coverUrl: "https://i1.sndcdn.com/artworks-000225111730-qbt7bb-t500x500.jpg",
-    plays: 66900000,
-    likes: 1040000,
-    reposts: 69500,
-    comments: 9166,
-  },
-  {
-    id: "2",
-    title: "SICKO MODE",
-    artist: "Travis Scott",
-    coverUrl: "https://i1.sndcdn.com/artworks-000225111730-qbt7bb-t500x500.jpg",
-    plays: 120000000,
-    likes: 2500000,
-    reposts: 150000,
-    comments: 15000,
-  },
-];
-
-const mockFollowing = [
-  {
-    username: "Travis Scott",
-    followers: 6150000,
-    tracks: 174,
-    avatar: "https://i1.sndcdn.com/avatars-000049954431-e7s5e2-t500x500.jpg",
-    isVerified: true,
-  },
-  {
-    username: "NourAbosaif04",
-    followers: 3000,
-    tracks: 0,
-    avatar: "",
-    isVerified: false,
-  },
-  {
-    username: "Farah medhat",
-    followers: 7000,
-    tracks: 0,
-    avatar: "",
-    isVerified: false,
-  },
-  {
-    username: "Farah medhat",
-    followers: 7000,
-    tracks: 0,
-    avatar: "",
-    isVerified: false,
-  },
-];
-
 export default function UsernamePage() {
+  const { username } = useParams();
   const { user: currentUser } = useAuthStore();
   const [selectedTab, setSelectedTab] = useState("All");
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const navigate = useNavigate();
 
-  const user = currentUser;
-  if (!user || !currentUser) return null;
+  if (!currentUser) return null;
 
-  const isOwner = user.id === currentUser.id;
+  const isOwner = !username || username === currentUser.username;
+  // const user = isOwner
+  //   ? currentUser
+  //   : {
+  //       ...currentUser,
+  //       username: username || currentUser.username,
+  //       displayName: username || currentUser.username,
+  //       avatar: "",
+  //       coverUrl: "",
+  //     };
   const { message, showUpload } = getEmptyState(selectedTab, isOwner);
+  const profile = isOwner ? null : mockUserProfiles[username || ""];
+  const likedTracks = isOwner ? mockLikedTracks : (profile?.likedTracks ?? []);
+  const following = isOwner ? mockFollowing : [];
+  const stats = isOwner
+    ? {
+        followers: mockFollowers.length,
+        following: mockFollowing.length,
+        tracks: 0,
+      }
+    : {
+        followers: profile?.followers ?? 0,
+        following: profile?.following ?? 0,
+        tracks: profile?.tracks ?? 0,
+      };
+
+  const user = isOwner
+    ? currentUser
+    : {
+        ...currentUser,
+        username: username || currentUser.username,
+        displayName: profile?.displayName || username || currentUser.username,
+        avatar: profile?.avatar || "",
+        coverUrl: profile?.coverUrl || "",
+        location: profile?.location || "",
+      };
 
   return (
     <div className="container px-4 md:px-8 lg:px-20">
@@ -119,7 +106,10 @@ export default function UsernamePage() {
         <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
           <p className="text-white font-bold text-17px">{message}</p>
           {showUpload && (
-            <button className=" cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded">
+            <button
+              onClick={() => navigate("/upload")}
+              className=" cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
+            >
               Upload now
             </button>
           )}
@@ -130,11 +120,8 @@ export default function UsernamePage() {
             isOwner={isOwner}
             likedTracks={mockLikedTracks}
             following={mockFollowing}
-            stats={{
-              followers: 0,
-              following: mockFollowing.length,
-              tracks: 0,
-            }}
+            stats={stats}
+            onTabChange={setSelectedTab}
           />
         </div>
       </div>
