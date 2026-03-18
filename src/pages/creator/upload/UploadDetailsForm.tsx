@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import HelpIcon from "./HelpIcon";
 import UploadCoverImage from "./UploadCoverImage";
@@ -24,35 +24,37 @@ const UploadDetailsForm = ({ audioData, onCancel }: Props) => {
         {/* Form Section for metadata */}
         <div className="flex-1 w-full space-y-8 text-xs text-text-upload">
           <div>
-            <label className="flex items-center text-xs font-bold  mb-1 tracking-wide">
+            <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
               Track title <span className="text-[#ec5261]">*</span>
               <HelpIcon />
             </label>
             <input
               type="text"
               defaultValue={initialTitle}
-              className="w-full bg-transparent text-sm border-b border-border py-2 outline-none transition-colors"
+              className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-white transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-text-upload mb-1 tracking-wide">
+            <label className="block text-xs font-bold mb-1 tracking-wide uppercase">
               Track link
             </label>
-            <div className="flex items-center text-sm text-text-upload/60 border-b border-border py-2">
-              <span>https://soundcloud.com/{username}/</span>
+            <div className="flex items-center text-sm text-text-upload border-b border-border py-2">
+              <span className="shrink-0">
+                https://soundcloud.com/{username}/
+              </span>
               <input
                 type="text"
+                readOnly
                 defaultValue={initialTitle.toLowerCase().replace(/\s+/g, "-")}
-                className="flex-1 bg-transparent text-text-uploadoutline-none"
+                className="flex-1 bg-transparent text-text-upload outline-none px-1"
               />
             </div>
           </div>
 
           <div>
-            <label className="flex items-center text-xs font-bold  mb-1 tracking-wide">
-              Main Artist(s)
-              <HelpIcon />
+            <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide ">
+              Main Artist(s) <HelpIcon />
             </label>
             <input
               type="text"
@@ -64,14 +66,13 @@ const UploadDetailsForm = ({ audioData, onCancel }: Props) => {
             </p>
           </div>
           <div>
-            <label className="flex items-center text-xs font-bold  mb-1 tracking-wide">
-              Tags
-              <HelpIcon />
+            <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide ">
+              Tags <HelpIcon />
             </label>
             <input
               type="text"
-              defaultValue={"Add styles, moods, tempo."}
-              className="w-full bg-transparent text-sm border-b border-border py-2 outline-none transition-colors  text-text-upload/60"
+              placeholder="Add styles, moods, tempo."
+              className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-white placeholder:text-text-upload/40"
             />
           </div>
         </div>

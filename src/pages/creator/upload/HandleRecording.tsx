@@ -22,6 +22,7 @@ interface HandleRecordingProps {
   setAudioSegments: React.Dispatch<React.SetStateAction<Blob[]>>;
   redoAudioStack: Blob[];
   setRedoAudioStack: React.Dispatch<React.SetStateAction<Blob[]>>;
+  selectedMicId: string;
 }
 
 const HandleRecording = ({
@@ -46,6 +47,7 @@ const HandleRecording = ({
   setAudioSegments,
   redoAudioStack,
   setRedoAudioStack,
+  selectedMicId,
 }: HandleRecordingProps) => {
   useEffect(() => {
     let interval: any;
@@ -72,7 +74,9 @@ const HandleRecording = ({
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { deviceId: selectedMicId ? { exact: selectedMicId } : undefined }
+      });      
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
@@ -166,12 +170,15 @@ const HandleRecording = ({
 
       // timeout to ensure the last segment is pushed to audioSegments
       setTimeout(() => {
-        const finalBlob = new Blob(audioSegments, { type: "audio/wav" });
-        setIsRecording(false);
-        setIsPaused(false);
-        setIsRecordingFinished(true);
-        onFinish(finalBlob);
-      }, 100);
+      setAudioSegments((prev) => {
+        const finalBlob = new Blob(prev, { type: "audio/wav" });
+        onFinish(finalBlob); 
+        return prev;
+      });
+      setIsRecording(false);
+      setIsPaused(false);
+      setIsRecordingFinished(true);
+    }, 150);
     }
   };
 

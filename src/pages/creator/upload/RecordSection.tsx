@@ -94,6 +94,7 @@ const RecordSection = ({ onFinish }: { onFinish: (data: Blob) => void }) => {
           mediaRecorderRef={mediaRecorderRef}
           redoAudioStack={redoAudioStack}
           setRedoAudioStack={setRedoAudioStack}
+          selectedMicId={selectedMicId}
         />
       </div>
     </div>
