@@ -14,6 +14,7 @@
   /* Brand  */
   --color-accent: #ff5500;
   --color-accent-hover: #e64a00;
+   
 
   /* Backgrounds  */
   --color-bg: #ffffff;
@@ -33,6 +34,7 @@
   --color-text-muted: #666666;
   --color-text-link: #0a6e8a;
   --color-text-link-hover: #085a72;
+  --color-text-hover:#000000;
   --color-text-hover:#000000;
   /* Upload Page Specific */
   --color-text-upload: #000000de;
