@@ -2,10 +2,14 @@ import TrackCard from "@/components/UI/Card";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import { mockDiscoverTracks } from "@/mocks/discover";
 import ArtistToolsCard from "@/components/discover/sidebar/ArtistToolsCard";
+import ListeningHistoryCard from "@/components/discover/sidebar/ListeningHistoryCard";
 
 const DiscoverPageAuth = () => {
   return (
-    <div className="min-h-screen w-full container px-4 md:px-8 lg:px-20" style={{ backgroundColor: "#121212" }}>
+    <div
+      className="min-h-screen w-full container px-4 md:px-8 lg:px-20"
+      style={{ backgroundColor: "#121212" }}
+    >
       {/* Two Column Layout */}
       <div className="flex gap-11 p-0">
         {/* Main Content — 70% */}
@@ -21,6 +25,7 @@ const DiscoverPageAuth = () => {
         <div className="flex flex-col gap-6 flex-[3] ps-2 pt-8">
           {/* sidebar components go here */}
           <ArtistToolsCard />
+          <ListeningHistoryCard />
         </div>
       </div>
     </div>
