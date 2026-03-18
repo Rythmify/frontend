@@ -48,7 +48,7 @@ function getEmptyState(tab: string, isOwner: boolean) {
 
 export default function UsernamePage() {
   const { username } = useParams();
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, setUser } = useAuthStore();
   const [selectedTab, setSelectedTab] = useState("All");
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -141,7 +141,19 @@ export default function UsernamePage() {
           user={user}
           onClose={() => setShowEdit(false)}
           onSave={(data) => {
-            console.log(data);
+            setUser({
+              ...currentUser,
+              displayName: data.displayName,
+              firstName: data.firstName,
+              lastName: data.lastName,
+              bio: data.bio,
+              city: data.city,
+              country: data.country,
+              location: data.location,
+              avatar: data.avatarFile
+                ? URL.createObjectURL(data.avatarFile)
+                : currentUser.avatar,
+            });
             setShowEdit(false);
           }}
         />

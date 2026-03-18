@@ -5,11 +5,16 @@ export interface User {
   id: string;
   username: string;
   displayName: string;
+  firstName: string;
+  lastName: string;
+  bio: string;
   email: string;
   avatar?: string;
   coverUrl?: string;
   role: "listener" | "artist" | "admin";
   isPro: boolean;
+  city?: string;
+  country?: string;
   location?: string;
 }
 

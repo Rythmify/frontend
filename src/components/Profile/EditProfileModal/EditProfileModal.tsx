@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from "react";
-import type { User } from "@/stores/auth.store";
 
 interface EditProfileModalProps {
-  user: User;
+  user: {
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+    bio?: string;
+    city?: string;
+    country?: string;
+    avatar?: string;
+    username?: string;
+  };
   onClose: () => void;
   onSave: (data: {
     displayName: string;
+    firstName: string;
+    lastName: string;
+    bio: string;
+    city: string;
+    country: string;
     location: string;
     avatarFile: File | null;
   }) => void;
@@ -24,31 +37,72 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   }, []);
 
   const [displayName, setDisplayName] = useState(user.displayName || "");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [city, setCity] = useState("");
-  const [country, setCountry] = useState("");
-  const [bio, setBio] = useState("");
+  const [firstName, setFirstName] = useState(user.firstName || "");
+  const [lastName, setLastName] = useState(user.lastName || "");
+  const [city, setCity] = useState(user.city || "");
+  const [country, setCountry] = useState(user.country || "");
+  const [bio, setBio] = useState(user.bio || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ displayName?: string }>({});
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setAvatarFile(file);
+    if (!file) return;
+
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      alert("Only JPEG, PNG, or WebP images are allowed.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be under 5MB.");
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
+  const validate = () => {
+    const newErrors: { displayName?: string } = {};
+    if (!displayName.trim()) {
+      newErrors.displayName = "Display name is required.";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = () => {
+    if (!validate()) return;
+
     onSave({
-      displayName,
-      location: `${city}, ${country}`,
+      displayName: displayName.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      bio: bio.trim(),
+      city: city.trim(),
+      country: country.trim(),
+      location: city && country ? `${city}, ${country}` : city || country || "",
       avatarFile,
     });
+
+    onClose();
   };
+
+  const currentAvatar = avatarPreview || user.avatar || null;
 
   return (
     <>
       <button
         onClick={onClose}
-        className="fixed top-3 right-3 cursor-pointer text-white text-lg hover:opacity-70 z-[60] bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center mt-6 mr-6"
+        className="fixed top-3 right-3 cursor-pointer text-white text-lg hover:opacity-70 z-60 bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center mt-6 mr-6"
       >
         <i className="fa-solid fa-xmark" />
       </button>
@@ -58,7 +112,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         onClick={onClose}
       >
         <div
-          className="bg-black rounded-sm p-9 w-[780px]  "
+          className="bg-black rounded-sm p-9 w-[780px]"
           onClick={(e) => e.stopPropagation()}
         >
           <h2 className="text-white text-left font-bold text-xl mb-6">
@@ -69,15 +123,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             {/* Avatar */}
             <div className="flex-shrink-0">
               <div className="w-48 h-48 rounded-full overflow-hidden bg-gray-600 relative cursor-pointer">
-                {avatarFile ? (
+                {currentAvatar ? (
                   <img
-                    src={URL.createObjectURL(avatarFile)}
-                    alt="avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : user.avatar ? (
-                  <img
-                    src={user.avatar}
+                    src={currentAvatar}
                     alt={user.username}
                     className="w-full h-full object-cover"
                   />
@@ -87,7 +135,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <label className="absolute bottom-6 left-1/2 -translate-x-1/2 cursor-pointer">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
                     onChange={handleAvatarChange}
                   />
@@ -106,9 +154,19 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 </label>
                 <input
                   value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
+                  onChange={(e) => {
+                    setDisplayName(e.target.value);
+                    if (errors.displayName) setErrors({});
+                  }}
+                  className={`bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border focus:border-white ${
+                    errors.displayName ? "border-red-500" : "border-transparent"
+                  }`}
                 />
+                {errors.displayName && (
+                  <span className="text-red-500 text-xs">
+                    {errors.displayName}
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-col gap-1">
