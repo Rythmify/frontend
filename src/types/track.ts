@@ -11,4 +11,6 @@ export interface Track {
   duration: string;
   postedAt: string;
   waveformData: number[];
+  username: string;
+  trackSlug: string;
 }
