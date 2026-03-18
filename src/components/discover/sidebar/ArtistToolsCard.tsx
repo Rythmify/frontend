@@ -30,7 +30,7 @@ const secondaryTools: ArtistTool[] = [
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
   wrapper: `
-    flex flex-col gap-3
+    flex flex-col gap-1
     w-full
   `,
   header: `
@@ -50,7 +50,7 @@ const styles = {
   `,
   toolsGrid: `
     
-    pt-2 flex justify-between 
+    pt-2 flex justify-between gap-2
   `,
   toolButton: `
    group
@@ -58,7 +58,7 @@ const styles = {
   border border-white/15
   rounded-md py-4
   h-24
-  w-22
+  w-20
   transition-colors duration-200
   relative
 `,
@@ -83,7 +83,7 @@ const styles = {
   ctaButton: `
     w-full
     bg-purple-700 hover:bg-purple-600
-    text-white text-xs
+    text-white text-xs my-2
     rounded-md py-2 px-3
     flex items-center gap-2
     transition-colors duration-200

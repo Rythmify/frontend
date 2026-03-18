@@ -1,6 +1,6 @@
 import { SiGmail, SiProtonmail } from "react-icons/si";
 import { Mail } from "lucide-react";
-import Airplane from "../../components/SigninComponents/airplane";
+import Airplane from "../../components/SigninComponents/Airplane";
 
 interface Props {
   email: string;

@@ -131,7 +131,7 @@ function SigninFlow() {
     <div className={card}>
       <h1 className="text-text-hover max-w-sm">Sign in or create an account</h1>
 
-      <p className="text-md font-bold text-text-secondary w-full">
+      <p className="text-md font-semibold text-text-secondary w-full">
         By clicking on any of the "Continue" buttons below, you agree to
         Rythmify's{" "}
         <a href="/terms" className="text-text-link hover:text-text-link-hover">
@@ -145,17 +145,17 @@ function SigninFlow() {
       </p>
 
       <div className="grid gap-6">
-        <Button data-test="btn-continue-facebook" className="flex items-center justify-center gap-2 text-center text-md font-bold text-white rounded-sm bg-[#003BB3] py-3 w-full">
+        <Button data-test="btn-continue-facebook" className="flex items-center justify-center gap-2 text-center text-md font-bold text-white rounded-sm bg-[#003BB3] py-6 w-full">
           <FaFacebook className="text-xl" />
           Continue with Facebook
         </Button>
 
-        <Button data-test="btn-continue-google" className="flex items-center justify-center gap-2 text-center text-md font-bold text-text-hover rounded-sm bg-input-bg py-3 w-full">
+        <Button data-test="btn-continue-google" className="flex items-center justify-center gap-2 text-center text-md font-bold text-text-hover rounded-sm bg-input-bg py-6 w-full">
           <FcGoogle className="text-xl" />
           Continue with Google
         </Button>
 
-        <Button data-test="btn-continue-apple" className="flex items-center justify-center gap-2 text-center text-md font-bold text-white rounded-sm bg-black py-3 w-full">
+        <Button data-test="btn-continue-apple" className="flex items-center justify-center gap-2 text-center text-md font-bold text-white rounded-sm bg-black py-6 w-full">
           <FaApple className="text-xl" />
           Continue with Apple
         </Button>
