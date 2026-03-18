@@ -44,6 +44,7 @@ export default function ResetPassword() {
               This password reset link is invalid or has expired.
             </p>
             <button
+              data-test="btn-back-to-signin"
               onClick={() => navigate("/signin")}
               className="text-blue-500 hover:underline text-sm"
             >
@@ -57,6 +58,7 @@ export default function ResetPassword() {
               Your password has been updated successfully.
             </p>
             <button
+              data-test="btn-signin"
               onClick={() => navigate("/signin")}
               className="w-full py-3 rounded-sm bg-[#f50] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
             >
@@ -81,6 +83,7 @@ export default function ResetPassword() {
             <div className="grid gap-1.5">
               <label className="text-gray-800 text-sm">Type your new password</label>
               <input
+                data-test="input-password"
                 autoFocus
                 type="password"
                 value={password}
@@ -96,6 +99,7 @@ export default function ResetPassword() {
             <div className="grid gap-1.5">
               <label className="text-gray-800 text-sm">Type your new password again, to confirm</label>
               <input
+                data-test="input-confirm-password"
                 type="password"
                 value={confirm}
                 onChange={(e) => {
@@ -111,6 +115,7 @@ export default function ResetPassword() {
             {/* Sign out everywhere checkbox */}
             <label className="flex items-center gap-2 cursor-pointer">
               <input
+                data-test="checkbox-sign-out-everywhere"
                 type="checkbox"
                 checked={signOutEverywhere}
                 onChange={(e) => setSignOutEverywhere(e.target.checked)}
@@ -121,6 +126,7 @@ export default function ResetPassword() {
 
             {/* Save button */}
             <button
+              data-test="btn-save"
               type="submit"
               disabled={!canSubmit}
               className={`w-full py-3 rounded-sm text-sm font-semibold transition-all ${
