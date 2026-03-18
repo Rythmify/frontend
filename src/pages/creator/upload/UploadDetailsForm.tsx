@@ -112,7 +112,7 @@ const UploadDetailsForm = ({ audioData, onCancel, onSuccess }: Props) => {
             </p>
           </div>
           <div>
-            <GenreDropdown />
+            <GenreDropdown value={genre} onChange={setGenre} />
           </div>
           <div>
             <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide ">

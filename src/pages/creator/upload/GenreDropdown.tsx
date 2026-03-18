@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
-const GenreDropdown = () => {
+const GenreDropdown = ({ value, onChange }: { value: string; onChange: (g: string) => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -80,6 +80,7 @@ const GenreDropdown = () => {
               <div
                 key={genre}
                 onClick={() => {
+                  onChange(genre);
                   setSearchTerm(genre);
                   setIsOpen(false);
                 }}
