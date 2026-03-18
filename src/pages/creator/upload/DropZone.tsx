@@ -62,7 +62,7 @@ const DropZone = ({ onUpload }: { onUpload: (file: File) => void }) => {
       <div
         className={`border-2 border-dashed rounded-md p-16 flex flex-col items-center justify-center text-center transition-colors ${
           isDragging
-            ? "border-accent bg-accent/5"
+            ? " bg-accent/5"
             : "border-border bg-bg hover:border-text-hover cursor-pointer"
         }`}
         onDragOver={handleDragOver}
