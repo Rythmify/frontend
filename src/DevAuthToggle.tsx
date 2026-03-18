@@ -15,9 +15,8 @@ const DevAuthToggle = () => {
           email: "nour@test.com",
           role: "artist",
           isPro: false,
-          location: "Cairo, Egypt",
         },
-        "fake-token-123",
+        "fake-token-123"
       );
       window.location.href = "/";
     }
