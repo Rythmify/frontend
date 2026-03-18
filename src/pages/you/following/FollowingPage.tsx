@@ -38,8 +38,8 @@ export default function FollowingPage() {
   return (
     <div className=" py-8 container px-4 md:px-8 lg:px-20">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-23 h-23 rounded-full overflow-hidden bg-gray-600 flex-shrink-0">
+      <div className="flex items-center gap-4 mb-3">
+        <div className="w-25 h-25 rounded-full overflow-hidden bg-gray-600 flex-shrink-0">
           {user.avatar ? (
             <img
               src={user.avatar}
@@ -53,6 +53,23 @@ export default function FollowingPage() {
         <h1 className="text-white text-2xl font-bold">
           {user.displayName || user.username} is following
         </h1>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-6  mb-8">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => handleTabChange(tab)}
+            className={`pb-2 pt-3 px-1 text-sm font-bold  border-b-[2px] ${
+              tab === "Following"
+                ? "text-white border-white"
+                : "text-text-secondary border-transparent hover:text-white"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
     </div>
   );
