@@ -1,11 +1,16 @@
 import TrackCard from "@/components/UI/Card";
-import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
+import HorizontalCarousel from "@/components/DiscoverComponents/HorizontalCarousel";
 import { mockDiscoverTracks } from "@/mocks/discover";
 import ArtistToolsCard from "@/components/discover/sidebar/ArtistToolsCard";
 import ListeningHistoryCard from "@/components/discover/sidebar/ListeningHistoryCard";
+import ArtistToolsCard from "@/components/DiscoverComponents/Sidebar/ArtistToolsCard";
 
 const DiscoverPageAuth = () => {
   return (
+    <div
+      className="min-h-screen w-full container px-4 md:px-8 lg:px-20"
+      style={{ backgroundColor: "#121212" }}
+    >
     <div
       className="min-h-screen w-full container px-4 md:px-8 lg:px-20"
       style={{ backgroundColor: "#121212" }}
