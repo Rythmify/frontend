@@ -6,14 +6,40 @@ const GenreDropdown = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const genres = [
-    "Alternative Rock", "Ambient", "Classical", "Country", 
-    "Dance & EDM", "Dancehall", "Deep House", "Disco"
+    "Alternative Rock",
+    "Ambient",
+    "Classical",
+    "Country",
+    "Dance & EDM",
+    "Dancehall",
+    "Deep House",
+    "Disco",
+    "Drum & Bass",
+    "Electronic",
+    "Hip-hop & Rap",
+    "House",
+    "Jazz & Blues",
+    "Latin",
+    "Metal",
+    "Piano",
+    "Pop",
+    "R&B & Soul",
+    "Reggae",
+    "Reggaeton",
+    "Rock",
+    "Soundtrack",
+    "Techno",
+    "Trance",
+    "World",
   ];
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -26,7 +52,7 @@ const GenreDropdown = () => {
       <label className="block text-xs font-bold mb-1 tracking-wide text-upload">
         Genre
       </label>
-      
+
       {/* Search Input Area */}
       <div className="relative flex items-center border-b border-border group">
         <input
@@ -37,7 +63,9 @@ const GenreDropdown = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-transparent text-sm py-2 outline-none text-upload placeholder:text-text-upload/40"
         />
-        <i className={`fa-solid fa-chevron-up text-xs transition-transform duration-200 ${!isOpen ? "rotate-180" : ""}`} />
+        <i
+          className={`fa-solid fa-chevron-up text-xs transition-transform duration-200 ${!isOpen ? "rotate-180" : ""}`}
+        />
       </div>
 
       {/* Dropdown List */}
@@ -47,7 +75,7 @@ const GenreDropdown = () => {
             All music genres
           </div>
           {genres
-            .filter(g => g.toLowerCase().includes(searchTerm.toLowerCase()))
+            .filter((g) => g.toLowerCase().includes(searchTerm.toLowerCase()))
             .map((genre) => (
               <div
                 key={genre}

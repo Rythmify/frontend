@@ -3,12 +3,6 @@ import axiosInstance from "../axiosInstance";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type TrackStatus = "processing" | "ready" | "failed";
-export type LicenseType = "all_rights_reserved" | "creative_commons";
-export type GeoRestrictionType =
-  | "worldwide"
-  | "exclusive_region"
-  | "blocked_regions";
-
 export interface Track {
   id: string;
   title: string;
