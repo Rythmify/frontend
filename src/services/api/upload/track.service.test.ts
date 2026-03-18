@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
-import { trackHandlers } from './trackHandlers';
+import { trackHandlers } from '../../mocks/handlers/trackHandlers';
 import {
   uploadTrack,
   getMyTracks,

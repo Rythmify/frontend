@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import type { Track, TrackSummary } from "./track.service";
+import type { Track, TrackSummary } from "../../api/upload/track.service";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
