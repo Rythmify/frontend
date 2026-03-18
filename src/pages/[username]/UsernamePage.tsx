@@ -6,7 +6,10 @@ import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
 import { useNavigate } from "react-router-dom";
-import { mockLikedTracks } from "@/components/Profile/MockData/mock";
+import {
+  mockLikedTracks,
+  mockUserFollowing,
+} from "@/components/Profile/MockData/mock";
 import { mockFollowing } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
 import { mockFollowers } from "@/components/Profile/MockData/mock";
@@ -66,7 +69,9 @@ export default function UsernamePage() {
   const { message, showUpload } = getEmptyState(selectedTab, isOwner);
   const profile = isOwner ? null : mockUserProfiles[username || ""];
   const likedTracks = isOwner ? mockLikedTracks : (profile?.likedTracks ?? []);
-  const following = isOwner ? mockFollowing : [];
+  const following = isOwner
+    ? mockFollowing
+    : (mockUserFollowing[username || ""] ?? []);
   const stats = isOwner
     ? {
         followers: mockFollowers.length,
@@ -118,8 +123,8 @@ export default function UsernamePage() {
           <ProfileSidebar
             user={user}
             isOwner={isOwner}
-            likedTracks={mockLikedTracks}
-            following={mockFollowing}
+            likedTracks={likedTracks}
+            following={following}
             stats={stats}
             onTabChange={setSelectedTab}
           />

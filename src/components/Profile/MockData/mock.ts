@@ -103,16 +103,37 @@ export const mockUserProfiles: Record<string, {
       },
     ],
   },
-  "farah-medhat": {
-    displayName: "Farah medhat",
-    avatar: "",
-    coverUrl: "",
-    location: "Cairo, Egypt",
-    followers: 7,
-    following: 3,
-    tracks: 0,
-    likedTracks: [],
-  },
+ "farah-medhat": {
+  displayName: "Farah medhat",
+  avatar: "",
+  coverUrl: "",
+  location: "Cairo, Egypt",
+  followers: 7,
+  following: 3,
+  tracks: 0,
+  likedTracks: [
+    {
+      id: "4",
+      title: "Blinding Lights",
+      artist: "The Weeknd",
+      coverUrl: "https://i1.sndcdn.com/artworks-000225111730-qbt7bb-t500x500.jpg",
+      plays: 200000000,
+      likes: 3000000,
+      reposts: 200000,
+      comments: 30000,
+    },
+    {
+      id: "5",
+      title: "STARGAZING",
+      artist: "Travis Scott",
+      coverUrl: "https://i1.sndcdn.com/artworks-000225111730-qbt7bb-t500x500.jpg",
+      plays: 80000000,
+      likes: 1200000,
+      reposts: 90000,
+      comments: 12000,
+    },
+  ],
+},
   "nourabosaif04": {
     displayName: "NourAbosaif04",
     avatar: "",
@@ -135,14 +156,41 @@ export const mockUserProfiles: Record<string, {
   },
 };
 
-export const mockUserFollowing: Record<string, typeof mockFollowing> = {
-  "travis-scott": mockFollowing,
-  "nourabosaif04": [],
-  "farah-medhat": [],
+export const mockUserFollowers: Record<string, typeof mockFollowers> = {
+  "farah-medhat": [
+    { username: "NourAbosaif04", displayName: "NourAbosaif04", followers: 3, avatar: "", isVerified: false },
+    { username: "Mariam Ramy", displayName: "Mariam Ramy", followers: 3, avatar: "", isVerified: false },
+    { username: "travis-scott", displayName: "Travis Scott", followers: 6150000, avatar: "https://i1.sndcdn.com/avatars-000049954431-e7s5e2-t500x500.jpg", isVerified: true },
+    { username: "Alyaa Mohamed", displayName: "Alyaa Mohamed", followers: 4, avatar: "", isVerified: false },
+    { username: "Rowida Ahmed", displayName: "Rowida Ahmed", followers: 4, avatar: "", isVerified: false },
+    { username: "Ahmed Ali", displayName: "Ahmed Ali", followers: 2, avatar: "", isVerified: false },
+    { username: "Sara Mohamed", displayName: "Sara Mohamed", followers: 1, avatar: "", isVerified: false },
+  ],
+  "nourabosaif04": [
+    { username: "farah-medhat", displayName: "Farah medhat", followers: 7, avatar: "", isVerified: false },
+    { username: "Mariam Ramy", displayName: "Mariam Ramy", followers: 3, avatar: "", isVerified: false },
+    { username: "travis-scott", displayName: "Travis Scott", followers: 6150000, avatar: "https://i1.sndcdn.com/avatars-000049954431-e7s5e2-t500x500.jpg", isVerified: true },
+  ],
+  "travis-scott": mockFollowers,
+  "mariam-ramy": [
+    { username: "NourAbosaif04", displayName: "NourAbosaif04", followers: 3, avatar: "", isVerified: false },
+    { username: "farah-medhat", displayName: "Farah medhat", followers: 7, avatar: "", isVerified: false },
+    { username: "travis-scott", displayName: "Travis Scott", followers: 6150000, avatar: "https://i1.sndcdn.com/avatars-000049954431-e7s5e2-t500x500.jpg", isVerified: true },
+  ],
 };
 
-export const mockUserFollowers: Record<string, typeof mockFollowers> = {
-  "travis-scott": mockFollowers,
-  "nourabosaif04": mockFollowers.slice(0, 1),
-  "farah-medhat": mockFollowers.slice(0, 2),
+export const mockUserFollowing: Record<string, typeof mockFollowing> = {
+  "farah-medhat": [
+    { username: "travis-scott", displayName: "Travis Scott", followers: 6150000, tracks: 174, avatar: "https://i1.sndcdn.com/avatars-000049954431-e7s5e2-t500x500.jpg", isVerified: true },
+    { username: "nourabosaif04", displayName: "NourAbosaif04", followers: 3000, tracks: 0, avatar: "", isVerified: false },
+    { username: "mariam-ramy", displayName: "Mariam Ramy", followers: 3, tracks: 0, avatar: "", isVerified: false },
+  ],
+  "nourabosaif04": [
+    { username: "travis-scott", displayName: "Travis Scott", followers: 6150000, tracks: 174, avatar: "https://i1.sndcdn.com/avatars-000049954431-e7s5e2-t500x500.jpg", isVerified: true },
+  ],
+  "travis-scott": mockFollowing,
+  "mariam-ramy": [
+    { username: "travis-scott", displayName: "Travis Scott", followers: 6150000, tracks: 174, avatar: "https://i1.sndcdn.com/avatars-000049954431-e7s5e2-t500x500.jpg", isVerified: true },
+    { username: "farah-medhat", displayName: "Farah medhat", followers: 7000, tracks: 0, avatar: "", isVerified: false },
+  ],
 };
