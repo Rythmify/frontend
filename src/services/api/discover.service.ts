@@ -4,7 +4,7 @@ import type { Mix } from "@/types/mix";
 
 // ─── Discover API functions ───────────────────────────────────────────────────
 
-/** GET /discover/recommended*/
+/** GET /discover/recommended */
 export const getRecommendedTracks = async (): Promise<Track[]> => {
   const res = await axiosInstance.get<{ data: Track[] }>(
     "/discover/recommended",
