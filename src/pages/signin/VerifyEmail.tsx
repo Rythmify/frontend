@@ -1,6 +1,6 @@
 import { SiGmail, SiProtonmail } from "react-icons/si";
 import { Mail } from "lucide-react";
-import Airplane from "../../components/SigninComponents/airplane";
+import Airplane from "../../components/SigninComponents/Airplane";
 
 interface Props {
   email: string;
@@ -31,7 +31,7 @@ export default function VerifyEmail({ email, onSendAgain, onBackToLogin }: Props
         </p>
         <p className="text-text-secondary text-sm">
           No email in your inbox or spam folder?{" "}
-          <button onClick={onSendAgain} className="text-text-link hover:text-text-link-hover">
+          <button data-test="btn-send-again" onClick={onSendAgain} className="text-text-link hover:text-text-link-hover">
             Send again
           </button>
         </p>
@@ -49,6 +49,7 @@ export default function VerifyEmail({ email, onSendAgain, onBackToLogin }: Props
       <div className="grid gap-4">
         {provider && (
           <a
+            data-test="btn-email-provider"
             href={provider.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -62,7 +63,7 @@ export default function VerifyEmail({ email, onSendAgain, onBackToLogin }: Props
          <div className="grid gap-2">
         <p className="text-text-secondary text-sm text-center">
           Wrong address?{" "}
-          <button onClick={onBackToLogin} className="text-text-link hover:text-text-link-hover">
+          <button data-test="btn-back-to-login" onClick={onBackToLogin} className="text-text-link hover:text-text-link-hover">
             Back to login
           </button>
         </p>

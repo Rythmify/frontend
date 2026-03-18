@@ -36,6 +36,7 @@ const HomePage = lazy(() => import("@/pages/home/HomePage"));
 
 // Signin
 const SigninPage = lazy(() => import("@/pages/signin/SigninPage"));
+const ResetPasswordPage = lazy(() => import("@/pages/signin/ResetPassword"));
 
 // Download
 const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
@@ -327,7 +328,13 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 8. Not Found
+  // 8. Reset Password 
+  {
+    path: "reset-password",
+    element: <Lazy component={ResetPasswordPage} />,
+  },
+
+  // 9. Not Found
   {
     path: "*",
     element: <Lazy component={NotFound} />,
