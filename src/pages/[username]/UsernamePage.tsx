@@ -71,12 +71,24 @@ export default function UsernamePage() {
   }, []);
   const { message, showUpload } = getEmptyState(selectedTab, isOwner);
   const profile = isOwner ? null : mockUserProfiles[username || ""];
-  const [likedTracks, setLikedTracks] = useState(
-    isOwner ? mockLikedTracks : (profile?.likedTracks ?? []),
-  );
+
+  const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
+    const stored = localStorage.getItem("likedTracks");
+    return stored
+      ? JSON.parse(stored)
+      : isOwner
+        ? mockLikedTracks
+        : (profile?.likedTracks ?? []);
+  });
 
   const handleUnlike = (id: string) => {
-    setLikedTracks((prev) => prev.filter((t) => t.id !== id));
+    setLikedTracks((prev: typeof mockLikedTracks) => {
+      const updated = prev.filter(
+        (t: (typeof mockLikedTracks)[0]) => t.id !== id,
+      );
+      localStorage.setItem("likedTracks", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const stats = isOwner
