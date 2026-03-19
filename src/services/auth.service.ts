@@ -1,7 +1,10 @@
-import axiosInstance from './api/axiosInstance';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+const EXISTING_EMAILS = ["test@test.com", "user@rythmify.com"];
 
+<<<<<<< HEAD
+export async function checkEmail(email: string): Promise<{ exists: boolean }> {
+  return { exists: EXISTING_EMAILS.includes(email.toLowerCase().trim()) };
+=======
 export type UserRole = 'artist' | 'listener' | 'admin';
 export type GenderType = 'male' | 'female';
 
@@ -211,4 +214,5 @@ export async function checkEmail(email: string): Promise<{ exists: boolean }> {
     // In real mode with no backend endpoint, fall back to "not found"
     return { exists: true };
   }
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 }

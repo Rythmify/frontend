@@ -36,8 +36,11 @@ const HomePage = lazy(() => import("@/pages/home/HomePage"));
 
 // Signin
 const SigninPage = lazy(() => import("@/pages/signin/SigninPage"));
+<<<<<<< HEAD
+=======
 const ResetPasswordPage = lazy(() => import("@/pages/signin/ResetPassword"));
 const VerifyEmailPage = lazy(() => import("@/pages/signin/VerifyEmailPage"));
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 
 // Download
 const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
@@ -91,7 +94,6 @@ const LikesPage = lazy(() => import("@/pages/you/likes/LikesPage"));
 const YouSetsPage = lazy(() => import("@/pages/you/sets/SetsPage"));
 const YouAlbumsPage = lazy(() => import("@/pages/you/albums/AlbumsPage"));
 const FollowingPage = lazy(() => import("@/pages/you/following/FollowingPage"));
-const FollowerPage = lazy(() => import("@/pages/you/follower/FollowerPage"));
 const HistoryPage = lazy(() => import("@/pages/you/history/HistoryPage"));
 const StationsPage = lazy(() => import("@/pages/you/stations/StationsPage"));
 const InsightsPage = lazy(() => import("@/pages/you/insights/InsightsPage"));
@@ -204,9 +206,12 @@ export const router = createBrowserRouter([
           { path: "albums", element: <Lazy component={UserAlbumsPage} /> },
           { path: "sets", element: <Lazy component={UserSetsPage} /> },
           { path: "reposts", element: <Lazy component={RepostsPage} /> },
+<<<<<<< HEAD
+=======
           { path: "follower", element: <Lazy component={FollowerPage} /> },
           { path: "following", element: <Lazy component={FollowingPage} /> },
           { path: "likes", element: <Lazy component={LikesPage} /> },
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
           {
             path: "popular-tracks",
             element: <Lazy component={PopularTracksPage} />,
@@ -252,7 +257,6 @@ export const router = createBrowserRouter([
                 path: "following",
                 element: <Lazy component={FollowingPage} />,
               },
-              { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "history", element: <Lazy component={HistoryPage} /> },
               { path: "stations", element: <Lazy component={StationsPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
@@ -334,6 +338,9 @@ export const router = createBrowserRouter([
     ],
   },
 
+<<<<<<< HEAD
+  // 8. Not Found
+=======
   // 8. Reset Password
   {
     path: "reset-password",
@@ -347,6 +354,7 @@ export const router = createBrowserRouter([
   },
 
   // 9. Not Found
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
   {
     path: "*",
     element: <Lazy component={NotFound} />,

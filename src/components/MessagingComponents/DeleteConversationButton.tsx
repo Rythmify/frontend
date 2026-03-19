@@ -1,0 +1,54 @@
+import { useState } from 'react';
+import DeleteConversationModal from './DeleteConversationModal';
+
+interface DeleteConversationButtonProps {
+  conversationId: string;
+  participantId: string;
+  onDeleted?: (conversationId: string) => void;
+}
+
+export default function DeleteConversationButton({
+  conversationId,
+  participantId,
+  onDeleted,
+}: DeleteConversationButtonProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setIsModalOpen(true)}
+        aria-label="Delete conversation"
+        className="inline-flex h-10 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#2a2a2a] text-red-400 transition-all hover:bg-[#3a1e1e] hover:text-red-400 active:scale-95"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+        </svg>
+      </button>
+
+      {isModalOpen && (
+        <DeleteConversationModal
+          conversationId={conversationId}
+          participantId={participantId}
+          onClose={() => setIsModalOpen(false)}
+          onDeleted={onDeleted}
+        />
+      )}
+    </>
+  );
+}

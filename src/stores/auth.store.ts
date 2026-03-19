@@ -10,14 +10,16 @@ export interface User {
   bio: string;
   email: string;
   avatar?: string;
-  coverUrl?: string;
   role: "listener" | "artist" | "admin";
   isPro: boolean;
+<<<<<<< HEAD
+=======
   city?: string;
   country?: string;
   location?: string;
   following_ids: string[];
   followers_ids?: string[];
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 }
 
 interface AuthStore {
