@@ -1,5 +1,5 @@
 import { useAuthStore } from "@/stores/auth.store";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import UploadGuestPage from "./UploadGuestPage";
 import UploadQuotaBar from "./UploadQuotaBar";
 import RecordSection from "./RecordSection";
@@ -7,6 +7,7 @@ import DropZone from "./DropZone";
 import UploadDetailsForm from "./UploadDetailsForm";
 import { useOutletContext } from "react-router-dom";
 import UploadFooter from "./UploadFooter";
+import UploadSuccessView from "./UploadSuccessView";
 
 export interface UploadFormHandle {
   triggerSubmit: () => void;
@@ -15,26 +16,66 @@ export interface UploadFormHandle {
 
 const UploadPage = () => {
   const { isAuthenticated } = useAuthStore();
-  const { isDetailsMode, setIsDetailsMode, setTrackName } =
-    useOutletContext<any>();
+  const { isDetailsMode, setIsDetailsMode, setTrackName } = useOutletContext<any>();
+  const [isSubmitting, setIsSubmitting] = useState(false); 
   const [audioData, setAudioData] = useState<File | Blob | null>(null);
+  const [uploadedTrackId, setUploadedTrackId] = useState<string | null>(null);
+  const [view, setView] = useState<"home" | "details" | "success">("home");
+  
   const formRef = useRef<UploadFormHandle>(null);
+
+  useEffect(() => {
+    if (view !== "success") {
+      setView(isDetailsMode ? "details" : "home");
+    }
+  }, [isDetailsMode, view]);
+
   if (!isAuthenticated) return <UploadGuestPage />;
 
   const handleFinishUpload = (data: File | Blob) => {
     setTrackName(data instanceof File ? data.name : "Recorded_Audio.wav");
-    setIsDetailsMode(true); // view the metadata form
-    setAudioData(data); //store recorded audio
+    setAudioData(data);
+    setIsDetailsMode(true);
+    setView("details");
+  };
+
+  const handleSuccess = (trackId: string) => {
+    setUploadedTrackId(trackId);
+    setIsSubmitting(false);
+    setView("success");
   };
 
   const handleSaveClick = () => {
-    formRef.current?.triggerSubmit();
+    if (formRef.current) {
+      formRef.current.triggerSubmit();
+    }
   };
 
+  if (view === "success") {
+    return (
+      <div className="fixed inset-0 bg-bg z-100 overflow-y-auto">
+        <nav className="flex items-center justify-between px-8 py-4 bg-bg sticky top-0 z-10">
+          <div className="flex items-center gap-4 text-white">
+            <i className="fa-brands fa-soundcloud text-3xl"></i>
+          </div>
+          <button
+            onClick={() => (window.location.href = "/")}
+            className="text-[#999] hover:text-white transition-colors p-2 cursor-pointer"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </nav>
+        <UploadSuccessView trackId={uploadedTrackId} />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="container text-left max-w-6xl antialiased">
-        {!isDetailsMode ? (
+    <div className="min-h-screen flex flex-col relative">
+      <div className="container text-left max-w-6xl antialiased pb-40">
+        {view === "home" ? (
           <>
             <div className="mb-8">
               <UploadQuotaBar />
@@ -47,14 +88,17 @@ const UploadPage = () => {
             ref={formRef}
             audioData={audioData}
             onCancel={() => setIsDetailsMode(false)}
+            onSuccess={handleSuccess}
+            setIsLoadingParent={setIsSubmitting}
           />
         )}
-        <UploadFooter
-          isDetailsMode={isDetailsMode}
-          onSave={handleSaveClick}
-          isLoading={formRef.current?.isUploading}
-        />
       </div>
+
+      <UploadFooter
+        isDetailsMode={view === "details"}
+        onSave={handleSaveClick}
+        isLoading={formRef.current?.isUploading}
+      />
     </div>
   );
 };

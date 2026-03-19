@@ -1,7 +1,6 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Modal from "@/components/UI/Modal";
-import UploadFooter from "@/pages/creator/upload/UploadFooter";
 
 const UploadLayout = () => {
   const navigate = useNavigate();
