@@ -1,44 +1,39 @@
-import { Link } from "react-router-dom";
-import { useState } from "react"
-import { Modal } from "../../../components/MessagingComponents/Modal";
-import ModalNewMessageBody from "./ModalNewMessageBody";  
-import MessagingHeader from '@/components/MessagingComponents/MessagingHeader';
-  
+import { useState } from 'react'
+import { Modal } from '@/components/MessagingComponents/Modal'
+import MessagingHeader from '@/components/MessagingComponents/MessagingHeader'
+import ModalNewMessageBody from './ModalNewMessageBody'
+
 const MessagesPage = () => {
-        const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div className="w-full py-6 ">
+    <div className="w-full py-6">
 
-      {/* Top Header */}
-      <div className="flex items-center justify-between pt-5 mb-10 w-0.5 gap-49 ">
-         <MessagingHeader/>
-        
-      </div>
+      <MessagingHeader />
 
       {/* Empty state */}
       <div className="container flex flex-col items-center justify-center flex-grow w-full text-center pt-43">
-        <p className="font-semibold text-white text-text text-s">
+        <p className="font-semibold text-white text-s">
           You have no messages
         </p>
 
-        <p className="mt-2 text-sm text-white text-text-muted">
+        <p className="mt-2 text-sm text-white">
           Send someone a message and make their day.
           <button
             onClick={() => setIsOpen(true)}
-            className="ml-1 text-[#699FFF] hover:underline text-#699FFF"
+            className="ml-1 text-[#699FFF] hover:underline"
           >
             Write one
           </button>
-
-                                                  {/*disclaimer*/ }
-                                                  {/* missing Modal here */}
-                                                  {/* missing Modal here */}
         </p>
       </div>
 
-    </div>
-  );
-};
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+        <ModalNewMessageBody onClose={() => setIsOpen(false)} />
+      </Modal>
 
-export default MessagesPage;
+    </div>
+  )
+}
+
+export default MessagesPage
