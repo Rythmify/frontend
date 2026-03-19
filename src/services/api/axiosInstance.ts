@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  withCredentials: true,
+  // withCredentials: true, // TODO: re-enable once backend fixes CORS to allow http://localhost:5173 with credentials
   headers: {
     'Content-Type': 'application/json',
   },

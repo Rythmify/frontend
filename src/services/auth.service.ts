@@ -14,6 +14,18 @@ export interface UserSummary {
   is_verified: boolean;
 }
 
+export interface UserProfile {
+  id: string;
+  username: string;
+  display_name: string;
+  email: string;
+  role: UserRole;
+  profile_picture?: string;
+  cover_photo?: string;
+  city?: string;
+  country?: string;
+}
+
 export interface AuthLoginResponseData {
   access_token: string;
   token_type: 'Bearer';
@@ -42,7 +54,7 @@ export interface RegisterPayload {
   captcha_token: string;
 }
 
-// ─── Token helpers ────────────────────────────────────────────────────────────
+// Token helpers 
 
 function saveToken(token: string) {
   localStorage.setItem('token', token);
@@ -52,7 +64,7 @@ function clearToken() {
   localStorage.removeItem('token');
 }
 
-// ─── Auth API functions ───────────────────────────────────────────────────────
+// Auth API functions 
 
 /** POST /auth/register */
 export async function register(payload: RegisterPayload) {
@@ -125,11 +137,20 @@ export async function forgotPassword(email: string) {
 }
 
 /** POST /auth/reset-password */
-export async function resetPassword(token: string, new_password: string) {
+export async function resetPassword(token: string, new_password: string, confirm_password: string, logout_all = true) {
   const res = await axiosInstance.post<{
     data: { success: boolean };
     message: string;
-  }>('/auth/reset-password', { token, new_password });
+  }>('/auth/reset-password', { token, new_password, confirm_password, logout_all });
+  return res.data;
+}
+
+/** POST /auth/verify-email-change */
+export async function verifyEmailChange(token: string) {
+  const res = await axiosInstance.post<{
+    data: { email: string };
+    message: string;
+  }>('/auth/verify-email-change', { token });
   return res.data;
 }
 
@@ -139,6 +160,15 @@ export async function changeEmail(new_email: string) {
     data: { success: boolean };
     message: string;
   }>('/auth/change-email', { new_email });
+  return res.data;
+}
+
+/** GET /users/me */
+export async function getMe() {
+  const res = await axiosInstance.get<{
+    data: UserProfile;
+    message: string;
+  }>('/users/me');
   return res.data;
 }
 
@@ -176,6 +206,6 @@ export async function checkEmail(email: string): Promise<{ exists: boolean }> {
     return res.data.data;
   } catch {
     // In real mode with no backend endpoint, fall back to "not found"
-    return { exists: false };
+    return { exists: true };
   }
 }

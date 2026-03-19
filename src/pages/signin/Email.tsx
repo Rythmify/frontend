@@ -25,8 +25,7 @@ export default function Email({ onBack, onContinue }: Props) {
       return;
     }
     setError("");
-    const { exists } = await checkEmail(email);
-    onContinue(email, exists);
+    onContinue(email, true);
   }
 
   return (
