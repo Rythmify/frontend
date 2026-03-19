@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import Footer from "./Footer";
 import Modal from "@/components/UI/Modal";
+import UploadFooter from "@/pages/creator/upload/UploadFooter";
 
 const UploadLayout = () => {
   const navigate = useNavigate();
@@ -86,7 +86,7 @@ const UploadLayout = () => {
           <div className="flex items-center justify-end gap-4">
             <button
               onClick={() => setShowQuitModal(false)}
-              className="text-white text-sm font-bold hover:opacity-70 transition-opacity"
+              className="text-text-upload text-sm font-bold hover:opacity-70 transition-opacity"
             >
               Back to upload
             </button>
@@ -95,7 +95,7 @@ const UploadLayout = () => {
                 setShowQuitModal(false);
                 navigate("/artists");
               }}
-              className="bg-[#EC5261] hover:bg-[#f78ca1] text-white text-sm font-bold px-6 py-2.5 rounded-full transition-colors"
+              className="bg-[#EC5261] hover:bg-[#f78ca1] text-text-upload text-sm font-bold px-6 py-2.5 rounded-full transition-colors"
             >
               Quit upload
             </button>
@@ -107,8 +107,6 @@ const UploadLayout = () => {
         {/* Pass states to UploadPage */}
         <Outlet context={{ isDetailsMode, setIsDetailsMode, setTrackName }} />
       </main>
-
-      <Footer />
     </div>
   );
 };

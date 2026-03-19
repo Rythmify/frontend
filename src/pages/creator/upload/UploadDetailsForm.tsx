@@ -64,7 +64,7 @@ const UploadDetailsForm = ({ audioData, onCancel, onSuccess }: Props) => {
   return (
     <div className="mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col lg:flex-row gap-12 items-start">
-        <UploadCoverImage />
+        <UploadCoverImage onImageSelect={(file) => setCoverFile(file)} />{" "}
         {/* Form Section for metadata */}
         <div className="flex-1 w-full space-y-8 text-xs text-text-upload">
           <div>

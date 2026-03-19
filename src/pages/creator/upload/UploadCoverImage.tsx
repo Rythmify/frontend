@@ -1,7 +1,11 @@
 import React from "react";
 import { useState, useRef } from "react";
 
-function UploadCoverImage() {
+interface UploadCoverImageProps {
+  onImageSelect: (file: File) => void;
+}
+
+function UploadCoverImage({ onImageSelect }: UploadCoverImageProps) {
   const [artwork, setArtwork] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -9,6 +13,7 @@ function UploadCoverImage() {
     const file = e.target.files?.[0];
     if (file) {
       setArtwork(URL.createObjectURL(file));
+      onImageSelect(file);
     }
   };
   return (
