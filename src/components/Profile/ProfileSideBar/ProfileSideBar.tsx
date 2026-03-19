@@ -42,6 +42,7 @@ interface ProfileSideBarProps {
   following?: FollowingUser[];
   followers?: FollowerUser[];
   onTabChange?: (tab: string) => void;
+  onUnlike?: (id: string) => void;
 }
 
 const formatCount = (n: number = 0) => {
@@ -60,6 +61,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   following = [],
   followers = [],
   onTabChange,
+  onUnlike,
 }) => {
   const navigate = useNavigate();
   const [bioExpanded, setBioExpanded] = useState(false);
@@ -151,7 +153,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 
       <div className="flex flex-col gap-4">
         {likedTracks.slice(0, 3).map((track) => (
-          <TrackItem key={track.id} {...track} />
+          <TrackItem key={track.id} {...track} onUnlike={onUnlike} />
         ))}
       </div>
 

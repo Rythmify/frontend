@@ -1,4 +1,8 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 interface TrackItemProps {
+  id: string;
   title: string;
   artist: string;
   coverUrl?: string;
@@ -6,9 +10,17 @@ interface TrackItemProps {
   likes?: number;
   reposts?: number;
   comments?: number;
+  onUnlike?: (id: string) => void;
 }
 
+const formatCount = (n: number) => {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return n.toString();
+};
+
 const TrackItem: React.FC<TrackItemProps> = ({
+  id,
   title,
   artist,
   coverUrl,
@@ -16,54 +28,146 @@ const TrackItem: React.FC<TrackItemProps> = ({
   likes,
   reposts,
   comments,
+  onUnlike,
 }) => {
+  const [hovered, setHovered] = useState(false);
+  const [liked, setLiked] = useState(true); // default true since it's in liked tracks
+  const [showMore, setShowMore] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLike = () => {
+    if (liked) {
+      setLiked(false);
+      onUnlike?.(id);
+    } else {
+      setLiked(true);
+    }
+  };
+
+  const trackSlug = title.toLowerCase().replace(/\s+/g, "-");
+
   return (
-    <div className="flex gap-3">
-      <div className="w-12 h-12 flex-shrink-0 bg-border rounded overflow-hidden">
+    <div
+      className="relative flex gap-3 group"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => {
+        setHovered(false);
+        setShowMore(false);
+      }}
+    >
+      {/* Cover */}
+      <div className="w-12 h-12 cursor-pointer flex-shrink-0 bg-border rounded overflow-hidden">
         {coverUrl ? (
           <img
             src={coverUrl}
             alt={title}
             className="w-full h-full object-cover"
+            onClick={() =>
+              navigate(
+                `/${artist.toLowerCase().replace(/\s+/g, "-")}/${trackSlug}`,
+              )
+            }
           />
         ) : (
           <div className="w-full h-full bg-border" />
         )}
       </div>
-      <div className="flex flex-col justify-center min-w-0">
-        <p className="text-xs font-semibold text-text-secondary text-left truncate">
+
+      {/* Info */}
+      <div className="flex flex-col justify-center min-w-0 flex-1">
+        <button
+          onClick={() =>
+            navigate(`/${artist.toLowerCase().replace(/\s+/g, "-")}`)
+          }
+          className="text-xs cursor-pointer font-semibold text-text-secondary text-left truncate "
+        >
           {artist}
-        </p>
-        <p className="text-sm font-semibold text-white text-left truncate">
+        </button>
+        <button
+          onClick={() =>
+            navigate(
+              `/${artist.toLowerCase().replace(/\s+/g, "-")}/${trackSlug}`,
+            )
+          }
+          className="text-sm cursor-pointer font-semibold text-white text-left truncate "
+        >
           {title}
-        </p>
-        <div className="flex items-center gap-2  text-xs text-text-secondary">
+        </button>
+        <div className="flex items-center gap-2 text-xs text-text-secondary">
           {plays !== undefined && (
-            <span className="flex items-center gap-1">
+            <span className="flex  items-center gap-1">
               <i className="fa-solid fa-play text-[10px]" />
-              {(plays / 1e6).toFixed(1)}M
+              {formatCount(plays)}
             </span>
           )}
           {likes !== undefined && (
-            <span className="flex items-center gap-1">
+            <span className="flex cursor-pointer items-center gap-1">
               <i className="fa-solid fa-heart text-[10px]" />
-              {(likes / 1e6).toFixed(2)}M
+              {formatCount(likes)}
             </span>
           )}
           {reposts !== undefined && (
-            <span className="flex items-center gap-1">
+            <span className="flex cursor-pointer items-center gap-1">
               <i className="fa-solid fa-retweet text-[10px]" />
-              {(reposts / 1000).toFixed(1)}K
+              {formatCount(reposts)}
             </span>
           )}
           {comments !== undefined && (
-            <span className="flex items-center gap-1">
+            <button
+              onClick={() =>
+                navigate(
+                  `/${artist.toLowerCase().replace(/\s+/g, "-")}/${trackSlug}`,
+                )
+              }
+              className="flex cursor-pointer items-center gap-1 "
+            >
               <i className="fa-solid fa-comment text-[10px]" />
               {comments.toLocaleString()}
-            </span>
+            </button>
           )}
         </div>
       </div>
+
+      {/* Like + More */}
+      {hovered && (
+        <div className="absolute right-0 top-1 flex items-center gap-2">
+          <button
+            onClick={handleLike}
+            className="w-9 h-8 cursor-pointer flex items-center justify-center rounded bg-zinc-700 hover:bg-zinc-600 transition-colors"
+          >
+            <i
+              className={`fa-heart text-sm ${liked ? "fa-solid text-red-500" : "fa-regular text-white"}`}
+            />
+          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowMore((p) => !p)}
+              className="w-9 cursor-pointer h-8 flex items-center justify-center rounded bg-zinc-700 hover:bg-zinc-600 text-white transition-colors"
+            >
+              <i className="fa-solid fa-ellipsis text-sm" />
+            </button>
+            {showMore && (
+              <div className="absolute right-0 top-10 z-50 bg-[#1a1a1a] border border-border rounded shadow-lg w-48 py-1">
+                {[
+                  { icon: "fa-retweet", label: "Repost" },
+                  { icon: "fa-arrow-up-from-bracket", label: "Share" },
+                  { icon: "fa-copy", label: "Copy Link" },
+                  { icon: "fa-list", label: "Add to Playlist" },
+                  { icon: "fa-tower-broadcast", label: "Station" },
+                ].map(({ icon, label }) => (
+                  <button
+                    key={label}
+                    className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                  >
+                    <i className={`fa-solid ${icon} text-xs w-4`} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

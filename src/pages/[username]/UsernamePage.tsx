@@ -71,7 +71,13 @@ export default function UsernamePage() {
   }, []);
   const { message, showUpload } = getEmptyState(selectedTab, isOwner);
   const profile = isOwner ? null : mockUserProfiles[username || ""];
-  const likedTracks = isOwner ? mockLikedTracks : (profile?.likedTracks ?? []);
+  const [likedTracks, setLikedTracks] = useState(
+    isOwner ? mockLikedTracks : (profile?.likedTracks ?? []),
+  );
+
+  const handleUnlike = (id: string) => {
+    setLikedTracks((prev) => prev.filter((t) => t.id !== id));
+  };
 
   const stats = isOwner
     ? {
@@ -150,6 +156,7 @@ export default function UsernamePage() {
             following={following}
             stats={stats}
             onTabChange={setSelectedTab}
+            onUnlike={handleUnlike}
           />
         </div>
       </div>
