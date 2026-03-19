@@ -174,7 +174,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   Profile URL <span className="text-red-500">*</span>
                 </label>
                 <div className="bg-[#333] rounded px-3 py-2 text-sm flex items-center gap-1">
-                  <span className="text-text-secondary">soundcloud.com/</span>
+                  <span className="text-text-secondary">Rythmify.com/</span>
                   <span className="text-white">{user.username}</span>
                 </div>
               </div>

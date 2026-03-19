@@ -71,11 +71,7 @@ export default function UsernamePage() {
   const { message, showUpload } = getEmptyState(selectedTab, isOwner);
   const profile = isOwner ? null : mockUserProfiles[username || ""];
   const likedTracks = isOwner ? mockLikedTracks : (profile?.likedTracks ?? []);
-  const following = isOwner
-    ? mockFollowing.filter((u) =>
-        currentUser?.following_ids?.includes(u.username),
-      )
-    : (mockUserFollowing[username || ""] ?? []);
+
   const stats = isOwner
     ? {
         followers: mockFollowers.length,
@@ -98,6 +94,21 @@ export default function UsernamePage() {
         coverUrl: profile?.coverUrl || "",
         location: profile?.location || "",
       };
+
+  const allMockUsers = Array.from(
+    new Map(
+      [
+        ...mockFollowing,
+        ...mockFollowers.map((u) => ({ ...u, tracks: 0 })),
+      ].map((u) => [u.username, u]),
+    ).values(),
+  );
+
+  const following = isOwner
+    ? allMockUsers.filter((u) =>
+        currentUser?.following_ids?.includes(u.username),
+      )
+    : (mockUserFollowing[username || ""] ?? []);
 
   return (
     <div className="container px-4 md:px-8 lg:px-20">

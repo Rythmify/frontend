@@ -188,11 +188,13 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-0.5">
                       <i className="fa-solid fa-user text-[10px]" />
-                      {user.followers >= 1e6
-                        ? `${(user.followers / 1e6).toFixed(1)}M`
-                        : `${(user.followers / 1000).toFixed(1)}K`}
+                      {user.followers >= 1_000_000
+                        ? `${(user.followers / 1_000_000).toFixed(1)}M`
+                        : user.followers >= 1_000
+                          ? `${(user.followers / 1_000).toFixed(1)}K`
+                          : user.followers}{" "}
                     </span>
                     {user.tracks !== undefined && user.tracks > 0 && (
                       <span className="flex items-center gap-1">

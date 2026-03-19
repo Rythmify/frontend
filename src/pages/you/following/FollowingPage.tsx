@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate } from "react-router-dom";
 import {
+  mockFollowers,
   mockFollowing,
   mockUserFollowing,
 } from "@/components/Profile/MockData/mock";
@@ -19,8 +20,16 @@ export default function FollowingPage() {
     ? currentUser
     : { username, displayName: username, avatar: "" };
 
-  const followingList = isOwner
-    ? mockFollowing.filter((u) =>
+
+
+  const allMockUsers = Array.from(
+    new Map(
+      [...mockFollowing, ...mockFollowers].map((u) => [u.username, u]),
+    ).values(),
+  );
+
+  const following = isOwner
+    ? allMockUsers.filter((u) =>
         currentUser?.following_ids?.includes(u.username),
       )
     : (mockUserFollowing[username || ""] ?? []);
@@ -79,7 +88,7 @@ export default function FollowingPage() {
 
       {/* Grid */}
       <div className="grid grid-cols-6 gap-6">
-        {followingList.map((u) => (
+        {following.map((u) => (
           <div
             key={u.username}
             className="flex flex-col  items-center gap-2 group"
@@ -131,7 +140,7 @@ export default function FollowingPage() {
         ))}
         {Array.from({
           length:
-            followingList.length % 6 === 0 ? 0 : 6 - (followingList.length % 6),
+            following.length % 6 === 0 ? 0 : 6 - (following.length % 6),
         }).map((_, i) => (
           <div
             key={`empty-${i}`}
