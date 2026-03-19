@@ -20,6 +20,7 @@ function UploadCoverImage({ onImageSelect }: UploadCoverImageProps) {
     <div className="flex flex-col items-center shrink-0">
       {/* Left: Artwork Upload Container */}
       <input
+        data-test="cover-image-input"
         type="file"
         ref={imageInputRef}
         className="hidden"
@@ -28,6 +29,7 @@ function UploadCoverImage({ onImageSelect }: UploadCoverImageProps) {
       />
 
       <button
+        data-test="cover-image-upload-button"
         type="button"
         onClick={() => imageInputRef.current?.click()}
         className="relative w-100 h-100 bg-transparent border border-dashed border-[#353535] flex flex-col items-center justify-center cursor-pointer rounded-sm transition-all group overflow-hidden"
