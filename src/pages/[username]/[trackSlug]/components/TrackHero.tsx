@@ -42,7 +42,7 @@ export default function TrackHero({
           minHeight: "380px",
       }}
     >
-      {/* ── Left / Main Section ── */}
+      {/* Left / Main Section */}
       <div className="flex-1 flex flex-col justify-between p-4 md:p-6 md:pb-4 min-w-0 z-10">
 
         {/* Top Row: Play Button + Title Block + Meta */}
@@ -64,7 +64,7 @@ export default function TrackHero({
           {/* Title Block — background fits content only, not full width */}
           <div className="inline-block px-3 py-2 md:px-4 md:py-3 rounded-sm max-w-[min(560px,100%)]">
 
-            {/* Title — wraps naturally, no truncation */}
+            {/* Title — wraps naturally */}
             <div className="bg-black px-3 pt-2">
                 <h1
               data-test="track-title"
@@ -135,7 +135,7 @@ export default function TrackHero({
           )}
         </div>
 
-        {/* ── Waveform + Comment Avatars ── */}
+        {/* Waveform + Comment Avatars (not yet) */}
         <div className="mt-6 md:mt-8 relative">
 
           {/* Waveform */}
@@ -171,7 +171,7 @@ export default function TrackHero({
         </div>
       </div>
 
-      {/* ── Right: Track Cover — hidden on mobile ── */}
+      {/* Right: Track Cover — hidden on mobile */}
       {track.coverUrl && (
         <div
           data-test="track-cover"
