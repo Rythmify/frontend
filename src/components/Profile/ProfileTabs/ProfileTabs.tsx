@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import FollowButton from "../../../components/Profile/FollowButton";
+import FollowButton from "../FollowButton/FollowButton";
 import { useNavigate } from "react-router-dom";
 
 interface TabButtonProps {

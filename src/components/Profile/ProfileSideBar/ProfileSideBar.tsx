@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import type { User } from "@/stores/auth.store";
 import TrackItem from "./TrackItem";
 import { useNavigate } from "react-router-dom";
-import FollowButton from "../../../components/Profile/FollowButton";
+import FollowButton from "../FollowButton/FollowButton";
 
 interface FollowingUser {
   username: string;

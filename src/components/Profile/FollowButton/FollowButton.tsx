@@ -14,7 +14,7 @@ export default function FollowButton({
 
   return (
     <button
-      data-test="follow-button"
+      data-test={`follow-button-${username}`}
       onClick={(e) => {
         e.stopPropagation();
         toggleFollow(username);

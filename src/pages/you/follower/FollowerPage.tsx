@@ -5,7 +5,7 @@ import {
   mockFollowers,
   mockUserFollowers,
 } from "@/components/Profile/MockData/mock";
-import FollowButton from "@/components/Profile/FollowButton";
+import FollowButton from "@/components/Profile/FollowButton/FollowButton";
 
 const tabs = ["Likes", "Following", "Followers"];
 
