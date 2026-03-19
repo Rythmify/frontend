@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import Modal from "@/components/UI/Modal";
+import { Modal } from "@/components/UI/Modal";
 
 const UploadLayout = () => {
   const navigate = useNavigate();
@@ -73,13 +73,13 @@ const UploadLayout = () => {
           </div>
         </div>
         <Modal isOpen={showQuitModal} onClose={() => setShowQuitModal(false)}>
-          <div className="flex items-left py-4">
-            <h2 className="text-text-upload text-xl font-bold mb-3">
+          <div className="flex items-left py-4 rounded-md w-130 h-10">
+            <h2 className="text-text-upload text-xl font-bold py-4">
               Are you sure you want to quit?
             </h2>
           </div>
           <div className="flex items-left py-5">
-            <p className="text-[#efefef] text-[16px] mb-8">
+            <p className="text-[#efefef] text-[16px] py-4 mt-4">
               Your changes will not be saved.
             </p>
           </div>
