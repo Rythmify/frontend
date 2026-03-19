@@ -14,7 +14,7 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const canSubmit = password.length >= 8 && confirm.length >= 8 && !loading;
+  const canSubmit = password.length >= 8 && confirm.length >= 8 && password === confirm && !loading;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,10 +25,10 @@ export default function ResetPassword() {
     setLoading(true);
     setError("");
     try {
-      await resetPassword(token!, password);
+      await resetPassword(token!, password, confirm, signOutEverywhere);
       setSuccess(true);
     } catch (err: any) {
-      setError(err?.message ?? "Something went wrong. Please try again.");
+      setError(err?.response?.data?.error?.message ?? "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -109,6 +109,9 @@ export default function ResetPassword() {
                 onKeyDown={(e) => e.key === "Enter" && canSubmit && handleSubmit(e as any)}
                 className="w-full bg-gray-100 border-0 rounded-sm px-3 py-3 text-gray-900 text-sm outline-none focus:ring-1 focus:ring-gray-400"
               />
+              {confirm && password !== confirm && (
+                <p className="text-red-500 text-xs mt-1">Passwords do not match.</p>
+              )}
               {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
             </div>
 

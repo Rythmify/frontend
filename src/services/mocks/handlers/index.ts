@@ -6,4 +6,5 @@ export const handlers = [
   ...trackHandlers, 
   ...authHandlers,
   ...messageHandlers,
+  ...trackHandlers
 ];
