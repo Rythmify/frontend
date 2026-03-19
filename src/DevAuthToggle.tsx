@@ -18,13 +18,16 @@ const DevAuthToggle = () => {
           email: "nour@test.com",
           role: "artist",
           isPro: false,
+<<<<<<< HEAD
+=======
           city: "Cairo",
           country: "Egypt",
           location: "Cairo, Egypt",
           following_ids: ["farah-medhat", "mariam-ramy"],
           followers_ids: ["farah-medhat", "mariam-ramy", "shahd-yehia"],
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
         },
-        "fake-token-123",
+        "fake-token-123"
       );
       window.location.href = "/";
     }

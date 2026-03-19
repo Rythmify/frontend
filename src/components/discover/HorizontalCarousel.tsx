@@ -13,8 +13,8 @@ const styles = {
     w-full
   `,
   title: `
-    text-white font-semibold
-    text-xl sm:text-2xl
+    text-white font-bold
+    text-base sm:text-lg
     text-left
   `,
   scrollWrapper: `
@@ -41,7 +41,7 @@ const styles = {
   right-6 translate-x-1/2
 `,
   scrollContainer: `
-  flex gap-8
+  flex gap-3
   overflow-x-auto
   scroll-smooth
   [&::-webkit-scrollbar]:hidden

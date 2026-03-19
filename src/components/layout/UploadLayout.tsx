@@ -1,3 +1,17 @@
+<<<<<<< HEAD
+import { Outlet } from "react-router-dom";
+import Footer from "./Footer";
+
+const UploadLayout = () => (
+  <div className="min-h-screen flex flex-col">
+    <header>
+      {/* Mariam---upload navbar design here */}
+    </header>
+
+    <main className="flex-1">
+      <Outlet />
+    </main>
+=======
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Modal } from "@/components/UI/Modal";
@@ -15,25 +29,15 @@ const UploadLayout = () => {
       navigate("/artists");
     }
   };
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 
-  return (
-    <div className="min-h-screen flex py-2.5 flex-col bg-bg transition-colors duration-300">
-      <header className="sticky top-0 z-50 bg-bg ">
-        <div className="w-full px-8 flex items-center justify-between h-11.5">
-          {/* Left side: Logo and page title */}
-          <div className="flex items-center gap-6">
-            <Link
-              to="/discover"
-              className="flex items-center text-4xl gap-2 hover:opacity-80 transition-opacity"
-            >
-              <i className="fa-brands fa-soundcloud text-text-hover" />
-            </Link>
-            {/*toggle between upload and details mode in the header*/}
-            <h6 className=" font-bold text-text-upload text-md tracking-wide">
-              {isDetailsMode ? "Track Info" : "Upload"}
-            </h6>
-          </div>
+    <Footer />
+  </div>
+);
 
+<<<<<<< HEAD
+export default UploadLayout;
+=======
           {/* Upload Status => Only visible in Details Mode */}
           <div className="flex items-center gap-4">
             {isDetailsMode && (
@@ -115,3 +119,4 @@ const UploadLayout = () => {
 };
 
 export default UploadLayout;
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
