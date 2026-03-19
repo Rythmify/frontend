@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import type { Track, TrackSummary } from "../../api/upload/track.service";
+import type { Track, TrackSummary } from "@/services/api/upload/track.service";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -71,7 +71,7 @@ export const trackHandlers = [
   http.get("*/tracks/me", () => {
     return HttpResponse.json({
       data: [mockTrackSummary],
-      pagination: { page: 1, limit: 20, total: 1 },
+      pagination: { page: 1, limit: 1, total: 1 },
     });
   }),
 
@@ -109,6 +109,29 @@ export const trackHandlers = [
     return HttpResponse.json({
       data: { success: true, id: track_id, is_public: body.is_public },
       message: "Track visibility updated.",
+    });
+  }),
+
+  http.get("*/subscriptions/me", () => {
+    return HttpResponse.json({
+      data: {
+        user_subscription_id: 1,
+        user_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        status: "active",
+        start_date: "2026-01-01",
+        end_date: null,
+        auto_renew: false,
+        created_at: "2026-01-01T00:00:00Z",
+        plan: {
+          subscription_plan_id: 1,
+          name: "free",
+          price: "0.00",
+          duration_days: null,
+          track_limit: 3,
+          playlist_limit: 2,
+        },
+      },
+      message: "Current subscription fetched successfully.",
     });
   }),
 ];

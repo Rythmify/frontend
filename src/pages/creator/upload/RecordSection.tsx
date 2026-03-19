@@ -42,6 +42,7 @@ const RecordSection = ({ onFinish }: { onFinish: (data: Blob) => void }) => {
 
         {/* Expand/ collapse button */}
         <button
+          data-test="record-section-toggle-button"
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-8 h-8 flex items-center justify-center bg-transparent rounded-full text-white cursor-pointer hover:bg-[#444] transition-colors z-10"
         >
