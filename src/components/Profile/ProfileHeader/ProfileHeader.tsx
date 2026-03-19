@@ -24,7 +24,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  // Avatar handlers
   const handleReplaceClick = () => {
     avatarInputRef.current?.click();
     setShowImageMenu(false);
@@ -34,7 +33,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const allowed = ["image/jpeg", "image/png", "image/webp"];
     if (!allowed.includes(file.type)) {
       alert("Only JPEG, PNG, or WebP images are allowed.");
@@ -44,7 +42,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       alert("Image must be under 5MB.");
       return;
     }
-
     const previewUrl = URL.createObjectURL(file);
     setLocalAvatar(previewUrl);
     setUser({ ...user, avatar: previewUrl });
@@ -57,11 +54,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     setHoveringAvatar(false);
   };
 
-  // Cover handlers
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const allowed = ["image/jpeg", "image/png", "image/webp"];
     if (!allowed.includes(file.type)) {
       alert("Only JPEG, PNG, or WebP images are allowed.");
@@ -71,7 +66,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       alert("Cover image must be under 10MB.");
       return;
     }
-
     const previewUrl = URL.createObjectURL(file);
     setLocalCover(previewUrl);
     setUser({ ...user, coverUrl: previewUrl });
@@ -79,8 +73,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   return (
     <div>
-      {/* Hidden file inputs */}
       <input
+        data-test="avatar-file-input"
         ref={avatarInputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
@@ -88,6 +82,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         onChange={handleAvatarChange}
       />
       <input
+        data-test="cover-file-input"
         ref={coverInputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
@@ -108,6 +103,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         {isOwner && (!localCover || hoveringCover) && (
           <div className="absolute top-8 right-6 z-10">
             <button
+              data-test="cover-update-button"
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -125,6 +121,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             {showCoverMenu && (
               <div className="absolute top-full right-0 mt-1 bg-black shadow-lg z-50 rounded">
                 <button
+                  data-test="cover-replace-button"
                   type="button"
                   onClick={() => {
                     coverInputRef.current?.click();
@@ -135,6 +132,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   Replace image
                 </button>
                 <button
+                  data-test="cover-delete-button"
                   type="button"
                   onClick={() => {
                     setLocalCover(undefined);
@@ -161,6 +159,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             >
               {localAvatar ? (
                 <img
+                  data-test="avatar-image"
                   src={localAvatar}
                   alt={username}
                   className="w-full h-full object-cover"
@@ -177,7 +176,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <div className="absolute inset-0 bg-black/50 flex items-end justify-center pb-8 rounded-full">
                   <div className="relative">
                     <button
-                      data-testid="update-image-button"
+                      data-test="avatar-update-button"
                       className={`cursor-pointer bg-black rounded text-sm hover:text-[#737272] font-semibold px-4 py-1.5 ${showImageMenu ? "text-accent" : "text-white"}`}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -197,14 +196,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                         }}
                       >
                         <button
-                          data-testid="replace-image-button"
+                          data-test="avatar-replace-button"
                           onClick={handleReplaceClick}
                           className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded"
                         >
                           Replace image
                         </button>
                         <button
-                          data-testid="delete-image-button"
+                          data-test="avatar-delete-button"
                           onClick={handleDeleteImage}
                           className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded"
                         >

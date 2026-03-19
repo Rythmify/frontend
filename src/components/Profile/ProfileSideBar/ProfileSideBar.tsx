@@ -76,6 +76,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       {/* Stats */}
       <div className="flex gap-13">
         <button
+          data-test="followers-stat"
           className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
           onClick={() => navigate(`/${user.username}/follower`)}
         >
@@ -88,6 +89,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </button>
 
         <button
+          data-test="following-stat"
           className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
           onClick={() => navigate(`/${user.username}/following`)}
         >
@@ -100,6 +102,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </button>
 
         <button
+          data-test="tracks-stat"
           className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
           onClick={() => onTabChange?.("Tracks")}
         >
@@ -112,14 +115,18 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </button>
       </div>
 
-      {/* Bio section */}
+      {/* Bio */}
       {bio.length > 0 && (
         <div className="flex flex-col gap-1 w-[320px]">
-          <p className="text-sm text-left text-white leading-relaxed">
+          <p
+            data-test="bio-text"
+            className="text-sm text-left text-white leading-relaxed"
+          >
             {displayedBio}
           </p>
           {isBioLong && (
             <button
+              data-test="bio-toggle"
               onClick={() => setBioExpanded((prev) => !prev)}
               className="text-sm font-bold text-white text-left hover:opacity-70 transition-opacity"
             >
@@ -141,7 +148,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               {likedTracks.length} LIKES
             </button>
             <button
-              data-test="view-all-button"
+              data-test="likes-view-all"
               onClick={() => navigate(`/${user.username}/likes`)}
               className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
             >
@@ -170,6 +177,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             Rythmify, and list existing events.
           </p>
           <button
+            data-test="upgrade-pro-button"
             onClick={() => navigate("/creator/checkout")}
             className="w-[320px] py-3 bg-white text-black font-semibold text-sm rounded-full hover:bg-gray-200 transition-colors"
           >
@@ -183,24 +191,25 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         <div className="flex flex-col gap-3 w-[320px]">
           <div className="flex items-center justify-between">
             <button
+              data-test="followers-label"
               onClick={() => navigate(`/${user.username}/follower`)}
               className="text-xs cursor-pointer font-bold text-white hover:opacity-70 transition-opacity"
             >
               {formatCount(stats.followers)} FOLLOWERS
             </button>
             <button
+              data-test="followers-view-all"
               onClick={() => navigate(`/${user.username}/follower`)}
               className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
             >
               View all
             </button>
           </div>
-
-          {/* Overlapping avatar row */}
           <div className="flex">
             {followers.slice(0, 10).map((follower, index) => (
               <button
                 key={follower.username}
+                data-test="follower-avatar"
                 onClick={() => navigate(`/${follower.username}`)}
                 className="w-12 h-12 rounded-full overflow-hidden bg-border flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
                 style={{ marginLeft: index === 0 ? 0 : "-8px", zIndex: index }}
@@ -221,17 +230,19 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       )}
 
-      {/* Following section */}
+      {/* Following */}
       {following.length > 0 && (
         <div className="flex flex-col gap-4 w-[320px]">
           <div className="flex items-center justify-between hover:opacity-70 transition-opacity">
             <button
+              data-test="following-label"
               onClick={() => navigate(`/${user.username}/following`)}
               className="text-xs cursor-pointer font-semibold text-white"
             >
               {following.length} FOLLOWING
             </button>
             <button
+              data-test="following-view-all"
               onClick={() => navigate(`/${user.username}/following`)}
               className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
             >
@@ -240,9 +251,14 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           </div>
 
           {following.slice(0, 3).map((u) => (
-            <div key={u.username} className="flex items-center justify-between">
+            <div
+              key={u.username}
+              data-test="following-item"
+              className="flex items-center justify-between"
+            >
               <div className="flex items-center gap-3">
                 <div
+                  data-test="following-avatar"
                   onClick={() => navigate(`/${u.username}`)}
                   className="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-border flex-shrink-0"
                 >
@@ -259,8 +275,9 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1">
                     <button
+                      data-test="following-username"
                       onClick={() => navigate(`/${u.username}`)}
-                      className=" cursor-pointer text-sm font-bold text-white hover:opacity-70 transition-opacity"
+                      className="cursor-pointer text-sm font-bold text-white hover:opacity-70 transition-opacity"
                     >
                       {u.username}
                     </button>
@@ -270,6 +287,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <button
+                      data-test="following-followers-count"
                       onClick={() => navigate(`/${u.username}/follower`)}
                       className="flex cursor-pointer items-center gap-0.5 hover:opacity-70 transition-opacity"
                     >
@@ -278,12 +296,13 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                         ? `${(u.followers / 1_000_000).toFixed(1)}M`
                         : u.followers >= 1_000
                           ? `${(u.followers / 1_000).toFixed(1)}K`
-                          : u.followers}{" "}
+                          : u.followers}
                     </button>
                     {u.tracks !== undefined && u.tracks > 0 && (
                       <button
+                        data-test="following-tracks-count"
                         onClick={() => navigate(`/${u.username}/tracks`)}
-                        className="cursor-pointer  flex items-center gap-1 hover:opacity-70 transition-opacity"
+                        className="cursor-pointer flex items-center gap-1 hover:opacity-70 transition-opacity"
                       >
                         <i className="fa-solid fa-bars text-[10px]" />
                         {u.tracks}
@@ -298,20 +317,26 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       )}
 
-      {/* Go Mobile section */}
+      {/* Go Mobile */}
       <div className="flex flex-col gap-3 w-[320px]">
         <span className="text-xs font-semibold text-left text-white">
           GO MOBILE
         </span>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70">
+          <button
+            data-test="app-store-button"
+            className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70"
+          >
             <i className="fa-brands fa-apple text-white text-xl" />
             <div className="flex flex-col items-start">
               <span className="text-[8px] text-white">Download on the</span>
               <span className="text-xs font-bold text-white">App Store</span>
             </div>
           </button>
-          <button className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70">
+          <button
+            data-test="google-play-button"
+            className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70"
+          >
             <i className="fa-brands fa-google-play text-white text-xl" />
             <div className="flex flex-col items-start">
               <span className="text-[8px] text-white">GET IT ON</span>
@@ -321,7 +346,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       </div>
 
-      {/* Footer links */}
+      {/* Footer */}
       <div className="flex flex-col gap-2 w-[320px]">
         <div className="flex flex-wrap gap-x-1 gap-y-1 text-xs text-text-secondary">
           {[
@@ -336,7 +361,10 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             "Transparency Reports",
           ].map((link, i, arr) => (
             <span key={link} className="flex items-center gap-1">
-              <button className="cursor-pointer hover:underline hover:text-text">
+              <button
+                data-test={`footer-${link.toLowerCase().replace(/\s+/g, "-")}`}
+                className="cursor-pointer hover:underline hover:text-text"
+              >
                 {link}
               </button>
               {i < arr.length - 1 && <span>·</span>}
@@ -345,7 +373,10 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
         <div className="text-xs text-left text-text-secondary">
           Language:{" "}
-          <button className="text-[#2196F3] hover:underline">
+          <button
+            data-test="language-button"
+            className="text-[#2196F3] hover:underline"
+          >
             English (US)
           </button>
         </div>

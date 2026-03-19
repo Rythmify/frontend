@@ -38,6 +38,7 @@ export default function LikesPage() {
     if (tab === "Following") navigate(`${base}/following`);
     if (tab === "Followers") navigate(`${base}/follower`);
   };
+
   const [showShare, setShowShare] = useState(false);
 
   return (
@@ -45,6 +46,7 @@ export default function LikesPage() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-3">
         <div
+          data-test="likes-user-avatar"
           className="w-25 h-25 rounded-full overflow-hidden bg-text-muted flex-shrink-0 cursor-pointer"
           onClick={() => navigate(`/${user.username}`)}
         >
@@ -58,7 +60,10 @@ export default function LikesPage() {
             <div className="w-full h-full bg-text-muted" />
           )}
         </div>
-        <h1 className="text-white text-2xl font-bold">
+        <h1
+          data-test="likes-page-title"
+          className="text-white text-2xl font-bold"
+        >
           Likes by {user.displayName || user.username}
         </h1>
       </div>
@@ -68,6 +73,7 @@ export default function LikesPage() {
         {tabs.map((tab) => (
           <button
             key={tab}
+            data-test={`likes-tab-${tab.toLowerCase()}`}
             onClick={() => handleTabChange(tab)}
             className={`pb-2 pt-3 px-1 text-sm font-bold cursor-pointer border-b-2 ${
               tab === "Likes"
@@ -82,12 +88,16 @@ export default function LikesPage() {
 
       {/* Description + Share */}
       <div className="flex items-center justify-between mb-6">
-        <p className="text-text-secondary text-sm">
+        <p
+          data-test="likes-description"
+          className="text-text-secondary text-sm"
+        >
           {isOwner
             ? "Hear the tracks you've liked"
             : `Hear the tracks ${user.displayName || user.username} has liked`}
         </p>
         <button
+          data-test="likes-share-button"
           onClick={() => setShowShare(true)}
           className="flex items-center gap-2 px-3 py-1.5 bg-input-bg text-white text-sm font-bold rounded hover:opacity-70"
         >
@@ -96,15 +106,17 @@ export default function LikesPage() {
         </button>
       </div>
 
-      {
-        <div className="flex items-center justify-center py-24">
-          <p className="text-white font-bold text-3xl">
-            {isOwner
-              ? "You have no likes yet."
-              : `${user.displayName || user.username} hasn't liked any tracks.`}
-          </p>
-        </div>
-      }
+      {/* Empty state */}
+      <div className="flex items-center justify-center py-24">
+        <p
+          data-test="likes-empty-state"
+          className="text-white font-bold text-3xl"
+        >
+          {isOwner
+            ? "You have no likes yet."
+            : `${user.displayName || user.username} hasn't liked any tracks.`}
+        </p>
+      </div>
 
       {/* Footer */}
       <div className="mt-16 flex flex-col gap-8">
@@ -121,7 +133,10 @@ export default function LikesPage() {
             "Transparency Reports",
           ].map((link, i, arr) => (
             <span key={link} className="flex items-center gap-1">
-              <button className="cursor-pointer hover:underline hover:text-text">
+              <button
+                data-test={`footer-link-${link.toLowerCase().replace(/\s+/g, "-")}`}
+                className="cursor-pointer hover:underline hover:text-text"
+              >
                 {link}
               </button>
               {i < arr.length - 1 && <span>·</span>}
@@ -130,7 +145,10 @@ export default function LikesPage() {
         </div>
         <div className="text-xs text-left text-bg-inverted">
           Language:{" "}
-          <button className="text-[#2196F3] cursor-pointer hover:underline">
+          <button
+            data-test="language-selector"
+            className="text-[#2196F3] cursor-pointer hover:underline"
+          >
             English (US)
           </button>
         </div>
