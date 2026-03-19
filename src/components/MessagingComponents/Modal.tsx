@@ -21,11 +21,12 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 
   return (
     <div
+      data-test="modal-backdrop"
       className="fixed inset-0 z-50 flex   bg-[white]/40 flex-col "
       onClick={onClose}   // clicking backdrop closes it
     >
 <div className="relative mt-10 mr-10">
-  <button className="bg-[#303030]  w-10 h-10 rounded-full absolute top-0 right-0 flex items-center justify-center " onClick={onClose}>
+  <button data-test="modal-close-button" className="bg-[#303030]  w-10 h-10 rounded-full absolute top-0 right-0 flex items-center justify-center " onClick={onClose}>
   <svg
   color="white"
     viewBox="0 0 16 16"

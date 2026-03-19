@@ -50,7 +50,7 @@ export function Chats({
 
   // ── List ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col overflow-y-auto">
+    <div data-test="chat-list" className="flex flex-col overflow-y-auto">
       {conversations.map(conv => (
         <ChatProfile
           key={conv.id}

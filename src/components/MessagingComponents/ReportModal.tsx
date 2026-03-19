@@ -17,14 +17,15 @@ export function ReportModal({
     onSpamSelected?.()
   }
   return (
-    <div className="font-sans text-white select-none w-135">
+    <div data-test="report-account-modal" className="font-sans text-white select-none w-135">
       <h2 className="mb-5 text-xl font-bold tracking-tight">
         Report account for
       </h2>
       <ul className="ml-5 space-y-1 mb-15">
         <li>
           <button
-           onClick= {handleSpam}
+            data-test="report-spam-button"
+            onClick={handleSpam}
             className="text-sm font-semibold text-[#557EC8] hover:underline"
           >
             Spam
@@ -32,6 +33,7 @@ export function ReportModal({
         </li>
         <li>
           <button
+            data-test="report-impersonation-button"
             onClick={handleExternalImpersonation}
             className="text-sm font-semibold text-[#557EC8] hover:underline"
           >
@@ -40,6 +42,7 @@ export function ReportModal({
         </li>
         <li>
           <button
+            data-test="report-abuse-button"
             onClick={handleExternalAbuse}
             className="text-sm font-semibold text-[#557EC8] hover:underline"
           >
@@ -48,6 +51,7 @@ export function ReportModal({
         </li>
         <li>
           <button
+            data-test="report-trademark-button"
             onClick={handleExternalTrademark}
             className="text-sm font-semibold text-[#557EC8] hover:underline"
           >
@@ -56,6 +60,7 @@ export function ReportModal({
         </li>
         <li>
           <button
+            data-test="report-other-button"
             onClick={handleExternalOther}
             className="text-sm font-semibold text-[#557EC8] hover:underline"
           >

@@ -2,7 +2,7 @@ import React from 'react'
 
 const ConversationPage = () => {
   return (
-    <div>ConversationPage</div>
+    <div data-test="conversation-page">ConversationPage</div>
   )
 }
 

@@ -37,8 +37,8 @@ export function SpamModal({
     }
   }
   return (
-    <div className="font-sans text-white select-none w-130">
-      <h2 className="mb-5 tracking-tight font-etrabold text-[22px]">
+    <div data-test="spam-report-modal" className="font-sans text-white select-none w-130">
+      <h2 className="mb-5 tracking-tight font-etrabold text-[22px]" data-test="spam-report-title">
         Report Spam
       </h2>
 
@@ -58,6 +58,7 @@ export function SpamModal({
 
       <div className="flex justify-end gap-3">
         <button
+          data-test="spam-cancel-button"
           onClick={onClose}
           disabled={loading}
           className="px-5 py-2 text-sm font-semibold bg-[#333] hover:text-[#838383] text-white transition-colors rounded-sm disabled:opacity-50"
@@ -65,6 +66,7 @@ export function SpamModal({
           Cancel
         </button>
         <button
+          data-test="spam-report-button"
           onClick={handleReport}
           disabled={loading}
           className="px-5 py-2 text-sm font-bold text-black transition-colors bg-white rounded-sm hover:text-gray-400 disabled:opacity-50"

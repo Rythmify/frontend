@@ -57,11 +57,12 @@ export function MessageBox({ onIsEmptyChange, onEmbedResolved }: MessageInputPro
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div data-test="message-box" className="flex flex-col gap-1">
       {title && (
-        <p className="text-xs font-semibold text-[#f50] truncate">{title}</p>
+        <p data-test="message-box-title" className="text-xs font-semibold text-[#f50] truncate">{title}</p>
       )}
       <textarea
+      data-test="message-input"
       value={value}
       onChange={handleChange}
       rows={4}

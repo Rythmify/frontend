@@ -1,31 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
-import { searchFollowing, type FollowingUser } from '@/services/api/messaging/conversationApi'
+import { useState, useRef } from 'react'
+import { MessageBox } from '@/components/MessagingComponents/MessageBox'
+import { RecipientInputBox, type RecipientResult } from '@/components/MessagingComponents/RecipientInputBox'
 
 const ModalNewMessageBody = () => {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<FollowingUser[]>([])
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [selected, setSelected] = useState<FollowingUser|null>(null)
-  const [message, setMessage] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults([])
-      setShowDropdown(false)
-      return
-    }
+  const [query, setQuery]       = useState('')
+  const [selected, setSelected] = useState<RecipientResult | null>(null)
+  const [message, setMessage]   = useState('')
+  const inputRef                = useRef<HTMLInputElement>(null)
 
-    const t = setTimeout(async () => {
-      const res = await searchFollowing(query.trim(), 10, 0)
-      setResults(res.data.items)
-      setShowDropdown(res.data.items.length > 0)
-    }, 150)
+  const { results, showDropdown, notFound, setShowDropdown } = RecipientInputBox(query)
 
-    return () => clearTimeout(t)
-  }, [query])
-
-  const handleSelect = (user: FollowingUser) => {
+  const handleSelect = (user: RecipientResult) => {
     setSelected(user)
     setQuery(user.display_name)
     setShowDropdown(false)
@@ -61,8 +46,9 @@ const ModalNewMessageBody = () => {
           To <span className="text-red-500">*</span>
         </label>
 
-         <div className="relative mb-4">  
+        <div className="relative mb-4">
           <input
+            data-test="recipient-input"
             ref={inputRef}
             autoFocus
             value={query}
@@ -70,6 +56,11 @@ const ModalNewMessageBody = () => {
             onFocus={() => { if (results.length > 0) setShowDropdown(true) }}
             className="msg-input w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded px-3 py-2 text-white transition-colors duration-150"
           />
+
+          {/* Not found error */}
+          {notFound && query.trim() && !selected && (
+            <p className="mt-1 text-sm text-red-500">SoundCloud user not found.</p>
+          )}
 
           {showDropdown && (
             <div className="absolute z-10 w-auto mt-1 bg-[#1a1a1a] border border-[#3a3a3a] rounded shadow-lg max-h-52 overflow-y-auto ml-5">
@@ -93,10 +84,9 @@ const ModalNewMessageBody = () => {
                       </div>
                     )}
                   </div>
-                  
-                    <div className="text-sm font-bold text-grey-300 hover:text-white">
-                     {user.display_name}
-                    </div>
+                  <div className="text-sm font-bold text-grey-300 hover:text-white">
+                    {user.display_name}
+                  </div>
                 </button>
               ))}
             </div>
@@ -107,15 +97,15 @@ const ModalNewMessageBody = () => {
           Write your message and add tracks or playlists{" "}
           <span className="text-red-500">*</span>
         </label>
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={5}
-          className="msg-input w-full bg-[#2a2a2a] border border-[#3a3a3a] rounded px-3 py-2 text-white resize-y transition-colors duration-150"
+
+        <MessageBox
+          onIsEmptyChange={(isEmpty) => console.log("Message box is empty:", isEmpty)}
+          onEmbedResolved={(embed) => console.log("Resolved embed:", embed)}
         />
 
         <div className="flex justify-end mt-4">
           <button
+            data-test="send-message-button"
             onClick={handleSend}
             disabled={!selected || !message.trim()}
             className="px-3 py-1 text-sm font-extrabold text-black bg-white rounded disabled:opacity-40 disabled:cursor-not-allowed"

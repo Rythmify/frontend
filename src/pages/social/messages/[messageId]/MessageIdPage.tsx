@@ -30,7 +30,7 @@ export default function MessageIdPage() {
   }, [])
 
   return (
-    <div className="container flex px-4 py-6 md:px-8 lg:px-20">
+    <div data-test="message-id-page" className="container flex px-4 py-6 md:px-8 lg:px-20">
       <div className="flex flex-col gap-4">
         <MessagingHeader />
         <Chats
@@ -44,6 +44,7 @@ export default function MessageIdPage() {
       <ConversationHeader />
 
       <button
+        data-test="open-report-modal-button"
         className="p-2 text-sm font-bold text-black border bg-text-hover rounded-[5px] w-14 hover:text-grey-300"
         onClick={() => setActiveModal('report')}
       >

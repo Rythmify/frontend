@@ -48,7 +48,7 @@ export function BlockUserModal({
   }
 
   return (
-    <div className="font-sans text-white select-none w-130">
+    <div data-test="block-user-modal" className="font-sans text-white select-none w-130">
       <h2 className="mb-5 text-xl font-bold tracking-tight">
         Block {username}
       </h2>
@@ -85,6 +85,7 @@ export function BlockUserModal({
 
       <div className="flex justify-end gap-3">
         <button
+          data-test="block-cancel-button"
           onClick={onClose}
           disabled={loading}
           className="px-5 py-2 text-sm font-semibold bg-[#333] hover:bg-[#444] text-white transition-colors rounded-sm disabled:opacity-50"
@@ -92,6 +93,7 @@ export function BlockUserModal({
           Cancel
         </button>
         <button
+          data-test="block-user-button"
           onClick={() => {handleBlock();
               onClose?.();
           }

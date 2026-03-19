@@ -20,6 +20,7 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
 
   return (
     <div
+      data-test={`chat-profile-${conversation.id}`}
       onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded-sm  ${
         isActive ? 'bg-black' : 'hover:bg-[#303030]'
