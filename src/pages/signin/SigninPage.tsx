@@ -60,12 +60,17 @@ function SigninFlow() {
               id: me.data.id,
               username: me.data.username,
               displayName: me.data.display_name,
+              firstName: me.data.first_name,
+              lastName: me.data.last_name,
+              bio: me.data.bio,
               email: me.data.email,
               role: me.data.role,
               isPro: false,
               avatar: me.data.profile_picture,
               coverUrl: me.data.cover_photo,
-              location: me.data.city ?? me.data.country,
+              city: me.data.city,
+              country: me.data.country,
+              following_ids: [],
             }, res.data.access_token);
             navigate("/discover");
           } catch (err: any) {
