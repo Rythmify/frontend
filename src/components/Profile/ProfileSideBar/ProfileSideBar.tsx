@@ -240,7 +240,10 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           {following.slice(0, 3).map((u) => (
             <div key={u.username} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-border flex-shrink-0">
+                <div
+                  onClick={() => navigate(`/${u.username}`)}
+                  className="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-border flex-shrink-0"
+                >
                   {u.avatar ? (
                     <img
                       src={u.avatar}
@@ -253,27 +256,36 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1">
-                    <span className="text-sm font-bold text-white">
+                    <button
+                      onClick={() => navigate(`/${u.username}`)}
+                      className=" cursor-pointer text-sm font-bold text-white hover:opacity-70 transition-opacity"
+                    >
                       {u.username}
-                    </span>
+                    </button>
                     {u.isVerified && (
                       <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
-                    <span className="flex items-center gap-0.5">
+                    <button
+                      onClick={() => navigate(`/${u.username}/follower`)}
+                      className="flex cursor-pointer items-center gap-0.5 hover:opacity-70 transition-opacity"
+                    >
                       <i className="fa-solid fa-user text-[10px]" />
                       {u.followers >= 1_000_000
                         ? `${(u.followers / 1_000_000).toFixed(1)}M`
                         : u.followers >= 1_000
                           ? `${(u.followers / 1_000).toFixed(1)}K`
                           : u.followers}{" "}
-                    </span>
+                    </button>
                     {u.tracks !== undefined && u.tracks > 0 && (
-                      <span className="flex items-center gap-1">
+                      <button
+                        onClick={() => navigate(`/${u.username}/tracks`)}
+                        className="cursor-pointer  flex items-center gap-1 hover:opacity-70 transition-opacity"
+                      >
                         <i className="fa-solid fa-bars text-[10px]" />
                         {u.tracks}
-                      </span>
+                      </button>
                     )}
                   </div>
                 </div>
