@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
+import { Outlet, useNavigate, useLocation, useParams } from "react-router-dom";
 import ProfileHeader from "../../components/Profile/ProfileHeader/ProfileHeader";
 import ProfileTabs from "../../components/Profile/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
   mockLikedTracks,
   mockUserFollowing,
@@ -14,9 +14,12 @@ import {
   mockFollowers,
   mockUserProfiles,
 } from "@/components/Profile/MockData/mock";
-import { useParams } from "react-router-dom";
 
-export default function UsernamePage() {
+export type UsernameLayoutContext = {
+  isOwner: boolean;
+};
+
+export default function UsernameLayout() {
   const { username } = useParams();
   const { user: currentUser, setUser } = useAuthStore();
   const [showShare, setShowShare] = useState(false);
@@ -147,20 +150,8 @@ export default function UsernamePage() {
       />
 
       <div className="flex gap-6 py-6 items-start">
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
-          <p className="text-white font-bold text-17px">
-            Seems a little quiet over here
-          </p>
-          {isOwner &&
-            selectedTab !== "Playlists" &&
-            selectedTab !== "Reposts" && (
-              <button
-                onClick={() => navigate("/upload")}
-                className="cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
-              >
-                Upload now
-              </button>
-            )}
+        <div className="flex-1">
+          <Outlet context={{ isOwner } satisfies UsernameLayoutContext} />
         </div>
         <div>
           <ProfileSidebar
