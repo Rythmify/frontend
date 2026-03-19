@@ -1,7 +1,11 @@
 import React from "react";
 import { useState, useRef } from "react";
 
-function UploadCoverImage() {
+interface UploadCoverImageProps {
+  onImageSelect: (file: File) => void;
+}
+
+function UploadCoverImage({ onImageSelect }: UploadCoverImageProps) {
   const [artwork, setArtwork] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -9,12 +13,14 @@ function UploadCoverImage() {
     const file = e.target.files?.[0];
     if (file) {
       setArtwork(URL.createObjectURL(file));
+      onImageSelect(file);
     }
   };
   return (
     <div className="flex flex-col items-center shrink-0">
       {/* Left: Artwork Upload Container */}
       <input
+        data-test="cover-image-input"
         type="file"
         ref={imageInputRef}
         className="hidden"
@@ -23,6 +29,7 @@ function UploadCoverImage() {
       />
 
       <button
+        data-test="cover-image-upload-button"
         type="button"
         onClick={() => imageInputRef.current?.click()}
         className="relative w-100 h-100 bg-transparent border border-dashed border-[#353535] flex flex-col items-center justify-center cursor-pointer rounded-sm transition-all group overflow-hidden"

@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { Outlet, useNavigate, useLocation, useParams } from "react-router-dom";
 import ProfileHeader from "../../components/Profile/ProfileHeader/ProfileHeader";
 import ProfileTabs from "../../components/Profile/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
-import { useNavigate, useLocation } from "react-router-dom";
 import {
   mockLikedTracks,
   mockUserFollowing,
@@ -14,9 +14,12 @@ import {
   mockFollowers,
   mockUserProfiles,
 } from "@/components/Profile/MockData/mock";
-import { useParams } from "react-router-dom";
 
-export default function UsernamePage() {
+export type UsernameLayoutContext = {
+  isOwner: boolean;
+};
+
+export default function UsernameLayout() {
   const { username } = useParams();
   const { user: currentUser, setUser } = useAuthStore();
   const [showShare, setShowShare] = useState(false);
@@ -51,16 +54,10 @@ export default function UsernamePage() {
   };
 
   const selectedTab = getActiveTab();
-  const profile = isOwner ? null : mockUserProfiles[username || ""];
-  const storageKey = `likedTracks_${isOwner ? currentUser.username : username}`;
 
-  const initiallyFollowing = useRef(
-    currentUser?.following_ids?.includes(username || "") ?? false,
-  );
-  const isFollowing =
-    currentUser?.following_ids?.includes(username || "") ?? false;
-  const followerDelta =
-    isFollowing === initiallyFollowing.current ? 0 : isFollowing ? 1 : -1;
+  const profile = isOwner ? null : mockUserProfiles[username || ""];
+
+  const storageKey = `likedTracks_${isOwner ? currentUser.username : username}`;
 
   const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
     const stored = localStorage.getItem(storageKey);
@@ -102,7 +99,7 @@ export default function UsernamePage() {
         tracks: 0,
       }
     : {
-        followers: (profile?.followers ?? 0) + followerDelta,
+        followers: profile?.followers ?? 0,
         following: profile?.following ?? 0,
         tracks: profile?.tracks ?? 0,
       };
@@ -150,30 +147,11 @@ export default function UsernamePage() {
         onTabChange={handleTabChange}
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
-        username={user.username}
-        displayName={user.displayName}
-        tracks={stats.tracks ?? 0}
       />
 
       <div className="flex gap-6 py-6 items-start">
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
-          <p
-            data-test="empty-state-message"
-            className="text-white font-bold text-17px"
-          >
-            Seems a little quiet over here
-          </p>
-          {isOwner &&
-            selectedTab !== "Playlists" &&
-            selectedTab !== "Reposts" && (
-              <button
-                data-test="upload-now-button"
-                onClick={() => navigate("/upload")}
-                className="cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
-              >
-                Upload now
-              </button>
-            )}
+        <div className="flex-1">
+          <Outlet context={{ isOwner } satisfies UsernameLayoutContext} />
         </div>
         <div>
           <ProfileSidebar

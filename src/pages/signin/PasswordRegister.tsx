@@ -15,13 +15,22 @@ export default function PasswordRegister({ email, onBack, onContinue }: Props) {
 
   const floated = focused || password.length > 0;
 
+  const rules = [
+    { label: "At least 8 characters", valid: password.length >= 8 },
+    { label: "At least one uppercase letter", valid: /[A-Z]/.test(password) },
+    { label: "At least one lowercase letter", valid: /[a-z]/.test(password) },
+    { label: "At least one number", valid: /[0-9]/.test(password) },
+  ];
+
+  const passwordValid = rules.every((r) => r.valid);
+
   function handleContinue() {
     if (!password) {
       setError("Please choose a password.");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (!passwordValid) {
+      setError("Password does not meet the requirements.");
       return;
     }
     setError("");
@@ -57,7 +66,7 @@ export default function PasswordRegister({ email, onBack, onContinue }: Props) {
                     : "top-1/2 -translate-y-1/2 text-md text-text-muted"
                 }`}
               >
-                Choose a password (min. 8 characters)
+                Choose a password
               </label>
               <input
                 data-test="input-password"
@@ -83,6 +92,15 @@ export default function PasswordRegister({ email, onBack, onContinue }: Props) {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          {password.length > 0 && (
+            <ul className="grid gap-1 mt-1">
+              {rules.map((r) => (
+                <li key={r.label} className={`text-xs flex items-center gap-1.5 ${r.valid ? "text-green-500" : "text-text-secondary"}`}>
+                  <span>{r.valid ? "✓" : "✗"}</span> {r.label}
+                </li>
+              ))}
+            </ul>
+          )}
           {error && <p className="text-red-500 text-sm">{error}</p>}
         </div>
 
