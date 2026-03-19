@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
+import FollowButton from "../../../components/Profile/FollowButton";
+import { useNavigate } from "react-router-dom";
 
 interface TabButtonProps {
   children: React.ReactNode;
@@ -10,10 +12,10 @@ function TabButton({ children, onSelect, isSelected }: TabButtonProps) {
   return (
     <button
       onClick={onSelect}
-      className={` cursor-pointer pb-2.5 pt-3 px-1.5 text-sm transition-colors border-b-[2px] ${
+      className={`cursor-pointer pb-2.5 pt-3 px-1.5 text-sm transition-colors border-b-[2px] ${
         isSelected
           ? "text-white font-bold border-white"
-          : "font-semibold border-transparent text-[#858687]  hover:text-white"
+          : "font-semibold border-transparent text-[#858687] hover:text-white"
       }`}
     >
       {children}
@@ -36,6 +38,9 @@ interface ProfileTabsProps {
   selectedTab?: string;
   onShare?: () => void;
   onEdit?: () => void;
+  username?: string;
+  displayName?: string;
+  tracks?: number;
 }
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({
@@ -44,10 +49,16 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   selectedTab = "All",
   onShare,
   onEdit,
+  username = "",
+  displayName = "",
+  tracks = 0,
 }) => {
+  const [showMore, setShowMore] = useState(false);
+  const navigate = useNavigate();
+
   return (
-    <div className=" flex  justify-between px-0.5 ">
-      <div className="flex items-center gap-3 ">
+    <div className="flex justify-between px-0.5 relative">
+      <div className="flex items-center gap-3">
         {tabs.map((tab) => (
           <TabButton
             key={tab.label}
@@ -59,22 +70,67 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
         ))}
       </div>
 
-      {isOwner && (
+      {isOwner ? (
         <div className="flex items-center gap-3">
           <button
             onClick={onShare}
-            className=" cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030]  rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
+            className="cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
           >
             <i className="fa-solid fa-arrow-up-from-bracket" />
             Share
           </button>
           <button
             onClick={onEdit}
-            className="cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030]  rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
+            className="cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
           >
             <i className="fa-solid fa-pencil" />
             Edit
           </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          {tracks > 0 && (
+            <button className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors">
+              <i className="fa-solid fa-tower-broadcast" />
+              Station
+            </button>
+          )}
+
+          <FollowButton username={username} />
+
+          <button
+            onClick={onShare}
+            className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
+          >
+            <i className="fa-solid fa-arrow-up-from-bracket" />
+            Share
+          </button>
+
+          <button className="cursor-pointer flex items-center justify-center w-9 h-9 bg-[#313030] rounded text-white hover:text-[#737272] transition-colors">
+            <i className="fa-solid fa-envelope" />
+          </button>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowMore((p) => !p)}
+              className="cursor-pointer flex items-center justify-center w-9 h-9 bg-[#313030] rounded text-white hover:text-[#737272] transition-colors"
+            >
+              <i className="fa-solid fa-ellipsis" />
+            </button>
+
+            {showMore && (
+              <div className="absolute right-0 top-11 z-50 bg-[#1a1a1a] border border-border rounded shadow-lg w-52 py-1">
+                <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors">
+                  <i className="fa-solid fa-ban text-xs w-4" />
+                  Block {displayName || username}
+                </button>
+                <button className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors">
+                  <i className="fa-solid fa-circle-exclamation text-xs w-4" />
+                  Report {displayName || username}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

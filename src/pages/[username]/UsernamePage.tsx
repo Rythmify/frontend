@@ -144,6 +144,7 @@ export default function UsernamePage() {
         onTabChange={handleTabChange}
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
+        tracks={stats.tracks ?? 0}
       />
 
       <div className="flex gap-6 py-6 items-start">
