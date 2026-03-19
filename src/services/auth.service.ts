@@ -18,6 +18,9 @@ export interface UserProfile {
   id: string;
   username: string;
   display_name: string;
+  first_name: string;
+  last_name: string;
+  bio: string;
   email: string;
   role: UserRole;
   profile_picture?: string;
