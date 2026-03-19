@@ -225,7 +225,7 @@ type ReportScenario =
   | 'rate_limited';
 
 export const mockConfig = {
-  conversations: 'empty' as MockScenario,
+  conversations: 'success' as MockScenario,
   conversationDetail: 'success' as MockScenario,
   block: 'success' as BlockScenario,
   report: 'success' as ReportScenario,

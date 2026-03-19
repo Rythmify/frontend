@@ -102,7 +102,7 @@ export function RecipientInputBox({ onSelect, onClear, error }: RecipientInputBo
     : 'border-[#3a3a3a] focus:border-white'
 
   return (
-    <div className="relative">
+    <div data-test="recipient-input-box" className="relative">
       <input
         data-test="recipient-input"
         ref={inputRef}
@@ -121,9 +121,10 @@ export function RecipientInputBox({ onSelect, onClear, error }: RecipientInputBo
       )}
 
       {showDropdown && (
-        <div className="absolute z-10 w-full mt-1 bg-[#1a1a1a] border border-[#3a3a3a] rounded shadow-lg max-h-52 overflow-y-auto">
+        <div data-test="recipient-dropdown" className="absolute z-10 w-full mt-1 bg-[#1a1a1a] border border-[#3a3a3a] rounded shadow-lg max-h-52 overflow-y-auto">
           {results.map((user) => (
             <button
+              data-test={`recipient-dropdown-item-${user.id}`}
               key={user.id}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleSelect(user)}
