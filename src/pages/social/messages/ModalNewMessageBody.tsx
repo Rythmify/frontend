@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { MessageBox } from '@/components/MessagingComponents/MessageBox'
-import { RecipientInputBox, type RecipientResult } from '@/components/MessagingComponents/RecipientInputBox'
+import { useRecipientSearch, type RecipientResult } from '@/components/MessagingComponents/RecipientInputBox'
 
 const ModalNewMessageBody = () => {
   const [query, setQuery]       = useState('')
@@ -8,7 +8,7 @@ const ModalNewMessageBody = () => {
   const [message, setMessage]   = useState('')
   const inputRef                = useRef<HTMLInputElement>(null)
 
-  const { results, showDropdown, notFound, setShowDropdown } = RecipientInputBox(query)
+  const { results, showDropdown, notFound, setShowDropdown } = useRecipientSearch(query)
 
   const handleSelect = (user: RecipientResult) => {
     setSelected(user)
