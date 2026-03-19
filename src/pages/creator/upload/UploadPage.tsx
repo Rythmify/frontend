@@ -16,8 +16,10 @@ export interface UploadFormHandle {
 
 const UploadPage = () => {
   const { isAuthenticated } = useAuthStore();
-  const { isDetailsMode, setIsDetailsMode, setTrackName } =
-    useOutletContext<any>();
+  const context = useOutletContext<{ isDetailsMode: boolean }>() || {
+    isDetailsMode: false,
+  };
+  const { isDetailsMode } = context;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [audioData, setAudioData] = useState<File | Blob | null>(null);
   const [uploadedTrackId, setUploadedTrackId] = useState<string | null>(null);
