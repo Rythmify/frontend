@@ -65,41 +65,40 @@ describe("ProfileTabs", () => {
 
   it("highlights the selected tab", () => {
     render(<ProfileTabs {...defaultOwnerProps} selectedTab="Tracks" />);
-    const tracksTab = screen.getByTestId("tab-Tracks");
+    const tracksTab = screen.getByTestId("tab-tracks");
     expect(tracksTab).toHaveClass("text-white");
   });
 
   it("calls onTabChange when a tab is clicked", () => {
     const onTabChange = vi.fn();
     render(<ProfileTabs {...defaultOwnerProps} onTabChange={onTabChange} />);
-    fireEvent.click(screen.getByTestId("tab-Tracks"));
+    fireEvent.click(screen.getByTestId("tab-tracks"));
     expect(onTabChange).toHaveBeenCalledWith("Tracks");
   });
 
   it("shows Share and Edit buttons for owner", () => {
     render(<ProfileTabs {...defaultOwnerProps} />);
-    expect(screen.getByTestId("owner-share-button")).toBeInTheDocument();
-    expect(screen.getByTestId("owner-edit-button")).toBeInTheDocument();
+    expect(screen.getByTestId("share-button")).toBeInTheDocument();
+    expect(screen.getByTestId("edit-button")).toBeInTheDocument();
   });
 
   it("calls onShare when Share is clicked (owner)", () => {
     const onShare = vi.fn();
     render(<ProfileTabs {...defaultOwnerProps} onShare={onShare} />);
-    fireEvent.click(screen.getByTestId("owner-share-button"));
+    fireEvent.click(screen.getByTestId("share-button"));
     expect(onShare).toHaveBeenCalled();
   });
 
   it("calls onEdit when Edit is clicked (owner)", () => {
     const onEdit = vi.fn();
     render(<ProfileTabs {...defaultOwnerProps} onEdit={onEdit} />);
-    fireEvent.click(screen.getByTestId("owner-edit-button"));
+    fireEvent.click(screen.getByTestId("edit-button"));
     expect(onEdit).toHaveBeenCalled();
   });
 
   it("does not show Share/Edit for non-owner", () => {
     render(<ProfileTabs {...defaultVisitorProps} />);
-    expect(screen.queryByTestId("owner-share-button")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("owner-edit-button")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("edit-button")).not.toBeInTheDocument();
   });
 
   it("shows Station button when tracks > 0 for non-owner", () => {
@@ -121,13 +120,13 @@ describe("ProfileTabs", () => {
 
   it("shows Share button for non-owner", () => {
     render(<ProfileTabs {...defaultVisitorProps} />);
-    expect(screen.getByTestId("visitor-share-button")).toBeInTheDocument();
+    expect(screen.getByTestId("share-button")).toBeInTheDocument();
   });
 
   it("calls onShare when Share is clicked (visitor)", () => {
     const onShare = vi.fn();
     render(<ProfileTabs {...defaultVisitorProps} onShare={onShare} />);
-    fireEvent.click(screen.getByTestId("visitor-share-button"));
+    fireEvent.click(screen.getByTestId("share-button"));
     expect(onShare).toHaveBeenCalled();
   });
 

@@ -97,7 +97,7 @@ describe("ProfileSideBar", () => {
   it("shows LIKES count and View all button", () => {
     render(<ProfileSideBar {...defaultProps} />);
     expect(screen.getByTestId("likes-button")).toHaveTextContent("2 LIKES");
-    expect(screen.getByTestId("view-all-button")).toBeInTheDocument();
+    expect(screen.getByTestId("likes-view-all")).toBeInTheDocument();
   });
 
   it("navigates to likes page on likes button click", () => {
@@ -108,14 +108,14 @@ describe("ProfileSideBar", () => {
 
   it("navigates to likes page on view all click", () => {
     render(<ProfileSideBar {...defaultProps} />);
-    fireEvent.click(screen.getByTestId("view-all-button"));
+    fireEvent.click(screen.getByTestId("likes-view-all"));
     expect(mockNavigate).toHaveBeenCalledWith("/testuser/likes");
   });
 
   it("shows ON TOUR section for owner", () => {
     render(<ProfileSideBar {...defaultProps} isOwner={true} />);
     expect(screen.getByText("ON TOUR")).toBeInTheDocument();
-    expect(screen.getByText("Upgrade to Artist Pro")).toBeInTheDocument();
+    expect(screen.getByTestId("upgrade-pro-button")).toBeInTheDocument();
   });
 
   it("hides ON TOUR section for non-owner", () => {
@@ -166,26 +166,26 @@ describe("ProfileSideBar", () => {
 
   it("navigates to follower page when followers stat is clicked", () => {
     render(<ProfileSideBar {...defaultProps} />);
-    fireEvent.click(screen.getByText("Followers").closest("button")!);
+    fireEvent.click(screen.getByTestId("followers-stat"));
     expect(mockNavigate).toHaveBeenCalledWith("/testuser/follower");
   });
 
   it("navigates to following page when following stat is clicked", () => {
     render(<ProfileSideBar {...defaultProps} />);
-    fireEvent.click(screen.getByText("Following").closest("button")!);
+    fireEvent.click(screen.getByTestId("following-stat"));
     expect(mockNavigate).toHaveBeenCalledWith("/testuser/following");
   });
 
   it("calls onTabChange with 'Tracks' when tracks stat is clicked", () => {
     const onTabChange = vi.fn();
     render(<ProfileSideBar {...defaultProps} onTabChange={onTabChange} />);
-    fireEvent.click(screen.getByText("Tracks").closest("button")!);
+    fireEvent.click(screen.getByTestId("tracks-stat"));
     expect(onTabChange).toHaveBeenCalledWith("Tracks");
   });
 
   it("navigates to checkout on Upgrade to Artist Pro click", () => {
     render(<ProfileSideBar {...defaultProps} isOwner={true} />);
-    fireEvent.click(screen.getByText("Upgrade to Artist Pro"));
+    fireEvent.click(screen.getByTestId("upgrade-pro-button"));
     expect(mockNavigate).toHaveBeenCalledWith("/creator/checkout");
   });
 });

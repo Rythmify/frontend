@@ -48,61 +48,53 @@ describe("TrackItem", () => {
 
   it("shows like and more buttons on hover", () => {
     render(<TrackItem {...defaultProps} />);
-    const container = screen.getByText("SICKO MODE").closest(".relative");
-    fireEvent.mouseEnter(container!);
-    expect(screen.getByText("")).toBeDefined(); // heart icon appears
-    const buttons = screen.getAllByRole("button");
-    expect(buttons.length).toBeGreaterThan(2);
+    const container = screen.getByTestId("track-item-1");
+    fireEvent.mouseEnter(container);
+    expect(screen.getByTestId("track-like-button-1")).toBeInTheDocument();
+    expect(screen.getByTestId("track-more-button-1")).toBeInTheDocument();
   });
 
   it("hides like and more buttons on mouse leave", () => {
     render(<TrackItem {...defaultProps} />);
-    const container = screen.getByText("SICKO MODE").closest(".relative");
-    fireEvent.mouseEnter(container!);
-    fireEvent.mouseLeave(container!);
-    // after leave, no heart/ellipsis button in hover area
-    const heartButtons = screen.queryAllByRole("button");
-    // only artist, title, comments buttons remain (no hover buttons)
-    expect(heartButtons.length).toBeLessThanOrEqual(3);
+    const container = screen.getByTestId("track-item-1");
+    fireEvent.mouseEnter(container);
+    fireEvent.mouseLeave(container);
+    expect(screen.queryByTestId("track-like-button-1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("track-more-button-1")).not.toBeInTheDocument();
   });
 
   it("calls onUnlike when heart is clicked while liked", () => {
     const onUnlike = vi.fn();
     render(<TrackItem {...defaultProps} onUnlike={onUnlike} />);
-    const container = screen.getByText("SICKO MODE").closest(".relative");
-    fireEvent.mouseEnter(container!);
-    // find the heart button (first button in hover area)
-    const allButtons = screen.getAllByRole("button");
-    const heartButton = allButtons.find((b) => b.querySelector(".fa-heart"));
-    fireEvent.click(heartButton!);
+    const container = screen.getByTestId("track-item-1");
+    fireEvent.mouseEnter(container);
+    fireEvent.click(screen.getByTestId("track-like-button-1"));
     expect(onUnlike).toHaveBeenCalledWith("1");
   });
 
   it("navigates to artist page when artist name is clicked", () => {
     render(<TrackItem {...defaultProps} />);
-    fireEvent.click(screen.getByText("Travis Scott"));
+    fireEvent.click(screen.getByTestId("track-artist-1"));
     expect(mockNavigate).toHaveBeenCalledWith("/travis-scott");
   });
 
   it("navigates to track page when title is clicked", () => {
     render(<TrackItem {...defaultProps} />);
-    fireEvent.click(screen.getByText("SICKO MODE"));
+    fireEvent.click(screen.getByTestId("track-title-1"));
     expect(mockNavigate).toHaveBeenCalledWith("/travis-scott/sicko-mode");
   });
 
   it("navigates to track page when comments is clicked", () => {
     render(<TrackItem {...defaultProps} />);
-    fireEvent.click(screen.getByText("15,000"));
+    fireEvent.click(screen.getByTestId("track-comments-1"));
     expect(mockNavigate).toHaveBeenCalledWith("/travis-scott/sicko-mode");
   });
 
   it("shows more menu when ellipsis button is clicked", () => {
     render(<TrackItem {...defaultProps} />);
-    const container = screen.getByText("SICKO MODE").closest(".relative");
-    fireEvent.mouseEnter(container!);
-    const allButtons = screen.getAllByRole("button");
-    const moreButton = allButtons.find((b) => b.querySelector(".fa-ellipsis"));
-    fireEvent.click(moreButton!);
+    const container = screen.getByTestId("track-item-1");
+    fireEvent.mouseEnter(container);
+    fireEvent.click(screen.getByTestId("track-more-button-1"));
     expect(screen.getByText("Repost")).toBeInTheDocument();
     expect(screen.getByText("Share")).toBeInTheDocument();
     expect(screen.getByText("Copy Link")).toBeInTheDocument();
