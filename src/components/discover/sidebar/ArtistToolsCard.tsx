@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 
 // ─── Types ────────────────────────────────────────────────
 interface ArtistTool {
@@ -178,6 +179,7 @@ const styles = {
 // ─── Component ────────────────────────────────────────────
 const ArtistToolsCard = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const navigate = useNavigate();
 
   return (
     <div className={styles.wrapper} data-test="section-artist-tools">
@@ -198,6 +200,7 @@ const ArtistToolsCard = () => {
             key={tool.id}
             className={styles.toolButton}
             data-test={`button-tool-${tool.label.toLowerCase()}`}
+            onClick={() => navigate("/creator/checkout")}
           >
             <svg
               aria-label="Paywalled feature"
@@ -240,6 +243,7 @@ const ArtistToolsCard = () => {
                 key={tool.id}
                 className={styles.toolButton}
                 data-test={`button-tool-${tool.label.toLowerCase().replace(" ", "-")}`}
+                onClick={() => navigate("/creator/checkout")}
               >
                 <svg
                   aria-label="Paywalled feature"
@@ -280,7 +284,11 @@ const ArtistToolsCard = () => {
           </div>
         </>
       )}
-      <button className={styles.ctaButton} data-test="button-artist-tools-cta">
+      <button
+        className={styles.ctaButton}
+        data-test="button-artist-tools-cta"
+        onClick={() => navigate("/creator/checkout")}
+      >
         <i className="fa-solid fa-circle-plus text-sm"></i>
         <span>Unlock Artist tools from EGP 29.99/month.</span>
       </button>
