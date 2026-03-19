@@ -8,6 +8,7 @@ import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../mocks/users";
 import { getTrackBySlug, getRelatedTracks } from "../../../services/mocks/Track.service";
 import { getUsers } from "../../../services/mocks/User.service";
+import { usePlayerStore } from "../../../stores/player.store";
 
 export default function TrackSlugPage() {
   const { username = "samo-lotfy", trackSlug = "msh-awl-mara" } = useParams<{
@@ -21,8 +22,11 @@ export default function TrackSlugPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [currentTrackId, setCurrentTrackId] = useState<number | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { setTrack: setPlayerTrack, currentTrack, isPlaying } = usePlayerStore();
+
+  // The hero always shows the currently playing track if one exists,
+  // otherwise falls back to the page's track
+  const heroTrack = currentTrack ?? track;
 
   // Fetch all data 
   useEffect(() => {
@@ -40,12 +44,11 @@ export default function TrackSlugPage() {
         if (cancelled) return;
 
         setTrack(fetchedTrack);
-        setCurrentTrackId(fetchedTrack.id);
-        setFeaturedArtists(fetchedUsers.slice(0, 3));
+        setFeaturedArtists(Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : []);
 
         // Fetch related tracks after we have the track id
         const related = await getRelatedTracks(fetchedTrack.id);
-        if (!cancelled) setRelatedTracks(related);
+        if (!cancelled) setRelatedTracks(Array.isArray(related) ? related : []);
       } catch (err) {
         if (!cancelled) setError("Failed to load track. Please try again.");
         console.error(err);
@@ -60,17 +63,19 @@ export default function TrackSlugPage() {
 
   // Playback handlers 
   const handleHeroPlayPause = () => {
-    if (!track) return;
-    setIsPlaying((p) => !p);
-    setCurrentTrackId(track.id);
+    if (!heroTrack) return;
+    if (currentTrack?.id === heroTrack.id) {
+      usePlayerStore.getState().togglePlay();
+    } else {
+      setPlayerTrack(heroTrack, [heroTrack, ...relatedTracks]);
+    }
   };
 
   const handleTrackPlay = (t: Track) => {
-    if (currentTrackId === t.id) {
-      setIsPlaying((p) => !p);
+    if (currentTrack?.id === t.id) {
+      usePlayerStore.getState().togglePlay();
     } else {
-      setCurrentTrackId(t.id);
-      setIsPlaying(true);
+      setPlayerTrack(t, [track!, ...relatedTracks].filter(Boolean) as Track[]);
     }
   };
 
@@ -125,13 +130,15 @@ export default function TrackSlugPage() {
       data-test="track-slug-page"
       className="flex-1 container px-4 md:px-8 lg:px-20"
     >
-      {/* Hero  */}
-      <TrackHero
-        track={track}
-        comments={[]}
-        isPlaying={isPlaying && currentTrackId === track.id}
-        onPlayPause={handleHeroPlayPause}
-      />
+      {/* Hero — always shows the currently playing track */}
+      {heroTrack && (
+        <TrackHero
+          track={heroTrack}
+          comments={[]}
+          isPlaying={currentTrack?.id === heroTrack.id && isPlaying}
+          onPlayPause={handleHeroPlayPause}
+        />
+      )}
 
       {/* Body — two columns */}
       <div className="flex flex-col lg:flex-row gap-8 py-2 w-full">
@@ -139,8 +146,8 @@ export default function TrackSlugPage() {
         {/* Left: actions + track list */}
         <div data-test="track-main-content" className="flex-1 min-w-0">
           <TrackActions
-            track={track}
-            onAddToNextUp={() => {}}
+            track={heroTrack ?? track}
+            onAddToNextUp={() => usePlayerStore.getState().addToQueue(track)}
             onComment={(text) => console.log("New comment:", text)}
           />
           <div className="mt-6">
@@ -149,7 +156,7 @@ export default function TrackSlugPage() {
             </h2>
             <TrackList
               tracks={relatedTracks}
-              currentTrackId={currentTrackId ?? undefined}
+              currentTrackId={currentTrack?.id}
               isPlaying={isPlaying}
               onTrackPlay={handleTrackPlay}
             />
@@ -162,7 +169,7 @@ export default function TrackSlugPage() {
           className="w-full lg:w-[280px] shrink-0 lg:pt-[12px]"
         >
           <TrackSidebar
-            track={track}
+            track={heroTrack ?? track}
             featuredArtists={featuredArtists}
           />
         </div>
