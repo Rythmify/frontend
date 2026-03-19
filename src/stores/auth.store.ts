@@ -17,6 +17,7 @@ export interface User {
   country?: string;
   location?: string;
   following_ids: string[];
+  followers_ids?: string[];
 }
 
 interface AuthStore {

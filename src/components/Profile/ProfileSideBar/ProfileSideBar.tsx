@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type { User } from "@/stores/auth.store";
 import TrackItem from "./TrackItem";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +10,11 @@ interface FollowingUser {
   tracks?: number;
   avatar?: string;
   isVerified?: boolean;
+}
+
+interface FollowerUser {
+  username: string;
+  avatar?: string;
 }
 
 interface LikedTracks {
@@ -35,6 +40,7 @@ interface ProfileSideBarProps {
   };
   likedTracks?: LikedTracks[];
   following?: FollowingUser[];
+  followers?: FollowerUser[];
   onTabChange?: (tab: string) => void;
 }
 
@@ -44,17 +50,28 @@ const formatCount = (n: number = 0) => {
   return n.toString();
 };
 
+const BIO_CHAR_LIMIT = 140;
+
 const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   user,
   isOwner = false,
   stats = { followers: 0, following: 0, tracks: 0 },
   likedTracks = [],
   following = [],
+  followers = [],
   onTabChange,
 }) => {
   const navigate = useNavigate();
+  const [bioExpanded, setBioExpanded] = useState(false);
+
+  const bio = user.bio ?? "";
+  const isBioLong = bio.length > BIO_CHAR_LIMIT;
+  const displayedBio =
+    isBioLong && !bioExpanded ? bio.slice(0, BIO_CHAR_LIMIT) + "…" : bio;
+
   return (
-    <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1 ">
+    <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1">
+      {/* Stats */}
       <div className="flex gap-13">
         <button
           className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
@@ -93,27 +110,43 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </button>
       </div>
 
+      {/* Bio section */}
+      {bio.length > 0 && (
+        <div className="flex flex-col gap-1 w-[320px]">
+          <p className="text-sm text-left text-white leading-relaxed">
+            {displayedBio}
+          </p>
+          {isBioLong && (
+            <button
+              onClick={() => setBioExpanded((prev) => !prev)}
+              className="text-sm font-bold text-white text-left hover:opacity-70 transition-opacity"
+            >
+              {bioExpanded ? "Show less" : "Show more"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Liked tracks */}
       {likedTracks.length > 0 && (
-        <>
-          <div>
-            <div className="flex items-center justify-between  w-full hover:opacity-70 transition-opacity ">
-              <button
-                data-test="likes-button"
-                onClick={() => navigate(`/${user.username}/likes`)}
-                className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
-              >
-                {likedTracks.length} LIKES
-              </button>
-              <button
-                data-test="view-all-button"
-                onClick={() => navigate(`/${user.username}/likes`)}
-                className="  text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
-              >
-                View all
-              </button>
-            </div>
+        <div>
+          <div className="flex items-center justify-between w-full hover:opacity-70 transition-opacity">
+            <button
+              data-test="likes-button"
+              onClick={() => navigate(`/${user.username}/likes`)}
+              className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
+            >
+              {likedTracks.length} LIKES
+            </button>
+            <button
+              data-test="view-all-button"
+              onClick={() => navigate(`/${user.username}/likes`)}
+              className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
+            >
+              View all
+            </button>
           </div>
-        </>
+        </div>
       )}
 
       <div className="flex flex-col gap-4">
@@ -122,27 +155,70 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         ))}
       </div>
 
+      {/* ON TOUR */}
       {isOwner && (
-        <div className="flex flex-col gap-2  ">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <i className="fa-solid fa-ticket text-text-secondary" />
             <span className="text-xs font-bold text-white">ON TOUR</span>
             <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
           </div>
-
           <p className="text-xs text-left text-white border-t pt-4 border-white w-[320px]">
             With an Artist Pro account, you can create ticketed live events on
             Rythmify, and list existing events.
           </p>
-
           <button
             onClick={() => navigate("/creator/checkout")}
-            className="w-[320px] py-3 bg-white text-black font-semibold  text-sm rounded-full hover:bg-gray-200 transition-colors"
+            className="w-[320px] py-3 bg-white text-black font-semibold text-sm rounded-full hover:bg-gray-200 transition-colors"
           >
             Upgrade to Artist Pro
           </button>
         </div>
       )}
+
+      {/* Followers */}
+      {!isOwner && followers.length > 0 && (
+        <div className="flex flex-col gap-3 w-[320px]">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate(`/${user.username}/follower`)}
+              className="text-xs cursor-pointer font-bold text-white hover:opacity-70 transition-opacity"
+            >
+              {formatCount(stats.followers)} FOLLOWERS
+            </button>
+            <button
+              onClick={() => navigate(`/${user.username}/follower`)}
+              className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
+            >
+              View all
+            </button>
+          </div>
+
+          {/* Overlapping avatar row */}
+          <div className="flex">
+            {followers.slice(0, 10).map((follower, index) => (
+              <button
+                key={follower.username}
+                onClick={() => navigate(`/${follower.username}`)}
+                className="w-12 h-12 rounded-full overflow-hidden bg-border flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
+                style={{ marginLeft: index === 0 ? 0 : "-8px", zIndex: index }}
+                title={follower.username}
+              >
+                {follower.avatar ? (
+                  <img
+                    src={follower.avatar}
+                    alt={follower.username}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-border" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Following section */}
       {following.length > 0 && (
         <div className="flex flex-col gap-4 w-[320px]">
@@ -161,17 +237,14 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             </button>
           </div>
 
-          {following.slice(0, 3).map((user) => (
-            <div
-              key={user.username}
-              className="flex items-center justify-between"
-            >
+          {following.slice(0, 3).map((u) => (
+            <div key={u.username} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-border flex-shrink-0">
-                  {user.avatar ? (
+                  {u.avatar ? (
                     <img
-                      src={user.avatar}
-                      alt={user.username}
+                      src={u.avatar}
+                      alt={u.username}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -181,31 +254,31 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1">
                     <span className="text-sm font-bold text-white">
-                      {user.username}
+                      {u.username}
                     </span>
-                    {user.isVerified && (
+                    {u.isVerified && (
                       <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <span className="flex items-center gap-0.5">
                       <i className="fa-solid fa-user text-[10px]" />
-                      {user.followers >= 1_000_000
-                        ? `${(user.followers / 1_000_000).toFixed(1)}M`
-                        : user.followers >= 1_000
-                          ? `${(user.followers / 1_000).toFixed(1)}K`
-                          : user.followers}{" "}
+                      {u.followers >= 1_000_000
+                        ? `${(u.followers / 1_000_000).toFixed(1)}M`
+                        : u.followers >= 1_000
+                          ? `${(u.followers / 1_000).toFixed(1)}K`
+                          : u.followers}{" "}
                     </span>
-                    {user.tracks !== undefined && user.tracks > 0 && (
+                    {u.tracks !== undefined && u.tracks > 0 && (
                       <span className="flex items-center gap-1">
                         <i className="fa-solid fa-bars text-[10px]" />
-                        {user.tracks}
+                        {u.tracks}
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-              <FollowButton username={user.username} />
+              <FollowButton username={u.username} />
             </div>
           ))}
         </div>

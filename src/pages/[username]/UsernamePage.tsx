@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import {
   mockLikedTracks,
   mockUserFollowing,
+  mockUserFollowers,
 } from "@/components/Profile/MockData/mock";
 import { mockFollowing } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
@@ -110,6 +111,12 @@ export default function UsernamePage() {
       )
     : (mockUserFollowing[username || ""] ?? []);
 
+  const followers = isOwner
+    ? allMockUsers.filter((u) =>
+        currentUser?.followers_ids?.includes(u.username),
+      )
+    : (mockUserFollowers[username || ""] ?? []);
+
   return (
     <div className="container px-4 md:px-8 lg:px-20">
       <ProfileHeader user={user} isOwner={isOwner} />
@@ -139,6 +146,7 @@ export default function UsernamePage() {
             user={user}
             isOwner={isOwner}
             likedTracks={likedTracks}
+            followers={followers}
             following={following}
             stats={stats}
             onTabChange={setSelectedTab}
