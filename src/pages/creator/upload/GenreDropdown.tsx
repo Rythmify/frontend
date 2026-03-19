@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 
-const GenreDropdown = () => {
+const GenreDropdown = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (g: string) => void;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -56,6 +62,7 @@ const GenreDropdown = () => {
       {/* Search Input Area */}
       <div className="relative flex items-center border-b border-border group">
         <input
+          data-test="genre-dropdown-input"
           type="text"
           placeholder="Add or search for genre"
           value={searchTerm}
@@ -80,6 +87,7 @@ const GenreDropdown = () => {
               <div
                 key={genre}
                 onClick={() => {
+                  onChange(genre);
                   setSearchTerm(genre);
                   setIsOpen(false);
                 }}

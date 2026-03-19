@@ -14,9 +14,9 @@ function HelpIcon() {
       >
         <path
           stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
           d="M9 15.75a6.75 6.75 0 1 0 0-13.5 6.75 6.75 0 0 0 0 13.5Z"
         ></path>
         <path
@@ -25,9 +25,9 @@ function HelpIcon() {
         ></path>
         <path
           stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
           d="M9 10.13v-.57A1.97 1.97 0 1 0 7.03 7.6"
         ></path>
       </svg>
