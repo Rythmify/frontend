@@ -8,7 +8,7 @@ import ConversationHeader from '@/components/MessagingComponents/ConversationHea
 import { Modal } from '@/components/MessagingComponents/Modal'
 import { ReportModal } from "@/components/MessagingComponents/ReportModal"
 import { SpamModal } from "@/components/MessagingComponents/SpamModal"
-
+import {MessageBox} from '@/components/MessagingComponents/MessageBox'
 type ActiveModal = 'none' | 'report' | 'spam'
 
 export default function MessageIdPage() {
@@ -69,7 +69,7 @@ export default function MessageIdPage() {
           onReported={() => console.log("User reported for spam")}
         />
       </Modal>
-
+<MessageBox onIsEmptyChange={(isEmpty) => console.log("Message box is empty:", isEmpty)} onEmbedResolved={(embed) => console.log("Resolved embed:", embed)} />
       {/*
       <ConversationPage />  conversation={activeConv} */}
     </div>

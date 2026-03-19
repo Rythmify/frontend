@@ -15,6 +15,7 @@ import type {
   BlockAlreadyExistsResponse,
   ReportCreatedResponse,
   ReportRequest,
+  PlaylistResponse,
 } from '../../api/messaging/conversationApi';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
@@ -90,6 +91,29 @@ const mockMessage2 = {
   embed_id: null,
   is_read: true,
   created_at: '2025-03-10T14:25:00Z',
+};
+
+
+const mockTrack = {
+  id: 'e5f6a7b8-c9d0-1234-efab-567890abcdef',
+  title: 'Mock Track Title',
+  stream_url: 'https://example.com/stream',
+  preview_url: null,
+  waveform_url: null,
+  duration: 240,
+  bitrate: 128,
+  is_public: true,
+  is_hidden: false,
+  created_at: '2025-01-01T00:00:00Z',
+};
+
+const mockPlaylist = {
+  id: 'playlist-mock-id-0001',
+  title: 'Mock Playlist Title',
+  description: 'A mock playlist for testing.',
+  is_public: true,
+  track_count: 5,
+  created_at: '2025-01-01T00:00:00Z',
 };
 
 const mockConversations: ConversationListResponse = {
@@ -201,7 +225,7 @@ type ReportScenario =
   | 'rate_limited';
 
 export const mockConfig = {
-  conversations: 'empty' as MockScenario,
+  conversations: 'success' as MockScenario,
   conversationDetail: 'success' as MockScenario,
   block: 'success' as BlockScenario,
   report: 'success' as ReportScenario,
@@ -333,15 +357,28 @@ export const messageHandlers = [
   }),
 
   // GET /resolve
+  // Parses the incoming rythmify.com URL to return the correct type and the
+  // matching mock ID so the subsequent fetch hits the right mock object.
+  //
+  // Test URLs to paste in the MessageInput textarea:
+  //   track    → https://rythmify.com/tracks/e5f6a7b8-c9d0-1234-efab-567890abcdef
+  //   playlist → https://rythmify.com/playlists/playlist-mock-id-0001
   http.get('*/resolve', ({ request }) => {
     const url = new URL(request.url);
     const permalink = url.searchParams.get('url') ?? '';
+
+    let type: 'track' | 'playlist' | 'user' = 'track';
+    if (permalink.includes('/playlists/')) type = 'playlist';
+    else if (permalink.includes('/users/')) type = 'user';
+
+    const id = type === 'track'
+      ? mockTrack.id
+      : type === 'playlist'
+      ? mockPlaylist.id
+      : permalink.split('/users/')[1] ?? 'unknown-user';
+
     return HttpResponse.json({
-      data: {
-        type: 'track',
-        id: 'e5f6a7b8-c9d0-1234-efab-567890abcdef',
-        permalink,
-      },
+      data: { type, id, permalink },
     } satisfies ResolvedResource);
   }),
 
@@ -417,22 +454,34 @@ export const messageHandlers = [
   }),
 
   // GET /tracks/:trackId
-  http.get('*/tracks/:trackId', () => {
+  http.get('*/tracks/:trackId', ({ params }) => {
+    const trackId = params.trackId as string;
+    if (trackId !== mockTrack.id) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Track not found.' } },
+        { status: 404 }
+      );
+    }
     return HttpResponse.json({
       success: true,
-      data: {
-        id: 'e5f6a7b8-c9d0-1234-efab-567890abcdef',
-        title: 'Mock Track Title',
-        stream_url: 'https://example.com/stream',
-        preview_url: null,
-        waveform_url: null,
-        duration: 240,
-        bitrate: 128,
-        is_public: true,
-        is_hidden: false,
-        created_at: '2025-01-01T00:00:00Z',
-      },
+      data: mockTrack,
     } satisfies TrackResponse);
+  }),
+
+
+  // GET /playlists/:playlistId
+  http.get('*/playlists/:playlistId', ({ params }) => {
+    const playlistId = params.playlistId as string;
+    if (playlistId !== mockPlaylist.id) {
+      return HttpResponse.json(
+        { error: { code: 'PLAYLIST_NOT_FOUND', message: 'Playlist not found.' } },
+        { status: 404 }
+      );
+    }
+    return HttpResponse.json({
+      success: true,
+      data: mockPlaylist,
+    } satisfies PlaylistResponse);
   }),
 
   // ─── Block ─────────────────────────────────────────────────────────────────

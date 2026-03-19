@@ -151,6 +151,22 @@ export interface TrackResponse {
   data: Track;
 }
 
+// ─── Playlist Types ───────────────────────────────────────────────────────────
+
+export interface Playlist {
+  id: string;
+  title: string;
+  description: string | null;
+  is_public: boolean;
+  track_count: number;
+  created_at: string;
+}
+
+export interface PlaylistResponse {
+  success: boolean;
+  data: Playlist;
+}
+
 // ─── Global Search Types ──────────────────────────────────────────────────────
 
 export interface TrackSearchResult {
@@ -361,6 +377,18 @@ export const searchFollowing = async (
 export const fetchTrack = async (trackId: string): Promise<TrackResponse> => {
   const response = await axiosInstance.get<TrackResponse>(
     `/tracks/${trackId}`
+  );
+  return response.data;
+};
+
+// GET /playlists/:playlistId
+export const fetchPlaylist = async (
+  playlistId: string,
+  options?: { secret_token?: string; include_tracks?: boolean }
+): Promise<PlaylistResponse> => {
+  const response = await axiosInstance.get<PlaylistResponse>(
+    `/playlists/${playlistId}`,
+    { params: options }
   );
   return response.data;
 };
