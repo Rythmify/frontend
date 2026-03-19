@@ -90,6 +90,7 @@ const LikesPage = lazy(() => import("@/pages/you/likes/LikesPage"));
 const YouSetsPage = lazy(() => import("@/pages/you/sets/SetsPage"));
 const YouAlbumsPage = lazy(() => import("@/pages/you/albums/AlbumsPage"));
 const FollowingPage = lazy(() => import("@/pages/you/following/FollowingPage"));
+const FollowerPage = lazy(() => import("@/pages/you/follower/FollowerPage"));
 const HistoryPage = lazy(() => import("@/pages/you/history/HistoryPage"));
 const StationsPage = lazy(() => import("@/pages/you/stations/StationsPage"));
 const InsightsPage = lazy(() => import("@/pages/you/insights/InsightsPage"));
@@ -202,6 +203,8 @@ export const router = createBrowserRouter([
           { path: "albums", element: <Lazy component={UserAlbumsPage} /> },
           { path: "sets", element: <Lazy component={UserSetsPage} /> },
           { path: "reposts", element: <Lazy component={RepostsPage} /> },
+          { path: "follower", element: <Lazy component={FollowerPage} /> },
+          { path: "following", element: <Lazy component={FollowingPage} /> },
           {
             path: "popular-tracks",
             element: <Lazy component={PopularTracksPage} />,
@@ -247,6 +250,7 @@ export const router = createBrowserRouter([
                 path: "following",
                 element: <Lazy component={FollowingPage} />,
               },
+              { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "history", element: <Lazy component={HistoryPage} /> },
               { path: "stations", element: <Lazy component={StationsPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
@@ -328,7 +332,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 8. Reset Password 
+  // 8. Reset Password
   {
     path: "reset-password",
     element: <Lazy component={ResetPasswordPage} />,
