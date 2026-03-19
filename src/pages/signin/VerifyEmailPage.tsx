@@ -61,6 +61,7 @@ export default function VerifyEmailPage() {
         <h2 className="text-text-hover text-2xl">Verification failed</h2>
         <p className="text-text-secondary text-sm">{errorMsg}</p>
         <button
+          data-test="btn-back-to-signin"
           onClick={() => navigate("/signin")}
           className="text-text-link hover:text-text-link-hover text-sm"
         >
