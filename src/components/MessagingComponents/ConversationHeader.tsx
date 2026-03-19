@@ -1,53 +1,67 @@
-import React from 'react'
 import { useState } from 'react'
 import { Modal } from './Modal'
-import ModalNewMessageBody from '@/pages/social/messages/ModalNewMessageBody'
-import  DeleteConversationButton from '@/components/MessagingComponents/DeleteConversationButton'
-interface User {
-    id: string
-    username: string
-    display_name: string
-    profile_picture: string | null
+import DeleteConversationButton from '@/components/MessagingComponents/DeleteConversationButton'
+import { BlockUserModal } from './BlockModal'
+import { ReportModal } from './ReportModal'
+
+interface ConversationHeaderProps {
+  reciepiantId: string
+  conversationId: string
 }
 
-interface ConversationHeaderPropsimport
- {
-reciepiantId:string
+const ConversationHeader = ({ reciepiantId, conversationId }: ConversationHeaderProps) => {
+  const [isBlockOpen, setIsBlockOpen]   = useState(false)
+  const [isReportOpen, setIsReportOpen] = useState(false)
 
-conversationId:string
-}
-
-const ConversationHeader = ({reciepiantId, conversationId }: ConversationHeaderPropsimport) => {
-const [isOpen, setIsOpen] = useState(false)
-    
   return (
-    <div data-test="conversation-header" className='flex space-between'>
-        <div className='flex text-white space-between '>
-           <button 
+    <div data-test="conversation-header" className="flex justify-between">
+
+      <div className="flex text-white">
+        <button
           data-test="conversation-new-button"
           className="p-2 text-sm font-bold w-14 hover:text-grey-300"
-          onClick={() => setIsOpen(true)}
         >
-        Profile
+          Profile
         </button>
-        <button 
+
+        <button
           data-test="conversation-block-button"
           className="p-2 text-sm font-bold w-14 hover:text-grey-300"
-          onClick={() => setIsOpen(true)}
+          onClick={() => setIsBlockOpen(true)}
         >
           Block
         </button>
-         <button 
+
+        <button
           data-test="conversation-report-button"
           className="p-2 text-sm font-bold w-14 hover:text-grey-300"
-          onClick={() => setIsOpen(true)}
+          onClick={() => setIsReportOpen(true)}
         >
           Report
         </button>
-        </div>
-        <div className='flex '>
-           <DeleteConversationButton conversationId={conversationId} participantId={reciepiantId} /> 
-        </div>
+      </div>
+
+      <div className="flex">
+        <DeleteConversationButton
+          conversationId={conversationId}
+          participantId={reciepiantId}
+        />
+      </div>
+
+      <Modal isOpen={isBlockOpen} onClose={() => setIsBlockOpen(false)}>
+        <BlockUserModal
+          userId={reciepiantId}
+          onClose={() => setIsBlockOpen(false)}
+        />
+      </Modal>
+
+      <Modal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)}>
+        <ReportModal
+          userId={reciepiantId}
+          onClose={() => setIsReportOpen(false)}
+        />
+      </Modal>
+
     </div>
   )
 }
