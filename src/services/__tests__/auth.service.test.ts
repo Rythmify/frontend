@@ -191,7 +191,7 @@ describe('forgotPassword()', () => {
 
 describe('resetPassword()', () => {
   it('returns success true on valid token', async () => {
-    const result = await resetPassword('valid-reset-token', 'NewPassword123');
+    const result = await resetPassword('valid-reset-token', 'NewPassword123', 'NewPassword123');
     expect(result.data.success).toBe(true);
   });
 
@@ -201,7 +201,7 @@ describe('resetPassword()', () => {
         HttpResponse.json({ message: 'Token expired' }, { status: 400 })
       )
     );
-    await expect(resetPassword('bad-token', 'NewPassword123')).rejects.toThrow();
+    await expect(resetPassword('bad-token', 'NewPassword123', 'NewPassword123')).rejects.toThrow();
   });
 });
 
@@ -273,13 +273,13 @@ describe('checkEmail()', () => {
     expect(result.exists).toBe(false);
   });
 
-  it('returns { exists: false } as fallback if server errors', async () => {
+  it('returns { exists: true } as fallback if server errors', async () => {
     server.use(
       http.post('*/auth/check-email', () =>
         HttpResponse.json({ message: 'Server error' }, { status: 500 })
       )
     );
     const result = await checkEmail('anyone@example.com');
-    expect(result.exists).toBe(false);
+    expect(result.exists).toBe(true);
   });
 });
