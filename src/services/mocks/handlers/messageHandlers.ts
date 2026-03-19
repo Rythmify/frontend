@@ -10,7 +10,6 @@ import type {
   ResolvedResource,
   FollowingSearchResponse,
   TrackResponse,
-<<<<<<< HEAD
   GlobalSearchResponse,
   BlockCreatedResponse,
   BlockAlreadyExistsResponse,
@@ -18,9 +17,7 @@ import type {
   ReportRequest,
   PlaylistResponse,
 } from '../../api/messaging/conversationApi';
-=======
-} from "../../api/messaging/conversationApi";
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
+
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -229,15 +226,10 @@ type ReportScenario =
   | 'rate_limited';
 
 export const mockConfig = {
-<<<<<<< HEAD
-  conversations: 'success' as MockScenario,
-  conversationDetail: 'success' as MockScenario,
-  block: 'success' as BlockScenario,
-  report: 'success' as ReportScenario,
-=======
   conversations: "empty" as MockScenario,
   conversationDetail: "success" as MockScenario,
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
+  block: 'success' as BlockScenario,
+  report: 'success' as ReportScenario,
 };
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
@@ -385,7 +377,6 @@ export const messageHandlers = [
   ),
 
   // GET /resolve
-<<<<<<< HEAD
   // Parses the incoming rythmify.com URL to return the correct type and the
   // matching mock ID so the subsequent fetch hits the right mock object.
   //
@@ -408,22 +399,10 @@ export const messageHandlers = [
 
     return HttpResponse.json({
       data: { type, id, permalink },
-=======
-  http.get("*/resolve", ({ request }) => {
-    const url = new URL(request.url);
-    const permalink = url.searchParams.get("url") ?? "";
-    return HttpResponse.json({
-      data: {
-        type: "track",
-        id: "e5f6a7b8-c9d0-1234-efab-567890abcdef",
-        permalink,
-      },
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
     } satisfies ResolvedResource);
   }),
 
   // GET /users/me/following/search
-<<<<<<< HEAD
   http.get('*/users/me/following/search', ({ request }) => {
     const url = new URL(request.url);
     const q = url.searchParams.get('q') ?? '';
@@ -436,9 +415,6 @@ export const messageHandlers = [
         )
       : mockFollowingPool;
 
-=======
-  http.get("*/users/me/following/search", () => {
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
     return HttpResponse.json({
       success: true,
       data: {
@@ -446,11 +422,7 @@ export const messageHandlers = [
         pagination: {
           page: 1,
           per_page: 10,
-<<<<<<< HEAD
           total_items: filtered.length,
-=======
-          total_items: 2,
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
           total_pages: 1,
           has_next: false,
           has_prev: false,
@@ -502,7 +474,6 @@ export const messageHandlers = [
   }),
 
   // GET /tracks/:trackId
-<<<<<<< HEAD
   http.get('*/tracks/:trackId', ({ params }) => {
     const trackId = params.trackId as string;
     if (trackId !== mockTrack.id) {
@@ -666,24 +637,3 @@ export const messageHandlers = [
     }
   }),
 ];
-=======
-
-  http.get("*/tracks/:trackId([0-9a-fA-F-]{36})", () => {
-    return HttpResponse.json({
-      success: true,
-      data: {
-        id: "e5f6a7b8-c9d0-1234-efab-567890abcdef",
-        title: "Mock Track Title",
-        stream_url: "https://example.com/stream",
-        preview_url: null,
-        waveform_url: null,
-        duration: 240,
-        bitrate: 128,
-        is_public: true,
-        is_hidden: false,
-        created_at: "2025-01-01T00:00:00Z",
-      },
-    } satisfies TrackResponse);
-  }),
-];
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
