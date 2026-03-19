@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import FollowingPage from "@/pages/[username]/following/FollowingPage";
+import FollowingPage from "@/pages/you/following/FollowingPage";
 
 const mockNavigate = vi.fn();
 
