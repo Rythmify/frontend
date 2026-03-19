@@ -89,7 +89,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
         setError(
           err.response?.data?.message || err.message || "Upload failed."
         );
-        setGlobalLoading(false); 
+        setGlobalLoading(false);
       }
     };
 
@@ -99,9 +99,11 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
     }));
 
     return (
-      <div className="mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div
+        data-testid="upload-details-form"
+        className="mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500"
+      >
         <div className="flex flex-col lg:flex-row gap-12 items-start">
-          {/* Cover Image now correctly updates coverFile state */}
           <UploadCoverImage onImageSelect={(file) => setCoverFile(file)} />
 
           <div className="flex-1 w-full space-y-8 text-xs text-text-upload">
@@ -112,6 +114,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 <HelpIcon />
               </label>
               <input
+                data-testid="upload-title-input"
                 type="text"
                 value={title}
                 onChange={handleTitleChange}
@@ -121,7 +124,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
             {/* Track Link */}
             <div>
-              <label className="block text-xs font-bold mb-1 tracking-wide ">
+              <label className="block text-xs font-bold mb-1 tracking-wide">
                 Track link
               </label>
               <div className="flex items-center text-sm text-text-upload border-b border-border py-2">
@@ -129,6 +132,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                   https://soundcloud.com/{username}/
                 </span>
                 <input
+                  data-testid="upload-track-link-input"
                   type="text"
                   value={trackLink}
                   onChange={(e) => setTrackLink(e.target.value)}
@@ -139,10 +143,11 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
             {/* Main Artist */}
             <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide ">
+              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
                 Main Artist(s) <HelpIcon />
               </label>
               <input
+                data-testid="upload-artists-input"
                 type="text"
                 value={artists}
                 onChange={(e) => setArtists(e.target.value)}
@@ -160,10 +165,11 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
             {/* Tags */}
             <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide ">
+              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
                 Tags <HelpIcon />
               </label>
               <input
+                data-testid="upload-tags-input"
                 type="text"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
@@ -174,10 +180,11 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
             {/* Description */}
             <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide ">
+              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
                 Description
               </label>
               <textarea
+                data-testid="upload-description-textarea"
                 rows={2}
                 placeholder="Tracks with description tend to get more plays and engagements."
                 value={description}
@@ -188,12 +195,13 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
             {/* Privacy Section */}
             <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide ">
+              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
                 Track Privacy
               </label>
               <div className="flex gap-10 text-sm py-2">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
+                    data-testid="upload-privacy-public-radio"
                     type="radio"
                     name="privacy"
                     className="hidden"
@@ -216,6 +224,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
+                    data-testid="upload-privacy-private-radio"
                     type="radio"
                     name="privacy"
                     className="hidden"
@@ -240,7 +249,10 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
             {/* Error Display */}
             {error && (
-              <p className="text-[#FB2C36] text-sm font-bold bg-[#FB2C36]/10 p-3 rounded-sm">
+              <p
+                data-testid="upload-error-message"
+                className="text-[#FB2C36] text-sm font-bold bg-[#FB2C36]/10 p-3 rounded-sm"
+              >
                 {error}
               </p>
             )}

@@ -49,6 +49,7 @@ const UploadFooter = ({
 
         <div className="absolute right-0">
           <button
+            data-test="upload-button"
             onClick={onSave}
             disabled={isLoading}
             className="bg-[#388e3c] hover:bg-[#81c784] text-text-upload text-sm px-4 py-2.5 w-50 rounded-full font-bold transition-colors disabled:opacity-50 cursor-pointer"

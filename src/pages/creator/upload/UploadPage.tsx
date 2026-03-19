@@ -16,12 +16,13 @@ export interface UploadFormHandle {
 
 const UploadPage = () => {
   const { isAuthenticated } = useAuthStore();
-  const { isDetailsMode, setIsDetailsMode, setTrackName } = useOutletContext<any>();
-  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const { isDetailsMode, setIsDetailsMode, setTrackName } =
+    useOutletContext<any>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [audioData, setAudioData] = useState<File | Blob | null>(null);
   const [uploadedTrackId, setUploadedTrackId] = useState<string | null>(null);
   const [view, setView] = useState<"home" | "details" | "success">("home");
-  
+
   const formRef = useRef<UploadFormHandle>(null);
 
   useEffect(() => {
@@ -59,10 +60,18 @@ const UploadPage = () => {
             <i className="fa-brands fa-soundcloud text-3xl"></i>
           </div>
           <button
+            data-test="close-success-view-button"
             onClick={() => (window.location.href = "/")}
             className="text-[#999] hover:text-white transition-colors p-2 cursor-pointer"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>

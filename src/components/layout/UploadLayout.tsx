@@ -50,6 +50,7 @@ const UploadLayout = () => {
                   <span className="truncate max-w-37.5">{trackName}</span>
                 </div>
                 <button
+                  data-test="replace-track-button"
                   onClick={() => setIsDetailsMode(false)}
                   className="text-text-upload text-sm font-bold hover:underline cursor-pointer"
                 >
@@ -60,6 +61,7 @@ const UploadLayout = () => {
 
             {/* Close page */}
             <button
+              data-test="exit-upload-button"
               onClick={handleExit}
               className="flex items-center justify-center h-6 w-6 p-5 rounded-full 
               bg-input-bg hover:bg-[dcdcdc] text-text-upload dark:hover:bg-[#353535]
@@ -84,12 +86,14 @@ const UploadLayout = () => {
 
           <div className="flex items-center justify-end gap-4">
             <button
+              data-test="back-to-upload-button"
               onClick={() => setShowQuitModal(false)}
               className="text-text-upload text-sm font-bold hover:opacity-70 transition-opacity"
             >
               Back to upload
             </button>
             <button
+              data-test="quit-upload-button"
               onClick={() => {
                 setShowQuitModal(false);
                 navigate("/artists");
