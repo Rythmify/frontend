@@ -75,8 +75,10 @@ const HandleRecording = ({
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { deviceId: selectedMicId ? { exact: selectedMicId } : undefined }
-      });      
+        audio: {
+          deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
+        },
+      });
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
@@ -170,15 +172,15 @@ const HandleRecording = ({
 
       // timeout to ensure the last segment is pushed to audioSegments
       setTimeout(() => {
-      setAudioSegments((prev) => {
-        const finalBlob = new Blob(prev, { type: "audio/wav" });
-        onFinish(finalBlob); 
-        return prev;
-      });
-      setIsRecording(false);
-      setIsPaused(false);
-      setIsRecordingFinished(true);
-    }, 150);
+        setAudioSegments((prev) => {
+          const finalBlob = new Blob(prev, { type: "audio/wav" });
+          onFinish(finalBlob);
+          return prev;
+        });
+        setIsRecording(false);
+        setIsPaused(false);
+        setIsRecordingFinished(true);
+      }, 150);
     }
   };
 
@@ -219,6 +221,7 @@ const HandleRecording = ({
           },
         ].map((btn, i) => (
           <button
+            data-test={`${btn.action === handleStop ? "stop-recording-button" : btn.action === handleUndo ? "undo-recording-button" : btn.action === handleRedo ? "redo-recording-button" : "restart-recording-button"}`}
             key={i}
             onClick={btn.action}
             className={`p-2 rounded-full transition-colors ${
@@ -236,6 +239,7 @@ const HandleRecording = ({
 
       {/* Record/ pause / resume button*/}
       <button
+        data-test="record-toggle-button"
         onClick={handleRecordToggle}
         className="flex items-center gap-2 bg-[#565656] hover:bg-[#8b8b8b] text-text-upload px-4 py-2.5 rounded-full font-bold 
       text-sm cursor-pointer transition-all justify-center z-10"

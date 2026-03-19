@@ -74,6 +74,7 @@ const DropZone = ({ onUpload }: { onUpload: (file: File) => void }) => {
         <CloudUploadIcon className="mb-6 text-text-upload" />
         {/* Hidden File Input */}
         <input
+          data-test="file-input"
           type="file"
           ref={fileInputRef}
           className="hidden"
@@ -101,6 +102,7 @@ const DropZone = ({ onUpload }: { onUpload: (file: File) => void }) => {
 
         {/*The button for uploading audio*/}
         <button
+          data-test="choose-files-button"
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="bg-bg-inverted hover:opacity-80 text-bg px-4 py-2.5 rounded-full text-sm font-bold transition-colors cursor-pointer"
