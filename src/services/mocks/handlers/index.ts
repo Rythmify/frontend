@@ -1,10 +1,12 @@
-import { messageHandlers } from './messageHandlers';
-import { authHandlers } from './authHandlers';
+import { messageHandlers } from "./messageHandlers";
+import { authHandlers } from "./authHandlers";
+import { discoverHandlers } from "./discoverHandlers";
 import { trackHandlers } from "./trackHandlers";
 
 export const handlers = [
-  ...trackHandlers, 
+  ...trackHandlers,
   ...authHandlers,
   ...messageHandlers,
-  ...trackHandlers
+  ...discoverHandlers,
+  ...trackHandlers,
 ];

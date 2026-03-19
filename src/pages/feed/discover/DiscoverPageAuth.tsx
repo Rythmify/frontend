@@ -2,6 +2,7 @@ import TrackCard from "@/components/UI/Card";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import { mockDiscoverTracks } from "@/mocks/discover";
 import ArtistToolsCard from "@/components/discover/sidebar/ArtistToolsCard";
+import ListeningHistoryCard from "@/components/discover/sidebar/ListeningHistoryCard";
 
 const DiscoverPageAuth = () => {
   return (
@@ -21,6 +22,7 @@ const DiscoverPageAuth = () => {
         <div className="flex flex-col gap-6 flex-[2] ps-2 pt-8">
           {/* sidebar components go here */}
           <ArtistToolsCard />
+          <ListeningHistoryCard />
         </div>
       </div>
     </div>
