@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import type { User } from "@/stores/auth.store";
 import TrackItem from "./TrackItem";
 import { useNavigate } from "react-router-dom";
+import FollowButton from "../FollowButton/FollowButton";
 
 interface FollowingUser {
   username: string;
@@ -9,6 +10,11 @@ interface FollowingUser {
   tracks?: number;
   avatar?: string;
   isVerified?: boolean;
+}
+
+interface FollowerUser {
+  username: string;
+  avatar?: string;
 }
 
 interface LikedTracks {
@@ -34,7 +40,9 @@ interface ProfileSideBarProps {
   };
   likedTracks?: LikedTracks[];
   following?: FollowingUser[];
+  followers?: FollowerUser[];
   onTabChange?: (tab: string) => void;
+  onUnlike?: (id: string) => void;
 }
 
 const formatCount = (n: number = 0) => {
@@ -43,19 +51,32 @@ const formatCount = (n: number = 0) => {
   return n.toString();
 };
 
+const BIO_CHAR_LIMIT = 140;
+
 const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   user,
   isOwner = false,
   stats = { followers: 0, following: 0, tracks: 0 },
   likedTracks = [],
   following = [],
+  followers = [],
   onTabChange,
+  onUnlike,
 }) => {
   const navigate = useNavigate();
+  const [bioExpanded, setBioExpanded] = useState(false);
+
+  const bio = user.bio ?? "";
+  const isBioLong = bio.length > BIO_CHAR_LIMIT;
+  const displayedBio =
+    isBioLong && !bioExpanded ? bio.slice(0, BIO_CHAR_LIMIT) + "…" : bio;
+
   return (
-    <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1 ">
+    <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1">
+      {/* Stats */}
       <div className="flex gap-13">
         <button
+          data-test="followers-stat"
           className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
           onClick={() => navigate(`/${user.username}/follower`)}
         >
@@ -68,6 +89,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </button>
 
         <button
+          data-test="following-stat"
           className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
           onClick={() => navigate(`/${user.username}/following`)}
         >
@@ -80,6 +102,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </button>
 
         <button
+          data-test="tracks-stat"
           className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
           onClick={() => onTabChange?.("Tracks")}
         >
@@ -92,131 +115,157 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </button>
       </div>
 
-      {likedTracks.length > 0 && (
-        <>
-          <div>
-            <div className="flex items-center justify-between  w-full hover:opacity-70 transition-opacity ">
-              <button
-                data-test="likes-button"
-                className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
-              >
-                {likedTracks.length} LIKES
-              </button>
-              <button
-                data-test="view-all-button"
-                className="  text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
-              >
-                View all
-              </button>
-            </div>
-          </div>
-        </>
+      {/* Bio */}
+      {bio.length > 0 && (
+        <div className="flex flex-col gap-1 w-[320px]">
+          <p
+            data-test="bio-text"
+            className="text-sm text-left text-white leading-relaxed"
+          >
+            {displayedBio}
+          </p>
+          {isBioLong && (
+            <button
+              data-test="bio-toggle"
+              onClick={() => setBioExpanded((prev) => !prev)}
+              className="text-sm font-bold text-white text-left hover:opacity-70 transition-opacity"
+            >
+              {bioExpanded ? "Show less" : "Show more"}
+            </button>
+          )}
+        </div>
       )}
 
-      {/*<div className="flex flex-col gap-4">
-              {likedTracks.map((track) => (
-                <div key={track.id} className="flex gap-3">
-                  <div className="w-14 h-14 flex-shrink-0 bg-border rounded overflow-hidden">
-                    {track.coverUrl ? (
-                      <img
-                        src={track.coverUrl}
-                        alt={track.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-border" />
-                    )}
-                  </div>
-                  <div className="flex flex-col justify-center min-w-0">
-                    <p className="text-xs text-text-secondary truncate">
-                      {track.artist}
-                    </p>
-                    <p className="text-sm font-bold text-text truncate">
-                      {track.title}
-                    </p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-text-secondary">
-                      {track.plays !== undefined && (
-                        <span className="flex items-center gap-1">
-                          <i className="fa-solid fa-play text-[10px]" />{" "}
-                          {(track.plays / 1e6).toFixed(1)}M
-                        </span>
-                      )}
-                      {track.likes !== undefined && (
-                        <span className="flex items-center gap-1">
-                          <i className="fa-solid fa-heart text-[10px]" />{" "}
-                          {(track.likes / 1e6).toFixed(2)}M
-                        </span>
-                      )}
-                      {track.reposts !== undefined && (
-                        <span className="flex items-center gap-1">
-                          <i className="fa-solid fa-retweet text-[10px]" />{" "}
-                          {(track.reposts / 1000).toFixed(1)}K
-                        </span>
-                      )}
-                      {track.comments !== undefined && (
-                        <span className="flex items-center gap-1">
-                          <i className="fa-solid fa-comment text-[10px]" />{" "}
-                          {track.comments.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* Liked tracks */}
+      {likedTracks.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between w-full hover:opacity-70 transition-opacity">
+            <button
+              data-test="likes-button"
+              onClick={() => navigate(`/${user.username}/likes`)}
+              className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
+            >
+              {likedTracks.length} LIKES
+            </button>
+            <button
+              data-test="likes-view-all"
+              onClick={() => navigate(`/${user.username}/likes`)}
+              className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
+            >
+              View all
+            </button>
           </div>
-        </>
-      )} */}
+        </div>
+      )}
+
       <div className="flex flex-col gap-4">
         {likedTracks.slice(0, 3).map((track) => (
-          <TrackItem key={track.id} {...track} />
+          <TrackItem key={track.id} {...track} onUnlike={onUnlike} />
         ))}
       </div>
 
+      {/* ON TOUR */}
       {isOwner && (
-        <div className="flex flex-col gap-2  ">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <i className="fa-solid fa-ticket text-text-secondary" />
             <span className="text-xs font-bold text-white">ON TOUR</span>
             <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
           </div>
-
           <p className="text-xs text-left text-white border-t pt-4 border-white w-[320px]">
             With an Artist Pro account, you can create ticketed live events on
             Rythmify, and list existing events.
           </p>
-
           <button
+            data-test="upgrade-pro-button"
             onClick={() => navigate("/creator/checkout")}
-            className="w-[320px] py-3 bg-white text-black font-semibold  text-sm rounded-full hover:bg-gray-200 transition-colors"
+            className="w-[320px] py-3 bg-white text-black font-semibold text-sm rounded-full hover:bg-gray-200 transition-colors"
           >
             Upgrade to Artist Pro
           </button>
         </div>
       )}
-      {/* Following section */}
+
+      {/* Followers */}
+      {!isOwner && followers.length > 0 && (
+        <div className="flex flex-col gap-3 w-[320px]">
+          <div className="flex items-center justify-between">
+            <button
+              data-test="followers-label"
+              onClick={() => navigate(`/${user.username}/follower`)}
+              className="text-xs cursor-pointer font-bold text-white hover:opacity-70 transition-opacity"
+            >
+              {formatCount(stats.followers)} FOLLOWERS
+            </button>
+            <button
+              data-test="followers-view-all"
+              onClick={() => navigate(`/${user.username}/follower`)}
+              className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
+            >
+              View all
+            </button>
+          </div>
+          <div className="flex">
+            {followers.slice(0, 10).map((follower, index) => (
+              <button
+                key={follower.username}
+                data-test="follower-avatar"
+                onClick={() => navigate(`/${follower.username}`)}
+                className="w-12 h-12 rounded-full overflow-hidden bg-border flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
+                style={{ marginLeft: index === 0 ? 0 : "-8px", zIndex: index }}
+                title={follower.username}
+              >
+                {follower.avatar ? (
+                  <img
+                    src={follower.avatar}
+                    alt={follower.username}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-border" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Following */}
       {following.length > 0 && (
         <div className="flex flex-col gap-4 w-[320px]">
           <div className="flex items-center justify-between hover:opacity-70 transition-opacity">
-            <button className="text-xs font-semibold text-white">
+            <button
+              data-test="following-label"
+              onClick={() => navigate(`/${user.username}/following`)}
+              className="text-xs cursor-pointer font-semibold text-white"
+            >
               {following.length} FOLLOWING
             </button>
-            <button className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text">
+            <button
+              data-test="following-view-all"
+              onClick={() => navigate(`/${user.username}/following`)}
+              className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
+            >
               View all
             </button>
           </div>
 
-          {following.slice(0, 3).map((user) => (
+          {following.slice(0, 3).map((u) => (
             <div
-              key={user.username}
+              key={u.username}
+              data-test="following-item"
               className="flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-border flex-shrink-0">
-                  {user.avatar ? (
+                <div
+                  data-test="following-avatar"
+                  onClick={() => navigate(`/${u.username}`)}
+                  className="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-border flex-shrink-0"
+                >
+                  {u.avatar ? (
                     <img
-                      src={user.avatar}
-                      alt={user.username}
+                      src={u.avatar}
+                      alt={u.username}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -225,51 +274,69 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1">
-                    <span className="text-sm font-bold text-white">
-                      {user.username}
-                    </span>
-                    {user.isVerified && (
+                    <button
+                      data-test="following-username"
+                      onClick={() => navigate(`/${u.username}`)}
+                      className="cursor-pointer text-sm font-bold text-white hover:opacity-70 transition-opacity"
+                    >
+                      {u.username}
+                    </button>
+                    {u.isVerified && (
                       <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
-                    <span className="flex items-center gap-1">
+                    <button
+                      data-test="following-followers-count"
+                      onClick={() => navigate(`/${u.username}/follower`)}
+                      className="flex cursor-pointer items-center gap-0.5 hover:opacity-70 transition-opacity"
+                    >
                       <i className="fa-solid fa-user text-[10px]" />
-                      {user.followers >= 1e6
-                        ? `${(user.followers / 1e6).toFixed(1)}M`
-                        : `${(user.followers / 1000).toFixed(1)}K`}
-                    </span>
-                    {user.tracks !== undefined && user.tracks > 0 && (
-                      <span className="flex items-center gap-1">
+                      {u.followers >= 1_000_000
+                        ? `${(u.followers / 1_000_000).toFixed(1)}M`
+                        : u.followers >= 1_000
+                          ? `${(u.followers / 1_000).toFixed(1)}K`
+                          : u.followers}
+                    </button>
+                    {u.tracks !== undefined && u.tracks > 0 && (
+                      <button
+                        data-test="following-tracks-count"
+                        onClick={() => navigate(`/${u.username}/tracks`)}
+                        className="cursor-pointer flex items-center gap-1 hover:opacity-70 transition-opacity"
+                      >
                         <i className="fa-solid fa-bars text-[10px]" />
-                        {user.tracks}
-                      </span>
+                        {u.tracks}
+                      </button>
                     )}
                   </div>
                 </div>
               </div>
-              <button className="px-3 py-1 bg-[#313030] text-white text-xs font-bold rounded hover:opacity-70">
-                Following
-              </button>
+              <FollowButton username={u.username} />
             </div>
           ))}
         </div>
       )}
 
-      {/* Go Mobile section */}
+      {/* Go Mobile */}
       <div className="flex flex-col gap-3 w-[320px]">
         <span className="text-xs font-semibold text-left text-white">
           GO MOBILE
         </span>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70">
+          <button
+            data-test="app-store-button"
+            className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70"
+          >
             <i className="fa-brands fa-apple text-white text-xl" />
             <div className="flex flex-col items-start">
               <span className="text-[8px] text-white">Download on the</span>
               <span className="text-xs font-bold text-white">App Store</span>
             </div>
           </button>
-          <button className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70">
+          <button
+            data-test="google-play-button"
+            className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70"
+          >
             <i className="fa-brands fa-google-play text-white text-xl" />
             <div className="flex flex-col items-start">
               <span className="text-[8px] text-white">GET IT ON</span>
@@ -279,7 +346,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       </div>
 
-      {/* Footer links */}
+      {/* Footer */}
       <div className="flex flex-col gap-2 w-[320px]">
         <div className="flex flex-wrap gap-x-1 gap-y-1 text-xs text-text-secondary">
           {[
@@ -294,7 +361,10 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             "Transparency Reports",
           ].map((link, i, arr) => (
             <span key={link} className="flex items-center gap-1">
-              <button className="cursor-pointer hover:underline hover:text-text">
+              <button
+                data-test={`footer-${link.toLowerCase().replace(/\s+/g, "-")}`}
+                className="cursor-pointer hover:underline hover:text-text"
+              >
                 {link}
               </button>
               {i < arr.length - 1 && <span>·</span>}
@@ -303,7 +373,10 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
         <div className="text-xs text-left text-text-secondary">
           Language:{" "}
-          <button className="text-[#2196F3] hover:underline">
+          <button
+            data-test="language-button"
+            className="text-[#2196F3] hover:underline"
+          >
             English (US)
           </button>
         </div>

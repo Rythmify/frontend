@@ -23,49 +23,63 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
       icon: "fa-brands fa-twitter",
       bg: "#1DA1F2",
       href: `https://twitter.com/intent/tweet?url=${url}`,
+      name: "twitter",
     },
     {
       icon: "fa-brands fa-facebook",
       bg: "#1877F2",
       href: `https://facebook.com/sharer/sharer.php?u=${url}`,
+      name: "facebook",
     },
     {
       icon: "fa-brands fa-tumblr",
       bg: "#35465C",
       href: `https://tumblr.com/share/link?url=${url}`,
+      name: "tumblr",
     },
     {
       icon: "fa-brands fa-pinterest",
       bg: "#E60023",
       href: `https://pinterest.com/pin/create/button/?url=${url}`,
+      name: "pinterest",
     },
-    { icon: "fa-solid fa-envelope", bg: "#555", href: `mailto:?body=${url}` },
+    {
+      icon: "fa-solid fa-envelope",
+      bg: "#555",
+      href: `mailto:?body=${url}`,
+      name: "email",
+    },
   ];
 
   return (
     <>
       <div
+        data-test="share-modal-overlay"
         className="fixed inset-0 bg-white/50 flex items-start justify-center z-50 pt-16"
         onClick={onClose}
       >
         <button
+          data-test="share-modal-close"
           onClick={onClose}
           className="cursor-pointer fixed top-3 right-3 cursor-pointer text-white text-lg hover:opacity-70 z-50 bg-gray-900 rounded-full w-8 h-8 flex items-center justify-center mt-6 mr-6"
         >
           <i className="fa-solid fa-xmark" />
         </button>
         <div
+          data-test="share-modal-content"
           className="bg-[#1a1a1a] rounded-sm p-6 w-[570px]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex gap-6 border-b border-border mb-6">
+          <div className="flex gap-6 mb-6">
             <button
+              data-test="share-tab-share"
               onClick={() => setActiveTab("share")}
               className={`font-bold pb-3 border-b-2 ${activeTab === "share" ? "text-white border-white" : "text-text-secondary border-transparent hover:text-white"}`}
             >
               Share
             </button>
             <button
+              data-test="share-tab-message"
               onClick={() => setActiveTab("message")}
               className={`font-bold pb-3 border-b-2 ${activeTab === "message" ? "text-white border-white" : "text-text-secondary border-transparent hover:text-white"}`}
             >
@@ -79,6 +93,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                 {socials.map((s) => (
                   <a
                     key={s.icon}
+                    data-test={`share-social-${s.name}`}
                     href={s.href}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -89,11 +104,15 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                   </a>
                 ))}
               </div>
-              <div className="bg-[#333] rounded px-3 py-2 text-sm text-white text-left truncate mb-3">
+              <div
+                data-test="share-url-display"
+                className="bg-[#333] rounded px-3 py-2 text-sm text-white text-left truncate mb-3"
+              >
                 {displayUrl}
               </div>
               <label className="flex items-center gap-2 text-sm text-white cursor-pointer">
                 <input
+                  data-test="share-shorten-checkbox"
                   type="checkbox"
                   checked={shortened}
                   onChange={(e) => setShortened(e.target.checked)}
@@ -109,6 +128,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                   To <span className="text-red-500">*</span>
                 </label>
                 <input
+                  data-test="message-to-input"
                   type="text"
                   className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
                 />
@@ -119,12 +139,16 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                   <span className="text-red-500">*</span>
                 </label>
                 <textarea
+                  data-test="message-body-input"
                   className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white h-32 resize-none"
                   defaultValue={url}
                 />
               </div>
               <div className="flex justify-end">
-                <button className="px-3 py-2 bg-white text-black font-bold text-sm rounded hover:bg-gray-200">
+                <button
+                  data-test="message-send-button"
+                  className="px-3 py-2 bg-white text-black font-bold text-sm rounded hover:bg-gray-200"
+                >
                   Send
                 </button>
               </div>
