@@ -108,7 +108,7 @@ export default function UsernamePage() {
           {showUpload && (
             <button
               onClick={() => navigate("/upload")}
-              className=" cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
+              className="cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
             >
               Upload now
             </button>

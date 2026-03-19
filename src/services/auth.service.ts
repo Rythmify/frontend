@@ -14,6 +14,18 @@ export interface UserSummary {
   is_verified: boolean;
 }
 
+export interface UserProfile {
+  id: string;
+  username: string;
+  display_name: string;
+  email: string;
+  role: UserRole;
+  profile_picture?: string;
+  cover_photo?: string;
+  city?: string;
+  country?: string;
+}
+
 export interface AuthLoginResponseData {
   access_token: string;
   token_type: 'Bearer';
@@ -151,6 +163,15 @@ export async function changeEmail(new_email: string) {
   return res.data;
 }
 
+/** GET /users/me */
+export async function getMe() {
+  const res = await axiosInstance.get<{
+    data: UserProfile;
+    message: string;
+  }>('/users/me');
+  return res.data;
+}
+
 /** POST /auth/google */
 export async function googleLogin(id_token: string) {
   const res = await axiosInstance.post<{
@@ -185,6 +206,6 @@ export async function checkEmail(email: string): Promise<{ exists: boolean }> {
     return res.data.data;
   } catch {
     // In real mode with no backend endpoint, fall back to "not found"
-    return { exists: false };
+    return { exists: true };
   }
 }
