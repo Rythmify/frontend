@@ -36,6 +36,11 @@ const HomePage = lazy(() => import("@/pages/home/HomePage"));
 
 // Signin
 const SigninPage = lazy(() => import("@/pages/signin/SigninPage"));
+<<<<<<< HEAD
+=======
+const ResetPasswordPage = lazy(() => import("@/pages/signin/ResetPassword"));
+const VerifyEmailPage = lazy(() => import("@/pages/signin/VerifyEmailPage"));
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 
 // Download
 const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
@@ -201,6 +206,12 @@ export const router = createBrowserRouter([
           { path: "albums", element: <Lazy component={UserAlbumsPage} /> },
           { path: "sets", element: <Lazy component={UserSetsPage} /> },
           { path: "reposts", element: <Lazy component={RepostsPage} /> },
+<<<<<<< HEAD
+=======
+          { path: "follower", element: <Lazy component={FollowerPage} /> },
+          { path: "following", element: <Lazy component={FollowingPage} /> },
+          { path: "likes", element: <Lazy component={LikesPage} /> },
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
           {
             path: "popular-tracks",
             element: <Lazy component={PopularTracksPage} />,
@@ -327,7 +338,23 @@ export const router = createBrowserRouter([
     ],
   },
 
+<<<<<<< HEAD
   // 8. Not Found
+=======
+  // 8. Reset Password
+  {
+    path: "reset-password",
+    element: <Lazy component={ResetPasswordPage} />,
+  },
+
+  // 9. Verify Email
+  {
+    path: "verify-email",
+    element: <Lazy component={VerifyEmailPage} />,
+  },
+
+  // 9. Not Found
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
   {
     path: "*",
     element: <Lazy component={NotFound} />,

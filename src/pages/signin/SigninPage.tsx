@@ -14,6 +14,10 @@ import ForgotPassword from "./ForgotPassword";
 import ForgotPasswordSent from "./ForgotPasswordSent";
 import Profile from "./Profile";
 import VerifyEmail from "./VerifyEmail";
+import { useNavigate } from "react-router-dom";
+import { login, register, resendVerification, getMe, forgotPassword } from "@/services/auth.service";
+import { useAuthStore } from "@/stores/auth.store";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? "";
 
@@ -23,6 +27,11 @@ function SigninFlow() {
   const [step, setStep] = useState<Step>("main");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const { login: storeLogin } = useAuthStore();
+  const { executeRecaptcha } = useGoogleReCaptcha();
+  const [loginError, setLoginError] = useState("");
+
 
   function handleEmailContinue(resolvedEmail: string, exists: boolean) {
     setEmail(resolvedEmail);
@@ -40,6 +49,7 @@ function SigninFlow() {
   }
 
   if (step === "login") {
+<<<<<<< HEAD
     return (
       <div className={card}>
         <PasswordLogin
@@ -54,6 +64,55 @@ function SigninFlow() {
       </div>
     );
   }
+=======
+  return (
+    <div className={card}>
+      {loginError && <p className="text-red-500 text-sm -mb-4">{loginError}</p>}
+      <PasswordLogin
+        email={email}
+        onBack={() => setStep("email")}
+        onContinue={async (pw) => {
+          setLoginError("");
+          try {
+            const res = await login(email, pw);
+            const me = await getMe();
+            storeLogin({
+              id: me.data.id,
+              username: me.data.username,
+              displayName: me.data.display_name,
+              firstName: me.data.first_name,
+              lastName: me.data.last_name,
+              bio: me.data.bio,
+              email: me.data.email,
+              role: me.data.role,
+              isPro: false,
+              avatar: me.data.profile_picture,
+              coverUrl: me.data.cover_photo,
+              city: me.data.city,
+              country: me.data.country,
+              following_ids: [],
+            }, res.data.access_token);
+            navigate("/discover");
+          } catch (err: any) {
+            setLoginError(err?.response?.data?.error?.message ?? "Invalid credentials.");
+          }
+        }}
+        onForgotPassword={() => setStep("forgot-password")}
+      />
+      <p className="text-sm text-center text-text-secondary">
+        Don't have an account?{" "}
+        <button
+          onClick={() => setStep("register")}
+          className="text-text-link hover:text-text-link-hover"
+        >
+          Create one
+        </button>
+      </p>
+    </div>
+  );
+}
+
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 
   if (step === "forgot-password") {
     return (
@@ -61,7 +120,14 @@ function SigninFlow() {
         <ForgotPassword
           email={email}
           onBack={() => setStep("login")}
-          onSend={() => setStep("forgot-password-sent")}
+          onSend={async () => {
+            try {
+              await forgotPassword(email);
+            } catch {
+              // backend always returns 200 to avoid email enumeration
+            }
+            setStep("forgot-password-sent");
+          }}
         />
       </div>
     );
@@ -99,6 +165,7 @@ function SigninFlow() {
         <Profile
           email={email}
           onBack={() => setStep("register")}
+<<<<<<< HEAD
           onContinue={(data) => {
             // TODO: call register API
             console.log("register", {
@@ -110,6 +177,22 @@ function SigninFlow() {
               captcha_token: data.captchaToken,
             });
             setStep("verify-email");
+=======
+          onContinue={async (data) => {
+            try {
+              await register({
+                email,
+                password,
+                display_name: data.displayName,
+                gender: data.gender.toLowerCase() as "male" | "female",
+                date_of_birth: `${data.dateOfBirth.year}-${String(MONTHS.indexOf(data.dateOfBirth.month) + 1).padStart(2, "0")}-${String(data.dateOfBirth.day).padStart(2, "0")}`,
+                captcha_token: data.captchaToken,
+              });
+              setStep("verify-email");
+            } catch (err: any) {
+              alert(err?.response?.data?.error?.message ?? "Registration failed.");
+            }
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
           }}
         />
       </div>
@@ -121,9 +204,20 @@ function SigninFlow() {
       <div className={card}>
         <VerifyEmail
           email={email}
+<<<<<<< HEAD
           onSendAgain={() => {
             // TODO: call resend verification email API
             console.log("resend verification email", { email });
+=======
+          onSendAgain={async () => {
+            if (!executeRecaptcha) return;
+            try {
+              const captchaToken = await executeRecaptcha("resend_verification");
+              await resendVerification(email, captchaToken);
+            } catch {
+              // silently fail — user can try again
+            }
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
           }}
           onBackToLogin={() => setStep("main")}
         />

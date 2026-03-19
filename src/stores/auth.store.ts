@@ -5,10 +5,21 @@ export interface User {
   id: string;
   username: string;
   displayName: string;
+  firstName: string;
+  lastName: string;
+  bio: string;
   email: string;
   avatar?: string;
   role: "listener" | "artist" | "admin";
   isPro: boolean;
+<<<<<<< HEAD
+=======
+  city?: string;
+  country?: string;
+  location?: string;
+  following_ids: string[];
+  followers_ids?: string[];
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 }
 
 interface AuthStore {
@@ -19,6 +30,7 @@ interface AuthStore {
   logout: () => void;
   setUser: (user: User) => void;
   setLoading: (loading: boolean) => void;
+  toggleFollow: (username: string) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -41,10 +53,27 @@ export const useAuthStore = create<AuthStore>()(
       setUser: (user) => set({ user, isAuthenticated: true }),
 
       setLoading: (isLoading) => set({ isLoading }),
+
+      toggleFollow: (username) =>
+        set((state) => {
+          if (!state.user) return state;
+          const isFollowing = state.user.following_ids.includes(username);
+          return {
+            user: {
+              ...state.user,
+              following_ids: isFollowing
+                ? state.user.following_ids.filter((u) => u !== username)
+                : [...state.user.following_ids, username],
+            },
+          };
+        }),
     }),
     {
       name: "auth-storage", // key in localStorage
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
-    }
-  )
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    },
+  ),
 );

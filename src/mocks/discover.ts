@@ -1,10 +1,13 @@
 import type { Track } from "@/types/track";
+import type { Mix } from "@/types/mix";
 
 export const mockDiscoverTracks: Track[] = [
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -20,6 +23,8 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -35,6 +40,8 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -50,6 +57,8 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -65,6 +74,8 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -80,6 +91,8 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -95,6 +108,8 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -110,6 +125,8 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -125,6 +142,8 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -140,6 +159,8 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
+    username: "amjad-samir",
+    trackSlug: "ma-ajhalak",
     coverUrl:
       "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
@@ -150,5 +171,57 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+  },
+];
+
+export const mockMixes: Mix[] = [
+  {
+    id: 1,
+    coverUrl: "https://picsum.photos/200/200?random=20",
+    artists: ["أمجد سمير", "Moh.ElGhaleez", "Fatma Amin", "علاء حامد", "Shahd"],
+  },
+  {
+    id: 2,
+    coverUrl: "https://picsum.photos/200/200?random=21",
+    artists: [
+      "League of Legends",
+      "H.Jen",
+      "Jessica Gelinas",
+      "Rooh Al-M",
+      "DJ Shadow",
+    ],
+  },
+  {
+    id: 3,
+    coverUrl: "https://picsum.photos/200/200?random=22",
+    artists: [
+      "أمجد سمير",
+      "قناة زاد طالب العلم",
+      "Mazen A",
+      "إمام البخاري",
+      "Fatma Amin",
+    ],
+  },
+  {
+    id: 4,
+    coverUrl: "https://picsum.photos/200/200?random=23",
+    artists: [
+      "Dr. Hazem Shouman",
+      "Moh.ElGhaleez",
+      "أمجد سمير",
+      "علاء حامد",
+      "Rooh Al-M",
+    ],
+  },
+  {
+    id: 5,
+    coverUrl: "https://picsum.photos/200/200?random=24",
+    artists: [
+      "التراث الاسلامي",
+      "Mazen A",
+      "إمام البخاري",
+      "League of Legends",
+      "DJ Shadow",
+    ],
   },
 ];

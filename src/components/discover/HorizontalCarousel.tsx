@@ -86,9 +86,11 @@ const HorizontalCarousel = ({ title, children }: HorizontalCarouselProps) => {
   };
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} data-test="carousel-wrapper">
       {/* Title */}
-      <h2 className={styles.title}>{title}</h2>
+      <h2 className={styles.title} data-test="carousel-title">
+        {title}
+      </h2>
 
       {/* Scroll Area + Arrows */}
       <div className={styles.scrollWrapper}>
@@ -98,6 +100,7 @@ const HorizontalCarousel = ({ title, children }: HorizontalCarouselProps) => {
           onClick={scrollLeft}
           disabled={atStart}
           onMouseEnter={() => handleNudge("left")}
+          data-test="button-carousel-left"
         >
           <i className="fa-solid fa-chevron-left text-sm"></i>
         </button>
@@ -107,6 +110,7 @@ const HorizontalCarousel = ({ title, children }: HorizontalCarouselProps) => {
           ref={scrollRef}
           className={`${styles.scrollContainer} ${nudgeClass}`}
           onScroll={handleScroll}
+          data-test="carousel-scroll-container"
         >
           {children}
         </div>
@@ -117,6 +121,7 @@ const HorizontalCarousel = ({ title, children }: HorizontalCarouselProps) => {
           onClick={scrollRight}
           disabled={atEnd}
           onMouseEnter={() => handleNudge("right")}
+          data-test="button-carousel-right"
         >
           <i className="fa-solid fa-chevron-right text-sm"></i>
         </button>

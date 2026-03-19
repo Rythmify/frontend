@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Outlet } from "react-router-dom";
 import Footer from "./Footer";
 
@@ -10,9 +11,112 @@ const UploadLayout = () => (
     <main className="flex-1">
       <Outlet />
     </main>
+=======
+import { Outlet, Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Modal } from "@/components/UI/Modal";
+
+const UploadLayout = () => {
+  const navigate = useNavigate();
+  const [isDetailsMode, setIsDetailsMode] = useState(false);
+  const [trackName, setTrackName] = useState("");
+  const [showQuitModal, setShowQuitModal] = useState(false);
+
+  const handleExit = () => {
+    if (isDetailsMode) {
+      setShowQuitModal(true);
+    } else {
+      navigate("/artists");
+    }
+  };
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 
     <Footer />
   </div>
 );
 
+<<<<<<< HEAD
 export default UploadLayout;
+=======
+          {/* Upload Status => Only visible in Details Mode */}
+          <div className="flex items-center gap-4">
+            {isDetailsMode && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-text-upload text-xs">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-[24px] h-[24px] shrink-0 text-text-upload"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="m10 16.5 6-4.5-6-4.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path>
+                  </svg>
+                  <span className="truncate max-w-37.5">{trackName}</span>
+                </div>
+                <button
+                  data-test="replace-track-button"
+                  onClick={() => setIsDetailsMode(false)}
+                  className="text-text-upload text-sm font-bold hover:underline cursor-pointer"
+                >
+                  Replace track
+                </button>
+              </div>
+            )}
+
+            {/* Close page */}
+            <button
+              data-test="exit-upload-button"
+              onClick={handleExit}
+              className="flex items-center justify-center h-6 w-6 p-5 rounded-full 
+              bg-input-bg hover:bg-[dcdcdc] text-text-upload dark:hover:bg-[#353535]
+              transition-all duration-300 cursor-pointer"
+              aria-label="Exit upload"
+            >
+              <i className="fa-solid fa-xmark text-md" />
+            </button>
+          </div>
+        </div>
+        <Modal isOpen={showQuitModal} onClose={() => setShowQuitModal(false)}>
+          <div className="flex items-left py-4 rounded-md w-130 h-10">
+            <h2 className="text-text-upload text-xl font-bold py-4">
+              Are you sure you want to quit?
+            </h2>
+          </div>
+          <div className="flex items-left py-5">
+            <p className="text-[#efefef] text-[16px] py-4 mt-4">
+              Your changes will not be saved.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-4">
+            <button
+              data-test="back-to-upload-button"
+              onClick={() => setShowQuitModal(false)}
+              className="text-text-upload text-sm font-bold hover:opacity-70 transition-opacity"
+            >
+              Back to upload
+            </button>
+            <button
+              data-test="quit-upload-button"
+              onClick={() => {
+                setShowQuitModal(false);
+                navigate("/artists");
+              }}
+              className="bg-[#EC5261] hover:bg-[#f78ca1] text-text-upload text-sm font-bold px-6 py-2.5 rounded-full transition-colors"
+            >
+              Quit upload
+            </button>
+          </div>
+        </Modal>
+      </header>
+
+      <main className="flex-1 bg-bg pt-8">
+        {/* Pass states to UploadPage */}
+        <Outlet context={{ isDetailsMode, setIsDetailsMode, setTrackName }} />
+      </main>
+    </div>
+  );
+};
+
+export default UploadLayout;
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb

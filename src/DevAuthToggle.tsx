@@ -12,9 +12,20 @@ const DevAuthToggle = () => {
           id: "1",
           username: "nourabosaif04",
           displayName: "Nour Abosaif",
+          firstName: "Nour",
+          lastName: "Abosaif",
+          bio: "Just a music lover sharing my vibes.",
           email: "nour@test.com",
           role: "artist",
           isPro: false,
+<<<<<<< HEAD
+=======
+          city: "Cairo",
+          country: "Egypt",
+          location: "Cairo, Egypt",
+          following_ids: ["farah-medhat", "mariam-ramy"],
+          followers_ids: ["farah-medhat", "mariam-ramy", "shahd-yehia"],
+>>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
         },
         "fake-token-123"
       );
