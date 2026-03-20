@@ -111,7 +111,10 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             <div>
               <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
                 Track title <span className="text-[#ec5261]">*</span>
-                <HelpIcon />
+                <HelpIcon
+                  title="Track title"
+                  content="Clear track titles help your fans know exactly what they're listening to."
+                />
               </label>
               <input
                 data-testid="upload-title-input"
@@ -144,7 +147,11 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             {/* Main Artist */}
             <div>
               <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
-                Main Artist(s) <HelpIcon />
+                Main Artist(s)
+                <HelpIcon
+                  title="Main Artist(s)"
+                  content="Put your name and any featured artists you want to give primary credit to here. These names will be displayed underneath your track title."
+                />
               </label>
               <input
                 data-testid="upload-artists-input"
@@ -166,7 +173,10 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             {/* Tags */}
             <div>
               <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
-                Tags <HelpIcon />
+                Tags <HelpIcon 
+                  title="Tags"
+                  content="Tags help identify what kind of sound your track is, whether it is spoken voice, hip-hop, etc. Tags make it easier for listeners to find your track on SoundCloud."
+                />
               </label>
               <input
                 data-testid="upload-tags-input"
