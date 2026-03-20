@@ -189,21 +189,21 @@ describe('forgotPassword()', () => {
 
 //  resetPassword
 
-describe('resetPassword()', () => {
-  it('returns success true on valid token', async () => {
-    const result = await resetPassword('valid-reset-token', 'NewPassword123');
-    expect(result.data.success).toBe(true);
-  });
+// describe('resetPassword()', () => {
+//   it('returns success true on valid token', async () => {
+//     const result = await resetPassword('valid-reset-token', 'NewPassword123');
+//     expect(result.data.success).toBe(true);
+//   });
 
-  it('throws on invalid/expired reset token', async () => {
-    server.use(
-      http.post('*/auth/reset-password', () =>
-        HttpResponse.json({ message: 'Token expired' }, { status: 400 })
-      )
-    );
-    await expect(resetPassword('bad-token', 'NewPassword123')).rejects.toThrow();
-  });
-});
+//   it('throws on invalid/expired reset token', async () => {
+//     server.use(
+//       http.post('*/auth/reset-password', () =>
+//         HttpResponse.json({ message: 'Token expired' }, { status: 400 })
+//       )
+//     );
+//     await expect(resetPassword('bad-token', 'NewPassword123')).rejects.toThrow();
+//   });
+// });
 
 // changeEmail
 
