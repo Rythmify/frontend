@@ -1,32 +1,20 @@
 import { useState } from "react";
-<<<<<<< HEAD
-=======
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 
 // ─── Types ────────────────────────────────────────────────
 interface ArtistTool {
   id: number;
   label: string;
-  icon: string;
+  icon: ReactNode;
 }
+
+const FA = ({ name }: { name: string }) => (
+  <i className={`fa-solid ${name} text-text-hover text-xl`} />
+);
 
 // ─── Data ─────────────────────────────────────────────────
 const primaryTools: ArtistTool[] = [
-<<<<<<< HEAD
-  { id: 1, label: "Amplify", icon: "fa-bolt" },
-  { id: 2, label: "Replace", icon: "fa-rotate" },
-  { id: 3, label: "Distribute", icon: "fa-globe" },
-  { id: 4, label: "Master", icon: "fa-sliders" },
-];
-
-const secondaryTools: ArtistTool[] = [
-  { id: 5, label: "Monetize", icon: "fa-circle-dollar-to-slot" },
-  { id: 6, label: "Spotlight", icon: "fa-wand-sparkles" },
-  { id: 7, label: "Top fans", icon: "fa-users" },
-  { id: 8, label: "Comments", icon: "fa-comments" },
-=======
   {
     id: 1,
     label: "Amplify",
@@ -123,13 +111,12 @@ const secondaryTools: ArtistTool[] = [
   { id: 6, label: "Spotlight", icon: <FA name="fa-wand-sparkles" /> },
   { id: 7, label: "Top fans", icon: <FA name="fa-users" /> },
   { id: 8, label: "Comments", icon: <FA name="fa-comments" /> },
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 ];
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
   wrapper: `
-    flex flex-col gap-3
+    flex flex-col gap-1
     w-full
   `,
   header: `
@@ -139,8 +126,8 @@ const styles = {
 
   `,
   title: `
-    text-white text-xs font-bold
-    tracking-widest uppercase
+    text-white text-sm font-black
+    tracking-normal uppercase
   `,
   collapseIcon: `
     text-white text-sm
@@ -148,18 +135,18 @@ const styles = {
     cursor-pointer
   `,
   toolsGrid: `
-    grid grid-cols-4 
+    
+    pt-2 flex justify-between gap-2
   `,
   toolButton: `
    group
   flex flex-col justify-between
-  border border-zinc-600
-  rounded-md p-4
-  h-20
+  border border-white/15
+  rounded-md py-4
+  h-24
   w-20
   transition-colors duration-200
   relative
-  overflow-hidden
 `,
   toolIcon: `
     text-white text-lg
@@ -167,21 +154,22 @@ const styles = {
   toolLabel: `
     text-white text-[12px]
     text-center
-    px-1 w-full
+    w-full
     transition-colors duration-200
+    
   `,
   plusBadge: `
     absolute top-1 right-1
   w-3 h-3
   rounded-full
-  bg-zinc-500
-  flex items-center justify-center
+  bg-[#211E34]
+  flex items-center justify-center 
   text-white text-[10px] 
   `,
   ctaButton: `
     w-full
     bg-purple-700 hover:bg-purple-600
-    text-white text-xs
+    text-white text-xs my-2
     rounded-md py-2 px-3
     flex items-center gap-2
     transition-colors duration-200
@@ -208,12 +196,6 @@ const ArtistToolsCard = () => {
       {/* Always visible — Row 1 */}
       <div className={styles.toolsGrid}>
         {primaryTools.map((tool) => (
-<<<<<<< HEAD
-          <button key={tool.id} className={styles.toolButton}>
-            <span className={styles.plusBadge}>+</span>
-            <div className="flex justify-center w-full">
-              <i className={`fa-solid ${tool.icon} ${styles.toolIcon}`}></i>
-=======
           <button
             key={tool.id}
             className={styles.toolButton}
@@ -237,15 +219,14 @@ const ArtistToolsCard = () => {
             </svg>
             <div className="flex justify-center w-full text-text-hover">
               {tool.icon}
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
             </div>
             <div
-              className={`${styles.toolLabel} group-hover:bg-purple-700 w-full`}
+              className={`${styles.toolLabel} group-hover:bg-[#7564F5] text-bg  w-full`}
             >
               <span className="group-hover:hidden block w-full text-center">
                 {tool.label}
               </span>
-              <span className="hidden group-hover:block w-full text-center">
+              <span className="hidden group-hover:block w-full text-bg font-extrabold text-center">
                 Upgrade
               </span>
             </div>
@@ -258,12 +239,6 @@ const ArtistToolsCard = () => {
         <>
           <div className={styles.toolsGrid}>
             {secondaryTools.map((tool) => (
-<<<<<<< HEAD
-              <button key={tool.id} className={styles.toolButton}>
-                <span className={styles.plusBadge}>+</span>
-                <div className="flex justify-center w-full">
-                  <i className={`fa-solid ${tool.icon} ${styles.toolIcon}`}></i>
-=======
               <button
                 key={tool.id}
                 className={styles.toolButton}
@@ -293,7 +268,6 @@ const ArtistToolsCard = () => {
                 </svg>
                 <div className="flex justify-center w-full text-text-hover">
                   {tool.icon}
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
                 </div>
                 <div
                   className={`${styles.toolLabel} group-hover:bg-purple-700 w-full`}

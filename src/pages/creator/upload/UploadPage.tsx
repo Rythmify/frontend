@@ -1,13 +1,4 @@
 import { useAuthStore } from "@/stores/auth.store";
-<<<<<<< HEAD
-import UploadGuestPage from "./UploadGuestPage";
-
-const UploadPage = () => {
-  const { isAuthenticated } = useAuthStore();
-  if (!isAuthenticated) return <UploadGuestPage />;
-
-  return <div>Upload form here</div>;
-=======
 import { useRef, useState, useEffect } from "react";
 import UploadGuestPage from "./UploadGuestPage";
 import UploadQuotaBar from "./UploadQuotaBar";
@@ -128,7 +119,6 @@ const UploadPage = () => {
       />
     </div>
   );
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 };
 
 export default UploadPage;
