@@ -118,7 +118,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 type="text"
                 value={title}
                 onChange={handleTitleChange}
-                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-white transition-colors"
+                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-bg-inverted  hover:border-bg-inverted transition-colors"
               />
             </div>
 
@@ -127,7 +127,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
               <label className="block text-xs font-bold mb-1 tracking-wide">
                 Track link
               </label>
-              <div className="flex items-center text-sm text-text-upload border-b border-border py-2">
+              <div className="flex items-center text-sm text-text-upload border-b border-border focus:border-bg-inverted  hover:border-bg-inverted transition-colors py-2">
                 <span className="shrink-0 text-text-upload/60">
                   https://soundcloud.com/{username}/
                 </span>
@@ -151,7 +151,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 type="text"
                 value={artists}
                 onChange={(e) => setArtists(e.target.value)}
-                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none transition-colors"
+                className="w-full bg-transparent text-sm border-b border-border  focus:border-bg-inverted  hover:border-bg-inverted py-2 outline-none transition-colors"
               />
               <p className="text-[12px] text-[#616161] mt-1">
                 Tip: Use commas to add multiple artist names.
@@ -174,7 +174,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="Add styles, moods, tempo."
-                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-white placeholder:text-text-upload/40"
+                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-bg-inverted  hover:border-bg-inverted placeholder:text-text-upload/40"
               />
             </div>
 
@@ -183,13 +183,12 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
               <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
                 Description
               </label>
-              <textarea
-                data-testid="upload-description-textarea"
-                rows={2}
+              <input
+                data-testid="upload-description-input"
                 placeholder="Tracks with description tend to get more plays and engagements."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-white placeholder:text-text-upload/40 resize-none"
+                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-bg-inverted  hover:border-bg-inverted placeholder:text-text-upload/40"
               />
             </div>
 

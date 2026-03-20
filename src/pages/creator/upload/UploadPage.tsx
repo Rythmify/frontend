@@ -65,7 +65,7 @@ const UploadPage = () => {
     return (
       <div className="fixed inset-0 bg-bg z-100 overflow-y-auto">
         <nav className="flex items-center justify-between px-8 py-4 bg-bg sticky top-0 z-10">
-          <div className="flex items-center gap-4 text-white">
+          <div className="flex items-center gap-4 text-text-upload">
             <i className="fa-brands fa-soundcloud text-3xl"></i>
           </div>
           <button
