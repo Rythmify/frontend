@@ -22,7 +22,7 @@ const RecordSection = ({ onFinish }: { onFinish: (data: Blob) => void }) => {
   };
 
   return (
-    <div className="relative container bg-[#121212] .dark:bg-bg-upload border border-border rounded-md mt-8 overflow-visible ">
+    <div className="relative bg-[#212121] light:bg-bg border border-border rounded-md mt-8 overflow-visible ">
       {/* Top Header Area & mic to see which mics you have on your system*/}
       <div className="p-6 flex items-center justify-between relative">
         <MicSelector
