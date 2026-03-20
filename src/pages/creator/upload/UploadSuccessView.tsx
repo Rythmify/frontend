@@ -1,4 +1,12 @@
+import { useNavigate } from "react-router-dom";
+
 const UploadSuccessView = ({ trackId }: { trackId: string | null }) => {
+  const navigate = useNavigate();
+
+  const handleArtistProClick = () => {
+    navigate("/artist-pro");
+  };
+
   return (
     <div className="container max-w-4xl mx-auto py-20 px-6 animate-in fade-in zoom-in-95 duration-500">
       <div className="flex gap-16 items-start justify-start">
@@ -47,6 +55,7 @@ const UploadSuccessView = ({ trackId }: { trackId: string | null }) => {
               </a>
             </p>
             <button
+              onClick={handleArtistProClick}
               data-test="unlock-artist-pro-button"
               className="bg-bg-inverted text-black px-4 py-2.5 text-sm rounded-full font-bold hover:bg-[#e5e5e5] transition-colors"
             >

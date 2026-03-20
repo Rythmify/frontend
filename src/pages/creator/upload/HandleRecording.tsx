@@ -226,8 +226,8 @@ const HandleRecording = ({
             onClick={btn.action}
             className={`p-2 rounded-full transition-colors ${
               isRecordingFinished || isPaused
-                ? "text-text-upload hover:bg-[#565656] cursor-pointer"
-                : "text-text-upload/20 cursor-default"
+                ? "text-[#ffffff] hover:bg-[#565656] cursor-pointer"
+                : "text-[#ffffff]/20 cursor-default"
             }`}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -241,7 +241,7 @@ const HandleRecording = ({
       <button
         data-test="record-toggle-button"
         onClick={handleRecordToggle}
-        className="flex items-center gap-2 bg-[#565656] hover:bg-[#8b8b8b] text-text-upload px-4 py-2.5 rounded-full font-bold 
+        className="flex items-center gap-2 bg-[#565656] hover:bg-[#8b8b8b] text-[#ffffff] px-4 py-2.5 rounded-full font-bold 
       text-sm cursor-pointer transition-all justify-center z-10"
       >
         <svg
@@ -267,7 +267,7 @@ const HandleRecording = ({
       </button>
 
       {/*Timer Section stays absolute right */}
-      <div className="text-text-upload font-bold text-[11px] min-w-10 text-right absolute right-6">
+      <div className="text-[#ffffff] font-bold text-[11px] min-w-10 text-right absolute right-6">
         {formatTime(seconds)}
       </div>
     </div>

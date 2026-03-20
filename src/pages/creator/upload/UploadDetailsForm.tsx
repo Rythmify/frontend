@@ -218,14 +218,14 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                     onChange={() => setPrivacy("public")}
                   />
                   <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "public" ? "border-white" : "border-[#666] group-hover:border-white"}`}
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "public" ? "border-bg-inverted" : "border-[#666] group-hover:border-bg-inverted"}`}
                   >
                     {privacy === "public" && (
-                      <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                      <div className="w-2.5 h-2.5 bg-bg-inverted rounded-full" />
                     )}
                   </div>
                   <span
-                    className={`${privacy === "public" ? "text-white font-bold" : "text-[#999]"}`}
+                    className={`${privacy === "public" ? "text-text-upload font-bold" : "text-[#999]"}`}
                   >
                     Public
                   </span>
@@ -241,14 +241,14 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                     onChange={() => setPrivacy("private")}
                   />
                   <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "private" ? "border-white" : "border-[#666] group-hover:border-white"}`}
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "private" ? "border-bg-inverted" : "border-[#666] group-hover:border-bg-inverted"}`}
                   >
                     {privacy === "private" && (
-                      <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                      <div className="w-2.5 h-2.5 bg-bg-inverted rounded-full" />
                     )}
                   </div>
                   <span
-                    className={`${privacy === "private" ? "text-white font-bold" : "text-[#999]"}`}
+                    className={`${privacy === "private" ? "text-text-upload font-bold" : "text-[#999]"}`}
                   >
                     Private
                   </span>
