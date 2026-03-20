@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-import React from 'react'
-
-export default function UsernamePage() {
-  return (
-    <div>UsernamePage</div>
-  )
-=======
 import { useState, useEffect, useRef } from "react";
 import ProfileHeader from "../../components/Profile/ProfileHeader/ProfileHeader";
 import ProfileTabs from "../../components/Profile/ProfileTabs/ProfileTabs";
@@ -227,5 +219,4 @@ export default function UsernamePage() {
       )}
     </div>
   );
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 }

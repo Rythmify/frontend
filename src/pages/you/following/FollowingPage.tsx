@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-import React from 'react'
-
-export default function FollowingPage() {
-  return (
-    <div>FollowingPage</div>
-  )
-=======
 import React from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
@@ -193,5 +185,4 @@ export default function FollowingPage() {
       </div>
     </div>
   );
->>>>>>> 6c9d16e92b7f619bb9071f653c94fc76a8bd77fb
 }

@@ -14,10 +14,15 @@
   /* Brand  */
   --color-accent: #ff5500;
   --color-accent-hover: #e64a00;
+   
 
   /* Backgrounds  */
   --color-bg: #ffffff;
+  --color-bg-inverted:#121212;
   --color-input-bg: #f3f3f3;
+
+  /*Artist and upload page specific*/
+  --color-bg-upload: #fafafafa;
 
   /* Borders  */
   --color-border: #e0e0e0;
@@ -30,6 +35,9 @@
   --color-text-link: #0a6e8a;
   --color-text-link-hover: #085a72;
   --color-text-hover:#000000;
+  --color-text-hover:#000000;
+  /* Upload Page Specific */
+  --color-text-upload: #000000de;
 
   /*  Semantic  */
   --color-error: #cf4a4a;
@@ -59,7 +67,11 @@
 @layer base {
   .dark {
     --color-bg: #121212;
+    --color-bg-inverted:#ffffff;
     --color-input-bg: #303030;
+
+    /*Artist and upload page specific*/
+    --color-bg-upload: #212121;
 
     --color-border: #333333;
     --color-border-light: #444444;
@@ -68,6 +80,8 @@
     --color-text-hover: #ffffff;
     --color-text-muted: #666666;
     --color-text-link: #699fff;
+    --color-text-upload: #ffffffff;
+
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -106,13 +120,13 @@
 
 /* Container Utility */
 
-@utility container {
+/* @utility container {
   max-width: var(--container-max);
   margin-left: auto;
   margin-right: auto;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
-}
+} */
 
 /* Nudge Animation */
 @keyframes nudge {
