@@ -39,7 +39,7 @@ const UploadFooter = ({
   return (
     <footer className="fixed bottom-0 left-0 right-0 bg-bg/90 transition-all duration-300 border-t border-border z-50">
       <div className="max-w-6xl mx-auto flex items-center justify-center relative h-19">
-        <p className="text-[12px] text-[#12121280] dark:text-[#ffffffb3]">
+        <p className="text-[12px] light:!text-[#12121280] dark:text-[#ffffffb3]">
           By uploading, you confirm that your sounds comply with our{" "}
           <a href="#" className="underline text-text-upload">
             Terms of Use
