@@ -2,19 +2,11 @@ import type { Track } from "@/types/track";
 import { useState } from "react";
 import { Tooltip } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
+import { usePlayerStore } from "@/stores/player.store";
 
 // ─── Props ────────────────────────────────────────────────
 interface TrackCardProps {
-  track: Pick<
-    Track,
-    | "id"
-    | "title"
-    | "artistName"
-    | "coverUrl"
-    | "artistUsername"
-    | "trackSlug"
-    | "audioUrl"
-  >;
+  track: Track;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -109,14 +101,13 @@ const tooltipStyles = {
 const TrackCard = ({ track }: TrackCardProps) => {
   const [liked, setLiked] = useState(false);
   const navigate = useNavigate();
+  const setTrack = usePlayerStore((state) => state.setTrack);
+
   // Handler for play button click (start playing track)
   const handlePlayClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // CRITICAL: Prevent card click from firing
-
-    // TODO: Replace this with Shahd's player function
-    // Example:
-    // startPlayback(track);
-
+    e.stopPropagation(); // Prevent card click from firing
+    // Start playing this track using Shahd's player store
+    setTrack(track);
     console.log("Play clicked for track:", track.id);
   };
 
