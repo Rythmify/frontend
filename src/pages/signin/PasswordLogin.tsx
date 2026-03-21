@@ -45,7 +45,7 @@ export default function PasswordLogin({ email, onBack, onContinue, onForgotPassw
       <div className="grid gap-5">
         <div className="grid gap-1">
           <p className="text-text-secondary text-sm font-semibold">Your email address or profile URL</p>
-          <p className="text-text-hover text-md">{email}</p>
+          <p className="text-text-hover max-w-xl text-md">{email}</p>
         </div>
 
         <div className="grid gap-1.5">

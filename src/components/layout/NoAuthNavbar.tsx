@@ -20,14 +20,14 @@ const NoAuthNavbar = () => {
   }, []);
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-md font-medium px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
+    `text-md font-bold px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
       isActive
         ? "text-text-hover border-text-hover"
         : "text-text-secondary border-transparent"
     }`;
 
   const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `block px-4 py-3 text-md font-medium transition-colors ${
+    `block px-4 py-3 text-md font-bold transition-colors ${
       isActive ? "text-text-hover" : "text-text-secondary hover:text-text-hover"
     }`;
 
@@ -35,7 +35,7 @@ const NoAuthNavbar = () => {
     <nav className="sticky top-1 z-50 w-full bg-bg ">
 
       {/* Main navbar row */}
-      <div className="container px-4 md:px-8 lg:px-20 grid grid-cols-[auto_1fr_auto] items-center h-11.5">
+      <div className="container px-4 md:px-8 lg:px-12 xl:px-20 grid grid-cols-[auto_1fr_auto] items-center h-11.5">
 
         {/* Left: Logo + Nav Links */}
         <div className="flex items-center gap-6 shrink-0">
@@ -45,7 +45,7 @@ const NoAuthNavbar = () => {
           </Link>
 
           {/* Nav links — tablet+ */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-3 lg:gap-4 xl:gap-6">
             <NavLink to="/discover" className={navLinkClass}>Home</NavLink>
             <NavLink to="/feed" className={navLinkClass}>Feed</NavLink>
             <NavLink to="/you/library" className={navLinkClass}>Library</NavLink>
@@ -75,7 +75,7 @@ const NoAuthNavbar = () => {
           <Link
             data-test="link-signin"
             to="/signin"
-            className="text-md font-medium text-text-hover hover:text-text-secondary transition-colors"
+            className="text-md font-bold text-text-hover hover:text-text-secondary transition-colors"
           >
             Sign in
           </Link>
@@ -91,7 +91,7 @@ const NoAuthNavbar = () => {
           <Link
             data-test="link-upload"
             to="/upload"
-            className="hidden lg:block text-md font-medium text-text-secondary hover:text-text-hover transition-colors"
+            className="hidden lg:block text-md font-bold text-text-secondary hover:text-text-hover transition-colors"
           >
             Upload
           </Link>

@@ -53,14 +53,14 @@ const MainNavbar = () => {
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-md font-medium px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
+    `text-md font-bold px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
       isActive
         ? "text-text-hover border-text-hover"
         : "text-text-secondary border-transparent"
     }`;
 
   const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `block px-4 py-3 text-md font-medium transition-colors ${
+    `block px-4 py-3 text-md font-bold transition-colors ${
       isActive ? "text-tex-hover" : "text-text-secondary hover:text-white"
     }`;
 
@@ -68,7 +68,7 @@ const MainNavbar = () => {
     <nav className="sticky top-0 z-100 flex h-[50px] w-full items-center bg-bg">
 
       {/* Main navbar row */}
-      <div className="container px-4 md:px-8 lg:px-20 grid grid-cols-[auto_1fr_auto] items-center h-13">
+      <div className="container px-4 md:px-8 lg:px-12 xl:px-20 grid grid-cols-[auto_1fr_auto] items-center h-13">
 
         {/* Left: Logo + Nav Links */}
         <div className="flex items-center gap-6 shrink-0">
@@ -77,7 +77,7 @@ const MainNavbar = () => {
           </Link>
 
           {/* Nav links — tablet+ */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-3 lg:gap-4 xl:gap-6">
             <NavLink to="/discover" className={navLinkClass}>Home</NavLink>
             <NavLink to="/feed" className={navLinkClass}>Feed</NavLink>
             <NavLink to="/you/library" className={navLinkClass}>Library</NavLink>
@@ -104,16 +104,16 @@ const MainNavbar = () => {
         <div className="flex-1 md:hidden" />
 
         {/* Right: Actions — tablet+ */}
-        <div className="hidden md:flex items-center gap-4 shrink-0">
+        <div className="hidden md:flex items-center gap-2 lg:gap-3 xl:gap-4 shrink-0">
 
           {/* Text links — desktop only */}
-          <Link to="/creator/checkout" className="hidden lg:block text-accent text-md font-medium hover:text-text-hover transition-colors">
+          <Link to="/creator/checkout" className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors">
             Try Artist Pro
           </Link>
-          <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-medium hover:text-text-hover transition-colors">
+          <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text-hover transition-colors">
             For Artists
           </Link>
-          <Link data-test="link-upload" to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-medium hover:text-text-hover transition-colors">
+          <Link data-test="link-upload" to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text-hover transition-colors">
             Upload
           </Link>
 

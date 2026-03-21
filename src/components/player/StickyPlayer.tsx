@@ -27,17 +27,13 @@ export default function StickyPlayer() {
   return (
     <div
       data-test="sticky-player"
-      className="
-        fixed bottom-0 left-0 right-0 z-[999]
-        h-[56px] flex items-center
-        bg-[#111] border-t border-[#2a2a2a]
-        px-4 gap-3
-      "
+      className="fixed z-999 h-14 bg-input-bg bottom-0 left-0 right-0"
     >
-      {/* 1. Controls */}
+      <div className="container  flex items-center h-full px-4 md:px-12 lg:px-12 el:px-20 gap-3">
+      {/* 1. Controls — far left */}
       <PlayerControls />
 
-      {/* 2. Progress bar */}
+      {/* 2. Progress bar with time — takes remaining space */}
       <div className="flex-1 min-w-0">
         <ProgressBar
           currentTime={currentTime}
@@ -53,73 +49,64 @@ export default function StickyPlayer() {
         onVolumeChange={setVolume}
         onToggleMute={toggleMute}
       />
-
-      {/* 4. Artwork */}
-      {currentTrack.coverUrl && (
-        <img
-          data-test="player-track-artwork"
-          src={currentTrack.coverUrl}
-          alt={currentTrack.title}
-          className="w-8 h-8 rounded object-cover shrink-0"
-        />
-      )}
-
-      {/* 5. Artist + Title */}
-      <div className="hidden sm:flex flex-col min-w-0 w-[130px]">
-        <Link
-          to={`/${currentTrack.artistUsername}`}
-          data-test="player-artist-name"
-          className="text-[var(--color-text-muted)] text-[11px] truncate hover:text-white transition-colors leading-tight"
-        >
-          {currentTrack.artistName}
-        </Link>
-        <span
-          data-test="player-track-title"
-          className="text-white text-xs font-semibold truncate leading-tight"
-        >
-          {currentTrack.title}
-        </span>
+      {/* 7. Artwork + Track Info — far right */}
+      <div className="flex items-center gap-2 shrink-0 w-40">
+        {currentTrack.coverUrl && (
+          <img
+            data-test="player-track-artwork"
+            src={currentTrack.coverUrl}
+            alt={currentTrack.title}
+            className="w-10 h-10 rounded object-cover shrink-0"
+          />
+        )}
+        <div className="flex flex-col min-w-0">
+          <span
+            data-test="player-track-title"
+            className="text-white text-md font-semibold truncate leading-tight"
+          >
+            {currentTrack.title}
+          </span>
+          <Link
+            to={`/${currentTrack.artistUsername}`}
+            data-test="player-artist-name"
+            className="text-text-muted text-[14px] truncate hover:text-white transition-colors leading-tight"
+          >
+            {currentTrack.artistName}
+          </Link>
+        </div>
       </div>
 
-      {/* 6. Like */}
+      
+
+      {/* 4. Like */}
       <button
         data-test="player-button-like"
         onClick={toggleLike}
-        className={`
-          w-8 h-8 flex items-center justify-center rounded shrink-0
-          transition-colors duration-150 cursor-pointer text-sm
-          ${isLiked
-            ? "text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
-            : "text-white hover:text-[var(--color-text-muted)]"
-          }
-        `}
+        className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer text-base
+          ${isLiked ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
       >
         <FaHeart />
       </button>
 
-      {/* 7. Follow */}
+      {/* 5. Follow */}
       <button
         data-test="player-button-follow"
-        className="
-          w-8 h-8 flex items-center justify-center rounded shrink-0
-          text-white hover:text-[var(--color-text-muted)]
-          transition-colors duration-150 cursor-pointer text-sm
-        "
+        className="w-10 h-10 flex items-center justify-center shrink-0 text-white hover:text-text-muted transition-colors duration-150 cursor-pointer text-base"
       >
         <FaUserPlus />
       </button>
 
-      {/* 8. Queue */}
+      {/* 6. Queue */}
       <button
         data-test="player-button-queue"
-        className="
-          w-8 h-8 flex items-center justify-center rounded shrink-0
-          text-white hover:text-[var(--color-text-muted)]
-          transition-colors duration-150 cursor-pointer text-lg
-        "
+        className="w-10 h-10 flex items-center justify-center shrink-0 text-white hover:text-text-muted transition-colors duration-150 cursor-pointer text-xl"
       >
         <MdQueueMusic />
       </button>
+
+      
+
+      </div>
     </div>
   );
 }
