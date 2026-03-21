@@ -31,6 +31,18 @@ const UploadGuestPage = () => {
     },
   ];
 
+  const footerLinks = [
+    "Legal",
+    "Privacy",
+    "Cookie Policy",
+    "Cookie Manager",
+    "Imprint",
+    "Artist Resources",
+    "Newsroom",
+    "Charts",
+    "Transparency Reports",
+  ];
+
   return (
     <div className="bg-bg container px-4 md:px-4 lg:px-20 text-text-upload ">
       <section
@@ -112,6 +124,7 @@ const UploadGuestPage = () => {
           clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 100%)",
           marginTop: "-40px",
           paddingTop: "100px",
+          paddingBottom: "100px",
         }}
       >
         <div className="container mx-auto px-6 md:px-20">
@@ -128,17 +141,23 @@ const UploadGuestPage = () => {
           </div>
 
           {/* Artist Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            {artists.map((artist) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 ">
+            {artists.map((artist,index) => (
               <div
                 key={artist.name}
-                className="bg-bg-inverted p-1 shadow-sm border border-gray-100 flex flex-col"
+                className={`bg-bg-inverted p-1 flex flex-col ${
+                  index === 0
+                    ? "mt-16" //lowest card
+                    : index === 1
+                      ? "mt-8" 
+                      : "mt-0" //highest card
+                }`}
               >
                 <div className="p-3 flex justify-between items-center bg-bg-inverted">
                   <span className="font-bold text-sm text-text-muted">
                     {artist.name}
                   </span>
-                  <span className="text-[11px] text-[#044dd2] font-bold flex items-center gap-1">
+                  <span className="text-[11px] text-[#044dd2] font-bold flex items-center gap-1 cursor-pointer hover:underline">
                     <i className="fa-solid fa-user text-[10px]" />{" "}
                     {artist.followers}
                   </span>
@@ -146,7 +165,7 @@ const UploadGuestPage = () => {
                 <img
                   src={artist.img}
                   alt={artist.name}
-                  className="w-full aspect-square object-cover"
+                  className="w-fit aspect-square object-cover"
                 />
                 <div className="p-5 bg-bg-inverted flex-1">
                   <p className="text-[13px] leading-relaxed text-bg">
@@ -170,57 +189,95 @@ const UploadGuestPage = () => {
         className="bg-bg text-black pb-24 pt-32"
         style={{
           clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 100%)",
-          marginTop: "-40px",
-          paddingTop: "100px",
+          marginTop: "-100px",
+          paddingTop: "130px",
         }}
       >
         <div className="container mx-auto px-6 md:px-20">
-          <div className="max-w-4xl mb-16">
+          <div className="max-w-[415px] mb-16">
             <h2 className="text-[36px] text-text-upload font-bold mb-2">
               Connect with fans and see who's listening
             </h2>
             <div className="w-16 h-1 bg-[#ff5500] mb-6"></div>
             <p className="text-[18px] leading-snug text-text-upload">
-              Uploading is just the beginning: SoundCloud gives you the tools to level up your career.
+              Uploading is just the beginning: SoundCloud gives you the tools to
+              level up your career.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 text-text-upload">
             <div className="space-y-4">
-              <h3 className="text-xl font-bold">Share your tracks anywhere on the web</h3>
+              <h3 className="text-xl font-bold">
+                Share your tracks anywhere on the web
+              </h3>
               <p className=" text-[16px] ">
-                Use the embed player and audio cards to share your tracks wherever your audience is: from music blogs to your Twitter stream.
+                Use the embed player and audio cards to share your tracks
+                wherever your audience is: from music blogs to your Twitter
+                stream.
               </p>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xl font-bold">Get to know and connect with your audience</h3>
+              <h3 className="text-xl font-bold">
+                Get to know and connect with your audience
+              </h3>
               <p className=" text-[16px]">
-                Measure your progress with stats and interact with your fans directly via comments and messages.
+                Measure your progress with stats and interact with your fans
+                directly via comments and messages.
               </p>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xl font-bold">Take creator tools with you anytime and anywhere</h3>
+              <h3 className="text-xl font-bold">
+                Take creator tools with you anytime and anywhere
+              </h3>
               <p className=" text-[16px]">
-                Whether you're in the studio, at home or on a tour bus,
-                keep your community humming with our mobile app for creators.
+                Whether you're in the studio, at home or on a tour bus, keep
+                your community humming with our mobile app for creators.
               </p>
             </div>
           </div>
           <img
             src="https://a-v2.sndcdn.com/assets/images/upload_devices-3d92796c.png"
-            className="w-full h-auto mt-8"
+            className="w-full h-auto mt-8 ml-8 mr-8"
           />
-          <button
-            onClick={handleUploadClick}
-            className="bg-bg-inverted cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
-          >
-            Try it free
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-10">
+            <button
+              onClick={handleUploadClick}
+              className="bg-bg-inverted cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
+            >
+              Try it free
+            </button>
+            <button
+              onClick={() => navigate("/artist-pro")}
+              className="text-[#699fff] text-[22px] font-bold cursor-pointer bg-transparent border-none"
+            >
+              Learn more about Pro plans
+            </button>
+          </div>
         </div>
       </section>
-      
+
+      <footer className="bg-bg px-10 lg:px-20 py-8">
+        <div className="flex flex-wrap items-center gap-y-1 mb-4">
+          {footerLinks.map((link, i) => (
+            <span key={link} className="flex items-center">
+              <button className="text-sm text-text-secondary hover:text-[#484848] transition-colors cursor-pointer bg-transparent border-none">
+                {link}
+              </button>
+              {i < footerLinks.length - 1 && (
+                <span className="text-text-secondary text-[12px] mx-2">·</span>
+              )}
+            </span>
+          ))}
+        </div>
+        <p className="text-sm text-text-secondary">
+          Language:{" "}
+          <button className="text-[#699fff] hover:underline cursor-pointer bg-transparent border-none font-medium">
+            English (US)
+          </button>
+        </p>
+      </footer>
     </div>
   );
 };
