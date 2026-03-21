@@ -35,13 +35,13 @@ const UploadLayout = () => {
             </Link>
             {/*toggle between upload and details mode in the header*/}
             <h6 className=" font-bold text-text-upload text-md tracking-wide">
-              {isDetailsMode ? "Track Info" : "Upload"}
+              {uploadSuccess ? "" : isDetailsMode ? "Track Info" : "Upload"}
             </h6>
           </div>
 
           {/* Upload Status => Only visible in Details Mode */}
           <div className="flex items-center gap-4">
-            {isDetailsMode && (
+            {isDetailsMode && !uploadSuccess && (
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 text-text-upload text-xs">
                   <svg
@@ -63,7 +63,7 @@ const UploadLayout = () => {
                 </button>
               </div>
             )}
-            {isDetailsMode && uploadProgress > 0 && uploadProgress < 100 && (
+            {isDetailsMode && !uploadSuccess && uploadProgress > 0 && uploadProgress < 100 && (
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-32 h-1.5 flex items-center gap-[2px]">
                   <div
