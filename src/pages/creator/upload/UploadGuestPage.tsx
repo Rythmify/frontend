@@ -57,7 +57,7 @@ const UploadGuestPage = () => {
           <div className="relative h-full w-full">
             <img
               src="https://a-v2.sndcdn.com/assets/images/img-upload-hero-0fd428fc.jpg"
-              className="object-cover h-full w-full opacity-50"
+              className="object-cover h-full w-full"
               alt=""
             />
           </div>
@@ -66,10 +66,10 @@ const UploadGuestPage = () => {
         {/*Content Structure */}
         <div className="relative z-10 px-10 pt-27.5 pl-15 pr-130">
           <div className=" max-w-2xl">
-            <h1 className="text-text-upload text-[40px] ">
+            <h1 className="text-white text-[40px] ">
               First upload to first album
             </h1>
-            <p className="text-text-upload text-[17px] font-bold mb-7.5 mt-2">
+            <p className="text-white text-[17px] font-bold mb-7.5 mt-2">
               Share your tracks and access the tools you need to break through
               and build your legacy.
             </p>
@@ -77,7 +77,7 @@ const UploadGuestPage = () => {
               data-test="upload-guestpage-button"
               type="button"
               onClick={handleUploadClick}
-              className="bg-bg-inverted text-bg hover:text-[#b0b0b0] cursor-pointer transition-all px-3 py-1.5 font-bold text-[22px] rounded-sm shadow-lg"
+              className="bg-[#ffffff] text-[#121212] hover:text-[#b0b0b0] cursor-pointer transition-all px-3 py-1.5 font-bold text-[22px] rounded-sm shadow-lg"
             >
               Upload your first track
             </button>
@@ -128,7 +128,7 @@ const UploadGuestPage = () => {
         }}
       >
         <div className="container mx-auto px-6 md:px-20">
-          <div className="max-w-4xl mb-16">
+          <div className="max-w-[415px] mb-16">
             <h2 className="text-[36px] font-bold mb-2">
               Made here, played everywhere
             </h2>
@@ -175,7 +175,7 @@ const UploadGuestPage = () => {
                     className="w-77 object-cover"
                   />
 
-                  <blockquote className="px-4 py-4 text-sm leading-relaxed text-bg">
+                  <blockquote className="px-4 py-4 text-sm leading-relaxed text-[#121212]">
                     "{artist.quote}"
                   </blockquote>
                 </div>
@@ -185,7 +185,7 @@ const UploadGuestPage = () => {
 
           <button
             onClick={handleUploadClick}
-            className="bg-bg text-text-upload cursor-pointer transition-colors  px-3 py-1.5 font-bold text-[22px] rounded-sm"
+            className="bg-[#121212] text-white cursor-pointer transition-colors  px-3 py-1.5 font-bold text-[22px] rounded-sm"
           >
             Join Now
           </button>
@@ -193,7 +193,7 @@ const UploadGuestPage = () => {
       </section>
 
       <section
-        className="bg-bg text-black pb-16.25 pt-32"
+        className="bg-bg text-[#121212] pb-16.25 pt-32"
         style={{
           clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 100%)",
           marginTop: "-100px",
@@ -251,13 +251,13 @@ const UploadGuestPage = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-10">
             <button
               onClick={handleUploadClick}
-              className="bg-bg-inverted cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
+              className="bg-bg-inverted text-bg cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
             >
               Try it free
             </button>
             <button
               onClick={() => navigate("/artist-pro")}
-              className="text-[#699fff] text-[22px] font-bold cursor-pointer bg-transparent border-none"
+              className="dark:!text-[#699fff] text-[#044dd2] text-[22px] font-bold cursor-pointer bg-transparent border-none"
             >
               Learn more about Pro plans
             </button>
@@ -269,7 +269,7 @@ const UploadGuestPage = () => {
         <div className="flex flex-wrap items-center gap-y-1 mb-4">
           {footerLinks.map((link, i) => (
             <span key={link} className="flex items-center">
-              <button className="text-sm text-text-secondary hover:text-[#484848] transition-colors cursor-pointer bg-transparent border-none">
+              <button className="text-sm dark:text-text-secondary dark:hover:text-[#484848] text-text-muted hover:text-[#c2c2c2] cursor-pointer">
                 {link}
               </button>
               {i < footerLinks.length - 1 && (
@@ -280,7 +280,7 @@ const UploadGuestPage = () => {
         </div>
         <p className="text-sm text-text-secondary">
           Language:{" "}
-          <button className="text-[#699fff] hover:underline cursor-pointer bg-transparent border-none font-medium">
+          <button className="text-[#044dd2] dark:text-[#699fff] hover:underline cursor-pointer bg-transparent border-none font-medium">
             English (US)
           </button>
         </p>
