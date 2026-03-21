@@ -5,7 +5,7 @@ import UploadQuotaBar from "./UploadQuotaBar";
 import RecordSection from "./RecordSection";
 import DropZone from "./DropZone";
 import UploadDetailsForm from "./UploadDetailsForm";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import UploadFooter from "./UploadFooter";
 import UploadSuccessView from "./UploadSuccessView";
 
@@ -21,14 +21,20 @@ const UploadPage = () => {
     setIsDetailsMode: (val: boolean) => void;
     setTrackName: (name: string) => void;
     setUploadProgress: (val: number) => void;
+    setUploadSuccess: (val: boolean) => void;
   }>() || {
     isDetailsMode: false,
     setIsDetailsMode: () => {},
     setTrackName: () => {},
   };
 
-  const { isDetailsMode, setIsDetailsMode, setTrackName, setUploadProgress } =
-    context;
+  const {
+    isDetailsMode,
+    setIsDetailsMode,
+    setTrackName,
+    setUploadProgress,
+    setUploadSuccess,
+  } = context;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [audioData, setAudioData] = useState<File | Blob | null>(null);
   const [uploadedTrackId, setUploadedTrackId] = useState<string | null>(null);
@@ -55,6 +61,7 @@ const UploadPage = () => {
     setUploadedTrackId(trackId);
     setIsSubmitting(false);
     setView("success");
+    setUploadSuccess(true);
   };
 
   const handleSaveClick = () => {
@@ -62,35 +69,6 @@ const UploadPage = () => {
       formRef.current.triggerSubmit();
     }
   };
-
-  if (view === "success") {
-    return (
-      <div className="fixed inset-0 bg-bg z-100 overflow-y-auto">
-        <nav className="flex items-center justify-between px-8 py-4 bg-bg sticky top-0 z-10">
-          <div className="flex items-center gap-4 text-text-upload">
-            <i className="fa-brands fa-soundcloud text-3xl"></i>
-          </div>
-          <button
-            data-test="close-success-view-button"
-            onClick={() => (window.location.href = "/")}
-            className="text-[#999] hover:text-white transition-colors p-2 cursor-pointer"
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </nav>
-        <UploadSuccessView trackId={uploadedTrackId} />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col relative">
@@ -103,7 +81,7 @@ const UploadPage = () => {
             <DropZone onUpload={handleFinishUpload} />
             <RecordSection onFinish={handleFinishUpload} />
           </>
-        ) : (
+        ) : view === "details" ? (
           <UploadDetailsForm
             ref={formRef}
             audioData={audioData}
@@ -112,14 +90,18 @@ const UploadPage = () => {
             setIsLoadingParent={setIsSubmitting}
             onProgress={setUploadProgress}
           />
+        ) : (
+          <UploadSuccessView trackId={uploadedTrackId} />
         )}
       </div>
 
-      <UploadFooter
-        isDetailsMode={view === "details"}
-        onSave={handleSaveClick}
-        isLoading={isSubmitting}
-      />
+      {view !== "success" && (
+        <UploadFooter
+          isDetailsMode={view === "details"}
+          onSave={handleSaveClick}
+          isLoading={isSubmitting}
+        />
+      )}
     </div>
   );
 };
