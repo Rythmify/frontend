@@ -59,7 +59,7 @@ export default function ProgressBar({ currentTime, duration, onSeek }: ProgressB
       {/* Current time */}
       <span
         data-test="player-current-time"
-        className="text-[var(--color-text-muted)] text-[11px] tabular-nums shrink-0 w-8 text-right"
+        className="text-text-hover text-[13px] tabular-nums shrink-0 w-8 text-right"
       >
         {formatTime(currentTime)}
       </span>
@@ -80,7 +80,7 @@ export default function ProgressBar({ currentTime, duration, onSeek }: ProgressB
         <div
           className="
             absolute top-1/2 -translate-y-1/2 -translate-x-1/2
-            w-3 h-3 rounded-full bg-white shadow
+            w-4 h-4 rounded-full bg-white shadow
             opacity-0 group-hover:opacity-100
             transition-opacity duration-150 pointer-events-none
           "
@@ -91,7 +91,7 @@ export default function ProgressBar({ currentTime, duration, onSeek }: ProgressB
       {/* Duration */}
       <span
         data-test="player-duration"
-        className="text-[var(--color-text-muted)] text-[11px] tabular-nums shrink-0 w-8"
+        className="text-text-hover text-[13px] tabular-nums shrink-0 w-8"
       >
         {formatTime(duration)}
       </span>
