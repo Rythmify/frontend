@@ -89,7 +89,7 @@ const UploadGuestPage = () => {
       <section className="bg-bg py-20 " style={{ marginTop: "-60px" }}>
         <div className="container mx-auto px-10 max-w-[1240px]">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 text-text-upload">
-            <div className="space-y-4">
+            <div className="space-y-4 mt-16">
               <h3 className="text-xl font-bold">Real-time stats</h3>
               <p className=" text-[16px] ">
                 See which fans are listening to your tracks the most and where
@@ -97,7 +97,7 @@ const UploadGuestPage = () => {
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 mt-8">
               <h3 className="text-xl font-bold">Find your community</h3>
               <p className=" text-[16px]">
                 Share your work with millions of daily active listeners or share
@@ -119,7 +119,7 @@ const UploadGuestPage = () => {
 
       {/*artists*/}
       <section
-        className="bg-[#fafafafa] text-black pb-24 pt-32"
+        className="bg-[#f8f8f8] text-black pb-24 pt-32"
         style={{
           clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 100%)",
           marginTop: "-40px",
@@ -142,37 +142,44 @@ const UploadGuestPage = () => {
 
           {/* Artist Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 ">
-            {artists.map((artist,index) => (
-              <div
+            {artists.map((artist, index) => (
+              <li
                 key={artist.name}
-                className={`bg-bg-inverted p-1 flex flex-col ${
-                  index === 0
-                    ? "mt-16" //lowest card
-                    : index === 1
-                      ? "mt-8" 
-                      : "mt-0" //highest card
+                className={`flex flex-col ${
+                  index === 0 ? "mt-24" : index === 1 ? "mt-12" : "mt-0"
                 }`}
               >
-                <div className="p-3 flex justify-between items-center bg-bg-inverted">
-                  <span className="font-bold text-sm text-text-muted">
-                    {artist.name}
-                  </span>
-                  <span className="text-[11px] text-[#044dd2] font-bold flex items-center gap-1 cursor-pointer hover:underline">
-                    <i className="fa-solid fa-user text-[10px]" />{" "}
-                    {artist.followers}
-                  </span>
-                </div>
-                <img
-                  src={artist.img}
-                  alt={artist.name}
-                  className="w-fit aspect-square object-cover"
-                />
-                <div className="p-5 bg-bg-inverted flex-1">
-                  <p className="text-[13px] leading-relaxed text-bg">
+                <div className="bg-white flex flex-col">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <h2 className="text-[15px] font-bold text-text-muted">
+                      {artist.name}
+                    </h2>
+                    <div className="flex items-center gap-1 text-[12px] text-[#044dd2] cursor-pointer hover:underline">
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="14"
+                        height="14"
+                        aria-hidden="true"
+                      >
+                        <g fill="currentColor">
+                          <path d="M8 7.5a3 3 0 100-6 3 3 0 000 6zM2.001 14.248C2.036 10.005 2.984 8.5 8 8.5s5.965 1.487 5.999 5.748a.25.25 0 01-.249.252H2.25a.25.25 0 01-.249-.252z" />
+                        </g>
+                      </svg>
+                      {artist.followers}
+                    </div>
+                  </div>
+
+                  <img
+                    src={artist.img}
+                    alt={artist.name}
+                    className="w-77 object-cover"
+                  />
+
+                  <blockquote className="px-4 py-4 text-sm leading-relaxed text-bg">
                     "{artist.quote}"
-                  </p>
+                  </blockquote>
                 </div>
-              </div>
+              </li>
             ))}
           </div>
 
@@ -186,7 +193,7 @@ const UploadGuestPage = () => {
       </section>
 
       <section
-        className="bg-bg text-black pb-24 pt-32"
+        className="bg-bg text-black pb-16.25 pt-32"
         style={{
           clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 100%)",
           marginTop: "-100px",
@@ -258,7 +265,7 @@ const UploadGuestPage = () => {
         </div>
       </section>
 
-      <footer className="bg-bg px-10 lg:px-20 py-8">
+      <footer className="bg-bg py-8">
         <div className="flex flex-wrap items-center gap-y-1 mb-4">
           {footerLinks.map((link, i) => (
             <span key={link} className="flex items-center">
