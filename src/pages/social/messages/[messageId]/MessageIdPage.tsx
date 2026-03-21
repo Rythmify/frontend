@@ -2,34 +2,81 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Chats } from '@/components/MessagingComponents/Chats'
 import MessagingHeader from '@/components/MessagingComponents/MessagingHeader'
-import { fetchConversations, type Conversation } from '@/services/api/messaging/conversationApi'
+import { fetchConversations, fetchConversation, type Conversation, type Message } from '@/services/api/messaging/conversationApi'
 import ConversationHeader from '@/components/MessagingComponents/ConversationHeader'
 import SendMessageForm from '@/components/MessagingComponents/SendMessageForm'
-
-type ActiveModal = 'none' | 'report' | 'spam'
 
 export default function MessageIdPage() {
   const navigate = useNavigate()
 
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [activeConvId, setActiveConvId]   = useState<string | null>(null)
-  const [loadingConvs, setLoadingConvs]   = useState(true)
-  const [error, setError]                 = useState<string | null>(null)
+  const [conversations, setConversations]   = useState<Conversation[]>([])
+  const [activeConvId, setActiveConvId]     = useState<string | null>(null)
+  const [activeMessages, setActiveMessages] = useState<Message[]>([])
+  const [loadingConvs, setLoadingConvs]     = useState(true)
+  const [loadingMsgs, setLoadingMsgs]       = useState(false)
+  const [error, setError]                   = useState<string | null>(null)
 
   const activeConv = conversations.find(c => c.id === activeConvId) ?? null
 
+  // 1. Fetch all conversations, then auto-open the first one
   useEffect(() => {
     setLoadingConvs(true)
-    setError(null)
     fetchConversations()
-      .then(res => setConversations(res.data.items))
+      .then(res => {
+        const items = res.data.items
+        setConversations(items)
+        if (items.length > 0) {
+          loadConversation(items[0])
+        }
+      })
       .catch(() => setError('Could not load conversations.'))
       .finally(() => setLoadingConvs(false))
   }, [])
 
-  const handleSelectConversation = (conv: Conversation) => {
+  // 2. Load messages for a given conversation
+  const loadConversation = (conv: Conversation) => {
     setActiveConvId(conv.id)
+    setActiveMessages([])
+    setLoadingMsgs(true)
+    fetchConversation(conv.id)
+      .then(res => setActiveMessages(res.data.messages))
+      .catch(() => setError('Could not load messages.'))
+      .finally(() => setLoadingMsgs(false))
+  }
+
+  // 3. On message sent — append to messages + update chat profile preview
+  const handleMessageSent = (msg: Message) => {
+    setActiveMessages(prev => [...prev, msg])
+    setConversations(prev =>
+      prev.map(c =>
+        c.id === activeConvId
+          ? { ...c, last_message: msg, updated_at: msg.created_at }
+          : c
+      )
+    )
+  }
+const handleConversationDeleted = (deletedId: string) => {
+  setConversations(prev => {
+    const remaining = prev.filter(c => c.id !== deletedId)
+
+    if (remaining.length > 0) {
+      // navigate to most recent 
+      const next = remaining[0]
+      navigate(`/messages/${next.participant.id}`)
+      loadConversation(next)
+    } else {
+      // no conversations left
+      setActiveConvId(null)
+      setActiveMessages([])
+      navigate('/messages')
+    }
+
+    return remaining
+  })
+}
+  const handleSelectConversation = (conv: Conversation) => {
     navigate(`/messages/${conv.participant.id}`)
+    loadConversation(conv)
   }
 
   return (
@@ -54,9 +101,14 @@ export default function MessageIdPage() {
             <ConversationHeader
               conversationId={activeConv.id}
               reciepiantId={activeConv.participant.id}
+              recipientName={activeConv.participant.display_name}
+              onDeleted={handleConversationDeleted} 
             />
             <SendMessageForm
               conversationId={activeConv.id}
+              existingMessages={activeMessages}
+              loadingMessages={loadingMsgs}
+              onMessageSent={handleMessageSent}
               currentUser={{
                 display_name: 'Me',
                 profile_picture: null,
@@ -64,9 +116,11 @@ export default function MessageIdPage() {
             />
           </>
         ) : (
-          <div className="flex items-center justify-center flex-1 text-sm text-[#666]">
-            Select a conversation to start messaging.
-          </div>
+          !loadingConvs && (
+            <div className="flex items-center justify-center flex-1 text-sm text-[#666]">
+              Select a conversation to start messaging.
+            </div>
+          )
         )}
       </div>
 
