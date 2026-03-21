@@ -107,14 +107,14 @@ interface RectangularCardProps {
     | "repostCount"
     | "commentCount"
     | "trackSlug"
-    | "username"
+    | "artistUsername"
   >;
 }
 
 const RectangularCard = ({ track }: RectangularCardProps) => {
   const navigate = useNavigate();
   const handleStatClick = (statType: "likes" | "reposts" | "comments") => {
-    navigate(`/${track.username}/${track.trackSlug}/${statType}`);
+    navigate(`/${track.artistUsername}/${track.trackSlug}/${statType}`);
   };
   return (
     <div className={styles.trackCard}>
