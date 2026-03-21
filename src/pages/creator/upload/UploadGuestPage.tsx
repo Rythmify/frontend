@@ -66,7 +66,7 @@ const UploadGuestPage = () => {
       <section className="bg-bg py-20 " style={{ marginTop: "-60px" }}>
         <div className="container mx-auto px-10 max-w-[1240px]">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 text-text-upload">
-            <div className="space-y-4 mt-16">
+            <div className="space-y-4 mt-24">
               <h3 className="text-xl font-bold">Real-time stats</h3>
               <p className=" text-[16px] ">
                 See which fans are listening to your tracks the most and where
@@ -74,7 +74,7 @@ const UploadGuestPage = () => {
               </p>
             </div>
 
-            <div className="space-y-4 mt-8">
+            <div className="space-y-4 mt-12">
               <h3 className="text-xl font-bold">Find your community</h3>
               <p className=" text-[16px]">
                 Share your work with millions of daily active listeners or share
