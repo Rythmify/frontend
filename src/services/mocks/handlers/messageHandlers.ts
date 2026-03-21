@@ -93,7 +93,16 @@ const mockMessage2 = {
   is_read: true,
   created_at: "2025-03-10T14:25:00Z",
 };
-
+const mockMessage3 = {
+  id: "e5f6a7b8-c9d0-1234-efab-567890abcdef",
+  conversation_id: "c1d2e3f4-a5b6-7890-cdef-123456789abc",
+  sender_id: "current-user-id",
+  body: "test",
+  embed_type: null,
+  embed_id: null,
+  is_read: true,
+  created_at: "2025-03-10T14:25:00Z",
+};
 
 const mockTrack = {
   id: 'e5f6a7b8-c9d0-1234-efab-567890abcdef',
@@ -157,11 +166,11 @@ const mockConversationDetail: ConversationDetailResponse = {
   success: true,
   data: {
     conversation: mockConversations.data.items[0],
-    messages: [mockMessage1, mockMessage2],
+    messages: [mockMessage1, mockMessage2, mockMessage3],
     pagination: {
       page: 1,
       per_page: 50,
-      total_items: 2,
+      total_items: 3,
       total_pages: 1,
       has_next: false,
       has_prev: false,
