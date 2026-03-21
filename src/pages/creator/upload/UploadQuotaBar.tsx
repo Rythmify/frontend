@@ -59,7 +59,7 @@ const UploadQuotaBar = () => {
       data-test="get-unlimited-uploads-button"
         type="button"
         className="shrink-0 flex items-center justify-center bg-bg py-2.5 px-6
-          outline-[#383838] outline-[0.2px] hover:bg-[#353535] text-white text-sm font-bold
+          outline-[#383838] outline-[0.2px] hover:bg-[#e8e8e8] dark:hover:bg-[#353535] text-text-upload text-sm font-bold
           outline-offset-[-1.5px] rounded-full transition-all whitespace-nowrap cursor-pointer"
       >
         Get unlimited uploads
