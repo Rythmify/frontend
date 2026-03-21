@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 import { mockUsers } from "../users";
 import type { Track } from "../../../types/track";
 
-const BASE = "/api";
+const BASE = "*/api/v1";
 
 const mockTracksJson: Track[] = [
   {
@@ -117,20 +117,10 @@ const mockTracksJson: Track[] = [
   },
 ];
 
-export const trackHandlers = [
-
-  // Tracks 
+export const trackPageHandlers = [
 
   http.get(`${BASE}/tracks`, () => {
     return HttpResponse.json(mockTracksJson);
-  }),
-
-  http.get(`${BASE}/tracks/:id`, ({ params }) => {
-    const track = mockTracksJson.find((t) => t.id === Number(params.id));
-    if (!track) {
-      return HttpResponse.json({ error: "Track not found" }, { status: 404 });
-    }
-    return HttpResponse.json(track);
   }),
 
   http.get(`${BASE}/tracks/:id/related`, ({ params }) => {
@@ -147,25 +137,19 @@ export const trackHandlers = [
 
   http.post(`${BASE}/tracks/:id/like`, ({ params }) => {
     const track = mockTracksJson.find((t) => t.id === Number(params.id));
-    if (!track) {
-      return HttpResponse.json({ error: "Track not found" }, { status: 404 });
-    }
+    if (!track) return HttpResponse.json({ error: "Track not found" }, { status: 404 });
     return HttpResponse.json({ liked: true, likeCount: track.likeCount + 1 });
   }),
 
   http.delete(`${BASE}/tracks/:id/like`, ({ params }) => {
     const track = mockTracksJson.find((t) => t.id === Number(params.id));
-    if (!track) {
-      return HttpResponse.json({ error: "Track not found" }, { status: 404 });
-    }
+    if (!track) return HttpResponse.json({ error: "Track not found" }, { status: 404 });
     return HttpResponse.json({ liked: false, likeCount: track.likeCount - 1 });
   }),
 
   http.post(`${BASE}/tracks/:id/repost`, ({ params }) => {
     const track = mockTracksJson.find((t) => t.id === Number(params.id));
-    if (!track) {
-      return HttpResponse.json({ error: "Track not found" }, { status: 404 });
-    }
+    if (!track) return HttpResponse.json({ error: "Track not found" }, { status: 404 });
     return HttpResponse.json({ reposted: true, repostCount: track.repostCount + 1 });
   }),
 
@@ -184,39 +168,25 @@ export const trackHandlers = [
     }, { status: 201 });
   }),
 
-  // Users
-
   http.get(`${BASE}/users`, () => {
     return HttpResponse.json(Array.isArray(mockUsers) ? mockUsers : []);
   }),
 
   http.get(`${BASE}/users/:username`, ({ params }) => {
     const user = mockUsers.find((u) => u.username === params.username);
-    if (!user) {
-      return HttpResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    if (!user) return HttpResponse.json({ error: "User not found" }, { status: 404 });
     return HttpResponse.json(user);
   }),
 
   http.post(`${BASE}/users/:username/follow`, ({ params }) => {
     const user = mockUsers.find((u) => u.username === params.username);
-    if (!user) {
-      return HttpResponse.json({ error: "User not found" }, { status: 404 });
-    }
-    return HttpResponse.json({
-      following: true,
-      followerCount: user.followerCount + 1,
-    });
+    if (!user) return HttpResponse.json({ error: "User not found" }, { status: 404 });
+    return HttpResponse.json({ following: true, followerCount: user.followerCount + 1 });
   }),
 
   http.delete(`${BASE}/users/:username/follow`, ({ params }) => {
     const user = mockUsers.find((u) => u.username === params.username);
-    if (!user) {
-      return HttpResponse.json({ error: "User not found" }, { status: 404 });
-    }
-    return HttpResponse.json({
-      following: false,
-      followerCount: user.followerCount - 1,
-    });
+    if (!user) return HttpResponse.json({ error: "User not found" }, { status: 404 });
+    return HttpResponse.json({ following: false, followerCount: user.followerCount - 1 });
   }),
 ];

@@ -6,10 +6,7 @@ export const mockDiscoverTracks: Track[] = [
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -18,15 +15,14 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -35,15 +31,14 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -52,15 +47,14 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -69,15 +63,14 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -86,15 +79,14 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -103,15 +95,14 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -120,15 +111,14 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -137,15 +127,14 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -154,15 +143,14 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
   {
     id: 1,
     title: "ما أجهلك",
     artistName: "أمجد سمير",
-    username: "amjad-samir",
-    trackSlug: "ma-ajhalak",
-    coverUrl:
-      "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
+    coverUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.5bunY-fh0HjO3ylZBApEygHaE7%3Fpid%3DApi&f=1&ipt=1405027ce312499797716b2bdb5b0806f702c8ef03bd97fa5fca3804ea34a121&ipo=images",
     genre: "Vocal",
     likeCount: 5140,
     repostCount: 70,
@@ -171,6 +159,8 @@ export const mockDiscoverTracks: Track[] = [
     duration: "4:32",
     postedAt: "2024-01-01",
     waveformData: [10, 20, 35, 50],
+    artistUsername: "",
+    audioUrl: ""
   },
 ];
 
