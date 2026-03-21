@@ -10,6 +10,7 @@ interface Props {
   onCancel: () => void;
   onSuccess?: (trackId: string) => void;
   setIsLoadingParent: (loading: boolean) => void;
+  onProgress?: (percent: number) => void;
 }
 
 export interface UploadFormHandle {
@@ -18,7 +19,7 @@ export interface UploadFormHandle {
 }
 
 const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
-  ({ audioData, onSuccess, setIsLoadingParent }: Props, ref) => {
+  ({ audioData, onSuccess, setIsLoadingParent , onProgress}: Props, ref) => {
     const { user } = useAuthStore();
     const username = user?.username || "username";
 
@@ -29,7 +30,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
     const [title, setTitle] = useState(initialTitle);
     const [trackLink, setTrackLink] = useState(
-      initialTitle.toLowerCase().replace(/\s+/g, "-")
+      initialTitle.toLowerCase().replace(/\s+/g, "-"),
     );
     const [artists, setArtists] = useState(username);
     const [genre, setGenre] = useState("");
@@ -72,22 +73,25 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
               .filter(Boolean)
           : undefined;
 
-        const result = await uploadTrack({
-          audio_file: audioData,
-          title: title.trim(),
-          description: description.trim() || undefined,
-          genre: genre || undefined,
-          artists: artists.trim() || undefined,
-          is_public: privacy === "public",
-          cover_image: coverFile,
-          tags: tagsArray,
-        });
+        const result = await uploadTrack(
+          {
+            audio_file: audioData,
+            title: title.trim(),
+            description: description.trim() || undefined,
+            genre: genre || undefined,
+            artists: artists.trim() || undefined,
+            is_public: privacy === "public",
+            cover_image: coverFile,
+            tags: tagsArray,
+          },
+          onProgress,
+        );
 
         onSuccess?.(result.data.id);
       } catch (err: any) {
         console.error("Upload failed:", err);
         setError(
-          err.response?.data?.message || err.message || "Upload failed."
+          err.response?.data?.message || err.message || "Upload failed.",
         );
         setGlobalLoading(false);
       }
@@ -111,14 +115,17 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             <div>
               <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
                 Track title <span className="text-[#ec5261]">*</span>
-                <HelpIcon />
+                <HelpIcon
+                  title="Track title"
+                  content="Clear track titles help your fans know exactly what they're listening to."
+                />
               </label>
               <input
                 data-testid="upload-title-input"
                 type="text"
                 value={title}
                 onChange={handleTitleChange}
-                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-white transition-colors"
+                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-bg-inverted  hover:border-bg-inverted transition-colors"
               />
             </div>
 
@@ -127,7 +134,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
               <label className="block text-xs font-bold mb-1 tracking-wide">
                 Track link
               </label>
-              <div className="flex items-center text-sm text-text-upload border-b border-border py-2">
+              <div className="flex items-center text-sm text-text-upload border-b border-border focus:border-bg-inverted  hover:border-bg-inverted transition-colors py-2">
                 <span className="shrink-0 text-text-upload/60">
                   https://soundcloud.com/{username}/
                 </span>
@@ -144,14 +151,18 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             {/* Main Artist */}
             <div>
               <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
-                Main Artist(s) <HelpIcon />
+                Main Artist(s)
+                <HelpIcon
+                  title="Main Artist(s)"
+                  content="Put your name and any featured artists you want to give primary credit to here. These names will be displayed underneath your track title."
+                />
               </label>
               <input
                 data-testid="upload-artists-input"
                 type="text"
                 value={artists}
                 onChange={(e) => setArtists(e.target.value)}
-                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none transition-colors"
+                className="w-full bg-transparent text-sm border-b border-border  focus:border-bg-inverted  hover:border-bg-inverted py-2 outline-none transition-colors"
               />
               <p className="text-[12px] text-[#616161] mt-1">
                 Tip: Use commas to add multiple artist names.
@@ -166,7 +177,11 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             {/* Tags */}
             <div>
               <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
-                Tags <HelpIcon />
+                Tags{" "}
+                <HelpIcon
+                  title="Tags"
+                  content="Tags help identify what kind of sound your track is, whether it is spoken voice, hip-hop, etc. Tags make it easier for listeners to find your track on SoundCloud."
+                />
               </label>
               <input
                 data-testid="upload-tags-input"
@@ -174,7 +189,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="Add styles, moods, tempo."
-                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-white placeholder:text-text-upload/40"
+                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-bg-inverted  hover:border-bg-inverted placeholder:text-text-upload/40"
               />
             </div>
 
@@ -183,13 +198,12 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
               <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
                 Description
               </label>
-              <textarea
-                data-testid="upload-description-textarea"
-                rows={2}
+              <input
+                data-testid="upload-description-input"
                 placeholder="Tracks with description tend to get more plays and engagements."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-white placeholder:text-text-upload/40 resize-none"
+                className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-bg-inverted  hover:border-bg-inverted placeholder:text-text-upload/40"
               />
             </div>
 
@@ -209,14 +223,14 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                     onChange={() => setPrivacy("public")}
                   />
                   <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "public" ? "border-white" : "border-[#666] group-hover:border-white"}`}
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "public" ? "border-bg-inverted" : "border-[#666] group-hover:border-bg-inverted"}`}
                   >
                     {privacy === "public" && (
-                      <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                      <div className="w-2.5 h-2.5 bg-bg-inverted rounded-full" />
                     )}
                   </div>
                   <span
-                    className={`${privacy === "public" ? "text-white font-bold" : "text-[#999]"}`}
+                    className={`${privacy === "public" ? "text-text-upload font-bold" : "text-[#999]"}`}
                   >
                     Public
                   </span>
@@ -232,14 +246,14 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                     onChange={() => setPrivacy("private")}
                   />
                   <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "private" ? "border-white" : "border-[#666] group-hover:border-white"}`}
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "private" ? "border-bg-inverted" : "border-[#666] group-hover:border-bg-inverted"}`}
                   >
                     {privacy === "private" && (
-                      <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                      <div className="w-2.5 h-2.5 bg-bg-inverted rounded-full" />
                     )}
                   </div>
                   <span
-                    className={`${privacy === "private" ? "text-white font-bold" : "text-[#999]"}`}
+                    className={`${privacy === "private" ? "text-text-upload font-bold" : "text-[#999]"}`}
                   >
                     Private
                   </span>
@@ -260,7 +274,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 export default UploadDetailsForm;
