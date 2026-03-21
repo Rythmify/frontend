@@ -33,8 +33,13 @@ const UploadGuestPage = () => {
 
   return (
     <div className="bg-bg container px-4 md:px-4 lg:px-20 text-text-upload ">
-      <section className="relative h-[600px] w-full overflow-hidden flex" 
-      style={{ clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 100%)" }}>
+      <section
+        className="relative w-full overflow-hidden"
+        style={{
+          clipPath: "polygon(0 0, 100% 0, 100% 88%, 0 100%)",
+          paddingBottom: "120px",
+        }}
+      >
         {/* Background Image */}
         <div className="absolute inset-0 h-full items-center">
           <div className="relative h-full w-full">
@@ -69,7 +74,7 @@ const UploadGuestPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="bg-bg py-20 border-t">
+      <section className="bg-bg py-20 " style={{ marginTop: "-60px" }}>
         <div className="container mx-auto px-10 max-w-[1240px]">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 text-text-upload">
             <div className="space-y-4">
@@ -103,7 +108,11 @@ const UploadGuestPage = () => {
       {/*artists*/}
       <section
         className="bg-[#fafafafa] text-black pb-24 pt-32"
-        style={{ clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 100%)" }}
+        style={{
+          clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 100%)",
+          marginTop: "-40px",
+          paddingTop: "100px",
+        }}
       >
         <div className="container mx-auto px-6 md:px-20">
           <div className="max-w-4xl mb-16">
