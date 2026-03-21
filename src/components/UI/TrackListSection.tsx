@@ -26,13 +26,18 @@ const TrackListSection = ({
   const navigate = useNavigate();
 
   return (
-    <div className={styles.container}>
+    <div data-test="track-list-section" className={styles.container}>
       {/* Header */}
-      <div className={styles.header}>
-        <button onClick={() => navigate(viewAllLink)} className={styles.title}>
+      <div data-test="track-list-section-header" className={styles.header}>
+        <button
+          data-test="track-list-section-title"
+          onClick={() => navigate(viewAllLink)}
+          className={styles.title}
+        >
           {title}
         </button>
         <button
+          data-test="track-list-section-view-all"
           onClick={() => navigate(viewAllLink)}
           className={styles.viewAll}
         >
@@ -41,7 +46,9 @@ const TrackListSection = ({
       </div>
 
       {/* Track List */}
-      <div className={styles.trackList}>{children}</div>
+      <div data-test="track-list-section-tracks" className={styles.trackList}>
+        {children}
+      </div>
     </div>
   );
 };

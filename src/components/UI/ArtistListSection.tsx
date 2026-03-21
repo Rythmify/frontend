@@ -15,7 +15,7 @@ interface ArtistListSectionProps {
   artists: Artist[];
   viewAllLink?: string;
   onRefresh?: () => void;
-  maxDisplay?: number; // (default: 3)
+  maxDisplay?: number;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -59,26 +59,32 @@ const ArtistListSection = ({
   };
 
   return (
-    <div className={styles.container}>
+    <div data-test="artist-list-section" className={styles.container}>
       {/* Header */}
-      <div className={styles.header}>
+      <div data-test="artist-list-section-header" className={styles.header}>
         <button
+          data-test="artist-list-section-title"
           onClick={() => viewAllLink && navigate(viewAllLink)}
           className={styles.title}
         >
           {title}
         </button>
 
-        {/* Show "View all" OR "Refresh list" depending on props */}
+        {/* Show "View all" OR "Refresh list" */}
         {viewAllLink ? (
           <button
+            data-test="artist-list-section-view-all"
             onClick={() => navigate(viewAllLink)}
             className={styles.viewAll}
           >
             View all
           </button>
         ) : onRefresh ? (
-          <button onClick={onRefresh} className={styles.refreshButton}>
+          <button
+            data-test="artist-list-section-refresh"
+            onClick={onRefresh}
+            className={styles.refreshButton}
+          >
             <i className={styles.refreshIcon} />
             Refresh list
           </button>
@@ -86,12 +92,20 @@ const ArtistListSection = ({
       </div>
 
       {/* Artist List */}
-      <div className={styles.artistList}>
+      <div
+        data-test="artist-list-section-artists"
+        className={styles.artistList}
+      >
         {artists.slice(0, maxDisplay).map((artist) => (
-          <div key={artist.username} className={styles.artistItem}>
+          <div
+            key={artist.username}
+            data-test={`artist-item-${artist.username}`}
+            className={styles.artistItem}
+          >
             <div className={styles.artistInfo}>
               {/* Avatar */}
               <div
+                data-test={`artist-avatar-${artist.username}`}
                 onClick={() => navigate(`/${artist.username}`)}
                 className={styles.avatar}
               >
@@ -111,17 +125,24 @@ const ArtistListSection = ({
                 {/* Name + Verified */}
                 <div className={styles.nameRow}>
                   <button
+                    data-test={`artist-username-${artist.username}`}
                     onClick={() => navigate(`/${artist.username}`)}
                     className={styles.username}
                   >
                     {artist.username}
                   </button>
-                  {artist.isVerified && <i className={styles.verifiedIcon} />}
+                  {artist.isVerified && (
+                    <i
+                      data-test={`artist-verified-${artist.username}`}
+                      className={styles.verifiedIcon}
+                    />
+                  )}
                 </div>
 
                 {/* Stats */}
                 <div className={styles.stats}>
                   <button
+                    data-test={`artist-followers-${artist.username}`}
                     onClick={() => navigate(`/${artist.username}/follower`)}
                     className={styles.stat}
                   >
@@ -130,6 +151,7 @@ const ArtistListSection = ({
                   </button>
                   {artist.tracks !== undefined && artist.tracks > 0 && (
                     <button
+                      data-test={`artist-tracks-${artist.username}`}
                       onClick={() => navigate(`/${artist.username}/tracks`)}
                       className={styles.stat}
                     >
@@ -142,7 +164,9 @@ const ArtistListSection = ({
             </div>
 
             {/* Follow Button */}
-            <FollowButton username={artist.username} />
+            <div data-test={`artist-follow-button-${artist.username}`}>
+              <FollowButton username={artist.username} />
+            </div>
           </div>
         ))}
       </div>
