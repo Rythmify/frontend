@@ -4,7 +4,7 @@ const UploadSuccessView = ({ trackId }: { trackId: string | null }) => {
   const navigate = useNavigate();
 
   const handleArtistProClick = () => {
-    navigate("/artist-pro");
+    navigate("creator/checkout");
   };
 
   return (
@@ -12,7 +12,7 @@ const UploadSuccessView = ({ trackId }: { trackId: string | null }) => {
       <div className="flex gap-16 items-start justify-start">
         {/* Left Side: Timeline/Icons */}
         <div className="flex flex-col items-center shrink-0">
-          <div className="w-24 h-24 rounded-full border-2 border-white flex items-center justify-center bg-bg">
+          <div className="w-24 h-24 rounded-full border-2 border-bg-inverted flex items-center justify-center bg-bg">
             <i className="fa-brands fa-soundcloud text-4xl text-text-upload"></i>
           </div>
           <div className="w-0.5 h-20 border-l-2 border-dashed border-[#9e9e9e] items-center justify-center my-4"></div>
@@ -52,7 +52,7 @@ const UploadSuccessView = ({ trackId }: { trackId: string | null }) => {
             <button
               data-test="view-track-button"
               onClick={() => (window.location.href = `/track/${trackId}`)}
-              className="border border-white text-text-upload text-sm px-6 py-2 rounded-full font-bold hover:bg-[#383838] cursor-pointer transition-all"
+              className="border border-bg-inverted text-text-upload text-sm px-6 py-2 rounded-full font-bold hover:bg-bg-inverted/50 cursor-pointer transition-all"
             >
               View track
             </button>
@@ -72,12 +72,34 @@ const UploadSuccessView = ({ trackId }: { trackId: string | null }) => {
             <button
               onClick={handleArtistProClick}
               data-test="unlock-artist-pro-button"
-              className="bg-bg-inverted text-black px-4 py-2.5 text-sm rounded-full font-bold hover:bg-[#e5e5e5] transition-colors"
+              className="bg-bg-inverted text-bg px-4 py-2.5 text-sm rounded-full font-bold hover:bg-bg-inverted/80 cursor-pointer transition-colors"
             >
               Unlock with Artist Pro
             </button>
           </section>
         </div>
+        <footer className="py-8 mt-20 fixed bottom-0 left-0 right-0 z-50  bg-bg/90 transition-all duration-300">
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-[12px] text-[#9e9e9e] ">
+          {[
+            "Legal",
+            "Privacy",
+            "Cookie Policy",
+            "Cookie Manager",
+            "Imprint",
+            "About us",
+            "Copyright",
+            "Feedback",
+          ].map((link) => (
+            <a
+              key={link}
+              href="#"
+              className="hover:underline last:after:content-none after:content-['-'] after:ml-2"
+            >
+              {link}
+            </a>
+          ))}
+        </div>
+      </footer>
       </div>
     </div>
   );
