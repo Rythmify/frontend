@@ -9,10 +9,11 @@ interface ConversationHeaderProps {
   reciepiantId: string
   conversationId: string
   recipientName: string
+  onDeleted?: (conversationId: string) => void
 }
 
 
-const ConversationHeader = ({ reciepiantId, conversationId, recipientName }: ConversationHeaderProps) => {
+const ConversationHeader = ({ reciepiantId, conversationId, recipientName, onDeleted }: ConversationHeaderProps) => {
   const [isBlockOpen, setIsBlockOpen]   = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isSpamOpen, setIsSpamOpen]     = useState(false) 
@@ -50,6 +51,7 @@ const ConversationHeader = ({ reciepiantId, conversationId, recipientName }: Con
         <DeleteConversationButton
           conversationId={conversationId}
           participantId={reciepiantId}
+          onDeleted={onDeleted} 
         />
       </div>
 

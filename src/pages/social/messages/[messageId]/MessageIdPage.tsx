@@ -55,7 +55,25 @@ export default function MessageIdPage() {
       )
     )
   }
+const handleConversationDeleted = (deletedId: string) => {
+  setConversations(prev => {
+    const remaining = prev.filter(c => c.id !== deletedId)
 
+    if (remaining.length > 0) {
+      // navigate to most recent 
+      const next = remaining[0]
+      navigate(`/messages/${next.participant.id}`)
+      loadConversation(next)
+    } else {
+      // no conversations left
+      setActiveConvId(null)
+      setActiveMessages([])
+      navigate('/messages')
+    }
+
+    return remaining
+  })
+}
   const handleSelectConversation = (conv: Conversation) => {
     navigate(`/messages/${conv.participant.id}`)
     loadConversation(conv)
@@ -84,6 +102,7 @@ export default function MessageIdPage() {
               conversationId={activeConv.id}
               reciepiantId={activeConv.participant.id}
               recipientName={activeConv.participant.display_name}
+              onDeleted={handleConversationDeleted} 
             />
             <SendMessageForm
               conversationId={activeConv.id}
