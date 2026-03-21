@@ -5,19 +5,36 @@ import { BlockUserModal } from './BlockModal'
 import { ReportModal } from './ReportModal'
 import { SpamModal } from './SpamModal'
 import { useNavigate } from 'react-router-dom'
+import { markMessageReadState } from '@/services/api/messaging/conversationApi'
 interface ConversationHeaderProps {
   reciepiantId: string
   conversationId: string
   recipientName: string
+  lastMessageId: string | null         
+  isUnread: boolean                   
+  onReadStateChange: (isUnread: boolean) => void  
   onDeleted?: (conversationId: string) => void
 }
 
 
-const ConversationHeader = ({ reciepiantId, conversationId, recipientName, onDeleted }: ConversationHeaderProps) => {
+const ConversationHeader = ({ reciepiantId, conversationId, recipientName, onDeleted , lastMessageId, isUnread, onReadStateChange }: ConversationHeaderProps) => {
   const [isBlockOpen, setIsBlockOpen]   = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
-  const [isSpamOpen, setIsSpamOpen]     = useState(false) 
+  const [isSpamOpen, setIsSpamOpen]     = useState(false)
+  const [loadingRead, setLoadingRead]   = useState(false)  
   const navigate = useNavigate()
+
+    const handleToggleRead = async () => {
+    if (!lastMessageId) return
+    setLoadingRead(true)
+    try {
+      await markMessageReadState(conversationId, lastMessageId, isUnread) // if currently unread → mark as read (is_read: true), and vice versa
+      onReadStateChange(!isUnread)
+    } finally {
+      setLoadingRead(false)
+    }
+  }
+
   return (
     <div data-test="conversation-header" className="flex justify-between">
 
@@ -47,11 +64,20 @@ const ConversationHeader = ({ reciepiantId, conversationId, recipientName, onDel
         </button>
       </div>
 
-      <div className="flex">
+      <div className="flex gap-2">
+      
+         <button
+          onClick={handleToggleRead}
+          disabled={loadingRead || !lastMessageId}
+          className="px-4 py-2 text-sm font-bold text-black bg-white rounded-sm hover:bg-gray-200 disabled:opacity-50"
+        >
+          {isUnread ? 'Mark as read' : 'Mark as unread'}
+        </button>
+
         <DeleteConversationButton
           conversationId={conversationId}
           participantId={reciepiantId}
-          onDeleted={onDeleted} 
+          onDeleted={onDeleted}
         />
       </div>
 

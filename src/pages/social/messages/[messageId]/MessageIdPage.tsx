@@ -78,6 +78,15 @@ const handleConversationDeleted = (deletedId: string) => {
     navigate(`/messages/${conv.participant.id}`)
     loadConversation(conv)
   }
+const handleReadStateChange = (isUnread: boolean) => {
+  setConversations(prev =>
+    prev.map(c =>
+      c.id === activeConvId
+        ? { ...c, unread_count: isUnread ? 1 : 0 }
+        : c
+    )
+  )
+}
 
   return (
     <div data-test="message-id-page" className="container flex px-4 py-6 md:px-8 lg:px-20">
@@ -102,6 +111,9 @@ const handleConversationDeleted = (deletedId: string) => {
               conversationId={activeConv.id}
               reciepiantId={activeConv.participant.id}
               recipientName={activeConv.participant.display_name}
+              lastMessageId={activeMessages[activeMessages.length - 1]?.id ?? null}
+              isUnread={activeConv.unread_count > 0}
+              onReadStateChange={handleReadStateChange}
               onDeleted={handleConversationDeleted} 
             />
             <SendMessageForm
