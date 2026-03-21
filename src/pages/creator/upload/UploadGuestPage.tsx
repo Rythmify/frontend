@@ -165,6 +165,62 @@ const UploadGuestPage = () => {
           </button>
         </div>
       </section>
+
+      <section
+        className="bg-bg text-black pb-24 pt-32"
+        style={{
+          clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 100%)",
+          marginTop: "-40px",
+          paddingTop: "100px",
+        }}
+      >
+        <div className="container mx-auto px-6 md:px-20">
+          <div className="max-w-4xl mb-16">
+            <h2 className="text-[36px] text-text-upload font-bold mb-2">
+              Connect with fans and see who's listening
+            </h2>
+            <div className="w-16 h-1 bg-[#ff5500] mb-6"></div>
+            <p className="text-[18px] leading-snug text-text-upload">
+              Uploading is just the beginning: SoundCloud gives you the tools to level up your career.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-16 text-text-upload">
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold">Share your tracks anywhere on the web</h3>
+              <p className=" text-[16px] ">
+                Use the embed player and audio cards to share your tracks wherever your audience is: from music blogs to your Twitter stream.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold">Get to know and connect with your audience</h3>
+              <p className=" text-[16px]">
+                Measure your progress with stats and interact with your fans directly via comments and messages.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold">Take creator tools with you anytime and anywhere</h3>
+              <p className=" text-[16px]">
+                Whether you're in the studio, at home or on a tour bus,
+                keep your community humming with our mobile app for creators.
+              </p>
+            </div>
+          </div>
+          <img
+            src="https://a-v2.sndcdn.com/assets/images/upload_devices-3d92796c.png"
+            className="w-full h-auto mt-8"
+          />
+          <button
+            onClick={handleUploadClick}
+            className="bg-bg-inverted cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
+          >
+            Try it free
+          </button>
+        </div>
+      </section>
+      
     </div>
   );
 };
