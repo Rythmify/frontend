@@ -44,6 +44,18 @@ export default function MessageIdPage() {
       .finally(() => setLoadingMsgs(false))
   }
 
+  // 3. On message sent — append to messages + update chat profile preview
+  const handleMessageSent = (msg: Message) => {
+    setActiveMessages(prev => [...prev, msg])
+    setConversations(prev =>
+      prev.map(c =>
+        c.id === activeConvId
+          ? { ...c, last_message: msg, updated_at: msg.created_at }
+          : c
+      )
+    )
+  }
+
   const handleSelectConversation = (conv: Conversation) => {
     navigate(`/messages/${conv.participant.id}`)
     loadConversation(conv)
@@ -71,12 +83,13 @@ export default function MessageIdPage() {
             <ConversationHeader
               conversationId={activeConv.id}
               reciepiantId={activeConv.participant.id}
+              recipientName={activeConv.participant.display_name}
             />
             <SendMessageForm
               conversationId={activeConv.id}
               existingMessages={activeMessages}
               loadingMessages={loadingMsgs}
-              onMessageSent={(msg) => setActiveMessages(prev => [...prev, msg])}
+              onMessageSent={handleMessageSent}
               currentUser={{
                 display_name: 'Me',
                 profile_picture: null,
