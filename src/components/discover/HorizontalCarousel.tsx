@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react";
 interface HorizontalCarouselProps {
   title: string;
   children: React.ReactNode;
+  "data-section"?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -49,7 +50,7 @@ const styles = {
 };
 
 // ─── Component ────────────────────────────────────────────
-const HorizontalCarousel = ({ title, children }: HorizontalCarouselProps) => {
+const HorizontalCarousel = ({ title, children, "data-section": dataSection }: HorizontalCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -86,7 +87,7 @@ const HorizontalCarousel = ({ title, children }: HorizontalCarouselProps) => {
   };
 
   return (
-    <div className={styles.wrapper} data-test="carousel-wrapper">
+    <div className={styles.wrapper} data-test="carousel-wrapper" data-section={dataSection}>
       {/* Title */}
       <h2 className={styles.title} data-test="carousel-title">
         {title}
