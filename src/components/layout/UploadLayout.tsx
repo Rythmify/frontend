@@ -7,7 +7,7 @@ const UploadLayout = () => {
   const [isDetailsMode, setIsDetailsMode] = useState(false);
   const [trackName, setTrackName] = useState("");
   const [showQuitModal, setShowQuitModal] = useState(false);
-
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const handleExit = () => {
     if (isDetailsMode) {
       setShowQuitModal(true);
@@ -58,7 +58,20 @@ const UploadLayout = () => {
                 </button>
               </div>
             )}
-
+            {isDetailsMode && uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-32 h-1.5 flex items-center gap-[2px]">
+                  <div
+                    className="h-full bg-[#2e7d32] rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                  <div className="h-full flex-1 border-t-2 border-dashed border-[#555]" />
+                </div>
+                <span className="text-xs text-text-upload whitespace-nowrap">
+                  Uploading {uploadProgress}%
+                </span>
+              </div>
+            )}
             {/* Close page */}
             <button
               data-test="exit-upload-button"
@@ -108,7 +121,15 @@ const UploadLayout = () => {
 
       <main className="flex-1 bg-bg pt-8">
         {/* Pass states to UploadPage */}
-        <Outlet context={{ isDetailsMode, setIsDetailsMode, setTrackName }} />
+        <Outlet
+          context={{
+            isDetailsMode,
+            setIsDetailsMode,
+            setTrackName,
+            uploadProgress,
+            setUploadProgress,
+          }}
+        />
       </main>
     </div>
   );

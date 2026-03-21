@@ -10,6 +10,7 @@ interface Props {
   onCancel: () => void;
   onSuccess?: (trackId: string) => void;
   setIsLoadingParent: (loading: boolean) => void;
+  onProgress?: (percent: number) => void;
 }
 
 export interface UploadFormHandle {
@@ -18,7 +19,7 @@ export interface UploadFormHandle {
 }
 
 const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
-  ({ audioData, onSuccess, setIsLoadingParent }: Props, ref) => {
+  ({ audioData, onSuccess, setIsLoadingParent , onProgress}: Props, ref) => {
     const { user } = useAuthStore();
     const username = user?.username || "username";
 
@@ -29,7 +30,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
     const [title, setTitle] = useState(initialTitle);
     const [trackLink, setTrackLink] = useState(
-      initialTitle.toLowerCase().replace(/\s+/g, "-")
+      initialTitle.toLowerCase().replace(/\s+/g, "-"),
     );
     const [artists, setArtists] = useState(username);
     const [genre, setGenre] = useState("");
@@ -72,22 +73,25 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
               .filter(Boolean)
           : undefined;
 
-        const result = await uploadTrack({
-          audio_file: audioData,
-          title: title.trim(),
-          description: description.trim() || undefined,
-          genre: genre || undefined,
-          artists: artists.trim() || undefined,
-          is_public: privacy === "public",
-          cover_image: coverFile,
-          tags: tagsArray,
-        });
+        const result = await uploadTrack(
+          {
+            audio_file: audioData,
+            title: title.trim(),
+            description: description.trim() || undefined,
+            genre: genre || undefined,
+            artists: artists.trim() || undefined,
+            is_public: privacy === "public",
+            cover_image: coverFile,
+            tags: tagsArray,
+          },
+          onProgress,
+        );
 
         onSuccess?.(result.data.id);
       } catch (err: any) {
         console.error("Upload failed:", err);
         setError(
-          err.response?.data?.message || err.message || "Upload failed."
+          err.response?.data?.message || err.message || "Upload failed.",
         );
         setGlobalLoading(false);
       }
@@ -173,7 +177,8 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             {/* Tags */}
             <div>
               <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
-                Tags <HelpIcon 
+                Tags{" "}
+                <HelpIcon
                   title="Tags"
                   content="Tags help identify what kind of sound your track is, whether it is spoken voice, hip-hop, etc. Tags make it easier for listeners to find your track on SoundCloud."
                 />
@@ -269,7 +274,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 export default UploadDetailsForm;

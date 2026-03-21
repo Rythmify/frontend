@@ -20,13 +20,15 @@ const UploadPage = () => {
     isDetailsMode: boolean;
     setIsDetailsMode: (val: boolean) => void;
     setTrackName: (name: string) => void;
+    setUploadProgress: (val: number) => void;
   }>() || {
     isDetailsMode: false,
     setIsDetailsMode: () => {},
     setTrackName: () => {},
   };
 
-  const { isDetailsMode, setIsDetailsMode, setTrackName } = context;
+  const { isDetailsMode, setIsDetailsMode, setTrackName, setUploadProgress } =
+    context;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [audioData, setAudioData] = useState<File | Blob | null>(null);
   const [uploadedTrackId, setUploadedTrackId] = useState<string | null>(null);
@@ -108,6 +110,7 @@ const UploadPage = () => {
             onCancel={() => setIsDetailsMode(false)}
             onSuccess={handleSuccess}
             setIsLoadingParent={setIsSubmitting}
+            onProgress={setUploadProgress}
           />
         )}
       </div>
@@ -115,7 +118,7 @@ const UploadPage = () => {
       <UploadFooter
         isDetailsMode={view === "details"}
         onSave={handleSaveClick}
-        isLoading={formRef.current?.isUploading}
+        isLoading={isSubmitting}
       />
     </div>
   );
