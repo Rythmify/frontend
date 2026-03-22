@@ -25,7 +25,7 @@ export default function PlayerControls() {
 
       {/* Previous */}
       <ControlBtn data-test="player-button-previous" onClick={previous}>
-        <FaStepBackward className="text-sm" />
+        <FaStepBackward className="text-xl" />
       </ControlBtn>
 
       {/* Play / Pause */}
@@ -33,29 +33,29 @@ export default function PlayerControls() {
         data-test="player-button-play-pause"
         onClick={togglePlay}
         className="
-          w-8 h-8 rounded-full flex items-center justify-center shrink-0
+          w-9 h-9 rounded-full flex items-center justify-center shrink-0
           bg-white text-black hover:bg-[#ccc]
           transition-colors duration-150 cursor-pointer mx-1
         "
       >
         {isPlaying
-          ? <FaPause className="text-[11px]" />
-          : <FaPlay className="text-[11px] ml-[1px]" />
+          ? <FaPause className="text-md" />
+          : <FaPlay className="text-md ml-0.5" />
         }
       </button>
 
       {/* Next */}
       <ControlBtn data-test="player-button-next" onClick={next}>
-        <FaStepForward className="text-sm" />
+        <FaStepForward className="text-xl" />
       </ControlBtn>
-
+    
       {/* Shuffle */}
       <ControlBtn
         data-test="player-button-shuffle"
         onClick={toggleShuffle}
         active={isShuffle}
       >
-        <FaRandom className="text-sm" />
+        <FaRandom className="text-md" />
       </ControlBtn>
 
       {/* Repeat */}
@@ -90,11 +90,11 @@ function ControlBtn({
       data-test={dataTest}
       onClick={onClick}
       className={`
-        w-8 h-8 flex items-center justify-center rounded
+        w-10 h-10 flex items-center justify-center rounded
         transition-colors duration-150 cursor-pointer
         ${active
-          ? "text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
-          : "text-white hover:text-[var(--color-text-muted)]"
+          ? "text-accent hover:text-accent-hover"
+          : "text-white hover:text-text-muted"
         }
       `}
     >

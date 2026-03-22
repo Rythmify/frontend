@@ -16,6 +16,7 @@
     "@fortawesome/fontawesome-free": "^7.2.0",
     "@heroui/react": "^2.8.9",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@react-oauth/google": "^0.13.4",
     "@tailwindcss/vite": "^4.2.1",
     "axios": "^1.13.6",
     "framer-motion": "^12.34.4",
