@@ -1,5 +1,11 @@
 
 import axiosInstance from "../api/axiosInstance";
+import axios from "axios";
+import type { MockUser } from "../mocks/users";
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? "/api",
+});
 
 // ─── Types (aligned to OpenAPI spec) ─────────────────────────────────────────
 
@@ -69,6 +75,12 @@ export interface UserListData {
 export async function getMyProfile(): Promise<OwnUser> {
   const res = await axiosInstance.get<{ data: OwnUser }>("/users/me");
   return res.data.data;
+}
+
+/** GET /api/users */
+export async function getUsers(): Promise<MockUser[]> {
+  const { data } = await api.get<MockUser[]>("/users");
+  return Array.isArray(data) ? data : [];
 }
 
 /** GET /users/{user_id} — user_id is a UUID */
