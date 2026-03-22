@@ -86,26 +86,39 @@ function buildTrackFormData(payload: UploadTrackPayload): FormData {
 /** POST /tracks — upload a new audio track (multipart/form-data) */
 export async function uploadTrack(
   payload: UploadTrackPayload,
-  onProgress?: (percent: number) => void, // ← add this
+  onProgress?: (pct: number) => void
 ) {
   const formData = buildTrackFormData(payload);
 
-  const res = await axiosInstance.post<{
-    data: Track;
-    message: string;
-  }>("/tracks", formData, {
-    // Let axios/browser set Content-Type with the multipart boundary automatically
-    headers: { "Content-Type": "multipart/form-data" },
-    onUploadProgress: (e) => {
-      if (onProgress && e.total) {
-        onProgress(Math.round((e.loaded / e.total) * 100));
-      }
-    },
-  });
+  let fakeProgress = 0;
+  let interval: ReturnType<typeof setInterval> | null = null;
 
-  return res.data;
+  if (onProgress) {
+    // Crawl while waiting for server
+    interval = setInterval(() => {
+      fakeProgress = Math.min(fakeProgress + Math.random() * 8, 90);
+      onProgress(Math.round(fakeProgress));
+    }, 600);
+  }
+
+  try {
+    const res = await axiosInstance.post<{
+      data: Track;
+      message: string;
+    }>('/tracks', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    if (interval) clearInterval(interval);
+    onProgress?.(100);
+
+    return res.data;
+
+  } catch (err) {
+    if (interval) clearInterval(interval);
+    throw err;
+  }
 }
-
 /** GET /tracks/me — list the authenticated user's own tracks */
 export async function getMyTracks(params?: {
   page?: number;

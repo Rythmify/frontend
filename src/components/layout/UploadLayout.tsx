@@ -52,7 +52,7 @@ const UploadLayout = () => {
                   >
                     <path d="m10 16.5 6-4.5-6-4.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path>
                   </svg>
-                  <span className="truncate max-w-37.5">{trackName}</span>
+                  <span className="truncate">{trackName}</span>
                 </div>
                 <button
                   data-test="replace-track-button"
@@ -63,7 +63,7 @@ const UploadLayout = () => {
                 </button>
               </div>
             )}
-            {isDetailsMode && !uploadSuccess && uploadProgress > 0 && uploadProgress < 100 && (
+            { isDetailsMode && !uploadSuccess && uploadProgress > 0&& (
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-32 h-1.5 flex items-center gap-[2px]">
                   <div
@@ -73,7 +73,7 @@ const UploadLayout = () => {
                   <div className="h-full flex-1 border-t-2 border-dashed border-[#555]" />
                 </div>
                 <span className="text-xs text-text-upload whitespace-nowrap">
-                  Uploading {uploadProgress}%
+                  {uploadProgress < 90 ? `Uploading ${uploadProgress}%` : "Processing..."}
                 </span>
               </div>
             )}
