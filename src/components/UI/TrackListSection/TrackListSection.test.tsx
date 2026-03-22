@@ -18,87 +18,149 @@ describe("TrackListSection", () => {
   });
 
   it("renders title correctly", () => {
-    // ARRANGE: Set up the component with props
     render(
       <TrackListSection title="3 LIKES" viewAllLink="/you/likes">
         <div>Mock Track</div>
       </TrackListSection>,
     );
 
-    // ASSERT: Check that the title appears in the document
     expect(screen.getByTestId("track-list-section-title")).toHaveTextContent(
       "3 LIKES",
     );
   });
 
   it("renders children correctly", () => {
-    // ARRANGE: Render with multiple children
     render(
       <TrackListSection title="LISTENING HISTORY" viewAllLink="/you/history">
-        <div data-testid="child-1">Track 1</div>
-        <div data-testid="child-2">Track 2</div>
+        <div>Track 1</div>
+        <div>Track 2</div>
       </TrackListSection>,
     );
 
-    // ASSERT: Check both children are rendered
-    expect(screen.getByTestId("child-1")).toBeInTheDocument();
-    expect(screen.getByTestId("child-2")).toBeInTheDocument();
+    expect(screen.getByText("Track 1")).toBeInTheDocument();
+    expect(screen.getByText("Track 2")).toBeInTheDocument();
   });
 
   it("renders 'View all' button", () => {
-    // ARRANGE
     render(
       <TrackListSection title="3 LIKES" viewAllLink="/you/likes">
         <div>Mock Track</div>
       </TrackListSection>,
     );
 
-    // ASSERT
     expect(screen.getByTestId("track-list-section-view-all")).toHaveTextContent(
       "View all",
     );
   });
 
   it("navigates to viewAllLink when title is clicked", () => {
-    // ARRANGE
     render(
       <TrackListSection title="3 LIKES" viewAllLink="/you/likes">
         <div>Mock Track</div>
       </TrackListSection>,
     );
 
-    // ACT: Simulate clicking the title
     fireEvent.click(screen.getByTestId("track-list-section-title"));
 
-    // ASSERT: Check navigate was called with correct path
     expect(mockNavigate).toHaveBeenCalledWith("/you/likes");
   });
 
   it("navigates to viewAllLink when 'View all' is clicked", () => {
-    // ARRANGE
     render(
       <TrackListSection title="3 LIKES" viewAllLink="/you/likes">
         <div>Mock Track</div>
       </TrackListSection>,
     );
 
-    // ACT: Simulate clicking "View all"
     fireEvent.click(screen.getByTestId("track-list-section-view-all"));
 
-    // ASSERT: Check navigate was called
     expect(mockNavigate).toHaveBeenCalledWith("/you/likes");
   });
 
   it("applies correct container styles", () => {
-    // ARRANGE
     render(
       <TrackListSection title="3 LIKES" viewAllLink="/you/likes">
         <div>Mock Track</div>
       </TrackListSection>,
     );
 
-    // ASSERT: Check CSS classes are applied
     const container = screen.getByTestId("track-list-section");
     expect(container).toHaveClass("flex", "flex-col", "gap-3", "w-full");
+  });
+
+  it("renders header section with correct structure", () => {
+    render(
+      <TrackListSection title="LISTENING HISTORY" viewAllLink="/you/history">
+        <div>Mock Track</div>
+      </TrackListSection>,
+    );
+
+    const header = screen.getByTestId("track-list-section-header");
+    expect(header).toBeInTheDocument();
+    expect(header).toHaveClass("flex", "items-center", "justify-between");
+  });
+
+  it("renders tracks container", () => {
+    render(
+      <TrackListSection title="3 LIKES" viewAllLink="/you/likes">
+        <div>Track 1</div>
+        <div>Track 2</div>
+      </TrackListSection>,
+    );
+
+    const tracksContainer = screen.getByTestId("track-list-section-tracks");
+    expect(tracksContainer).toBeInTheDocument();
+    expect(tracksContainer).toHaveClass("flex", "flex-col", "gap-4");
+  });
+
+  it("does not render component when no children", () => {
+    render(
+      <TrackListSection title="NO TRACKS" viewAllLink="/you/likes">
+        {/* No children */}
+      </TrackListSection>,
+    );
+
+    // Entire component should NOT render
+    const container = screen.queryByTestId("track-list-section");
+    expect(container).not.toBeInTheDocument();
+
+    // Title should also NOT exist
+    const title = screen.queryByTestId("track-list-section-title");
+    expect(title).not.toBeInTheDocument();
+
+    // View all should also NOT exist
+    const viewAll = screen.queryByTestId("track-list-section-view-all");
+    expect(viewAll).not.toBeInTheDocument();
+  });
+
+  it("handles different viewAllLink values", () => {
+    render(
+      <TrackListSection title="HISTORY" viewAllLink="/you/history">
+        <div>Track</div>
+      </TrackListSection>,
+    );
+
+    fireEvent.click(screen.getByTestId("track-list-section-view-all"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/you/history");
+  });
+
+  it("title and view all both navigate to same link", () => {
+    render(
+      <TrackListSection title="TEST" viewAllLink="/test/link">
+        <div>Track</div>
+      </TrackListSection>,
+    );
+
+    // Click title
+    fireEvent.click(screen.getByTestId("track-list-section-title"));
+    expect(mockNavigate).toHaveBeenCalledWith("/test/link");
+
+    // Reset mock
+    vi.clearAllMocks();
+
+    // Click view all
+    fireEvent.click(screen.getByTestId("track-list-section-view-all"));
+    expect(mockNavigate).toHaveBeenCalledWith("/test/link");
   });
 });

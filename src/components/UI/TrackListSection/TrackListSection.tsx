@@ -1,3 +1,5 @@
+// src/components/common/TrackListSection.tsx
+
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -5,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 interface TrackListSectionProps {
   title: string;
   viewAllLink: string;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -25,28 +27,33 @@ const TrackListSection = ({
 }: TrackListSectionProps) => {
   const navigate = useNavigate();
 
+  // ✅ Early return if no children
+  if (!children) {
+    return null;
+  }
+
   return (
-    <div data-test="track-list-section" className={styles.container}>
+    <div className={styles.container} data-test="track-list-section">
       {/* Header */}
-      <div data-test="track-list-section-header" className={styles.header}>
+      <div className={styles.header} data-test="track-list-section-header">
         <button
-          data-test="track-list-section-title"
           onClick={() => navigate(viewAllLink)}
           className={styles.title}
+          data-test="track-list-section-title"
         >
           {title}
         </button>
         <button
-          data-test="track-list-section-view-all"
           onClick={() => navigate(viewAllLink)}
           className={styles.viewAll}
+          data-test="track-list-section-view-all"
         >
           View all
         </button>
       </div>
 
-      {/* Track List */}
-      <div data-test="track-list-section-tracks" className={styles.trackList}>
+      {/* Tracks */}
+      <div className={styles.trackList} data-test="track-list-section-tracks">
         {children}
       </div>
     </div>
