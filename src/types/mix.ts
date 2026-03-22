@@ -1,5 +1,8 @@
 export interface Mix {
-  id: number;
-  coverUrl: string;
-  artists: string[]; // array of up to 5 artist names
+  id: string;
+  label: string;
+  flavor: "listening_history" | "taste_profile";
+  coverUrl: string | null;
+  trackCount: number;
+  generatedAt: string;
 }
