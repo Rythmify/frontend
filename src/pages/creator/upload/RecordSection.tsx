@@ -22,7 +22,7 @@ const RecordSection = ({ onFinish }: { onFinish: (data: Blob) => void }) => {
   };
 
   return (
-    <div className="relative container bg-bg-upload border border-border rounded-sm mt-8 overflow-visible ">
+    <div className="relative bg-[#212121] light:bg-bg border border-border rounded-md mt-8 overflow-visible ">
       {/* Top Header Area & mic to see which mics you have on your system*/}
       <div className="p-6 flex items-center justify-between relative">
         <MicSelector
@@ -31,10 +31,10 @@ const RecordSection = ({ onFinish }: { onFinish: (data: Blob) => void }) => {
         />
 
         <div className="text-center absolute left-1/2 -translate-x-1/2 pointer-events-none">
-          <h4 className="text-text-upload font-bold text-base m-0">
+          <h4 className="text-[#ffffff] font-bold text-base m-0">
             Or record with a microphone
           </h4>
-          <p className="text-text-upload text-xs m-0 mt-1">
+          <p className="text-[#ffffff] text-xs m-0 mt-1">
             Upload recorded voice memos, updates, news, or intros to new
             releases.
           </p>

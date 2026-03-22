@@ -11,9 +11,10 @@ import ForgotPasswordSent from "./ForgotPasswordSent";
 import Profile from "./Profile";
 import VerifyEmail from "./VerifyEmail";
 import { useNavigate } from "react-router-dom";
-import { login, register, resendVerification, getMe, forgotPassword } from "@/services/auth.service";
+import { login, register, resendVerification, getMe, forgotPassword, googleLogin } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { GoogleLogin } from "@react-oauth/google";
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? "";
 
@@ -27,6 +28,32 @@ function SigninFlow() {
   const { login: storeLogin } = useAuthStore();
   const { executeRecaptcha } = useGoogleReCaptcha();
   const [loginError, setLoginError] = useState("");
+
+  const handleGoogleCredential = async (idToken: string) => {
+    try {
+      const googleRes = await googleLogin(idToken);
+      const me = await getMe();
+      storeLogin({
+        id: me.data.id,
+        username: me.data.username,
+        displayName: me.data.display_name,
+        firstName: me.data.first_name,
+        lastName: me.data.last_name,
+        bio: me.data.bio,
+        email: me.data.email,
+        role: me.data.role,
+        isPro: false,
+        avatar: me.data.profile_picture,
+        coverUrl: me.data.cover_photo,
+        city: me.data.city,
+        country: me.data.country,
+        following_ids: [],
+      }, googleRes.data.access_token);
+      navigate(googleRes.data.is_new_user ? "/complete-profile" : "/discover");
+    } catch (err: any) {
+      setLoginError(err?.response?.data?.error?.message ?? "Google sign-in failed.");
+    }
+  };
 
 
   function handleEmailContinue(resolvedEmail: string, exists: boolean) {
@@ -188,6 +215,7 @@ function SigninFlow() {
   return (
     <div className={card}>
       <h1 className="text-text-hover max-w-sm">Sign in or create an account</h1>
+      {loginError && <p className="text-red-500 text-sm -mb-4">{loginError}</p>}
 
       <p className="text-md font-semibold text-text-secondary w-full">
         By clicking on any of the "Continue" buttons below, you agree to
@@ -208,10 +236,20 @@ function SigninFlow() {
           Continue with Facebook
         </Button>
 
-        <Button data-test="btn-continue-google" className="flex items-center justify-center gap-2 text-center text-md font-bold text-text-hover rounded-sm bg-input-bg py-6 w-full">
-          <FcGoogle className="text-xl" />
-          Continue with Google
-        </Button>
+        <div className="relative w-full">
+          <Button data-test="btn-continue-google" className="flex items-center justify-center gap-2 text-center text-md font-bold text-text-hover rounded-sm bg-input-bg py-6 w-full">
+            <FcGoogle className="text-xl" />
+            Continue with Google
+          </Button>
+          <div className="absolute inset-0 opacity-0 overflow-hidden">
+            <GoogleLogin
+              onSuccess={(cr) => cr.credential && handleGoogleCredential(cr.credential)}
+              onError={() => setLoginError("Google sign-in was cancelled or failed.")}
+              width="500"
+              shape="rectangular"
+            />
+          </div>
+        </div>
 
         <Button data-test="btn-continue-apple" className="flex items-center justify-center gap-2 text-center text-md font-bold text-white rounded-sm bg-black py-6 w-full">
           <FaApple className="text-xl" />
