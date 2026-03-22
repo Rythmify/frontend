@@ -1,10 +1,12 @@
 import type { Track } from "@/types/track";
 import { useState } from "react";
 import { Tooltip } from "@heroui/react";
+import { useNavigate } from "react-router-dom";
+import { usePlayerStore } from "@/stores/player.store";
 
 // ─── Props ────────────────────────────────────────────────
 interface TrackCardProps {
-  track: Pick<Track, "id" | "title" | "artistName" | "coverUrl">;
+  track: Track;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -98,8 +100,23 @@ const tooltipStyles = {
 // ─── Component ────────────────────────────────────────────
 const TrackCard = ({ track }: TrackCardProps) => {
   const [liked, setLiked] = useState(false);
+  const navigate = useNavigate();
+  const setTrack = usePlayerStore((state) => state.setTrack);
+
+  // Handler for play button click (start playing track)
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click from firing
+    // Start playing this track using Shahd's player store
+    setTrack(track);
+    console.log("Play clicked for track:", track.id);
+  };
+
   return (
-    <div className={styles.card} data-test="card-track">
+    <div
+      className={styles.card}
+      onClick={() => navigate(`/${track.artistUsername}/${track.trackSlug}`)}
+      data-test="card-track"
+    >
       <div className={styles.imageWrapper}>
         <img
           src={track.coverUrl}
@@ -113,7 +130,11 @@ const TrackCard = ({ track }: TrackCardProps) => {
 
           {/* Center — Play Button */}
           <div className={styles.overlayCenter}>
-            <button className={styles.playButton} data-test="button-play">
+            <button
+              className={styles.playButton}
+              onClick={handlePlayClick}
+              data-test="button-play"
+            >
               <i className="fa-sharp fa-solid fa-play text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] pl-0.5"></i>
             </button>
           </div>
@@ -129,7 +150,10 @@ const TrackCard = ({ track }: TrackCardProps) => {
               closeDelay={0}
             >
               <button
-                onClick={() => setLiked(!liked)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLiked(!liked);
+                }}
                 className={styles.actionButton}
                 data-test="button-like"
               >
@@ -146,7 +170,11 @@ const TrackCard = ({ track }: TrackCardProps) => {
               placement="bottom"
               classNames={tooltipStyles}
             >
-              <button className={styles.actionButton} data-test="button-more">
+              <button
+                className={styles.actionButton}
+                onClick={(e) => e.stopPropagation()}
+                data-test="button-more"
+              >
                 <i className={`fa-solid fa-ellipsis ${styles.actionIcon}`}></i>
               </button>
             </Tooltip>

@@ -132,6 +132,44 @@ export const authHandlers = [
     });
   }),
 
+  // PATCH /users/me
+  http.patch('*/users/me', async ({ request }) => {
+    const body = await request.json() as { display_name?: string; gender?: string; date_of_birth?: string };
+    return HttpResponse.json({
+      data: {
+        id: mockUser.user_id,
+        username: 'demouser',
+        display_name: body.display_name ?? mockUser.display_name,
+        email: mockUser.email,
+        role: mockUser.role,
+        gender: body.gender ?? mockUser.gender,
+        date_of_birth: body.date_of_birth,
+      },
+      message: 'Profile updated successfully.',
+    });
+  }),
+
+  // GET /users/me
+  http.get('*/users/me', () => {
+    return HttpResponse.json({
+      data: {
+        id: mockUser.user_id,
+        username: 'demouser',
+        display_name: mockUser.display_name,
+        first_name: 'Demo',
+        last_name: 'User',
+        bio: '',
+        email: mockUser.email,
+        role: mockUser.role,
+        profile_picture: undefined,
+        cover_photo: undefined,
+        city: undefined,
+        country: undefined,
+      },
+      message: 'User fetched successfully.',
+    });
+  }),
+
   // POST /auth/google
   http.post('*/auth/google', () => {
     return HttpResponse.json({
