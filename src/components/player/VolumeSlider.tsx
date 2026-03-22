@@ -45,7 +45,7 @@ export default function VolumeSlider({
           <div
             data-test="player-volume-track"
             onClick={handleVerticalClick}
-            className="relative w-[3px] h-full rounded-full bg-[#444] cursor-pointer"
+            className="relative w-[2px] h-full rounded-full bg-[#444] cursor-pointer"
           >
             {/* Filled portion */}
             <div
@@ -70,7 +70,7 @@ export default function VolumeSlider({
         data-test="player-button-mute"
         onClick={onToggleMute}
         className="
-          w-8 h-8 flex items-center justify-center
+          w-11 h-11 flex items-center justify-center
           text-white hover:text-[var(--color-text-muted)]
           transition-colors cursor-pointer text-base shrink-0
         "

@@ -5,7 +5,7 @@ import TrackActions from "./components/TrackActions";
 import TrackList from "./components/TrackList";
 import TrackSidebar from "./components/TrackSidebar";
 import type { Track } from "../../../types/track";
-import type { MockUser } from "../../../mocks/users";
+import type { MockUser } from "../../../services/mocks/users";
 import { getTrackBySlug, getRelatedTracks } from "../../../services/mocks/Track.service";
 import { getUsers } from "../../../services/mocks/User.service";
 import { usePlayerStore } from "../../../stores/player.store";

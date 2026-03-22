@@ -60,7 +60,7 @@ export interface RegisterPayload {
 // Token helpers 
 
 function saveToken(token: string) {
-  localStorage.setItem('token', token);
+  localStorage.setItem('auth_token', token);
 }
 
 function clearToken() {
@@ -163,6 +163,19 @@ export async function changeEmail(new_email: string) {
     data: { success: boolean };
     message: string;
   }>('/auth/change-email', { new_email });
+  return res.data;
+}
+
+/** PATCH /users/me */
+export async function updateMe(data: {
+  display_name?: string;
+  gender?: string;
+  date_of_birth?: string;
+}) {
+  const res = await axiosInstance.patch<{
+    data: UserProfile;
+    message: string;
+  }>('/users/me', data);
   return res.data;
 }
 

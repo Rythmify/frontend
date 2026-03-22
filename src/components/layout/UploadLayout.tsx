@@ -1,15 +1,20 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Modal } from "@/components/UI/Modal";
+import QuitUploadModal from "@/pages/creator/upload/QuitUploadModal";
 
 const UploadLayout = () => {
   const navigate = useNavigate();
   const [isDetailsMode, setIsDetailsMode] = useState(false);
   const [trackName, setTrackName] = useState("");
   const [showQuitModal, setShowQuitModal] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   const handleExit = () => {
-    if (isDetailsMode) {
+    if (uploadSuccess) {
+      navigate("/discover");
+    } else if (isDetailsMode) {
       setShowQuitModal(true);
     } else {
       navigate("/artists");
@@ -30,13 +35,13 @@ const UploadLayout = () => {
             </Link>
             {/*toggle between upload and details mode in the header*/}
             <h6 className=" font-bold text-text-upload text-md tracking-wide">
-              {isDetailsMode ? "Track Info" : "Upload"}
+              {uploadSuccess ? "" : isDetailsMode ? "Track Info" : "Upload"}
             </h6>
           </div>
 
           {/* Upload Status => Only visible in Details Mode */}
           <div className="flex items-center gap-4">
-            {isDetailsMode && (
+            {isDetailsMode && !uploadSuccess && (
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 text-text-upload text-xs">
                   <svg
@@ -58,7 +63,20 @@ const UploadLayout = () => {
                 </button>
               </div>
             )}
-
+            {isDetailsMode && !uploadSuccess && uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-32 h-1.5 flex items-center gap-[2px]">
+                  <div
+                    className="h-full bg-[#2e7d32] rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                  <div className="h-full flex-1 border-t-2 border-dashed border-[#555]" />
+                </div>
+                <span className="text-xs text-text-upload whitespace-nowrap">
+                  Uploading {uploadProgress}%
+                </span>
+              </div>
+            )}
             {/* Close page */}
             <button
               data-test="exit-upload-button"
@@ -72,43 +90,27 @@ const UploadLayout = () => {
             </button>
           </div>
         </div>
-        <Modal isOpen={showQuitModal} onClose={() => setShowQuitModal(false)}>
-          <div className="flex items-left py-4 rounded-md w-130 h-10">
-            <h2 className="text-text-upload text-xl font-bold py-4">
-              Are you sure you want to quit?
-            </h2>
-          </div>
-          <div className="flex items-left py-5">
-            <p className="text-[#efefef] text-[16px] py-4 mt-4">
-              Your changes will not be saved.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-4">
-            <button
-              data-test="back-to-upload-button"
-              onClick={() => setShowQuitModal(false)}
-              className="text-text-upload text-sm font-bold hover:opacity-70 transition-opacity"
-            >
-              Back to upload
-            </button>
-            <button
-              data-test="quit-upload-button"
-              onClick={() => {
-                setShowQuitModal(false);
-                navigate("/artists");
-              }}
-              className="bg-[#EC5261] hover:bg-[#f78ca1] text-text-upload text-sm font-bold px-6 py-2.5 rounded-full transition-colors"
-            >
-              Quit upload
-            </button>
-          </div>
-        </Modal>
+        <QuitUploadModal
+          isOpen={showQuitModal}
+          onClose={() => setShowQuitModal(false)}
+          onConfirm={() => {
+            setShowQuitModal(false);
+            navigate("/artists");
+          }}
+        />
       </header>
 
       <main className="flex-1 bg-bg pt-8">
         {/* Pass states to UploadPage */}
-        <Outlet context={{ isDetailsMode, setIsDetailsMode, setTrackName }} />
+        <Outlet
+          context={{
+            isDetailsMode,
+            setIsDetailsMode,
+            setTrackName,
+            setUploadProgress,
+            setUploadSuccess,
+          }}
+        />
       </main>
     </div>
   );

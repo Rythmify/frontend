@@ -84,16 +84,22 @@ function buildTrackFormData(payload: UploadTrackPayload): FormData {
 // ─── Track API functions ──────────────────────────────────────────────────────
 
 /** POST /tracks — upload a new audio track (multipart/form-data) */
-export async function uploadTrack(payload: UploadTrackPayload) {
+export async function uploadTrack(
+  payload: UploadTrackPayload,
+  onProgress?: (percent: number) => void, // ← add this
+) {
   const formData = buildTrackFormData(payload);
 
   const res = await axiosInstance.post<{
     data: Track;
     message: string;
   }>("/tracks", formData, {
-    headers: {
-      // Let axios/browser set Content-Type with the multipart boundary automatically
-      "Content-Type": "multipart/form-data",
+    // Let axios/browser set Content-Type with the multipart boundary automatically
+    headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: (e) => {
+      if (onProgress && e.total) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
     },
   });
 

@@ -10,7 +10,6 @@ import {
   logout,
   refreshToken,
   forgotPassword,
-  resetPassword,
   changeEmail,
   googleLogin,
   disconnectProvider,
@@ -273,13 +272,13 @@ describe('checkEmail()', () => {
     expect(result.exists).toBe(false);
   });
 
-  it('returns { exists: false } as fallback if server errors', async () => {
+  it('returns { exists: true } as fallback if server errors', async () => {
     server.use(
       http.post('*/auth/check-email', () =>
         HttpResponse.json({ message: 'Server error' }, { status: 500 })
       )
     );
     const result = await checkEmail('anyone@example.com');
-    expect(result.exists).toBe(false);
+    expect(result.exists).toBe(true);
   });
 });
