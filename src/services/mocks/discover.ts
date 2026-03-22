@@ -1,6 +1,7 @@
 import type { Track } from "@/types/track";
 import type { Mix } from "@/types/mix";
 import type { Station } from "@/types/station";
+import type { User } from "@/types/user";
 
 // ─── Recently Played Mocks ────────────────────────────────
 export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
@@ -309,5 +310,89 @@ export const mockAlbumsForYou: Track[] = [
     waveformData: Array.from({ length: 100 }, () => Math.random()),
     trackSlug: "cosmic-dance",
     audioUrl: "https://example.com/audio/110.mp3",
+  },
+];
+
+// ─── New crew, suggested for you mock ─────────────────────────────────
+export const mockSuggestedUsers: User[] = [
+  {
+    id: 1,
+    username: "travis-scott",
+    displayName: "Travis Scott",
+    avatar: "https://picsum.photos/200/200?random=201",
+    followers: 6234000,
+    isVerified: false,
+  },
+  {
+    id: 2,
+    username: "billie-eilish",
+    displayName: "Billie Eilish",
+    avatar: "https://picsum.photos/200/200?random=202",
+    followers: 8567000,
+    isVerified: true,
+  },
+  {
+    id: 3,
+    username: "the-weeknd",
+    displayName: "The Weeknd",
+    avatar: "https://picsum.photos/200/200?random=203",
+    followers: 7891000,
+    isVerified: true,
+  },
+  {
+    id: 4,
+    username: "dua-lipa",
+    displayName: "Dua Lipa",
+    avatar: "https://picsum.photos/200/200?random=204",
+    followers: 5432000,
+    isVerified: true,
+  },
+  {
+    id: 5,
+    username: "post-malone",
+    displayName: "Post Malone",
+    avatar: "https://picsum.photos/200/200?random=205",
+    followers: 4876000,
+    isVerified: true,
+  },
+  {
+    id: 6,
+    username: "ariana-grande",
+    displayName: "Ariana Grande",
+    avatar: "https://picsum.photos/200/200?random=206",
+    followers: 9234000,
+    isVerified: true,
+  },
+  {
+    id: 7,
+    username: "drake",
+    displayName: "Drake",
+    avatar: "https://picsum.photos/200/200?random=207",
+    followers: 12000000,
+    isVerified: true,
+  },
+  {
+    id: 8,
+    username: "taylor-swift",
+    displayName: "Taylor Swift",
+    avatar: "https://picsum.photos/200/200?random=208",
+    followers: 15600000,
+    isVerified: true,
+  },
+  {
+    id: 9,
+    username: "ed-sheeran",
+    displayName: "Ed Sheeran",
+    avatar: "https://picsum.photos/200/200?random=209",
+    followers: 6789000,
+    isVerified: true,
+  },
+  {
+    id: 10,
+    username: "kendrick-lamar",
+    displayName: "Kendrick Lamar",
+    avatar: "https://picsum.photos/200/200?random=210",
+    followers: 5234000,
+    isVerified: true,
   },
 ];

@@ -4,6 +4,7 @@ import { mockDiscoverTracks } from "@/mocks/discover";
 import DiscoverSideBar from "@/components/discover/sidebar/DiscoverSideBar";
 import RecentlyPlayed from "@/components/discover/RecentlyPlayed";
 import AlbumsForYou from "@/components/discover/AlbumsForYou";
+import NewCrewForYou from "@/components/discover/NewCrewForYou";
 
 const DiscoverPageAuth = () => {
   return (
@@ -19,6 +20,7 @@ const DiscoverPageAuth = () => {
           </HorizontalCarousel>
           <RecentlyPlayed />
           <AlbumsForYou />
+          <NewCrewForYou />
         </div>
 
         {/* Sidebar — 30% */}
