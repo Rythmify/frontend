@@ -28,6 +28,7 @@ const QuitUploadModal = ({ isOpen, onClose, onConfirm }: Props) => {
       >
         {/* close button */}
         <button
+          data-test="close-quit-modal-button"
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#303030] hover:bg-[#404040] flex items-center justify-center transition-colors cursor-pointer"
           aria-label="Close"

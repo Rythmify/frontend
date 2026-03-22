@@ -152,12 +152,14 @@ const UploadGuestPage = () => {
           />
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-10">
             <button
+              data-test="try-it-free-button"
               onClick={handleUploadClick}
               className="bg-bg-inverted text-bg cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
             >
               Try it free
             </button>
             <button
+              data-test="learn-more-button"
               onClick={() => navigate("/artist-pro")}
               className="dark:!text-[#699fff] text-[#044dd2] text-[22px] font-bold cursor-pointer bg-transparent border-none"
             >
