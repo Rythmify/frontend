@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -7,6 +7,11 @@ import {
   mockUserFollowing,
 } from "@/components/Profile/MockData/mock";
 import FollowButton from "@/components/Profile/FollowButton/FollowButton";
+import {
+  getFollowing,
+  resolveUsername,
+  type UserSummary,
+} from "@/services/mocks/User.service";
 
 const tabs = ["Likes", "Following", "Followers"];
 
@@ -19,17 +24,39 @@ export default function FollowingPage() {
     ? currentUser
     : { username, displayName: username, avatar: "" };
 
+  // Real API data — replaces mock when loaded
+  const [apiFollowing, setApiFollowing] = useState<UserSummary[] | null>(null);
+
+  useEffect(() => {
+    const targetUsername = isOwner ? currentUser?.username : username;
+    if (!targetUsername) return;
+
+    resolveUsername(targetUsername)
+      .then((userId) => getFollowing(userId, { limit: 50, offset: 0 }))
+      .then((res) => setApiFollowing(res.items))
+      .catch((err) => console.error("Failed to load following:", err));
+  }, [username, isOwner]);
+
   const allMockUsers = Array.from(
     new Map(
       [...mockFollowing, ...mockFollowers].map((u) => [u.username, u]),
     ).values(),
   );
 
-  const following = isOwner
-    ? allMockUsers.filter((u) =>
-        currentUser?.following_ids?.includes(u.username),
-      )
-    : (mockUserFollowing[username || ""] ?? []);
+  // Use real data when available, fall back to mock
+  const following = apiFollowing
+    ? apiFollowing.map((u) => ({
+        username: u.user_id,        // used as key and nav target (UUID)
+        displayName: u.display_name,
+        avatar: "",                 // UserSummary has no avatar per spec
+        isVerified: u.is_verified,
+        followers: 0,               // UserSummary has no follower_count per spec
+      }))
+    : isOwner
+      ? allMockUsers.filter((u) =>
+          currentUser?.following_ids?.includes(u.username),
+        )
+      : (mockUserFollowing[username || ""] ?? []);
 
   if (!user) return null;
 

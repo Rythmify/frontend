@@ -1,6 +1,12 @@
 import React, { useState, useRef } from "react";
 import type { User } from "@/stores/auth.store";
 import { useAuthStore } from "@/stores/auth.store";
+import {
+  uploadAvatar,
+  deleteAvatar,
+  uploadCover,
+  deleteCover,
+} from "@/services/mocks/User.service";
 
 interface ProfileHeaderProps {
   user: User;
@@ -30,7 +36,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     setHoveringAvatar(false);
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const allowed = ["image/jpeg", "image/png", "image/webp"];
@@ -42,19 +48,40 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       alert("Image must be under 5MB.");
       return;
     }
+    // Optimistic preview
     const previewUrl = URL.createObjectURL(file);
     setLocalAvatar(previewUrl);
     setUser({ ...user, avatar: previewUrl });
+
+    try {
+      // POST /users/me/avatar
+      const { profile_picture } = await uploadAvatar(file);
+      setLocalAvatar(profile_picture);
+      setUser({ ...user, avatar: profile_picture });
+    } catch {
+      // Revert on failure
+      setLocalAvatar(avatar);
+      setUser({ ...user, avatar });
+    }
   };
 
-  const handleDeleteImage = () => {
+  const handleDeleteImage = async () => {
     setLocalAvatar(undefined);
     setUser({ ...user, avatar: undefined });
     setShowImageMenu(false);
     setHoveringAvatar(false);
+
+    try {
+      // DELETE /users/me/avatar
+      await deleteAvatar();
+    } catch {
+      // Revert on failure
+      setLocalAvatar(avatar);
+      setUser({ ...user, avatar });
+    }
   };
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const allowed = ["image/jpeg", "image/png", "image/webp"];
@@ -66,9 +93,21 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       alert("Cover image must be under 10MB.");
       return;
     }
+    // Optimistic preview
     const previewUrl = URL.createObjectURL(file);
     setLocalCover(previewUrl);
     setUser({ ...user, coverUrl: previewUrl });
+
+    try {
+      // POST /users/me/cover
+      const { cover_photo } = await uploadCover(file);
+      setLocalCover(cover_photo);
+      setUser({ ...user, coverUrl: cover_photo });
+    } catch {
+      // Revert on failure
+      setLocalCover(coverUrl);
+      setUser({ ...user, coverUrl });
+    }
   };
 
   return (
@@ -134,10 +173,18 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <button
                   data-test="cover-delete-button"
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setLocalCover(undefined);
                     setUser({ ...user, coverUrl: undefined });
                     setShowCoverMenu(false);
+                    try {
+                      // DELETE /users/me/cover
+                      await deleteCover();
+                    } catch {
+                      // Revert on failure
+                      setLocalCover(coverUrl);
+                      setUser({ ...user, coverUrl });
+                    }
                   }}
                   className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded"
                 >

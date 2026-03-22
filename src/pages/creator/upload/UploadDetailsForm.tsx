@@ -53,24 +53,15 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
     };
 
     const handleSubmit = async () => {
-      if (!audioData) {
-        setError("Missing audio data.");
-        return;
-      }
-      if (!title.trim()) {
-        setError("Track title is required.");
-        return;
-      }
+      if (!audioData) { setError("Missing audio data."); return; }
+      if (!title.trim()) { setError("Track title is required."); return; }
 
       setGlobalLoading(true);
       setError(null);
 
       try {
         const tagsArray = tags
-          ? tags
-              .split(",")
-              .map((t) => t.trim())
-              .filter(Boolean)
+          ? tags.split(",").map((t) => t.trim()).filter(Boolean)
           : undefined;
 
         const result = await uploadTrack(
@@ -84,15 +75,14 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             cover_image: coverFile,
             tags: tagsArray,
           },
-          onProgress,
+          (pct) => onProgress?.(pct)  
         );
 
         onSuccess?.(result.data.id);
       } catch (err: any) {
+        onProgress?.(0);
         console.error("Upload failed:", err);
-        setError(
-          err.response?.data?.message || err.message || "Upload failed.",
-        );
+        setError(err.response?.data?.message || err.message || "Upload failed.");
         setGlobalLoading(false);
       }
     };

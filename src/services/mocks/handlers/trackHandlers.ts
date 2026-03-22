@@ -52,6 +52,7 @@ const mockTrackSummary: TrackSummary = {
 export const trackHandlers = [
   // POST /tracks — upload a new track
   http.post("*/tracks", async ({ request }) => {
+    await new Promise((r) => setTimeout(r, 4000));
     const formData = await request.formData();
     const title = formData.get("title") as string | null;
 
