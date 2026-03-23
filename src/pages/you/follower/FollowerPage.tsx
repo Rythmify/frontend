@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -6,6 +6,11 @@ import {
   mockUserFollowers,
 } from "@/components/Profile/MockData/mock";
 import FollowButton from "@/components/Profile/FollowButton/FollowButton";
+import {
+  getFollowers,
+  resolveUsername,
+  type UserSummary,
+} from "@/services/mocks/User.service";
 
 const tabs = ["Likes", "Following", "Followers"];
 
@@ -18,9 +23,31 @@ export default function FollowerPage() {
     ? currentUser
     : { username, displayName: username, avatar: "" };
 
-  const followerList = isOwner
-    ? mockFollowers
-    : (mockUserFollowers[username || ""] ?? []);
+  // Real API data — replaces mockFollowers when loaded
+  const [apiFollowers, setApiFollowers] = useState<UserSummary[] | null>(null);
+
+  useEffect(() => {
+    const targetUsername = isOwner ? currentUser?.username : username;
+    if (!targetUsername) return;
+
+    resolveUsername(targetUsername)
+      .then((userId) => getFollowers(userId, { limit: 50, offset: 0 }))
+      .then((res) => setApiFollowers(res.items))
+      .catch((err) => console.error("Failed to load followers:", err));
+  }, [username, isOwner]);
+
+  // Use real data when available, fall back to mock
+  const followerList = apiFollowers
+    ? apiFollowers.map((u) => ({
+        username: u.user_id,        // used as key and nav target (UUID)
+        displayName: u.display_name,
+        avatar: "",                 // UserSummary has no avatar per spec
+        isVerified: u.is_verified,
+        followers: 0,               // UserSummary has no follower_count per spec
+      }))
+    : isOwner
+      ? mockFollowers
+      : (mockUserFollowers[username || ""] ?? []);
 
   if (!user) return null;
 

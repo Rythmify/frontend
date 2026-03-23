@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react";
 interface HorizontalCarouselProps {
   title: string;
   children: React.ReactNode;
+  "data-section"?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -49,11 +50,39 @@ const styles = {
 };
 
 // ─── Component ────────────────────────────────────────────
-const HorizontalCarousel = ({ title, children }: HorizontalCarouselProps) => {
+const HorizontalCarousel = ({
+  title,
+  children,
+  "data-section": dataSection,
+}: HorizontalCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [nudgeClass, setNudgeClass] = useState("");
+
+  // Calculate scroll distance based on card width + gap
+  const getScrollDistance = () => {
+    if (!scrollRef.current) return 300;
+
+    const container = scrollRef.current;
+    const firstChild = container.firstElementChild as HTMLElement;
+
+    if (!firstChild) return 300;
+
+    // Get card width from the first child
+    const cardWidth = firstChild.offsetWidth;
+
+    // Gap is 32px (gap-8 = 2rem = 32px)
+    const gap = 32;
+
+    // Scroll 3 cards at a time (adjustable)
+    const cardsToScroll = 3;
+
+    // Total scroll distance = (card width + gap) * number of cards - last gap
+    const scrollDistance = (cardWidth + gap) * cardsToScroll;
+
+    return scrollDistance;
+  };
 
   const handleScroll = () => {
     const container = scrollRef.current;
@@ -65,11 +94,13 @@ const HorizontalCarousel = ({ title, children }: HorizontalCarouselProps) => {
   };
 
   const scrollLeft = () => {
-    scrollRef.current?.scrollBy({ left: -300, behavior: "smooth" });
+    const distance = getScrollDistance();
+    scrollRef.current?.scrollBy({ left: -distance, behavior: "smooth" });
   };
 
   const scrollRight = () => {
-    scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" });
+    const distance = getScrollDistance();
+    scrollRef.current?.scrollBy({ left: distance, behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -86,7 +117,11 @@ const HorizontalCarousel = ({ title, children }: HorizontalCarouselProps) => {
   };
 
   return (
-    <div className={styles.wrapper} data-test="carousel-wrapper">
+    <div
+      className={styles.wrapper}
+      data-test="carousel-wrapper"
+      data-section={dataSection}
+    >
       {/* Title */}
       <h2 className={styles.title} data-test="carousel-title">
         {title}

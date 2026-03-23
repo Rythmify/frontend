@@ -28,6 +28,7 @@ const QuitUploadModal = ({ isOpen, onClose, onConfirm }: Props) => {
       >
         {/* close button */}
         <button
+          data-test="close-quit-modal-button"
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#303030] hover:bg-[#404040] flex items-center justify-center transition-colors cursor-pointer"
           aria-label="Close"
@@ -37,7 +38,7 @@ const QuitUploadModal = ({ isOpen, onClose, onConfirm }: Props) => {
           </svg>
         </button>
 
-        <h2 className="text-text-upload text-xl font-bold mb-4 pr-10">
+        <h2 className="text-white text-xl font-bold mb-4 pr-10">
           Are you sure you want to quit?
         </h2>
 
@@ -51,7 +52,7 @@ const QuitUploadModal = ({ isOpen, onClose, onConfirm }: Props) => {
           <button
             data-test="back-to-upload-button"
             onClick={onClose}
-            className="text-text-upload text-sm font-bold hover:opacity-70 transition-opacity cursor-pointer bg-transparent border-none"
+            className="text-white text-sm font-bold hover:opacity-70 transition-opacity cursor-pointer bg-transparent border-none"
           >
             Back to upload
           </button>

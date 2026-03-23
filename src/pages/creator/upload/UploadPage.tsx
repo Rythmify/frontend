@@ -88,7 +88,7 @@ const UploadPage = () => {
             onCancel={() => setIsDetailsMode(false)}
             onSuccess={handleSuccess}
             setIsLoadingParent={setIsSubmitting}
-            onProgress={setUploadProgress}
+            onProgress={(pct) => setUploadProgress(pct)} 
           />
         ) : (
           <UploadSuccessView trackId={uploadedTrackId} />
