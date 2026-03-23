@@ -6,7 +6,7 @@ import { BlockUserModal } from './BlockModal'
 import { ReportModal } from './ReportModal'
 import { SpamModal } from './SpamModal'
 import { markMessageReadState } from '@/services/api/messaging/conversationApi'
-
+import {blockUser,unblockUser} from '@/services/api/messaging/conversationApi'
 interface ConversationHeaderProps {
   reciepiantId: string
   conversationId: string
@@ -26,15 +26,13 @@ const ConversationHeader = ({
 }: ConversationHeaderProps) => {
   const navigate = useNavigate()
 
-  const [isBlockOpen, setIsBlockOpen]   = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isSpamOpen, setIsSpamOpen]     = useState(false)
   const [loadingRead, setLoadingRead]   = useState(false)
-  // false = conversation is read → button shows "Mark as unread"
-  // true  = conversation is unread → button shows "Mark as read"
   const [isUnread, setIsUnread]         = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
+  const [loadingBlock, setLoadingBlock] = useState(false)
 
-  // reset button to "Mark as unread" every time a new conversation is opened
   useEffect(() => {
     setIsUnread(false)
   }, [conversationId])
@@ -44,8 +42,6 @@ const ConversationHeader = ({
     setLoadingRead(true)
     try {
       await markMessageReadState(conversationId, lastMessageId, isUnread)
-      // is_read: false when isUnread=false (marking as unread)
-      // is_read: true  when isUnread=true  (marking as read)
       setIsUnread(prev => !prev)
       onReadStateChange(!isUnread)
     } finally {
@@ -53,6 +49,22 @@ const ConversationHeader = ({
     }
   }
 
+  const handleToggleBlock = async () => {
+  setLoadingBlock(true)
+  try {
+    if (isBlocked) {
+      await unblockUser(reciepiantId)
+      setIsBlocked(false)
+    } else {
+      await blockUser(reciepiantId)
+      setIsBlocked(true)
+    }
+  } catch {
+    // silently fail — button stays as is
+  } finally {
+    setLoadingBlock(false)
+  }
+}
   return (
     <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3">
 
@@ -68,9 +80,9 @@ const ConversationHeader = ({
         <button
           data-test="conversation-block-button"
           className="p-2 text-sm font-bold text-text-secondary hover:text-text-hover"
-          onClick={() => setIsBlockOpen(true)}
-        >
-          Block
+          disabled={loadingBlock}
+          onClick={handleToggleBlock}        >
+          {isBlocked ? 'Unblock' : 'Block'}
         </button>
 
         <button
@@ -98,13 +110,7 @@ const ConversationHeader = ({
         />
       </div>
 
-      <Modal isOpen={isBlockOpen} onClose={() => setIsBlockOpen(false)}>
-        <BlockUserModal
-          userId={reciepiantId}
-          username={recipientName}
-          onClose={() => setIsBlockOpen(false)}
-        />
-      </Modal>
+   
 
       <Modal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)}>
         <ReportModal

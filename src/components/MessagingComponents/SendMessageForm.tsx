@@ -45,8 +45,13 @@ export default function SendMessageForm({
       setValue('');
       setEmbed(null);
       setBoxKey(k => k + 1);
-    } catch {
-      setError('Failed to send message. Please try again.');
+    }  catch (err: unknown) {
+    const axiosError = err as { response?: { status: number } }
+    if (axiosError.response?.status === 403) {
+      setError('Unable to send message to this user.')
+    } else {
+      setError('Failed to send message. Please try again.')
+    }
     } finally {
       setIsSending(false);
     }

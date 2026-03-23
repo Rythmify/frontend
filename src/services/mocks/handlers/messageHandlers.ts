@@ -93,6 +93,7 @@ const mockMessage2 = {
   is_read: true,
   created_at: "2025-03-10T14:25:00Z",
 };
+
 const mockMessage3 = {
   id: "e5f6a7b8-c9d0-1234-efab-567890abcdef",
   conversation_id: "c1d2e3f4-a5b6-7890-cdef-123456789abc",
@@ -102,6 +103,18 @@ const mockMessage3 = {
   embed_id: null,
   is_read: true,
   created_at: "2025-03-10T14:25:00Z",
+};
+
+// ─── Block-specific mock message ──────────────────────────────────────────────
+const mockMessageUnread = {
+  id: "f6a7b8c9-d0e1-2345-fabc-678901abcdef",
+  conversation_id: "c1d2e3f4-a5b6-7890-cdef-123456789abc",
+  sender_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  body: "Check out this track!",
+  embed_type: null,
+  embed_id: null,
+  is_read: false,
+  created_at: "2025-03-10T14:22:00Z",
 };
 
 const mockTrack = {
@@ -178,6 +191,24 @@ const mockConversationDetail: ConversationDetailResponse = {
   },
 };
 
+// ─── Block-specific conversation detail ───────────────────────────────────────
+// uses mockMessageUnread (is_read: false) so mark-as-read flow works in block tests
+const mockConversationDetailForBlock: ConversationDetailResponse = {
+  success: true,
+  data: {
+    conversation: mockConversations.data.items[0],
+    messages: [mockMessageUnread, mockMessage2, mockMessage3],
+    pagination: {
+      page: 1,
+      per_page: 50,
+      total_items: 3,
+      total_pages: 1,
+      has_next: false,
+      has_prev: false,
+    },
+  },
+};
+
 const mockFollowingPool = [
   {
     id: mockParticipant.id,
@@ -222,11 +253,7 @@ const mockGlobalUserPool = [
 // ─── Scenario Config ──────────────────────────────────────────────────────────
 
 type MockScenario = "success" | "empty" | "error" | "loading";
-
-// Scenario config for block endpoint lets you simulate edge-cases in tests.
 type BlockScenario = 'success' | 'already_blocked' | 'block_self' | 'not_found';
-
-// Scenario config for report endpoint.
 type ReportScenario =
   | 'success'
   | 'validation_error'
@@ -239,7 +266,22 @@ export const mockConfig = {
   conversationDetail: "success" as MockScenario,
   block: 'success' as BlockScenario,
   report: 'success' as ReportScenario,
+  // ── Block feature flags ──────────────────────────────────────────────────
+  // these are isolated from other tests — only flip during block/unblock tests
+  isBlocked: false,         // true = participant has been blocked by current user
+  useBlockScenario: false,  // true = use mockConversationDetailForBlock (unread messages)
 };
+
+// ─── Reset helper ─────────────────────────────────────────────────────────────
+// call this in beforeEach() in your test files to guarantee a clean slate
+export const resetMockConfig = () => {
+  mockConfig.conversations      = 'success'
+  mockConfig.conversationDetail = 'success'
+  mockConfig.block              = 'success'
+  mockConfig.report             = 'success'
+  mockConfig.isBlocked          = false
+  mockConfig.useBlockScenario   = false
+}
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -288,9 +330,12 @@ export const messageHandlers = [
       case "loading":
         return new Promise(() => {});
       default:
-        return HttpResponse.json(
-          mockConversationDetail satisfies ConversationDetailResponse,
-        );
+        // use block-specific detail (unread messages) when in block test scenario
+       const detail = mockConfig.useBlockScenario
+  ? mockConversationDetailForBlock
+  : mockConversationDetail
+
+return HttpResponse.json(detail satisfies ConversationDetailResponse);
     }
   }),
 
@@ -306,6 +351,15 @@ export const messageHandlers = [
   http.post(
     "*/messages/conversations/:conversationId/messages",
     async ({ request }) => {
+      // reject message sending when participant has blocked current user
+      // only active during block tests (useBlockScenario = true)
+      if (mockConfig.isBlocked) {
+        return HttpResponse.json(
+          { error: { code: 'BLOCKED', message: 'You have been blocked by this user.' } },
+          { status: 403 }
+        )
+      }
+
       const body = (await request.json()) as {
         body?: string;
         resource?: { type: string; id: string };
@@ -386,12 +440,6 @@ export const messageHandlers = [
   ),
 
   // GET /resolve
-  // Parses the incoming rythmify.com URL to return the correct type and the
-  // matching mock ID so the subsequent fetch hits the right mock object.
-  //
-  // Test URLs to paste in the MessageInput textarea:
-  //   track    → https://rythmify.com/tracks/e5f6a7b8-c9d0-1234-efab-567890abcdef
-  //   playlist → https://rythmify.com/playlists/playlist-mock-id-0001
   http.get('*/resolve', ({ request }) => {
     const url = new URL(request.url);
     const permalink = url.searchParams.get('url') ?? '';
@@ -497,7 +545,6 @@ export const messageHandlers = [
     } satisfies TrackResponse);
   }),
 
-
   // GET /playlists/:playlistId
   http.get('*/playlists/:playlistId', ({ params }) => {
     const playlistId = params.playlistId as string;
@@ -516,7 +563,6 @@ export const messageHandlers = [
   // ─── Block ─────────────────────────────────────────────────────────────────
 
   // POST /users/:user_id/block
-  // Switch on mockConfig.block to simulate different scenarios in tests.
   http.post('*/users/:user_id/block', ({ params }) => {
     const userId = params.user_id as string;
 
@@ -529,27 +575,18 @@ export const messageHandlers = [
 
       case 'block_self':
         return HttpResponse.json(
-          {
-            error: {
-              code: 'BLOCK_SELF',
-              message: 'You cannot block yourself.',
-            },
-          },
+          { error: { code: 'BLOCK_SELF', message: 'You cannot block yourself.' } },
           { status: 400 }
         );
 
       case 'not_found':
         return HttpResponse.json(
-          {
-            error: {
-              code: 'NOT_FOUND',
-              message: 'User not found.',
-            },
-          },
+          { error: { code: 'NOT_FOUND', message: 'User not found.' } },
           { status: 404 }
         );
 
       default: // 'success'
+        mockConfig.isBlocked = true  // ← flip to blocked, isolated to block tests
         return HttpResponse.json(
           {
             data: {
@@ -566,7 +603,7 @@ export const messageHandlers = [
 
   // DELETE /users/:user_id/block
   http.delete('*/users/:user_id/block', () => {
-    // 204 No Content — no body per spec.
+    mockConfig.isBlocked = false  // ← flip back to unblocked
     return new HttpResponse(null, { status: 204 });
   }),
 
@@ -584,10 +621,7 @@ export const messageHandlers = [
               code: 'VALIDATION_FAILED',
               message: 'Validation failed',
               details: [
-                {
-                  field: 'reason',
-                  issue: 'Copyright reason is only valid for track reports.',
-                },
+                { field: 'reason', issue: 'Copyright reason is only valid for track reports.' },
               ],
             },
           },
@@ -596,34 +630,19 @@ export const messageHandlers = [
 
       case 'not_found':
         return HttpResponse.json(
-          {
-            error: {
-              code: 'RESOURCE_NOT_FOUND',
-              message: 'The reported resource was not found',
-            },
-          },
+          { error: { code: 'RESOURCE_NOT_FOUND', message: 'The reported resource was not found' } },
           { status: 404 }
         );
 
       case 'already_reported':
         return HttpResponse.json(
-          {
-            error: {
-              code: 'RESOURCE_ALREADY_EXISTS',
-              message: 'You have already reported this resource',
-            },
-          },
+          { error: { code: 'RESOURCE_ALREADY_EXISTS', message: 'You have already reported this resource' } },
           { status: 409 }
         );
 
       case 'rate_limited':
         return HttpResponse.json(
-          {
-            error: {
-              code: 'RATE_LIMITED',
-              message: 'Too many reports. Please try again later.',
-            },
-          },
+          { error: { code: 'RATE_LIMITED', message: 'Too many reports. Please try again later.' } },
           { status: 429 }
         );
 
