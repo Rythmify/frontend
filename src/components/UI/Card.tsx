@@ -101,14 +101,22 @@ const tooltipStyles = {
 const TrackCard = ({ track }: TrackCardProps) => {
   const [liked, setLiked] = useState(false);
   const navigate = useNavigate();
-  const setTrack = usePlayerStore((state) => state.setTrack);
+  const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
 
-  // Handler for play button click (start playing track)
+  // Check if this card's track is the one currently playing
+  const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
+
+  // Handler for play button click (play/pause toggle)
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click from firing
-    // Start playing this track using Shahd's player store
-    setTrack(track);
-    console.log("Play clicked for track:", track.id);
+
+    if (currentTrack?.id === track.id) {
+      // Same track is already loaded, just toggle play/pause
+      togglePlay();
+    } else {
+      // Different track, set it and start playing
+      setTrack(track);
+    }
   };
 
   return (
@@ -135,7 +143,9 @@ const TrackCard = ({ track }: TrackCardProps) => {
               onClick={handlePlayClick}
               data-test="button-play"
             >
-              <i className="fa-sharp fa-solid fa-play text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] pl-0.5"></i>
+              <i
+                className={`fa-sharp fa-solid ${isThisTrackPlaying ? "fa-pause" : "fa-play"} text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ${isThisTrackPlaying ? "pl-0" : "pl-0.5"}`}
+              ></i>
             </button>
           </div>
 

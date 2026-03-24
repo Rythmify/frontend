@@ -8,13 +8,19 @@ import EditProfileModal from "../../components/Profile/EditProfileModal/EditProf
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   mockLikedTracks,
-  mockUserFollowing,
-  mockUserFollowers,
-  mockFollowing,
-  mockFollowers,
-  mockUserProfiles,
 } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
+import {
+  getMyProfile,
+  getUserById,
+  getFollowers,
+  getFollowing,
+  getFollowStatus,
+  updateMyProfile,
+  type OwnUser,
+  type PublicUser,
+  type UserSummary,
+} from "@/services/mocks/User.service";
 
 export default function UsernamePage() {
   const { username } = useParams();
@@ -24,21 +30,81 @@ export default function UsernamePage() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(null);
+  const [followers, setFollowers] = useState<UserSummary[]>([]);
+  const [following, setFollowing] = useState<UserSummary[]>([]);
+  const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
+  const [isFollowing, setIsFollowing] = useState(false);
+
   if (!currentUser) return null;
 
   const isOwner = !username || username === currentUser.username;
 
   useEffect(() => {
-    if (
-      currentUser &&
-      (!currentUser.following_ids || currentUser.following_ids.length === 0)
-    ) {
-      setUser({
-        ...currentUser,
-        following_ids: mockFollowing.map((u) => u.username),
-      });
+    if (isOwner) {
+      // GET /users/me
+      getMyProfile().then((profile) => {
+        setProfileData(profile);
+        setStats({
+          followers: profile.followers_count,
+          following: profile.following_count,
+          tracks: 0,
+        });
+        setUser({
+          ...currentUser,
+          bio: profile.bio || "",
+          location: [(profile as OwnUser).city, (profile as OwnUser).country]
+            .filter(Boolean)
+            .join(", ") || currentUser.location,
+        });
+      }).catch(console.error);
+
+      if (currentUser.id) {
+        getFollowers(currentUser.id, { limit: 100 })
+          .then((res) => setFollowers(res.items))
+          .catch(console.error);
+        getFollowing(currentUser.id, { limit: 100 })
+          .then((res) => {
+            setFollowing(res.items);
+            setStats((s) => ({ ...s, following: res.meta.total }));
+          })
+          .catch(console.error);
+      }
+    } else {
+      // GET /users/{user_id} — backend accepts username in path
+      getUserById(username!).then((profile) => {
+        setProfileData(profile);
+        setStats({
+          followers: profile.followers_count,
+          following: profile.following_count,
+          tracks: 0,
+        });
+      }).catch(console.error);
     }
-  }, []);
+  }, [username, isOwner]);
+
+  // Once we have the visited profile's UUID, fetch their social lists + follow status
+  useEffect(() => {
+    if (!isOwner && profileData) {
+      getFollowers(profileData.id, { limit: 100 })
+        .then((res) => {
+          setFollowers(res.items);
+          setStats((s) => ({ ...s, followers: res.meta.total }));
+        })
+        .catch(console.error);
+      getFollowing(profileData.id, { limit: 100 })
+        .then((res) => {
+          setFollowing(res.items);
+          setStats((s) => ({ ...s, following: res.meta.total }));
+        })
+        .catch(console.error);
+
+      // GET /users/{user_id}/follow-status
+      getFollowStatus(profileData.id)
+        .then((status) => setIsFollowing(status.is_following))
+        .catch(console.error);
+    }
+  }, [profileData?.id, isOwner]);
 
   const getActiveTab = () => {
     const path = location.pathname;
@@ -51,24 +117,17 @@ export default function UsernamePage() {
   };
 
   const selectedTab = getActiveTab();
-  const profile = isOwner ? null : mockUserProfiles[username || ""];
   const storageKey = `likedTracks_${isOwner ? currentUser.username : username}`;
 
-  const initiallyFollowing = useRef(
-    currentUser?.following_ids?.includes(username || "") ?? false,
-  );
-  const isFollowing =
-    currentUser?.following_ids?.includes(username || "") ?? false;
+  // Track the initial follow state so we can compute a follower delta for the
+  // stats display without waiting for a full refetch
+  const initiallyFollowing = useRef(isFollowing);
   const followerDelta =
     isFollowing === initiallyFollowing.current ? 0 : isFollowing ? 1 : -1;
 
   const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
     const stored = localStorage.getItem(storageKey);
-    return stored
-      ? JSON.parse(stored)
-      : isOwner
-        ? mockLikedTracks
-        : (profile?.likedTracks ?? []);
+    return stored ? JSON.parse(stored) : isOwner ? mockLikedTracks : [];
   });
 
   const handleUnlike = (id: string) => {
@@ -95,50 +154,44 @@ export default function UsernamePage() {
     if (route) navigate(route);
   };
 
-  const stats = isOwner
-    ? {
-        followers: mockFollowers.length,
-        following: currentUser?.following_ids?.length ?? 0,
-        tracks: 0,
-      }
+  const displayedStats = isOwner
+    ? stats
     : {
-        followers: (profile?.followers ?? 0) + followerDelta,
-        following: profile?.following ?? 0,
-        tracks: profile?.tracks ?? 0,
+        ...stats,
+        followers: stats.followers + followerDelta,
       };
 
+  // Adapt API response back to the camelCase User shape ProfileHeader expects
   const user = isOwner
     ? currentUser
     : {
         ...currentUser,
-        username: username || currentUser.username,
-        displayName: profile?.displayName || username || currentUser.username,
-        bio: profile?.bio || "",
-        avatar: profile?.avatar || "",
-        coverUrl: profile?.coverUrl || "",
-        location: profile?.location || "",
+        username: profileData?.username || username || currentUser.username,
+        displayName: profileData?.display_name || username || currentUser.username,
+        bio: profileData?.bio || "",
+        avatar: profileData?.profile_picture || "",
+        coverUrl: profileData?.cover_photo || "",
+        location: (profileData as PublicUser | null)?.location || "",
       };
 
-  const allMockUsers = Array.from(
-    new Map(
-      [
-        ...mockFollowing,
-        ...mockFollowers.map((u) => ({ ...u, tracks: 0 })),
-      ].map((u) => [u.username, u]),
-    ).values(),
-  );
+  // Adapt UserSummary[] → the shape ProfileSidebar expects
+  const followersMapped = followers.map((u) => ({
+    username: u.user_id,
+    displayName: u.display_name,
+    avatar: "",
+    followers: 0,
+    tracks: 0,
+    isVerified: u.is_verified,
+  }));
 
-  const following = isOwner
-    ? allMockUsers.filter((u) =>
-        currentUser?.following_ids?.includes(u.username),
-      )
-    : (mockUserFollowing[username || ""] ?? []);
-
-  const followers = isOwner
-    ? allMockUsers.filter((u) =>
-        currentUser?.followers_ids?.includes(u.username),
-      )
-    : (mockUserFollowers[username || ""] ?? []);
+  const followingMapped = following.map((u) => ({
+    username: u.user_id,
+    displayName: u.display_name,
+    avatar: "",
+    followers: 0,
+    tracks: 0,
+    isVerified: u.is_verified,
+  }));
 
   return (
     <div className="container px-4 md:px-8 lg:px-20">
@@ -152,7 +205,7 @@ export default function UsernamePage() {
         onEdit={() => setShowEdit(true)}
         username={user.username}
         displayName={user.displayName}
-        tracks={stats.tracks ?? 0}
+        tracks={displayedStats.tracks ?? 0}
       />
 
       <div className="flex gap-6 py-6 items-start">
@@ -180,9 +233,9 @@ export default function UsernamePage() {
             user={user}
             isOwner={isOwner}
             likedTracks={likedTracks}
-            followers={followers}
-            following={following}
-            stats={stats}
+            followers={followersMapped}
+            following={followingMapped}
+            stats={displayedStats}
             onTabChange={handleTabChange}
             onUnlike={handleUnlike}
           />
@@ -200,6 +253,17 @@ export default function UsernamePage() {
           user={user}
           onClose={() => setShowEdit(false)}
           onSave={(data) => {
+            // PATCH /users/me with the updated fields
+            updateMyProfile({
+              display_name: data.displayName,
+              first_name: data.firstName,
+              last_name: data.lastName,
+              bio: data.bio,
+              city: data.city,
+              country: data.country,
+            }).catch(console.error);
+
+            // Optimistically update auth store so UI reflects the change immediately
             setUser({
               ...currentUser,
               displayName: data.displayName,

@@ -12,7 +12,7 @@ export interface Track {
   duration: string;
   postedAt: string;
   waveformData: number[];
-  trackSlug: string;
+  trackSlug?: string;
   audioUrl: string;
   isPrivate?: boolean; // private tracks
   madeFor?: string; // made for [username]

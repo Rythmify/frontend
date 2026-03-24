@@ -149,6 +149,23 @@ export const authHandlers = [
     });
   }),
 
+  // PATCH /users/me
+  http.patch('*/users/me', async ({ request }) => {
+    const body = await request.json() as { display_name?: string; gender?: string; date_of_birth?: string };
+    return HttpResponse.json({
+      data: {
+        id: mockUser.user_id,
+        username: 'demouser',
+        display_name: body.display_name ?? mockUser.display_name,
+        email: mockUser.email,
+        role: mockUser.role,
+        profile_picture: undefined,
+        cover_photo: undefined,
+      },
+      message: 'User updated successfully.',
+    });
+  }),
+
   // GET /users/me
   http.get('*/users/me', () => {
     return HttpResponse.json({

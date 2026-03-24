@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ArtistToolsCard from "./ArtistToolsCard";
 import TrackItem from "@/components/UI/TrackItem";
-import TrackListSection from "@/components/UI/TrackListSection";
+import TrackListSection from "@/components/UI/TrackListSection/TrackListSection";
 import ArtistListSection from "@/components/UI/ArtistListSection";
 import GoMobileSection from "@/components/UI/GoMobile";
 
@@ -130,6 +130,16 @@ const DiscoverSidebar = () => {
         <ArtistToolsCard />
       </div>
 
+      {/* Suggested Artists Section */}
+      <div data-test="discover-sidebar-suggested-artists">
+        <ArtistListSection
+          title="ARTISTS YOU SHOULD FOLLOW"
+          artists={suggestedArtists}
+          onRefresh={handleRefreshArtists}
+          maxDisplay={3}
+        />
+      </div>
+
       {/* Liked Tracks Section */}
       <div data-test="discover-sidebar-liked-tracks">
         <TrackListSection
@@ -156,16 +166,6 @@ const DiscoverSidebar = () => {
             <TrackItem key={track.id} {...track} initialLiked={false} />
           ))}
         </TrackListSection>
-      </div>
-
-      {/* Suggested Artists Section */}
-      <div data-test="discover-sidebar-suggested-artists">
-        <ArtistListSection
-          title="SUGGESTED ARTISTS"
-          artists={suggestedArtists}
-          onRefresh={handleRefreshArtists}
-          maxDisplay={3}
-        />
       </div>
 
       {/* Go Mobile Section */}

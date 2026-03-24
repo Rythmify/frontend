@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { mockDiscoverTracks, mockMixes } from "@/mocks/discover";
+import { mockDiscoverTracks } from "@/mocks/discover";
 
 export const discoverHandlers = [
   // GET /discover/recommended
@@ -10,13 +10,13 @@ export const discoverHandlers = [
     });
   }),
 
-  // GET /discover/mixes
-  http.get("*/discover/mixes", () => {
-    return HttpResponse.json({
-      data: mockMixes,
-      message: "Mixes fetched successfully.",
-    });
-  }),
+  // // GET /discover/mixes
+  // http.get("*/discover/mixes", () => {
+  //   return HttpResponse.json({
+  //     data: mockMixes,
+  //     message: "Mixes fetched successfully.",
+  //   });
+  // }),
 
   // GET /user/history
   http.get("*/user/history", () => {

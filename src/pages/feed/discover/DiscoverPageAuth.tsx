@@ -1,7 +1,10 @@
 import TrackCard from "@/components/UI/Card";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import { mockDiscoverTracks } from "@/mocks/discover";
-import DiscoverSideBar from "@/components/discover/DiscoverSideBar/DiscoverSideBar";
+import DiscoverSideBar from "@/components/discover/sidebar/DiscoverSideBar";
+import RecentlyPlayed from "@/components/discover/RecentlyPlayed";
+import AlbumsForYou from "@/components/discover/AlbumsForYou";
+import NewCrewForYou from "@/components/discover/NewCrewForYou";
 
 const DiscoverPageAuth = () => {
   return (
@@ -15,6 +18,9 @@ const DiscoverPageAuth = () => {
               <TrackCard key={track.id} track={track} />
             ))}
           </HorizontalCarousel>
+          <RecentlyPlayed />
+          <AlbumsForYou />
+          <NewCrewForYou />
         </div>
 
         {/* Sidebar — 30% */}
