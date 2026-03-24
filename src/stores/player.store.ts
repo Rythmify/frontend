@@ -60,12 +60,22 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setTrack: (track, queue) => {
     const newQueue = queue ?? get().queue;
     const index = newQueue.findIndex((t) => t.id === track.id);
+    
+    // If the audio element was seeked before hitting Play (like clicking the waveform
+    // on page load), its progress will be in get().currentTime via timeupdate.
+    // Instead of hard-resetting to 0, we adopt whatever the current time is ONLY IF
+    // we are resuming the same track, or if we are starting play from a `null`
+    // state (which implies the user seeked the page's hero waveform before hitting play).
+    const isSameTrack = get().currentTrack?.id === track.id;
+    const isFromNullState = get().currentTrack === null;
+    const nextTime = (isSameTrack || isFromNullState) ? get().currentTime : 0;
+    
     set({
       currentTrack: track,
       queue: newQueue,
       queueIndex: index >= 0 ? index : 0,
       isPlaying: true,
-      currentTime: 0,
+      currentTime: nextTime,
       isLiked: false,
     });
   },
@@ -108,7 +118,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     });
   },
 
-  seek: (time) => set({ currentTime: time }),
+  // Delegates to seekAudio so there is one canonical seek path.
+  // Falls back to a store-only update if seekAudio isn't resolved yet (shouldn't happen in practice).
+  seek: (time) => {
+    const seekFn = getSeekAudio();
+    if (seekFn) {
+      seekFn(time); // also updates store.currentTime via seekAudio
+    } else {
+      set({ currentTime: time });
+    }
+  },
   setCurrentTime: (time) => set({ currentTime: time }),
   setDuration: (duration) => set({ duration }),
 
