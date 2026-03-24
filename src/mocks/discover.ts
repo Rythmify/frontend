@@ -31,54 +31,5 @@ export const mockDiscoverTracks: Track[] = Array.from(
 );
 
 // ─── Mock Mixes ───────────────────────────────────────────
-export const mockMixes: Mix[] = [
-  {
-    id: 1,
-    coverUrl: "https://picsum.photos/200/200?random=20",
-    artists: ["أمجد سمير", "Moh.ElGhaleez", "Fatma Amin", "علاء حامد", "Shahd"],
-  },
-  {
-    id: 2,
-    coverUrl: "https://picsum.photos/200/200?random=21",
-    artists: [
-      "League of Legends",
-      "H.Jen",
-      "Jessica Gelinas",
-      "Rooh Al-M",
-      "DJ Shadow",
-    ],
-  },
-  {
-    id: 3,
-    coverUrl: "https://picsum.photos/200/200?random=22",
-    artists: [
-      "أمجد سمير",
-      "قناة زاد طالب العلم",
-      "Mazen A",
-      "إمام البخاري",
-      "Fatma Amin",
-    ],
-  },
-  {
-    id: 4,
-    coverUrl: "https://picsum.photos/200/200?random=23",
-    artists: [
-      "Dr. Hazem Shouman",
-      "Moh.ElGhaleez",
-      "أمجد سمير",
-      "علاء حامد",
-      "Rooh Al-M",
-    ],
-  },
-  {
-    id: 5,
-    coverUrl: "https://picsum.photos/200/200?random=24",
-    artists: [
-      "التراث الاسلامي",
-      "Mazen A",
-      "إمام البخاري",
-      "League of Legends",
-      "DJ Shadow",
-    ],
-  },
-];
+
+

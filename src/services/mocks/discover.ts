@@ -77,6 +77,7 @@ export const mockRecentlyPlayedMixes: (Mix & { type: "mix" })[] = [
       "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop",
     trackCount: 27,
     generatedAt: "2026-03-20T00:00:00Z",
+    
   },
   {
     type: "mix",
@@ -87,6 +88,7 @@ export const mockRecentlyPlayedMixes: (Mix & { type: "mix" })[] = [
       "https://images.unsplash.com/photo-1511379938547-c1f69b13d835?w=300&h=300&fit=crop",
     trackCount: 19,
     generatedAt: "2026-03-19T00:00:00Z",
+  
   },
 ];
 
