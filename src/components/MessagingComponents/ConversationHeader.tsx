@@ -66,7 +66,7 @@ const ConversationHeader = ({
   }
 }
   return (
-    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3">
+    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3 sticky top-0 bg-your-background-color z-10">
 
       <div className="flex items-center gap-2 text-text">
         <button

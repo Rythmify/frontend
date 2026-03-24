@@ -22,7 +22,7 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
     <div
       data-test={`chat-profile-${conversation.id}`}
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded-sm  ${
+      className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded-sm width-full ${
         isActive ? 'bg-black' : 'hover:bg-[#303030]'
       }`}
     >
@@ -45,7 +45,7 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-0.5">
           <span
-            className={`text-sm truncate ${
+            className={`text-xs truncate ${
               unread_count > 0 ? 'font-bold text-white' : 'font-semibold text-white'
             }`}
           >
@@ -54,7 +54,7 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
           <span className="text-[#999] text-xs shrink-0">{timeAgo(updated_at)}</span>
         </div>
         <p
-          className={`text-sm truncate ${
+          className={`text-xs truncate ${
             unread_count > 0 ? 'text-[#ccc] font-medium' : 'text-[#999]'
           }`}
         >
