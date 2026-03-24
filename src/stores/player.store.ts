@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import type { Track } from "../types/track";
-// Lazy import to avoid circular dependency (audioService imports this store)
+
+// audioService imports this store, so we can't import it at the top level
+// without creating a circular dependency. Dynamic import resolves this.
 let _seekAudio: ((time: number) => void) | null = null;
 function getSeekAudio() {
   if (!_seekAudio) {
-    // Dynamic import so this module doesn't eagerly depend on audioService at parse time
     import("../services/audioService").then((m) => { _seekAudio = m.seekAudio; });
   }
   return _seekAudio;
@@ -60,16 +61,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setTrack: (track, queue) => {
     const newQueue = queue ?? get().queue;
     const index = newQueue.findIndex((t) => t.id === track.id);
-    
-    // If the audio element was seeked before hitting Play (like clicking the waveform
-    // on page load), its progress will be in get().currentTime via timeupdate.
-    // Instead of hard-resetting to 0, we adopt whatever the current time is ONLY IF
-    // we are resuming the same track, or if we are starting play from a `null`
-    // state (which implies the user seeked the page's hero waveform before hitting play).
+
+    // If the user seeked on the waveform before pressing play, we want to
+    // honour that position instead of jumping back to 0:00. We preserve the
+    // current time only when resuming the same track or when no track was
+    // playing yet (null state means the hero waveform was interacted with).
     const isSameTrack = get().currentTrack?.id === track.id;
     const isFromNullState = get().currentTrack === null;
     const nextTime = (isSameTrack || isFromNullState) ? get().currentTime : 0;
-    
+
     set({
       currentTrack: track,
       queue: newQueue,
@@ -104,7 +104,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   previous: () => {
     const { queue, queueIndex, currentTime } = get();
     if (!queue.length) return;
-    // If more than 3s in, restart current track
+    // More than 3 seconds in? Restart the current track instead of going back.
     if (currentTime > 3) {
       set({ currentTime: 0 });
       return;
@@ -143,8 +143,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         s.repeatMode === "none"
           ? "all"
           : s.repeatMode === "all"
-          ? "one"
-          : "none",
+            ? "one"
+            : "none",
     })),
 
   toggleLike: () => set((s) => ({ isLiked: !s.isLiked })),

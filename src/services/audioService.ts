@@ -16,13 +16,13 @@ export function setTrackLoadedLocally(id: number) {
   currentLoadedId = id;
 }
 
-// Wire store → audio directly via subscribe (no React, no useEffect)
+// Wire store -> audio directly via subscribe (no React, no useEffect)
 usePlayerStore.subscribe((state, prev) => {
 
   // New track loaded (only proceeds if it explicitly has a NEW id)
   if (state.currentTrack && state.currentTrack.id !== currentLoadedId) {
     // Kill the old WaveSurfer instance synchronously before we change audio.src.
-    // This prevents WaveSurfer v7 from intercepting the `play` event and forcefully reverting the track.
+    // This prevents WaveSurfer from intercepting the `play` event and forcefully reverting the track.
     if (globalWaveSurfer) {
       globalWaveSurfer.destroy();
       globalWaveSurfer = null;
