@@ -11,8 +11,9 @@ interface ProfileData {
 
 interface Props {
   email: string;
+  defaultDisplayName?: string;
   onBack: () => void;
-  onContinue: (data: ProfileData) => void;
+  onContinue: (data: ProfileData) => Promise<void> | void;
 }
 
 const MONTHS = [
@@ -74,11 +75,10 @@ function FloatingSelect({
   );
 }
 
-export default function Profile({ email, onBack, onContinue }: Props) {
+export default function Profile({ email, defaultDisplayName, onBack, onContinue }: Props) {
   const { executeRecaptcha } = useGoogleReCaptcha();
 
-  const defaultDisplayName = email.split("@")[0];
-  const [displayName, setDisplayName] = useState(defaultDisplayName);
+  const [displayName, setDisplayName] = useState(defaultDisplayName ?? email.split("@")[0]);
   const [displayNameFocused, setDisplayNameFocused] = useState(false);
 
   const [month, setMonth] = useState("");
@@ -109,14 +109,14 @@ export default function Profile({ email, onBack, onContinue }: Props) {
     setLoading(true);
     try {
       const captchaToken = await executeRecaptcha("register");
-      onContinue({
+      await onContinue({
         displayName: displayName.trim(),
         dateOfBirth: { month, day, year },
         gender,
         captchaToken,
       });
     } catch {
-      setErrors({ form: "reCAPTCHA failed. Please try again." });
+      setErrors({ form: "Something went wrong. Please try again." });
     } finally {
       setLoading(false);
     }

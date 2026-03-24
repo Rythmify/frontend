@@ -32,6 +32,17 @@ function SigninFlow() {
   const handleGoogleCredential = async (idToken: string) => {
     try {
       const googleRes = await googleLogin(idToken);
+
+      if (googleRes.data.is_new_user) {
+        navigate("/complete-profile", {
+          state: {
+            email: googleRes.data.user.email,
+            displayName: googleRes.data.user.display_name,
+          },
+        });
+        return;
+      }
+
       const me = await getMe();
       storeLogin({
         id: me.data.id,
@@ -49,7 +60,7 @@ function SigninFlow() {
         country: me.data.country,
         following_ids: [],
       }, googleRes.data.access_token);
-      navigate(googleRes.data.is_new_user ? "/complete-profile" : "/discover");
+      navigate("/discover");
     } catch (err: any) {
       setLoginError(err?.response?.data?.error?.message ?? "Google sign-in failed.");
     }
