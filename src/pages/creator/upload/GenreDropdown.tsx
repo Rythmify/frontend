@@ -36,15 +36,16 @@ const GenreDropdown = ({
   onChange: (g: string) => void;
 }) => {
   return (
-    <Dropdown
-      data-test="genre-dropdown"
-      label="Genre"
-      value={value}
-      options={genres}
-      onChange={onChange}
-      placeholder="Add or search for genre"
-      headerText="All music genres"
-    />
+    <div data-test="genre-dropdown">
+      <Dropdown
+        label="Genre"
+        value={value}
+        options={genres}
+        onChange={onChange}
+        placeholder="Add or search for genre"
+        headerText="All music genres"
+      />
+    </div>
   );
 };
 

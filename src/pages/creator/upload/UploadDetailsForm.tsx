@@ -94,7 +94,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
     return (
       <div
-        data-testid="upload-details-form"
+        data-test="upload-details-form"
         className="mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500"
       >
         <div className="flex flex-col lg:flex-row gap-12 items-start">
@@ -111,7 +111,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 />
               </label>
               <input
-                data-testid="upload-title-input"
+                data-test="upload-title-input"
                 type="text"
                 value={title}
                 onChange={handleTitleChange}
@@ -129,7 +129,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                   https://soundcloud.com/{username}/
                 </span>
                 <input
-                  data-testid="upload-track-link-input"
+                  data-test="upload-track-link-input"
                   type="text"
                   value={trackLink}
                   onChange={(e) => setTrackLink(e.target.value)}
@@ -148,7 +148,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 />
               </label>
               <input
-                data-testid="upload-artists-input"
+                data-test="upload-artists-input"
                 type="text"
                 value={artists}
                 onChange={(e) => setArtists(e.target.value)}
@@ -174,7 +174,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 />
               </label>
               <input
-                data-testid="upload-tags-input"
+                data-test="upload-tags-input"
                 type="text"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
@@ -189,7 +189,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 Description
               </label>
               <input
-                data-testid="upload-description-input"
+                data-test="upload-description-input"
                 placeholder="Tracks with description tend to get more plays and engagements."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -205,7 +205,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
               <div className="flex gap-10 text-sm py-2">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
-                    data-testid="upload-privacy-public-radio"
+                    data-test="upload-privacy-public-radio"
                     type="radio"
                     name="privacy"
                     className="hidden"
@@ -228,7 +228,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
-                    data-testid="upload-privacy-private-radio"
+                    data-test="upload-privacy-private-radio"
                     type="radio"
                     name="privacy"
                     className="hidden"
@@ -254,7 +254,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             {/* Error Display */}
             {error && (
               <p
-                data-testid="upload-error-message"
+                data-test="upload-error-message"
                 className="text-[#FB2C36] text-sm font-bold bg-[#FB2C36]/10 p-3 rounded-sm"
               >
                 {error}
