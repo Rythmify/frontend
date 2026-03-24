@@ -208,7 +208,11 @@ jobs:
           name: frontend-prod-build
           path: dist/
 <<<<<<< HEAD
+<<<<<<< HEAD
           retention-days: 14
 =======
           retention-days: 14
 >>>>>>> 818fc54 (pipeline)
+=======
+          retention-days: 14
+>>>>>>> 3a0ccbe (feat(pipeline): add frontend development and main CI workflows)
