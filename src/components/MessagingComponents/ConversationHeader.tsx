@@ -6,7 +6,8 @@ import { BlockUserModal } from './BlockModal'
 import { ReportModal } from './ReportModal'
 import { SpamModal } from './SpamModal'
 import { markMessageReadState } from '@/services/api/messaging/conversationApi'
-import {blockUser,unblockUser} from '@/services/api/messaging/conversationApi'
+import { unblockUser } from '@/services/api/messaging/conversationApi'
+
 interface ConversationHeaderProps {
   reciepiantId: string
   conversationId: string
@@ -28,10 +29,10 @@ const ConversationHeader = ({
 
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isSpamOpen, setIsSpamOpen]     = useState(false)
+  const [isBlockOpen, setIsBlockOpen]   = useState(false)
   const [loadingRead, setLoadingRead]   = useState(false)
   const [isUnread, setIsUnread]         = useState(false)
-  const [isBlocked, setIsBlocked] = useState(false)
-  const [loadingBlock, setLoadingBlock] = useState(false)
+  const [isBlocked, setIsBlocked]       = useState(false)
 
   useEffect(() => {
     setIsUnread(false)
@@ -49,22 +50,15 @@ const ConversationHeader = ({
     }
   }
 
-  const handleToggleBlock = async () => {
-  setLoadingBlock(true)
-  try {
-    if (isBlocked) {
+  const handleUnblock = async () => {
+    try {
       await unblockUser(reciepiantId)
       setIsBlocked(false)
-    } else {
-      await blockUser(reciepiantId)
-      setIsBlocked(true)
+    } catch {
+      // silently fail
     }
-  } catch {
-    // silently fail — button stays as is
-  } finally {
-    setLoadingBlock(false)
   }
-}
+
   return (
     <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3 sticky top-0 bg-your-background-color z-10">
 
@@ -80,8 +74,8 @@ const ConversationHeader = ({
         <button
           data-test="conversation-block-button"
           className="p-2 text-sm font-bold text-text-secondary hover:text-text-hover"
-          disabled={loadingBlock}
-          onClick={handleToggleBlock}        >
+          onClick={isBlocked ? handleUnblock : () => setIsBlockOpen(true)}
+        >
           {isBlocked ? 'Unblock' : 'Block'}
         </button>
 
@@ -110,7 +104,17 @@ const ConversationHeader = ({
         />
       </div>
 
-   
+      <Modal isOpen={isBlockOpen} onClose={() => setIsBlockOpen(false)}>
+        <BlockUserModal
+          userId={reciepiantId}
+          username={recipientName}
+          onClose={() => setIsBlockOpen(false)}
+          onBlocked={() => {
+            setIsBlocked(true)
+            setIsBlockOpen(false)
+          }}
+        />
+      </Modal>
 
       <Modal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)}>
         <ReportModal
