@@ -101,7 +101,6 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
-        continue-on-error: true
         run: |
           npm run lint || {
             echo "ESLint failed — fix all lint errors before merging to dev."
@@ -109,7 +108,6 @@ jobs:
           }
 
       - name: Run TypeScript type check
-        continue-on-error: true
         run: |
           npx tsc -b --noEmit || {
             echo "TypeScript type check failed — fix all type errors before merging to dev."

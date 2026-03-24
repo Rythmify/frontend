@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { Track } from "../../../../types/track";
-import type { MockUser } from "../../../../mocks/users";
+import type { MockUser } from "../../../../services/mocks/users";
 import { followUser, unfollowUser } from "../../../../services/mocks/User.service";
 
 interface TrackSidebarProps {
@@ -71,20 +71,22 @@ function ArtistCard({ artist }: { artist: MockUser }) {
     n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
   const formatExact = (n: number) => n.toLocaleString();
 
-  // Follow/Unfollow - calls MSW (/api/users/:username/follow ) 
+  // Follow/Unfollow - calls /api/users/:username/follow (POST) and /unfollow (DELETE).
+  // The service is typed as Promise<void> (MSW returns JSON but the wrapper discards it;
+  // the real API returns 201/204 with no body). Either way, we update the count locally.
   const handleFollow = async () => {
     try {
       if (following) {
-        const res = await unfollowUser(artist.username);
+        await unfollowUser(artist.username);
         setFollowing(false);
-        setFollowerCount(res.followerCount);
+        setFollowerCount((c) => Math.max(0, c - 1));
       } else {
-        const res = await followUser(artist.username);
+        await followUser(artist.username);
         setFollowing(true);
-        setFollowerCount(res.followerCount);
+        setFollowerCount((c) => c + 1);
       }
     } catch {
-      // optimistic fallback
+      // revert optimistic update on failure
       setFollowing((p) => !p);
     }
   };
