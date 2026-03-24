@@ -1,10 +1,12 @@
 import { usePlayerStore } from "../stores/player.store";
-//NOT  FINISHED
-//Single audio element, lives at module level forever 
-const audio = new Audio();
+
+// Single <audio> element — shared between the sticky player, the waveform, and everything else.
+// Exported so WaveSurfer (TrackWaveform) can pass it as the `media` option and share playback.
+export const audio = new Audio();
+
 let currentLoadedId: number | null = null;
 
-// Wire store → audio directly via subscribe (no React, no useEffect) 
+// Wire store → audio directly via subscribe (no React, no useEffect)
 usePlayerStore.subscribe((state, prev) => {
 
   // New track loaded
@@ -51,7 +53,12 @@ audio.addEventListener("ended", () => {
   }
 });
 
-// Public seek - sets audio.currentTime directly, nothing else 
+/**
+ * Seek the shared audio element to `time` seconds.
+ * Also updates the store immediately so the progress bar thumb
+ * doesn't wait for the next `timeupdate` event to catch up.
+ */
 export function seekAudio(time: number) {
   audio.currentTime = time;
+  usePlayerStore.getState().setCurrentTime(time);
 }

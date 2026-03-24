@@ -1,5 +1,14 @@
 import { create } from "zustand";
 import type { Track } from "../types/track";
+// Lazy import to avoid circular dependency (audioService imports this store)
+let _seekAudio: ((time: number) => void) | null = null;
+function getSeekAudio() {
+  if (!_seekAudio) {
+    // Dynamic import so this module doesn't eagerly depend on audioService at parse time
+    import("../services/audioService").then((m) => { _seekAudio = m.seekAudio; });
+  }
+  return _seekAudio;
+}
 
 interface PlayerState {
   //Current track 
