@@ -169,13 +169,23 @@ export async function changeEmail(new_email: string) {
 /** PATCH /users/me */
 export async function updateMe(data: {
   display_name?: string;
+}) {
+  const res = await axiosInstance.patch<{
+    data: UserProfile;
+    message: string;
+  }>('/users/me', data);
+  return res.data;
+}
+
+/** PATCH /users/me/account — updates birth date and/or gender */
+export async function updateMeAccount(data: {
   gender?: string;
   date_of_birth?: string;
 }) {
   const res = await axiosInstance.patch<{
     data: UserProfile;
     message: string;
-  }>('/users/me', data);
+  }>('/users/me/account', data);
   return res.data;
 }
 
