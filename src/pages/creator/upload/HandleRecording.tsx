@@ -88,7 +88,7 @@ const HandleRecording = ({
 
       recorder.onstop = () => {
         const segmentBlob = new Blob(chunks, {
-          type: "audio/ogg; codecs=opus",
+          type: "audio/webm; codecs=opus",
         });
         setAudioSegments((prev) => [...prev, segmentBlob]);
       };
@@ -163,7 +163,6 @@ const HandleRecording = ({
     if (isRecording || isPaused) {
       // If we stop while recording, stop the recorder first to trigger onstop
       if (isRecording && !isPaused) {
-        mediaRecorderRef.current?.stop();
         const segmentDuration = seconds - currentSegmentStart;
         if (segmentDuration > 0) {
           setHistory([...history, segmentDuration]);
@@ -171,33 +170,18 @@ const HandleRecording = ({
       }
 
       // timeout to ensure the last segment is pushed to audioSegments
-      mediaRecorderRef.current!.onstop = () => {
+      setTimeout(() => {
         setAudioSegments((prev) => {
-          const finalBlob = new Blob(prev, {
-            type:
-              mediaRecorderRef.current?.mimeType ?? "audio/ogg; codecs=opus",
-          });
+          const finalBlob = new Blob(prev, { type: "audio/webm; codecs=opus" });
           onFinish(finalBlob);
           return prev;
         });
         setIsRecording(false);
         setIsPaused(false);
         setIsRecordingFinished(true);
-      };
-
-      mediaRecorderRef.current?.stop();
-    } else {
-      // recorder already stopped, all segments are ready
-      const finalBlob = new Blob(audioSegments, {
-        type: mediaRecorderRef.current?.mimeType ?? "audio/ogg; codecs=opus",
-      });
-      onFinish(finalBlob);
-      setIsRecording(false);
-      setIsPaused(false);
-      setIsRecordingFinished(true);
+      }, 150);
     }
   };
-
   //delete icon function to reset the recording and start over again
   const handleRestart = () => {
     setSeconds(0);
