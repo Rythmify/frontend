@@ -94,7 +94,7 @@ const HandleRecording = ({
       };
 
       mediaRecorderRef.current = recorder;
-      recorder.start();
+      recorder.start(100);
     } catch (err) {
       console.error("Microphone access denied", err);
     }
@@ -171,16 +171,30 @@ const HandleRecording = ({
       }
 
       // timeout to ensure the last segment is pushed to audioSegments
-      setTimeout(() => {
+      mediaRecorderRef.current!.onstop = () => {
         setAudioSegments((prev) => {
-          const finalBlob = new Blob(prev, { type: "audio/wav" });
+          const finalBlob = new Blob(prev, {
+            type:
+              mediaRecorderRef.current?.mimeType ?? "audio/ogg; codecs=opus",
+          });
           onFinish(finalBlob);
           return prev;
         });
         setIsRecording(false);
         setIsPaused(false);
         setIsRecordingFinished(true);
-      }, 150);
+      };
+
+      mediaRecorderRef.current?.stop();
+    } else {
+      // recorder already stopped, all segments are ready
+      const finalBlob = new Blob(audioSegments, {
+        type: mediaRecorderRef.current?.mimeType ?? "audio/ogg; codecs=opus",
+      });
+      onFinish(finalBlob);
+      setIsRecording(false);
+      setIsPaused(false);
+      setIsRecordingFinished(true);
     }
   };
 
