@@ -5,7 +5,7 @@ import { Chats } from "../Chats";
 import type { Conversation } from "@/services/api/messaging/conversationApi";
 
 vi.mock("@/components/UI/Spinner", () => ({
-  default: () => <div data-testid="spinner">Loading...</div>,
+  default: () => <div data-test="spinner">Loading...</div>,
 }));
 
 const makeConversation = (id: string): Conversation => ({

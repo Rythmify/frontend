@@ -8,6 +8,7 @@ import {
 
 describe("externalhandler", () => {
   beforeEach(() => {
+    vi.restoreAllMocks(); // clears call history from the previous test's spy
     vi.spyOn(window, "open").mockImplementation(() => null);
   });
 

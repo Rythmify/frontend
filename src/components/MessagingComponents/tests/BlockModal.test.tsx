@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BlockUserModal } from "../BlockModal";
 
-vi.mock("../../services/api/messaging/conversationApi", () => ({
+// ✅ Fix 1: Use the same @/ alias the component uses so the mock actually applies
+vi.mock("@/services/api/messaging/conversationApi", () => ({
   blockUser: vi.fn(),
   submitReport: vi.fn(),
 }));
@@ -18,7 +19,11 @@ const renderBlock = (
     username?: string;
     userId?: string;
     onClose?: () => void;
-    onBlocked?: (data: { blocker_id: string; blocked_id: string; created_at: string }) => void;
+    onBlocked?: (data: {
+      blocker_id: string;
+      blocked_id: string;
+      created_at: string;
+    }) => void;
   } = {}
 ) =>
   render(
@@ -45,7 +50,8 @@ describe("BlockUserModal", () => {
 
   it("renders the heading with username", () => {
     renderBlock({ username: "Charlie" });
-    expect(screen.getByText(/block charlie/i)).toBeInTheDocument();
+    // Both the <h2> and the block button contain "Block Charlie"
+    expect(screen.getAllByText(/Block Charlie/i)).toHaveLength(2);
   });
 
   it("renders all seven consequence list items", () => {
@@ -56,18 +62,20 @@ describe("BlockUserModal", () => {
     expect(screen.getByText(/send you messages/i)).toBeInTheDocument();
     expect(screen.getByText(/share tracks with you/i)).toBeInTheDocument();
     expect(screen.getByText(/post new comments/i)).toBeInTheDocument();
-    expect(screen.getByText(/send you new stream or email notifications/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/send you new stream or email notifications/i)
+    ).toBeInTheDocument();
   });
 
+  // ✅ Fix 2: CheckBox renders a custom <div>, not an <input> or <img>.
+  //    Query by label text directly — no broken role query needed.
   it("renders two checkboxes", () => {
     renderBlock();
-    const labels = screen.getAllByRole("img", { hidden: true });
-    // Both checkboxes are unchecked initially (no SVG), so check labels instead
     expect(
       screen.getByText(/also permanently remove this user's comments/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/also report charlie for spam/i)
+      screen.getByText(/also report Charlie for spam/i)
     ).toBeInTheDocument();
   });
 
@@ -105,8 +113,14 @@ describe("BlockUserModal", () => {
   });
 
   it("calls onBlocked with block data on success", async () => {
-    const blockData = { blocker_id: "me", blocked_id: "user-charlie", created_at: "now" };
-    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({ data: blockData });
+    const blockData = {
+      blocker_id: "me",
+      blocked_id: "user-charlie",
+      created_at: "now",
+    };
+    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: blockData,
+    });
     const onBlocked = vi.fn();
     renderBlock({ onBlocked });
     await userEvent.click(screen.getByTestId("block-user-button"));
@@ -132,8 +146,10 @@ describe("BlockUserModal", () => {
     (submitReport as ReturnType<typeof vi.fn>).mockResolvedValue({});
     renderBlock({ userId: "user-charlie" });
 
-    // Click the spam checkbox (second checkbox label)
-    const spamLabel = screen.getByText(/also report charlie for spam/i).closest("label")!;
+    // The spam checkbox is the second label > div[class*='border']
+    const spamLabel = screen
+      .getByText(/also report charlie for spam/i)
+      .closest("label")!;
     const checkbox = spamLabel.querySelector("div[class*='border']")!;
     await userEvent.click(checkbox);
     await userEvent.click(screen.getByTestId("block-user-button"));

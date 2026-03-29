@@ -9,7 +9,8 @@ vi.mock("@/services/api/messaging/conversationApi", () => ({
   unblockUser: vi.fn(),
 }));
 
-vi.mock("./Modal", () => ({
+// Paths are relative to THIS test file (inside /tests/), so modals are one level up ("../")
+vi.mock("../Modal", () => ({
   Modal: ({
     isOpen,
     children,
@@ -17,7 +18,7 @@ vi.mock("./Modal", () => ({
     isOpen: boolean;
     children: React.ReactNode;
     onClose: () => void;
-  }) => (isOpen ? <div data-testid="modal">{children}</div> : null),
+  }) => (isOpen ? <div data-test="modal">{children}</div> : null),
 }));
 
 vi.mock("@/components/MessagingComponents/DeleteConversationButton", () => ({
@@ -29,22 +30,22 @@ vi.mock("@/components/MessagingComponents/DeleteConversationButton", () => ({
     participantId: string;
     onDeleted?: (id: string) => void;
   }) => (
-    <button data-testid="delete-button" onClick={() => onDeleted?.(conversationId)}>
+    <button data-test="delete-button" onClick={() => onDeleted?.(conversationId)}>
       Delete
     </button>
   ),
 }));
 
-vi.mock("./BlockModal", () => ({
+vi.mock("../BlockModal", () => ({
   BlockUserModal: ({ onClose, onBlocked }: { onClose: () => void; onBlocked: () => void }) => (
-    <div data-testid="block-modal">
+    <div data-test="block-modal">
       <button onClick={onBlocked}>Confirm block</button>
       <button onClick={onClose}>Cancel block</button>
     </div>
   ),
 }));
 
-vi.mock("./ReportModal", () => ({
+vi.mock("../ReportModal", () => ({
   ReportModal: ({
     onClose,
     onSpamSelected,
@@ -52,16 +53,16 @@ vi.mock("./ReportModal", () => ({
     onClose: () => void;
     onSpamSelected: () => void;
   }) => (
-    <div data-testid="report-modal">
+    <div data-test="report-modal">
       <button onClick={onSpamSelected}>Select spam</button>
       <button onClick={onClose}>Close report</button>
     </div>
   ),
 }));
 
-vi.mock("./SpamModal", () => ({
+vi.mock("../SpamModal", () => ({
   SpamModal: ({ onClose }: { onClose: () => void }) => (
-    <div data-testid="spam-modal">
+    <div data-test="spam-modal">
       <button onClick={onClose}>Close spam</button>
     </div>
   ),
@@ -108,9 +109,7 @@ describe("ConversationHeader", () => {
 
   it("renders recipient name as a button", () => {
     renderHeader();
-    expect(
-      screen.getByTestId("conversation-profile-button")
-    ).toHaveTextContent("Alice");
+    expect(screen.getByTestId("conversation-profile-button")).toHaveTextContent("Alice");
   });
 
   it("renders Block button", () => {
@@ -211,7 +210,9 @@ describe("ConversationHeader", () => {
     // Block first
     await userEvent.click(screen.getByTestId("conversation-block-button"));
     await userEvent.click(screen.getByText("Confirm block"));
-    await waitFor(() => screen.getByText("Unblock"));
+    await waitFor(() =>
+      expect(screen.getByTestId("conversation-block-button")).toHaveTextContent("Unblock")
+    );
     await userEvent.click(screen.getByTestId("conversation-block-button"));
     expect(unblockUser).toHaveBeenCalledWith("user-1");
   });

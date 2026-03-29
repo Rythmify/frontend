@@ -3,8 +3,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DeleteConversationButton from "../DeleteConversationButton";
 
-// We mock the modal so we don't need to test it again here
-vi.mock("./DeleteConversationModal", () => ({
+// Mock path is relative to THIS file (inside /tests/), so modal is one level up ("../")
+// Button labels match the real modal: "Cancel" to close, "Archive" to confirm
+vi.mock("../DeleteConversationModal", () => ({
   default: ({
     onClose,
     onDeleted,
@@ -14,9 +15,9 @@ vi.mock("./DeleteConversationModal", () => ({
     onDeleted?: (id: string) => void;
     conversationId: string;
   }) => (
-    <div data-testid="delete-modal">
-      <button onClick={onClose}>Close</button>
-      <button onClick={() => onDeleted?.(conversationId)}>Confirm</button>
+    <div data-test="delete-modal">
+      <button onClick={onClose}>Cancel</button>
+      <button onClick={() => onDeleted?.(conversationId)}>Archive</button>
     </div>
   ),
 }));
@@ -69,24 +70,24 @@ describe("DeleteConversationButton", () => {
 
   // ── Close modal ────────────────────────────────────────────────────────────
 
-  it("closes the modal when Close is triggered", async () => {
+  it("closes the modal when Cancel is clicked", async () => {
     renderButton();
     await userEvent.click(
       screen.getByRole("button", { name: /delete conversation/i })
     );
-    await userEvent.click(screen.getByText("Close"));
+    await userEvent.click(screen.getByText("Cancel"));
     expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
   });
 
   // ── onDeleted propagation ──────────────────────────────────────────────────
 
-  it("calls onDeleted with conversationId when Confirm is clicked", async () => {
+  it("calls onDeleted with conversationId when Archive is clicked", async () => {
     const onDeleted = vi.fn();
     renderButton({ onDeleted, conversationId: "conv-42" });
     await userEvent.click(
       screen.getByRole("button", { name: /delete conversation/i })
     );
-    await userEvent.click(screen.getByText("Confirm"));
+    await userEvent.click(screen.getByText("Archive"));
     expect(onDeleted).toHaveBeenCalledWith("conv-42");
   });
 });

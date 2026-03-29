@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import MessagesPage from "@/pages/social/messages/emptyMessagesPage";
 
+// All mocks use data-test (not data-testid) to match this project's testIdAttribute config
+
 vi.mock("@/components/MessagingComponents/Modal", () => ({
   Modal: ({
     isOpen,
@@ -15,7 +17,7 @@ vi.mock("@/components/MessagingComponents/Modal", () => ({
     onClose: () => void;
   }) =>
     isOpen ? (
-      <div data-testid="modal">
+      <div data-test="modal">
         {children}
         <button onClick={onClose}>Close modal</button>
       </div>
@@ -23,12 +25,15 @@ vi.mock("@/components/MessagingComponents/Modal", () => ({
 }));
 
 vi.mock("@/components/MessagingComponents/MessagingHeader", () => ({
-  default: () => <div data-testid="messaging-header">Header</div>,
+  default: () => <div data-test="messaging-header">Header</div>,
 }));
 
-vi.mock("./ModalNewMessageBody", () => ({
+// ModalNewMessageBody is imported by the page via a relative path from the page's
+// own directory (@/pages/social/messages/). Mock it by its absolute alias so
+// vitest intercepts it regardless of where this test file lives.
+vi.mock("@/pages/social/messages/ModalNewMessageBody", () => ({
   default: ({ onClose }: { onClose: () => void }) => (
-    <div data-testid="new-message-body">
+    <div data-test="new-message-body">
       <button onClick={onClose}>Close body</button>
     </div>
   ),

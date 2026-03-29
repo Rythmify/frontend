@@ -144,7 +144,7 @@ className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overfl
             <ConversationHeader
               conversationId={activeConv.id}
               reciepiantId={activeConv.participant.id}
-              recipientName={activeConv.participant.display_name}
+              recipientName={activeConv.participant.username}
               lastMessageId={lastReceivedMessage?.id ?? null}
               onReadStateChange={handleReadStateChange}
               onDeleted={handleConversationDeleted}
