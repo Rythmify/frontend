@@ -10,6 +10,7 @@ interface SendMessageFormProps {
   existingMessages: Message[];
   loadingMessages: boolean;
   onMessageSent: (msg: Message) => void;
+  isTyping?: boolean;
   ParticipantInfo: {
     display_name: string;
     profile_picture?: string | null;
@@ -22,6 +23,7 @@ export default function SendMessageForm({
   existingMessages,
   loadingMessages,
   onMessageSent,
+  isTyping,
   ParticipantInfo,
 }: SendMessageFormProps) {
   const [value, setValue]         = useState('');
@@ -84,8 +86,11 @@ const getSenderInfo = (senderId: string) => {
           />
         ))
       )}
-
+{isTyping && (
+  <p className="text-xs text-[#999] italic px-3 pb-1">typing...</p>
+)}
       <div className="flex flex-col gap-2">
+
         <label className="text-sm font-bold text-white">
           Write your message and add tracks or playlists{' '}
           <span className="text-red-500">*</span>

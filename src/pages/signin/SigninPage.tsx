@@ -15,7 +15,7 @@ import { login, register, resendVerification, getMe, forgotPassword, googleLogin
 import { useAuthStore } from "@/stores/auth.store";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { GoogleLogin } from "@react-oauth/google";
-
+import { connectSocket } from '@/services/api/messaging/socketService';
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? "";
 
 type Step = "main" | "email" | "login" | "register" | "forgot-password" | "forgot-password-sent" | "profile" | "verify-email";
@@ -60,6 +60,8 @@ function SigninFlow() {
         country: me.data.country,
         following_ids: [],
       }, googleRes.data.access_token);
+      const token = localStorage.getItem('access_token') ?? '';
+      connectSocket(token);
       navigate("/discover");
     } catch (err: any) {
       setLoginError(err?.response?.data?.error?.message ?? "Google sign-in failed.");
