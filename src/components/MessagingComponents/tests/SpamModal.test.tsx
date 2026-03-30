@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SpamModal } from "../SpamModal";
 
-vi.mock("../../services/api/messaging/conversationApi", () => ({
+// ✅ Use the same alias the component uses internally
+vi.mock("@/services/api/messaging/conversationApi", () => ({
   submitReport: vi.fn(),
 }));
 
@@ -41,8 +42,10 @@ describe("SpamModal", () => {
 
   it("renders the title", () => {
     renderSpam();
-    expect(screen.getByTestId("spam-report-title")).toBeInTheDocument();
-    expect(screen.getByText(/report spam/i)).toBeInTheDocument();
+    const title = screen.getByTestId("spam-report-title");
+    expect(title).toBeInTheDocument();
+    // ✅ Scope the text check to the title element to avoid matching the button
+    expect(title).toHaveTextContent(/report spam/i);
   });
 
   it("renders the username in the description", () => {

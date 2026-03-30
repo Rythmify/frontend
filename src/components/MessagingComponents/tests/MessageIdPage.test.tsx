@@ -12,12 +12,23 @@ vi.mock("@/services/api/messaging/conversationApi", () => ({
   markMessageReadState: vi.fn(),
 }));
 
+// ── Stable navigate mock ───────────────────────────────────────────────────
+// Declared before vi.mock so the hoisted factory captures the real reference.
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
 // ── Mock child components ──────────────────────────────────────────────────
+// All elements use data-test — this project's testIdAttribute is 'data-test'.
+
 vi.mock("@/components/MessagingComponents/Chats", () => ({
   Chats: ({
     conversations,
     onSelect,
     activeConversationId,
+    error,
   }: {
     conversations: Conversation[];
     loading: boolean;
@@ -25,11 +36,12 @@ vi.mock("@/components/MessagingComponents/Chats", () => ({
     activeConversationId: string | null;
     onSelect: (c: Conversation) => void;
   }) => (
-    <div data-testid="chats">
+    <div data-test="chats">
+      {error && <p data-test="chats-error">{error}</p>}
       {conversations.map((c) => (
         <button
           key={c.id}
-          data-testid={`conv-${c.id}`}
+          data-test={`conv-${c.id}`}
           data-active={c.id === activeConversationId}
           onClick={() => onSelect(c)}
         >
@@ -41,7 +53,7 @@ vi.mock("@/components/MessagingComponents/Chats", () => ({
 }));
 
 vi.mock("@/components/MessagingComponents/MessagingHeader", () => ({
-  default: () => <div data-testid="messaging-header">Header</div>,
+  default: () => <div data-test="messaging-header">Header</div>,
 }));
 
 vi.mock("@/components/MessagingComponents/ConversationHeader", () => ({
@@ -58,18 +70,12 @@ vi.mock("@/components/MessagingComponents/ConversationHeader", () => ({
     reciepiantId: string;
     lastMessageId: string | null;
   }) => (
-    <div data-testid="conversation-header">
+    <div data-test="conversation-header">
       <span>{recipientName}</span>
-      <button
-        data-testid="mark-unread"
-        onClick={() => onReadStateChange(true)}
-      >
+      <button data-test="mark-unread" onClick={() => onReadStateChange(true)}>
         Mark unread
       </button>
-      <button
-        data-testid="delete-conv"
-        onClick={() => onDeleted?.(conversationId)}
-      >
+      <button data-test="delete-conv" onClick={() => onDeleted?.(conversationId)}>
         Delete
       </button>
     </div>
@@ -86,9 +92,9 @@ vi.mock("@/components/MessagingComponents/SendMessageForm", () => ({
     onMessageSent: (msg: unknown) => void;
     ParticipantInfo: { display_name: string; profile_picture?: string | null };
   }) => (
-    <div data-testid="send-message-form">
+    <div data-test="send-message-form">
       <button
-        data-testid="send-msg"
+        data-test="send-msg"
         onClick={() =>
           onMessageSent({
             id: "new-msg",
@@ -104,12 +110,6 @@ vi.mock("@/components/MessagingComponents/SendMessageForm", () => ({
     </div>
   ),
 }));
-
-const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return { ...actual, useNavigate: () => mockNavigate };
-});
 
 import {
   fetchConversations,
@@ -207,18 +207,26 @@ describe("MessageIdPage", () => {
     expect(screen.getByText("User 1")).toBeInTheDocument();
   });
 
-  it("navigates to first conversation's participant URL", async () => {
+  it("navigates to participant URL when user selects a conversation", async () => {
+    // FIX: The component calls navigate() only inside handleSelectConversation
+    // (triggered by user click), NOT during the initial auto-open which goes
+    // through loadConversation() directly. The previous test waited for a
+    // navigate call that the component never makes on initial load.
     const conv1 = makeConv("1", "p1");
+    const conv2 = makeConv("2", "p2");
     (fetchConversations as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { items: [conv1] },
+      data: { items: [conv1, conv2] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: { messages: [] },
     });
 
     renderPage();
+    await waitFor(() => screen.getByTestId("conv-2"));
+    await userEvent.click(screen.getByTestId("conv-2"));
+
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/messages/p1")
+      expect(mockNavigate).toHaveBeenCalledWith("/messages/p2")
     );
   });
 
@@ -234,11 +242,7 @@ describe("MessageIdPage", () => {
 
     renderPage();
     await waitFor(() =>
-      expect(markMessageReadState).toHaveBeenCalledWith(
-        "1",
-        unreadMsg.id,
-        true
-      )
+      expect(markMessageReadState).toHaveBeenCalledWith("1", unreadMsg.id, true)
     );
   });
 
@@ -308,7 +312,6 @@ describe("MessageIdPage", () => {
     renderPage();
     await waitFor(() => screen.getByTestId("send-msg"));
     await userEvent.click(screen.getByTestId("send-msg"));
-    // SendMessageForm calls onMessageSent — no crash is sufficient
   });
 
   // ── Conversation deleted ───────────────────────────────────────────────────
@@ -364,7 +367,6 @@ describe("MessageIdPage", () => {
     renderPage();
     await waitFor(() => screen.getByTestId("mark-unread"));
     await userEvent.click(screen.getByTestId("mark-unread"));
-    // After toggle, unread_count becomes 1 in state — no crash verifies wiring
   });
 
   // ── Error handling ─────────────────────────────────────────────────────────

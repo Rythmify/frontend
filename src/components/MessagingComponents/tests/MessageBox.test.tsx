@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, act, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MessageBox } from "../MessageBox";
 
@@ -25,10 +25,16 @@ const renderBox = (props = {}) =>
     />
   );
 
-// Helper: simulate typing a full string at once via fireEvent (no timer issues).
-// Used only for debounce tests where we control the clock manually.
+// Synchronously sets the textarea value and fires onChange.
+// Used in debounce tests so fake timers control ALL async work —
+// userEvent.type uses its own internal setTimeout delays which
+// conflict with vi.useFakeTimers() and cause indefinite hangs.
 const fireType = (element: HTMLElement, value: string) =>
   fireEvent.change(element, { target: { value } });
+
+// Fires all pending timers AND flushes resulting Promise microtasks,
+// then wraps everything in act() so React commits all setState calls to the DOM.
+const runAllTimers = () => act(async () => { await vi.runAllTimersAsync(); });
 
 describe("MessageBox", () => {
   beforeEach(() => {
@@ -52,7 +58,7 @@ describe("MessageBox", () => {
     expect(screen.getByTestId("message-box")).toBeInTheDocument();
   });
 
-  // ── Typing (real timers, userEvent) ────────────────────────────────────────
+  // ── Typing (real timers + userEvent) ───────────────────────────────────────
 
   it("calls onValueChange when user types", async () => {
     const user = userEvent.setup();
@@ -101,9 +107,21 @@ describe("MessageBox", () => {
   });
 
   // ── Debounced URL embed detection ──────────────────────────────────────────
-  // We use fireEvent.change (synchronous, no internal delays) instead of
-  // userEvent.type so that fake timers control ALL async behaviour.
-  // Pattern: fireType → install fake timers → advance 600ms → flush promises.
+  //
+  // PROBLEM (the last 2 failures):
+  //   vi.runAllTimersAsync() fires the debounce setTimeout and drains Promise
+  //   microtasks (resolvePermalink, fetchTrack chains), but React's setTitle()
+  //   calls happen INSIDE those async callbacks. React batches setState and
+  //   only commits them to the DOM when the update is flushed inside act().
+  //   Without act(), the DOM never updates — so getByTestId("message-box-title")
+  //   finds nothing even though setTitle("Awesome Track") was called.
+  //
+  // FIX:
+  //   Wrap vi.runAllTimersAsync() inside act(async () => { ... }).
+  //   act() tells React "flush everything now" — timers fire, promises drain,
+  //   and all resulting setState calls are committed to the DOM before we assert.
+  //
+  //   Extracted into the runAllTimers() helper above for readability.
 
   describe("debounced URL embed detection", () => {
     beforeEach(() => {
@@ -120,7 +138,6 @@ describe("MessageBox", () => {
         screen.getByTestId("message-input"),
         "https://rythmify.com/tracks/123"
       );
-      // Debounce delay has NOT elapsed — resolvePermalink must not be called yet
       expect(resolvePermalink).not.toHaveBeenCalled();
     });
 
@@ -138,11 +155,9 @@ describe("MessageBox", () => {
         "https://rythmify.com/tracks/t-1"
       );
 
-      await act(async () => {
-        vi.advanceTimersByTime(600);
-      });
+      await runAllTimers();
 
-      await waitFor(() => expect(resolvePermalink).toHaveBeenCalled());
+      expect(resolvePermalink).toHaveBeenCalled();
     });
 
     it("renders track title after successful track embed resolution", async () => {
@@ -159,13 +174,9 @@ describe("MessageBox", () => {
         "https://rythmify.com/tracks/t-1"
       );
 
-      await act(async () => {
-        vi.advanceTimersByTime(600);
-      });
+      await runAllTimers();
 
-      await waitFor(() =>
-        expect(screen.getByTestId("message-box-title")).toHaveTextContent("Awesome Track")
-      );
+      expect(screen.getByTestId("message-box-title")).toHaveTextContent("Awesome Track");
     });
 
     it("renders playlist title after successful playlist embed resolution", async () => {
@@ -182,13 +193,9 @@ describe("MessageBox", () => {
         "https://rythmify.com/playlists/p-1"
       );
 
-      await act(async () => {
-        vi.advanceTimersByTime(600);
-      });
+      await runAllTimers();
 
-      await waitFor(() =>
-        expect(screen.getByTestId("message-box-title")).toHaveTextContent("My Playlist")
-      );
+      expect(screen.getByTestId("message-box-title")).toHaveTextContent("My Playlist");
     });
 
     it("clears title when embed resolution fails", async () => {
@@ -202,13 +209,9 @@ describe("MessageBox", () => {
         "https://rythmify.com/tracks/bad"
       );
 
-      await act(async () => {
-        vi.advanceTimersByTime(600);
-      });
+      await runAllTimers();
 
-      await waitFor(() =>
-        expect(screen.queryByTestId("message-box-title")).not.toBeInTheDocument()
-      );
+      expect(screen.queryByTestId("message-box-title")).not.toBeInTheDocument();
     });
 
     it("calls onEmbedResolved with track embed data on success", async () => {
@@ -226,14 +229,10 @@ describe("MessageBox", () => {
         "https://rythmify.com/tracks/t-99"
       );
 
-      await act(async () => {
-        vi.advanceTimersByTime(600);
-      });
+      await runAllTimers();
 
-      await waitFor(() =>
-        expect(onEmbedResolved).toHaveBeenCalledWith(
-          expect.objectContaining({ type: "track", id: "t-99" })
-        )
+      expect(onEmbedResolved).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "track", id: "t-99" })
       );
     });
   });

@@ -1,22 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SendMessageForm from "../SendMessageForm";
 import type { Message } from "@/services/api/messaging/conversationApi";
 
-// ── Mock API ───────────────────────────────────────────────────────────────
-vi.mock("../../services/api/messaging/conversationApi", () => ({
+// ── Mock API ───────────────────────────────────────────────────────────────────
+//
+// Vite resolves path aliases before producing module IDs, so
+// '@/services/api/messaging/conversationApi' and the component's relative
+// '../../services/api/messaging/conversationApi' both resolve to the same
+// absolute path. Using the @/ alias here is safe and avoids fragility around
+// how many '../' levels the test file sits below the source root.
+
+vi.mock("@/services/api/messaging/conversationApi", () => ({
   sendMessage: vi.fn(),
 }));
 
-// ── Mock auth store ────────────────────────────────────────────────────────
+// ── Mock auth store ────────────────────────────────────────────────────────────
+
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: (selector: (s: { user: { id: string; avatar: string } }) => unknown) =>
     selector({ user: { id: "me", avatar: "https://example.com/me.jpg" } }),
 }));
 
-// ── Mock MessageBox ────────────────────────────────────────────────────────
-vi.mock("./MessageBox", () => ({
+// ── Mock MessageBox ────────────────────────────────────────────────────────────
+//
+// Same alias rule applies: '@/components/MessagingComponents/MessageBox' resolves
+// to the same file as the component's relative './MessageBox'.
+
+vi.mock("@/components/MessagingComponents/MessageBox", () => ({
   MessageBox: ({
     onValueChange,
     onIsEmptyChange,
@@ -26,7 +38,7 @@ vi.mock("./MessageBox", () => ({
     onEmbedResolved: (embed: unknown) => void;
   }) => (
     <textarea
-      data-testid="message-box-input"
+      data-test="message-box-input"
       onChange={(e) => {
         onValueChange(e.target.value);
         onIsEmptyChange(e.target.value.trim() === "");
@@ -36,6 +48,8 @@ vi.mock("./MessageBox", () => ({
 }));
 
 import { sendMessage } from "@/services/api/messaging/conversationApi";
+
+// ── Fixtures ───────────────────────────────────────────────────────────────────
 
 const makeMessage = (overrides: Partial<Message> = {}): Message => ({
   id: "msg-1",
@@ -60,12 +74,18 @@ const defaultProps = {
 const renderForm = (props = {}) =>
   render(<SendMessageForm {...defaultProps} {...props} />);
 
+// Sets the textarea value synchronously — safe with or without fake timers.
+const typeIntoBox = (value: string) =>
+  fireEvent.change(screen.getByTestId("message-box-input"), {
+    target: { value },
+  });
+
 describe("SendMessageForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // ── Rendering ──────────────────────────────────────────────────────────────
+  // ── Rendering ────────────────────────────────────────────────────────────────
 
   it("renders the message label", () => {
     renderForm();
@@ -94,7 +114,7 @@ describe("SendMessageForm", () => {
     expect(screen.queryByText(/loading messages…/i)).not.toBeInTheDocument();
   });
 
-  // ── Existing messages ──────────────────────────────────────────────────────
+  // ── Existing messages ─────────────────────────────────────────────────────────
 
   it("renders existing messages", () => {
     renderForm({
@@ -124,11 +144,10 @@ describe("SendMessageForm", () => {
 
   it("renders no messages when existingMessages is empty", () => {
     renderForm({ existingMessages: [] });
-    // Only the form-level label is rendered, no message cells
     expect(screen.queryByText(/just now/i)).not.toBeInTheDocument();
   });
 
-  // ── Validation ─────────────────────────────────────────────────────────────
+  // ── Validation ────────────────────────────────────────────────────────────────
 
   it("shows 'Enter a message' error when Send is clicked with empty input", async () => {
     renderForm();
@@ -142,25 +161,25 @@ describe("SendMessageForm", () => {
     expect(sendMessage).not.toHaveBeenCalled();
   });
 
-  it("clears error when user starts typing", async () => {
+  it("clears error when user types a non-empty value", async () => {
     renderForm();
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(screen.getByText(/enter a message/i)).toBeInTheDocument();
-    // onIsEmptyChange(false) clears error — simulate non-empty change
-    await userEvent.type(screen.getByTestId("message-box-input"), " ");
-    // The empty detection only fires on isEmptyChange(false) indirectly via onIsEmptyChange
-    // The component clears on `if (empty) setError(null)` when empty=false... 
-    // Here we're testing that sendMessage doesn't show error when text is present
+    // fireEvent fires onIsEmptyChange(false) → component calls setError(null)
+    typeIntoBox("Hello");
+    await waitFor(() =>
+      expect(screen.queryByText(/enter a message/i)).not.toBeInTheDocument()
+    );
   });
 
-  // ── Success flow ───────────────────────────────────────────────────────────
+  // ── Success flow ──────────────────────────────────────────────────────────────
 
   it("calls sendMessage with correct payload", async () => {
     (sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: makeMessage({ body: "Hello Alice" }),
     });
     renderForm();
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello Alice");
+    typeIntoBox("Hello Alice");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     await waitFor(() =>
       expect(sendMessage).toHaveBeenCalledWith(
@@ -175,7 +194,7 @@ describe("SendMessageForm", () => {
     (sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue({ data: msg });
     const onMessageSent = vi.fn();
     renderForm({ onMessageSent });
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello Alice");
+    typeIntoBox("Hello Alice");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     await waitFor(() =>
       expect(onMessageSent).toHaveBeenCalledWith(
@@ -189,22 +208,21 @@ describe("SendMessageForm", () => {
       data: makeMessage(),
     });
     renderForm();
-    const input = screen.getByTestId("message-box-input");
-    await userEvent.type(input, "Hello");
+    typeIntoBox("Hello");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     await waitFor(() => expect(sendMessage).toHaveBeenCalled());
-    // After send, boxKey changes and MessageBox re-mounts (new textarea)
+    // boxKey change unmounts and remounts MessageBox — new textarea starts empty
     expect(screen.getByTestId("message-box-input")).toHaveValue("");
   });
 
-  // ── Error handling ─────────────────────────────────────────────────────────
+  // ── Error handling ────────────────────────────────────────────────────────────
 
   it("shows 403 error when user is blocked", async () => {
     (sendMessage as ReturnType<typeof vi.fn>).mockRejectedValue({
       response: { status: 403 },
     });
     renderForm();
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
+    typeIntoBox("Hello");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     await waitFor(() =>
       expect(
@@ -218,12 +236,10 @@ describe("SendMessageForm", () => {
       response: { status: 500 },
     });
     renderForm();
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
+    typeIntoBox("Hello");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     await waitFor(() =>
-      expect(
-        screen.getByText(/failed to send message/i)
-      ).toBeInTheDocument()
+      expect(screen.getByText(/failed to send message/i)).toBeInTheDocument()
     );
   });
 
@@ -233,29 +249,29 @@ describe("SendMessageForm", () => {
     expect(screen.queryByText(/failed to send/i)).not.toBeInTheDocument();
   });
 
-  // ── Sending state ──────────────────────────────────────────────────────────
+  // ── Sending state ─────────────────────────────────────────────────────────────
 
   it("shows 'Sending…' text while request is in progress", async () => {
-    let resolve: (v: unknown) => void;
+    let resolve!: (v: unknown) => void;
     (sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
       () => new Promise((res) => { resolve = res; })
     );
     renderForm();
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
+    typeIntoBox("Hello");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(screen.getByText(/sending…/i)).toBeInTheDocument();
-    resolve!({ data: makeMessage() });
+    resolve({ data: makeMessage() });
   });
 
   it("disables Send button while sending", async () => {
-    let resolve: (v: unknown) => void;
+    let resolve!: (v: unknown) => void;
     (sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
       () => new Promise((res) => { resolve = res; })
     );
     renderForm();
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
+    typeIntoBox("Hello");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(screen.getByRole("button", { name: /sending/i })).toBeDisabled();
-    resolve!({ data: makeMessage() });
+    resolve({ data: makeMessage() });
   });
 });

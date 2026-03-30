@@ -3,25 +3,33 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import MessagesPage from "@/pages/social/messages/MessagesPage";
 
-vi.mock("../../../services/api/messaging/conversationApi", () => ({
+// Use alias paths so vitest intercepts the same module instance the component loads.
+// Relative paths from the test file ("/tests/") don't match what the component
+// imports from its own directory, so the real module loads instead of the mock.
+
+vi.mock("@/services/api/messaging/conversationApi", () => ({
   fetchConversations: vi.fn(),
 }));
 
-vi.mock("../../../components/UI/Spinner", () => ({
-  default: () => <div data-testid="spinner">Loading...</div>,
+vi.mock("@/components/UI/Spinner", () => ({
+  // data-test not data-testid — project testIdAttribute is 'data-test'
+  default: () => <div data-test="spinner">Loading...</div>,
 }));
 
-vi.mock("./emptyMessagesPage", () => ({
-  default: () => <div data-testid="empty-page">Empty Page</div>,
+vi.mock("@/pages/social/messages/emptyMessagesPage", () => ({
+  // data-test not data-testid
+  default: () => <div data-test="empty-page">Empty Page</div>,
 }));
 
+// Stable navigate reference declared before vi.mock so the hoisted factory
+// captures the real function, not undefined.
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-import { fetchConversations } from "../../../services/api/messaging/conversationApi";
+import { fetchConversations } from "@/services/api/messaging/conversationApi";
 
 const renderPage = () =>
   render(
@@ -92,7 +100,6 @@ describe("MessagesPage", () => {
       isAxiosError: true,
       response: { data: { message: "Unauthorized" } },
     };
-    // Mock axios.isAxiosError
     vi.doMock("axios", () => ({
       default: { isAxiosError: (e: unknown) => e === axiosError },
       isAxiosError: (e: unknown) => e === axiosError,
