@@ -112,6 +112,7 @@ function SigninFlow() {
               country: me.data.country,
               following_ids: [],
             }, res.data.access_token);
+            connectSocket(res.data.access_token);
             navigate("/discover");
           } catch (err: any) {
             setLoginError(err?.response?.data?.error?.message ?? "Invalid credentials.");

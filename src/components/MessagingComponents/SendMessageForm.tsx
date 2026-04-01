@@ -5,6 +5,7 @@ import { MessageBox } from './MessageBox';
 import type { ResolvedEmbed } from './MessageBox';
 import MessageCell from './messagecell';
 import { useAuthStore } from '@/stores/auth.store' 
+import { emitMessageSent, emitStopTyping } from '@/services/api/messaging/socketService';
 interface SendMessageFormProps {
   conversationId: string;
   existingMessages: Message[];
@@ -45,6 +46,8 @@ export default function SendMessageForm({
         ...(embed ? { resource: { type: embed.type, id: embed.id } } : {}),
       });
       onMessageSent({ ...res.data, body: value.trim() });
+      emitMessageSent(conversationId, { ...res.data, body: value.trim() });
+      emitStopTyping(conversationId);   
       setValue('');
       setEmbed(null);
       setBoxKey(k => k + 1);
