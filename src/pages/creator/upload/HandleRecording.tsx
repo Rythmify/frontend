@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import toWav from "../../../services/api/upload/audiotranscoder";
+import toWav from "../../../services/api/upload/audioTranscoder";
 
 interface HandleRecordingProps {
   isRecording: boolean;
