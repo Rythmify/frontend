@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import UploadQuotaBar from "../UploadQuotaBar";
+import UploadQuotaBar from "../../../../components/Upload/UploadQuotaBar";
 import { MemoryRouter } from "react-router-dom"; // <-- import MemoryRouter
 
 // ─── Mock quota service ───────────────────────────────────────────────────────

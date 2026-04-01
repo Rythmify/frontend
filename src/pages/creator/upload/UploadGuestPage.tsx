@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import ArtistsSectionGuest from "./ArtistsSectionGuest";
-
+import "./UploadGuestPage.css";
 const UploadGuestPage = () => {
   const navigate = useNavigate();
 
@@ -154,14 +154,14 @@ const UploadGuestPage = () => {
             <button
               data-test="try-it-free-button"
               onClick={handleUploadClick}
-              className="bg-bg-inverted text-bg cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
+              className="bg-bg-inverted text-bg hover:text-[#a0a0a0] cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
             >
               Try it free
             </button>
             <button
               data-test="learn-more-button"
               onClick={() => navigate("/artist-pro")}
-              className="dark:!text-[#699fff] text-[#044dd2] text-[22px] font-bold cursor-pointer bg-transparent border-none"
+              className="text-text-link text-[22px] font-bold cursor-pointer bg-transparent border-none"
             >
               Learn more about Pro plans
             </button>
@@ -173,7 +173,7 @@ const UploadGuestPage = () => {
         <div className="flex flex-wrap items-center gap-y-1 mb-4">
           {footerLinks.map((link, i) => (
             <span key={link} className="flex items-center">
-              <button className="text-sm dark:text-text-secondary dark:hover:text-[#484848] text-text-muted hover:text-[#c2c2c2] cursor-pointer">
+              <button className="text-sm cursor-pointer footer-link">
                 {link}
               </button>
               {i < footerLinks.length - 1 && (
@@ -184,7 +184,7 @@ const UploadGuestPage = () => {
         </div>
         <p className="text-sm text-text-secondary">
           Language:{" "}
-          <button className="text-[#044dd2] dark:text-[#699fff] hover:underline cursor-pointer bg-transparent border-none font-medium">
+          <button className="text-text-link hover:underline cursor-pointer bg-transparent border-none font-medium">
             English (US)
           </button>
         </p>

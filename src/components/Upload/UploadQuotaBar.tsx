@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import SmallCloudIcon from "./SmallCloudIcon";
+import SmallCloudIcon from "../../pages/creator/upload/SmallCloudIcon";
 import {
   getUploadQuota,
   type QuotaData,

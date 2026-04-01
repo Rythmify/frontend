@@ -1,0 +1,15 @@
+.footer-link {
+  color: #666666;
+}
+
+.footer-link:hover {
+  color: #c2c2c2;
+}
+
+.dark .footer-link:hover {
+  color: #484848;
+}
+
+.dark .footer-link {
+  color: #999999;
+}

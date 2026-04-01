@@ -1,4 +1,4 @@
-import Dropdown from "../../../components/UI/Dropdown";
+import Dropdown from "../UI/Dropdown";
 
 const genres = [
   "Alternative Rock",
