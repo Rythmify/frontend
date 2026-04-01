@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import toWav from "../../../services/api/upload/audiotranscoder";
 
 interface HandleRecordingProps {
   isRecording: boolean;
@@ -72,32 +73,36 @@ const HandleRecording = ({
     setSeconds,
   ]);
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
-        },
-      });
-      const recorder = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
-
-      recorder.onstop = () => {
-        const segmentBlob = new Blob(chunks, {
-          type: "audio/webm; codecs=opus",
+  const startRecording = async (): Promise<void> => {
+    return new Promise(async (resolve) => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
+          },
         });
-        setAudioSegments((prev) => [...prev, segmentBlob]);
-      };
 
-      mediaRecorderRef.current = recorder;
-      recorder.start(100);
-    } catch (err) {
-      console.error("Microphone access denied", err);
-    }
+        const recorder = new MediaRecorder(stream);
+        const chunks: Blob[] = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+
+        recorder.onstop = () => {
+          const mimeType = recorder.mimeType || "audio/ogg; codecs=opus"; //MIME type of browser's recording format
+          const segmentBlob = new Blob(chunks, { type: mimeType });
+          setAudioSegments((prev) => [...prev, segmentBlob]);
+          resolve();
+        };
+
+        mediaRecorderRef.current = recorder;
+        recorder.start(250);
+      } catch (err) {
+        console.error("Microphone access denied", err);
+        resolve();
+      }
+    });
   };
 
   const handleRecordToggle = () => {
@@ -160,28 +165,58 @@ const HandleRecording = ({
 
   //stop icon function to stop the recording and save it without deleting it
   const handleStop = () => {
-    if (isRecording || isPaused) {
-      // If we stop while recording, stop the recorder first to trigger onstop
-      if (isRecording && !isPaused) {
-        const segmentDuration = seconds - currentSegmentStart;
-        if (segmentDuration > 0) {
-          setHistory([...history, segmentDuration]);
-        }
-      }
+    if (!isRecording && !isPaused) return;
 
-      // timeout to ensure the last segment is pushed to audioSegments
-      setTimeout(() => {
-        setAudioSegments((prev) => {
-          const finalBlob = new Blob(prev, { type: "audio/webm; codecs=opus" });
-          onFinish(finalBlob);
-          return prev;
-        });
-        setIsRecording(false);
-        setIsPaused(false);
-        setIsRecordingFinished(true);
-      }, 150);
+    const segmentDuration = seconds - currentSegmentStart;
+    const finalize = async (segments: Blob[]) => {
+      // Merge all recorded segments into one blob
+      const rawBlob = new Blob(segments, {
+        type: segments[0]?.type ?? "audio/ogg",
+      });
+
+      // Transcode to WAV so the backend can process it
+      try {
+        const wavBlob = await toWav(rawBlob);
+        onFinish(wavBlob);
+      } catch (err) {
+        console.error(
+          "WAV transcoding failed, sending raw blob as fallback:",
+          err,
+        );
+        onFinish(rawBlob);
+      }
+    };
+
+    if (isRecording && !isPaused) {
+      const recorder = mediaRecorderRef.current;
+      if (recorder) {
+        const originalOnStop = recorder.onstop;
+        recorder.onstop = (e) => {
+          originalOnStop?.call(recorder, e);
+          setTimeout(() => {
+            setAudioSegments((prev) => {
+              finalize(prev);
+              return prev;
+            });
+            setIsRecording(false);
+            setIsPaused(false);
+            setIsRecordingFinished(true);
+          }, 0);
+        };
+        recorder.stop();
+        if (segmentDuration > 0) setHistory([...history, segmentDuration]);
+      }
+    } else if (isPaused) {
+      setAudioSegments((prev) => {
+        finalize(prev);
+        return prev;
+      });
+      setIsRecording(false);
+      setIsPaused(false);
+      setIsRecordingFinished(true);
     }
   };
+
   //delete icon function to reset the recording and start over again
   const handleRestart = () => {
     setSeconds(0);

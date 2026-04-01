@@ -161,7 +161,7 @@ const UploadGuestPage = () => {
             <button
               data-test="learn-more-button"
               onClick={() => navigate("/artist-pro")}
-              className="text-text-link text-[22px] font-bold cursor-pointer bg-transparent border-none"
+              className="text-text-ulink text-[22px] font-bold cursor-pointer bg-transparent border-none"
             >
               Learn more about Pro plans
             </button>
@@ -184,7 +184,7 @@ const UploadGuestPage = () => {
         </div>
         <p className="text-sm text-text-secondary">
           Language:{" "}
-          <button className="text-text-link hover:underline cursor-pointer bg-transparent border-none font-medium">
+          <button className="text-text-ulink hover:underline cursor-pointer bg-transparent border-none font-medium">
             English (US)
           </button>
         </p>
