@@ -73,36 +73,32 @@ const HandleRecording = ({
     setSeconds,
   ]);
 
-  const startRecording = async (): Promise<void> => {
-    return new Promise(async (resolve) => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
-          },
-        });
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
+        },
+      });
 
-        const recorder = new MediaRecorder(stream);
-        const chunks: Blob[] = [];
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
 
-        recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) chunks.push(e.data);
-        };
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
 
-        recorder.onstop = () => {
-          const mimeType = recorder.mimeType || "audio/ogg; codecs=opus"; //MIME type of browser's recording format
-          const segmentBlob = new Blob(chunks, { type: mimeType });
-          setAudioSegments((prev) => [...prev, segmentBlob]);
-          resolve();
-        };
+      recorder.onstop = () => {
+        const mimeType = recorder.mimeType || "audio/ogg; codecs=opus"; //MIME type of browser's recording format
+        const segmentBlob = new Blob(chunks, { type: mimeType });
+        setAudioSegments((prev) => [...prev, segmentBlob]);
+      };
 
-        mediaRecorderRef.current = recorder;
-        recorder.start(250);
-      } catch (err) {
-        console.error("Microphone access denied", err);
-        resolve();
-      }
-    });
+      mediaRecorderRef.current = recorder;
+      recorder.start(250);
+    } catch (err) {
+      console.error("Microphone access denied", err);
+    }
   };
 
   const handleRecordToggle = () => {
