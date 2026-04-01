@@ -10,6 +10,9 @@ import {
   mockLikedTracks,
 } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
+import { TrackCard } from "../../components/track";
+import { mockTracks } from "../../services/mocks/tracks";
+import type { Track } from "../../types/track";
 import {
   getMyProfile,
   getUserById,
@@ -35,10 +38,17 @@ export default function UsernamePage() {
   const [following, setFollowing] = useState<UserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
+  const [profileTracks, setProfileTracks] = useState<Track[]>([]);
 
   if (!currentUser) return null;
 
   const isOwner = !username || username === currentUser.username;
+
+  useEffect(() => {
+    // Load tracks for this profile (owner → all mock tracks, others → first 3)
+    // TODO: replace with real API call — e.g. getTracks({ username })
+    setProfileTracks(isOwner ? mockTracks : mockTracks.slice(0, 3));
+  }, [isOwner]);
 
   useEffect(() => {
     if (isOwner) {
@@ -48,7 +58,7 @@ export default function UsernamePage() {
         setStats({
           followers: profile.followers_count,
           following: profile.following_count,
-          tracks: 0,
+          tracks: mockTracks.length, // TODO: real count from API
         });
         setUser({
           ...currentUser,
@@ -209,24 +219,57 @@ export default function UsernamePage() {
       />
 
       <div className="flex gap-6 py-6 items-start">
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
-          <p
-            data-test="empty-state-message"
-            className="text-white font-bold text-17px"
-          >
-            Seems a little quiet over here
-          </p>
-          {isOwner &&
-            selectedTab !== "Playlists" &&
-            selectedTab !== "Reposts" && (
-              <button
-                data-test="upload-now-button"
-                onClick={() => navigate("/upload")}
-                className="cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
+        <div className="flex-1 min-w-0">
+          {profileTracks.length > 0 ? (
+            <>
+              <h2
+                style={{
+                  color: "#fff",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  marginBottom: 12,
+                }}
               >
-                Upload now
-              </button>
-            )}
+                Recent
+              </h2>
+              {profileTracks.map((t) => (
+                <TrackCard
+                  key={t.id}
+                  track={t}
+                  onCopyLink={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`
+                    );
+                  }}
+                  onEdit={() => navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)}
+                  onReplaceFile={() => console.log("[TrackCard] replace file:", t.id)}
+                  onDelete={() => console.log("[TrackCard] delete:", t.id)}
+                  onDistribute={() => console.log("[TrackCard] distribute:", t.id)}
+                  onAddToPlaylist={() => {}}
+                />
+              ))}
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-4 py-16">
+              <p
+                data-test="empty-state-message"
+                className="text-white font-bold text-17px"
+              >
+                Seems a little quiet over here
+              </p>
+              {isOwner &&
+                selectedTab !== "Playlists" &&
+                selectedTab !== "Reposts" && (
+                  <button
+                    data-test="upload-now-button"
+                    onClick={() => navigate("/upload")}
+                    className="cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
+                  >
+                    Upload now
+                  </button>
+                )}
+            </div>
+          )}
         </div>
         <div>
           <ProfileSidebar

@@ -12,12 +12,12 @@ function getSeekAudio() {
 }
 
 interface PlayerState {
-  //Current track 
+  // Current track
   currentTrack: Track | null;
   queue: Track[];
   queueIndex: number;
 
-  //Playback state 
+  // Playback state
   isPlaying: boolean;
   currentTime: number;   // seconds
   duration: number;      // seconds
@@ -27,7 +27,7 @@ interface PlayerState {
   repeatMode: "none" | "one" | "all";
   isLiked: boolean;
 
-  // Actions 
+  // Actions
   setTrack: (track: Track, queue?: Track[]) => void;
   play: () => void;
   pause: () => void;
@@ -35,6 +35,7 @@ interface PlayerState {
   next: () => void;
   previous: () => void;
   seek: (time: number) => void;
+  seekTo: (time: number) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
   setVolume: (volume: number) => void;
@@ -61,14 +62,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setTrack: (track, queue) => {
     const newQueue = queue ?? get().queue;
     const index = newQueue.findIndex((t) => t.id === track.id);
-
-    // If the user seeked on the waveform before pressing play, we want to
-    // honour that position instead of jumping back to 0:00. We preserve the
-    // current time only when resuming the same track or when no track was
-    // playing yet (null state means the hero waveform was interacted with).
     const isSameTrack = get().currentTrack?.id === track.id;
+
+    if (isSameTrack) {
+      // Same track - just ensure it is playing. Dont touch currentTime or
+      // trigger a reload. The waveform already seeked audio.currentTime directly.
+      set({ isPlaying: true });
+      return;
+    }
+
+    // New track - preserve currentTime only when coming from null state
+    // (example hero waveform was interacted with before pressing play).
     const isFromNullState = get().currentTrack === null;
-    const nextTime = (isSameTrack || isFromNullState) ? get().currentTime : 0;
+    const nextTime = isFromNullState ? get().currentTime : 0;
 
     set({
       currentTrack: track,
@@ -106,7 +112,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (!queue.length) return;
     // More than 3 seconds in? Restart the current track instead of going back.
     if (currentTime > 3) {
-      set({ currentTime: 0 });
+      get().seek(0);
       return;
     }
     const prevIndex = (queueIndex - 1 + queue.length) % queue.length;
@@ -119,21 +125,29 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   // Delegates to seekAudio so there is one canonical seek path.
-  // Falls back to a store-only update if seekAudio isn't resolved yet (shouldn't happen in practice).
+  // Falls back to a store-only update if seekAudio isn't resolved yet.
   seek: (time) => {
     const seekFn = getSeekAudio();
     if (seekFn) {
-      seekFn(time); // also updates store.currentTime via seekAudio
+      seekFn(time);
     } else {
       set({ currentTime: time });
     }
   },
+
+  // seekTo: updates store currentTime only - doesnt touch isPlaying.
+  // Use this when the audio element has already been seeked directly
+  // (example WaveSurfer interaction, progress bar drag) so the subscriber
+  // doesnt fire audio.play() and interrupt the seek.
+  seekTo: (time) => {
+    set({ currentTime: time });
+  },
+
   setCurrentTime: (time) => set({ currentTime: time }),
   setDuration: (duration) => set({ duration }),
 
   setVolume: (volume) => set({ volume, isMuted: volume === 0 }),
-  toggleMute: () =>
-    set((s) => ({ isMuted: !s.isMuted })),
+  toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
 
   toggleShuffle: () => set((s) => ({ isShuffle: !s.isShuffle })),
 
