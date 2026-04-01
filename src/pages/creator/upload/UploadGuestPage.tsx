@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import ArtistsSectionGuest from "./ArtistsSectionGuest";
 import "./UploadGuestPage.css";
+import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+
 const UploadGuestPage = () => {
   const navigate = useNavigate();
 
@@ -8,17 +10,6 @@ const UploadGuestPage = () => {
     navigate("/signin");
   };
 
-  const footerLinks = [
-    "Legal",
-    "Privacy",
-    "Cookie Policy",
-    "Cookie Manager",
-    "Imprint",
-    "Artist Resources",
-    "Newsroom",
-    "Charts",
-    "Transparency Reports",
-  ];
 
   return (
     <div className="bg-bg container px-4 md:px-4 lg:px-20 text-text-upload ">
@@ -168,27 +159,7 @@ const UploadGuestPage = () => {
           </div>
         </div>
       </section>
-
-      <footer className="bg-bg py-8">
-        <div className="flex flex-wrap items-center gap-y-1 mb-4">
-          {footerLinks.map((link, i) => (
-            <span key={link} className="flex items-center">
-              <button className="text-sm cursor-pointer footer-link">
-                {link}
-              </button>
-              {i < footerLinks.length - 1 && (
-                <span className="text-text-secondary text-[12px] mx-2">·</span>
-              )}
-            </span>
-          ))}
-        </div>
-        <p className="text-sm text-text-secondary">
-          Language:{" "}
-          <button className="text-text-ulink hover:underline cursor-pointer bg-transparent border-none font-medium">
-            English (US)
-          </button>
-        </p>
-      </footer>
+      <GuestPageFooter></GuestPageFooter>
     </div>
   );
 };
