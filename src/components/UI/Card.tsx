@@ -250,6 +250,7 @@ const TrackCard = ({ track }: TrackCardProps) => {
 
       {showPlaylistModal && (
         <AddToPlaylistModal
+          trackTitle={track.title}
           trackId={track.id}
           onClose={() => setShowPlaylistModal(false)}
         />

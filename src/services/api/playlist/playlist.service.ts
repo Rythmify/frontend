@@ -17,6 +17,7 @@ export interface PlaylistTrackItem {
   track_id: string;
   position: number;
   added_at: string;
+  title?: string;
 }
 
 export interface PlaylistDetails extends Playlist {
@@ -54,7 +55,10 @@ export async function getMyPlaylists(params?: {
   q?: string;
 }) {
   const res = await axiosInstance.get<{
-    data: { items: Playlist[]; meta: { limit: number; offset: number; total: number } };
+    data: {
+      items: Playlist[];
+      meta: { limit: number; offset: number; total: number };
+    };
     message: string;
   }>("/playlists", { params: { ...params, mine: true } });
 
@@ -64,7 +68,7 @@ export async function getMyPlaylists(params?: {
 /** GET /playlists/:id — get playlist details with tracks */
 export async function getPlaylist(
   playlistId: string,
-  params?: { secret_token?: string; include_tracks?: boolean }
+  params?: { secret_token?: string; include_tracks?: boolean },
 ) {
   const res = await axiosInstance.get<{
     data: PlaylistDetails;
@@ -77,7 +81,7 @@ export async function getPlaylist(
 /** PATCH /playlists/:id — update playlist metadata */
 export async function updatePlaylist(
   playlistId: string,
-  payload: UpdatePlaylistPayload
+  payload: UpdatePlaylistPayload,
 ) {
   const res = await axiosInstance.patch<{
     data: Playlist;
@@ -101,7 +105,7 @@ export async function deletePlaylist(playlistId: string) {
 export async function addTrackToPlaylist(
   playlistId: string,
   trackId: string | number,
-  position?: number
+  position?: number,
 ) {
   const res = await axiosInstance.post<{
     data: PlaylistDetails;
@@ -114,7 +118,7 @@ export async function addTrackToPlaylist(
 /** DELETE /playlists/:id/tracks/:trackId — remove a track from a playlist */
 export async function removeTrackFromPlaylist(
   playlistId: string,
-  trackId: string
+  trackId: string,
 ) {
   const res = await axiosInstance.delete<{
     data: PlaylistDetails;
@@ -127,7 +131,7 @@ export async function removeTrackFromPlaylist(
 /** PATCH /playlists/:id/tracks/reorder — reorder tracks in a playlist */
 export async function reorderPlaylistTracks(
   playlistId: string,
-  items: { track_id: string; position: number }[]
+  items: { track_id: string; position: number }[],
 ) {
   const res = await axiosInstance.patch<{
     data: PlaylistDetails;
@@ -146,7 +150,7 @@ export async function getPlaylistEmbed(
     autoplay?: boolean;
     width?: number;
     height?: number;
-  }
+  },
 ) {
   const res = await axiosInstance.get<{
     data: { embed_url: string; iframe_html: string };
