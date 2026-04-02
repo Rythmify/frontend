@@ -171,7 +171,6 @@ const AddToPlaylistModal = ({
         )}
 
         {/* Add to playlist tab */}
-       
 
         {/* Create a playlist tab / only view */}
         {!loading && (!hasPlaylists || activeTab === "create") && (
@@ -192,23 +191,24 @@ const AddToPlaylistModal = ({
             </div>
 
             {/* Privacy toggle */}
-            <div className="flex">
-              <label className="flex items-center gap-1 text-sm text-white font-bold mb-1 tracking-wide mr-2">
-                Privacy :
-              </label>
-              <PrivacyToggle value={privacy} onChange={setPrivacy} />
-            </div>
-
-            {/* Save button */}
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={handleCreate}
-                disabled={creating || !playlistTitle.trim()}
-                className="bg-white text-black text-sm font-bold px-6 py-2.5 rounded-sm
+            <div className="flex justify-between">
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-1 text-sm text-white font-bold mb-1 tracking-wide mr-2">
+                  Privacy :
+                </label>
+                <PrivacyToggle value={privacy} onChange={setPrivacy} />
+              </div>
+              {/* Save button */}
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={handleCreate}
+                  disabled={creating || !playlistTitle.trim()}
+                  className="bg-white text-black text-sm font-bold px-3 py-1.5 rounded-sm
                   hover:text-[#a0a0a0] transition-colors disabled:opacity-40 cursor-pointer"
-              >
-                Save
-              </button>
+                >
+                  Save
+                </button>
+              </div>
             </div>
           </div>
         )}
