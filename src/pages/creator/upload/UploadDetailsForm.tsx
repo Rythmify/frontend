@@ -4,6 +4,7 @@ import { uploadTrack } from "@/services/api/upload/track.service";
 import HelpIcon from "../../../components/Upload/HelpIcon";
 import UploadCoverImage from "../../../components/Upload/UploadCoverImage";
 import GenreDropdown from "../../../components/Upload/GenreDropdown";
+import PrivacyToggle from "../../../components/Upload/PrivacyToggle";
 
 interface Props {
   audioData: File | Blob | null;
@@ -207,60 +208,9 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-bg-inverted  hover:border-bg-inverted placeholder:text-text-upload/40"
               />
             </div>
-
+            
             {/* Privacy Section */}
-            <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
-                Track Privacy
-              </label>
-              <div className="flex gap-10 text-sm py-2">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    data-test="upload-privacy-public-radio"
-                    type="radio"
-                    name="privacy"
-                    className="hidden"
-                    checked={privacy === "public"}
-                    onChange={() => setPrivacy("public")}
-                  />
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "public" ? "border-bg-inverted" : "border-[#666] group-hover:border-bg-inverted"}`}
-                  >
-                    {privacy === "public" && (
-                      <div className="w-2.5 h-2.5 bg-bg-inverted rounded-full" />
-                    )}
-                  </div>
-                  <span
-                    className={`${privacy === "public" ? "text-text-upload font-bold" : "text-[#999]"}`}
-                  >
-                    Public
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    data-test="upload-privacy-private-radio"
-                    type="radio"
-                    name="privacy"
-                    className="hidden"
-                    checked={privacy === "private"}
-                    onChange={() => setPrivacy("private")}
-                  />
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "private" ? "border-bg-inverted" : "border-[#666] group-hover:border-bg-inverted"}`}
-                  >
-                    {privacy === "private" && (
-                      <div className="w-2.5 h-2.5 bg-bg-inverted rounded-full" />
-                    )}
-                  </div>
-                  <span
-                    className={`${privacy === "private" ? "text-text-upload font-bold" : "text-[#999]"}`}
-                  >
-                    Private
-                  </span>
-                </label>
-              </div>
-            </div>
+            <PrivacyToggle value={privacy} onChange={setPrivacy} />
 
             {/* Error Display */}
             {error && (
