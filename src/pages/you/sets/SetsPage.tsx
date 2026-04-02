@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 
 export default function SetsPage() {
   const [filterText, setFilterText] = useState("");
@@ -77,6 +78,16 @@ export default function SetsPage() {
             )}
           </div>
         </div>
+      </div>
+      <div className="px-4 pt-2 pb-10">
+        <HorizontalCarousel title=" ">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="min-w-[160px] h-[160px] bg-[#303030] rounded-md "
+            />
+          ))}
+        </HorizontalCarousel>
       </div>
       <div className="py-2 px-4">
         <GuestPageFooter></GuestPageFooter>
