@@ -100,7 +100,7 @@ export async function deletePlaylist(playlistId: string) {
 /** POST /playlists/:id/tracks — add a track to a playlist */
 export async function addTrackToPlaylist(
   playlistId: string,
-  trackId: string,
+  trackId: string | number,
   position?: number
 ) {
   const res = await axiosInstance.post<{
