@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import TrackCard from "@/components/UI/Card";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
-import { mockDiscoverTracks } from "@/mocks/discover";
+import { mockDiscoverTracks } from "@/services/mocks/discover";
 import DiscoverSideBar from "@/components/discover/sidebar/DiscoverSideBar";
 import RecentlyPlayed from "@/components/discover/RecentlyPlayed";
 import AlbumsForYou from "@/components/discover/AlbumsForYou";
@@ -38,7 +38,9 @@ const DiscoverPageAuth = () => {
           </HorizontalCarousel>
           <RecentlyPlayed />
           <AlbumsForYou />
-          <NewCrewForYou users={homeData?.artists_to_watch.map(mapSuggestedToUser)} />
+          <NewCrewForYou
+            users={homeData?.artists_to_watch.map(mapSuggestedToUser)}
+          />
         </div>
 
         {/* Sidebar — 30% */}
