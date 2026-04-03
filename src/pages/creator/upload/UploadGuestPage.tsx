@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import ArtistsSectionGuest from "./ArtistsSectionGuest";
+import "./UploadGuestPage.css";
+import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 
 const UploadGuestPage = () => {
   const navigate = useNavigate();
@@ -8,17 +10,6 @@ const UploadGuestPage = () => {
     navigate("/signin");
   };
 
-  const footerLinks = [
-    "Legal",
-    "Privacy",
-    "Cookie Policy",
-    "Cookie Manager",
-    "Imprint",
-    "Artist Resources",
-    "Newsroom",
-    "Charts",
-    "Transparency Reports",
-  ];
 
   return (
     <div className="bg-bg container px-4 md:px-4 lg:px-20 text-text-upload ">
@@ -154,41 +145,21 @@ const UploadGuestPage = () => {
             <button
               data-test="try-it-free-button"
               onClick={handleUploadClick}
-              className="bg-bg-inverted text-bg cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
+              className="bg-bg-inverted text-bg hover:text-[#a0a0a0] cursor-pointer transition-colors items-center px-3 py-1.5 font-bold text-[22px] rounded-sm"
             >
               Try it free
             </button>
             <button
               data-test="learn-more-button"
               onClick={() => navigate("/artist-pro")}
-              className="dark:!text-[#699fff] text-[#044dd2] text-[22px] font-bold cursor-pointer bg-transparent border-none"
+              className="text-text-ulink text-[22px] font-bold cursor-pointer bg-transparent border-none"
             >
               Learn more about Pro plans
             </button>
           </div>
         </div>
       </section>
-
-      <footer className="bg-bg py-8">
-        <div className="flex flex-wrap items-center gap-y-1 mb-4">
-          {footerLinks.map((link, i) => (
-            <span key={link} className="flex items-center">
-              <button className="text-sm dark:text-text-secondary dark:hover:text-[#484848] text-text-muted hover:text-[#c2c2c2] cursor-pointer">
-                {link}
-              </button>
-              {i < footerLinks.length - 1 && (
-                <span className="text-text-secondary text-[12px] mx-2">·</span>
-              )}
-            </span>
-          ))}
-        </div>
-        <p className="text-sm text-text-secondary">
-          Language:{" "}
-          <button className="text-[#044dd2] dark:text-[#699fff] hover:underline cursor-pointer bg-transparent border-none font-medium">
-            English (US)
-          </button>
-        </p>
-      </footer>
+      <GuestPageFooter></GuestPageFooter>
     </div>
   );
 };

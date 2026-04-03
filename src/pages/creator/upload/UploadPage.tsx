@@ -1,9 +1,9 @@
 import { useAuthStore } from "@/stores/auth.store";
 import { useRef, useState, useEffect } from "react";
 import UploadGuestPage from "./UploadGuestPage";
-import UploadQuotaBar from "./UploadQuotaBar";
+import UploadQuotaBar from "../../../components/Upload/UploadQuotaBar";
 import RecordSection from "./RecordSection";
-import DropZone from "./DropZone";
+import DropZone from "../../../components/Upload/DropZone";
 import UploadDetailsForm from "./UploadDetailsForm";
 import { Link, useOutletContext } from "react-router-dom";
 import UploadFooter from "./UploadFooter";
@@ -88,7 +88,7 @@ const UploadPage = () => {
             onCancel={() => setIsDetailsMode(false)}
             onSuccess={handleSuccess}
             setIsLoadingParent={setIsSubmitting}
-            onProgress={(pct) => setUploadProgress(pct)} 
+            onProgress={(pct) => setUploadProgress(pct)}
           />
         ) : (
           <UploadSuccessView trackId={uploadedTrackId} />
