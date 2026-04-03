@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ArtistToolsCard from "./ArtistToolsCard";
 import TrackItem from "@/components/UI/TrackItem";
 import TrackListSection from "@/components/UI/TrackListSection/TrackListSection";
 import ArtistListSection from "@/components/UI/ArtistListSection";
 import GoMobileSection from "@/components/UI/GoMobile";
+import { getSuggestedArtists } from "@/services/api/discover.service";
+import { mapSuggestedToArtist } from "@/services/api/discover.mapper";
 
 // ─── Mock Data ────────────────────────────────────────────
 const mockLikedTracks = [
@@ -72,37 +74,6 @@ const mockListeningHistory = [
   },
 ];
 
-const mockSuggestedArtistsData = [
-  {
-    username: "fatma-amin",
-    avatar: "https://picsum.photos/48/48?random=10",
-    followers: 45200,
-    tracks: 23,
-    isVerified: true,
-  },
-  {
-    username: "moh-elghaleez",
-    avatar: "https://picsum.photos/48/48?random=11",
-    followers: 38500,
-    tracks: 18,
-    isVerified: false,
-  },
-  {
-    username: "league-of-legends",
-    avatar: "https://picsum.photos/48/48?random=12",
-    followers: 1200000,
-    tracks: 45,
-    isVerified: true,
-  },
-  {
-    username: "shahd-music",
-    avatar: "https://picsum.photos/48/48?random=13",
-    followers: 28300,
-    tracks: 12,
-    isVerified: false,
-  },
-];
-
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
   sidebar: `
@@ -113,14 +84,29 @@ const styles = {
 
 // ─── Component ────────────────────────────────────────────
 const DiscoverSidebar = () => {
-  const [suggestedArtists, setSuggestedArtists] = useState(
-    mockSuggestedArtistsData,
-  );
+  const [suggestedArtists, setSuggestedArtists] = useState<
+    ReturnType<typeof mapSuggestedToArtist>[]
+  >([]);
+  const [artistsLoading, setArtistsLoading] = useState(true);
+  const [artistsError, setArtistsError] = useState<string | null>(null);
 
+  // Fetch suggested artists once when the sidebar mounts.
+  useEffect(() => {
+    getSuggestedArtists({ limit: 10 })
+      .then((res) => {
+        setSuggestedArtists(res.items.map(mapSuggestedToArtist));
+      })
+      .catch((err: Error) => {
+        setArtistsError(err.message);
+      })
+      .finally(() => {
+        setArtistsLoading(false);
+      });
+  }, []);
+
+  // Shuffle the already-loaded list — no extra network call needed.
   const handleRefreshArtists = () => {
-    console.log("Refreshing suggested artists...");
-    const shuffled = [...suggestedArtists].sort(() => Math.random() - 0.5);
-    setSuggestedArtists(shuffled);
+    setSuggestedArtists((prev) => [...prev].sort(() => Math.random() - 0.5));
   };
 
   return (
@@ -132,12 +118,16 @@ const DiscoverSidebar = () => {
 
       {/* Suggested Artists Section */}
       <div data-test="discover-sidebar-suggested-artists">
-        <ArtistListSection
-          title="ARTISTS YOU SHOULD FOLLOW"
-          artists={suggestedArtists}
-          onRefresh={handleRefreshArtists}
-          maxDisplay={3}
-        />
+        {artistsError ? (
+          <p className="text-xs text-text-secondary">{artistsError}</p>
+        ) : (
+          <ArtistListSection
+            title="ARTISTS YOU SHOULD FOLLOW"
+            artists={artistsLoading ? [] : suggestedArtists}
+            onRefresh={handleRefreshArtists}
+            maxDisplay={3}
+          />
+        )}
       </div>
 
       {/* Liked Tracks Section */}
@@ -151,6 +141,7 @@ const DiscoverSidebar = () => {
               key={track.id}
               {...track}
               initialLiked={true}
+              //TODO: waiting for back to implement engagement endpoints
               onUnlike={(id) => {
                 console.log("Unlike track:", id);
               }}
