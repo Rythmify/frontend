@@ -262,14 +262,7 @@ function BasicInformation() {
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
-  const genders = [
-    "Indicate gender",
-    "Male",
-    "Female",
-    "Non-binary",
-    "Other",
-    "Prefer not to say",
-  ];
+  const genders = ["Indicate gender", "Male", "Female", "Prefer not to say"];
 
   return (
     <div>
