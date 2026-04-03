@@ -17,7 +17,7 @@ export async function getUploadQuota(): Promise<QuotaData> {
   console.log("subRes:", subRes);
 
   return {
-    usedTracks: tracksRes.pagination.total,
+    usedTracks: tracksRes.pagination?.total ?? tracksRes.data.length,
     trackLimit: subRes.data.plan.track_limit ?? null,
   };
 }
