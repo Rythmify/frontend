@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import type { Track, TrackSummary } from "@/services/api/upload/track.service";
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// Mock Data 
 
 const mockTrack: Track = {
   id: "e5f6a7b8-c9d0-1234-efab-567890abcdef",
@@ -47,7 +47,7 @@ const mockTrackSummary: TrackSummary = {
   user_id: mockTrack.user_id,
 };
 
-// ─── Handlers ─────────────────────────────────────────────────────────────────
+// Handlers 
 
 export const trackHandlers = [
   // POST /tracks — upload a new track

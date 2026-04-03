@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
 import { screen, fireEvent } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
-import DropZone from "../DropZone";
+import DropZone from "../../../../components/Upload/DropZone";
 
 describe("DropZone", () => {
   const mockUpload = vi.fn();

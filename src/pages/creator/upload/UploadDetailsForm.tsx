@@ -1,9 +1,10 @@
 import { useState, useImperativeHandle, forwardRef } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { uploadTrack } from "@/services/api/upload/track.service";
-import HelpIcon from "./HelpIcon";
-import UploadCoverImage from "./UploadCoverImage";
-import GenreDropdown from "./GenreDropdown";
+import HelpIcon from "../../../components/Upload/HelpIcon";
+import UploadCoverImage from "../../../components/Upload/UploadCoverImage";
+import GenreDropdown from "../../../components/Upload/GenreDropdown";
+import PrivacyToggle from "../../../components/Upload/PrivacyToggle";
 
 interface Props {
   audioData: File | Blob | null;
@@ -19,7 +20,7 @@ export interface UploadFormHandle {
 }
 
 const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
-  ({ audioData, onSuccess, setIsLoadingParent , onProgress}: Props, ref) => {
+  ({ audioData, onSuccess, setIsLoadingParent, onProgress }: Props, ref) => {
     const { user } = useAuthStore();
     const username = user?.username || "username";
 
@@ -53,15 +54,24 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
     };
 
     const handleSubmit = async () => {
-      if (!audioData) { setError("Missing audio data."); return; }
-      if (!title.trim()) { setError("Track title is required."); return; }
+      if (!audioData) {
+        setError("Missing audio data.");
+        return;
+      }
+      if (!title.trim()) {
+        setError("Track title is required.");
+        return;
+      }
 
       setGlobalLoading(true);
       setError(null);
 
       try {
         const tagsArray = tags
-          ? tags.split(",").map((t) => t.trim()).filter(Boolean)
+          ? tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
           : undefined;
 
         const result = await uploadTrack(
@@ -75,14 +85,16 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             cover_image: coverFile,
             tags: tagsArray,
           },
-          (pct) => onProgress?.(pct)  
+          (pct) => onProgress?.(pct),
         );
 
         onSuccess?.(result.data.id);
       } catch (err: any) {
         onProgress?.(0);
         console.error("Upload failed:", err);
-        setError(err.response?.data?.message || err.message || "Upload failed.");
+        setError(
+          err.response?.data?.message || err.message || "Upload failed.",
+        );
         setGlobalLoading(false);
       }
     };
@@ -94,7 +106,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
     return (
       <div
-        data-testid="upload-details-form"
+        data-test="upload-details-form"
         className="mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500"
       >
         <div className="flex flex-col lg:flex-row gap-12 items-start">
@@ -111,7 +123,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 />
               </label>
               <input
-                data-testid="upload-title-input"
+                data-test="upload-title-input"
                 type="text"
                 value={title}
                 onChange={handleTitleChange}
@@ -129,7 +141,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                   https://soundcloud.com/{username}/
                 </span>
                 <input
-                  data-testid="upload-track-link-input"
+                  data-test="upload-track-link-input"
                   type="text"
                   value={trackLink}
                   onChange={(e) => setTrackLink(e.target.value)}
@@ -148,7 +160,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 />
               </label>
               <input
-                data-testid="upload-artists-input"
+                data-test="upload-artists-input"
                 type="text"
                 value={artists}
                 onChange={(e) => setArtists(e.target.value)}
@@ -174,7 +186,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 />
               </label>
               <input
-                data-testid="upload-tags-input"
+                data-test="upload-tags-input"
                 type="text"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
@@ -189,7 +201,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 Description
               </label>
               <input
-                data-testid="upload-description-input"
+                data-test="upload-description-input"
                 placeholder="Tracks with description tend to get more plays and engagements."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -198,63 +210,15 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
             </div>
 
             {/* Privacy Section */}
-            <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
-                Track Privacy
-              </label>
-              <div className="flex gap-10 text-sm py-2">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    data-testid="upload-privacy-public-radio"
-                    type="radio"
-                    name="privacy"
-                    className="hidden"
-                    checked={privacy === "public"}
-                    onChange={() => setPrivacy("public")}
-                  />
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "public" ? "border-bg-inverted" : "border-[#666] group-hover:border-bg-inverted"}`}
-                  >
-                    {privacy === "public" && (
-                      <div className="w-2.5 h-2.5 bg-bg-inverted rounded-full" />
-                    )}
-                  </div>
-                  <span
-                    className={`${privacy === "public" ? "text-text-upload font-bold" : "text-[#999]"}`}
-                  >
-                    Public
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    data-testid="upload-privacy-private-radio"
-                    type="radio"
-                    name="privacy"
-                    className="hidden"
-                    checked={privacy === "private"}
-                    onChange={() => setPrivacy("private")}
-                  />
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${privacy === "private" ? "border-bg-inverted" : "border-[#666] group-hover:border-bg-inverted"}`}
-                  >
-                    {privacy === "private" && (
-                      <div className="w-2.5 h-2.5 bg-bg-inverted rounded-full" />
-                    )}
-                  </div>
-                  <span
-                    className={`${privacy === "private" ? "text-text-upload font-bold" : "text-[#999]"}`}
-                  >
-                    Private
-                  </span>
-                </label>
-              </div>
-            </div>
+            <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
+              Track Privacy
+            </label>
+            <PrivacyToggle value={privacy} onChange={setPrivacy} />
 
             {/* Error Display */}
             {error && (
               <p
-                data-testid="upload-error-message"
+                data-test="upload-error-message"
                 className="text-[#FB2C36] text-sm font-bold bg-[#FB2C36]/10 p-3 rounded-sm"
               >
                 {error}

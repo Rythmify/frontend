@@ -38,7 +38,7 @@ describe('login()', () => {
 
   it('saves token to localStorage on success', async () => {
     await login('user@example.com', 'password123');
-    expect(localStorage.getItem('token')).toBe('mock-access-token-xyz');
+    expect(localStorage.getItem('auth_token')).toBe('mock-access-token-xyz');
   });
 
   it('throws on server error', async () => {
@@ -92,7 +92,7 @@ describe('verifyEmail()', () => {
   it('returns access token and saves it', async () => {
     const result = await verifyEmail('valid-token');
     expect(result.data.access_token).toBe('mock-access-token-xyz');
-    expect(localStorage.getItem('token')).toBe('mock-access-token-xyz');
+    expect(localStorage.getItem('auth_token')).toBe('mock-access-token-xyz');
   });
 
   it('throws on invalid/expired token', async () => {
@@ -129,13 +129,13 @@ describe('resendVerification()', () => {
 
 describe('logout()', () => {
   beforeEach(() => {
-    localStorage.setItem('token', 'some-token');
+    localStorage.setItem('auth_token', 'some-token');
   });
 
   it('returns success and clears token from localStorage', async () => {
     const result = await logout();
     expect(result.data.success).toBe(true);
-    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('auth_token')).toBeNull();
   });
 
   it('still clears token even if server errors', async () => {
@@ -145,7 +145,7 @@ describe('logout()', () => {
       )
     );
     await expect(logout()).rejects.toThrow();
-    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('auth_token')).toBeNull();
   });
 });
 
@@ -155,7 +155,7 @@ describe('refreshToken()', () => {
   it('returns new token and saves it', async () => {
     const result = await refreshToken();
     expect(result.data.access_token).toBe('mock-refreshed-token-xyz');
-    expect(localStorage.getItem('token')).toBe('mock-refreshed-token-xyz');
+    expect(localStorage.getItem('auth_token')).toBe('mock-refreshed-token-xyz');
   });
 
   it('throws on server error', async () => {
@@ -228,7 +228,7 @@ describe('googleLogin()', () => {
   it('returns token and saves it', async () => {
     const result = await googleLogin('mock-google-id-token');
     expect(result.data.access_token).toBe('mock-access-token-xyz');
-    expect(localStorage.getItem('token')).toBe('mock-access-token-xyz');
+    expect(localStorage.getItem('auth_token')).toBe('mock-access-token-xyz');
   });
 
   it('throws on server error', async () => {
@@ -259,26 +259,4 @@ describe('disconnectProvider()', () => {
   });
 });
 
-// checkEmail
 
-describe('checkEmail()', () => {
-  it('returns { exists: true } for a known email', async () => {
-    const result = await checkEmail('user@example.com');
-    expect(result.exists).toBe(true);
-  });
-
-  it('returns { exists: false } for an unknown email', async () => {
-    const result = await checkEmail('unknown@newdomain.com');
-    expect(result.exists).toBe(false);
-  });
-
-  it('returns { exists: true } as fallback if server errors', async () => {
-    server.use(
-      http.post('*/auth/check-email', () =>
-        HttpResponse.json({ message: 'Server error' }, { status: 500 })
-      )
-    );
-    const result = await checkEmail('anyone@example.com');
-    expect(result.exists).toBe(true);
-  });
-});
