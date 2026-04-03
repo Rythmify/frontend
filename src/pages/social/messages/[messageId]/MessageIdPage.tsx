@@ -123,10 +123,10 @@ export default function MessageIdPage() {
   return (
     <div
       data-test="message-id-page"
-      className="container flex px-4 py-6 md:px-8 lg:px-20"
-    >
+className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overflow-hidden "
+>
       {/* ── Left: conversation list ── */}
-      <div className="flex flex-col gap-4 mr-30">
+      <div className="flex flex-col w-95 flex-shrink-0 overflow-y-auto ">
         <MessagingHeader />
         <Chats
           conversations={conversations}
@@ -138,13 +138,13 @@ export default function MessageIdPage() {
       </div>
 
       {/* ── Right: active conversation ── */}
-      <div className="flex flex-col flex-1 gap-4 ml-6">
+      <div className="flex flex-col flex-1  ml-6 min-w-0 ">
         {activeConv ? (
           <>
             <ConversationHeader
               conversationId={activeConv.id}
               reciepiantId={activeConv.participant.id}
-              recipientName={activeConv.participant.display_name}
+              recipientName={activeConv.participant.username}
               lastMessageId={lastReceivedMessage?.id ?? null}
               onReadStateChange={handleReadStateChange}
               onDeleted={handleConversationDeleted}
@@ -154,9 +154,9 @@ export default function MessageIdPage() {
               existingMessages={activeMessages}
               loadingMessages={loadingMsgs}
               onMessageSent={handleMessageSent}
-              currentUser={{
-                display_name: "Me",
-                profile_picture: null,
+              ParticipantInfo={{
+                display_name: activeConv.participant.display_name,
+                profile_picture: activeConv.participant.profile_picture,
               }}
             />
           </>
