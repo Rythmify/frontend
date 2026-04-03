@@ -130,23 +130,23 @@ function Checkbox({ label }: { label: string }) {
     <label className="flex items-center gap-3 cursor-pointer">
       <div
         onClick={() => setChecked(!checked)}
-        className={`w-4 h-4 border rounded-[var(--radius-xs)] flex items-center justify-center transition-colors duration-150 ${
+        className={`w-5 h-5 border rounded-[var(--radius-xs)] flex items-center justify-center transition-colors duration-150 ${
           checked
-            ? "bg-[var(--color-accent)] border-[var(--color-accent)]"
-            : "bg-[var(--color-input-bg)] border-[var(--color-border)]"
+            ? "bg-[var(--color-input-bg)] border-[var(--color-border)]"
+            : "bg-transparent border-[var(--color-border)]"
         }`}
       >
         {checked && (
           <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M2 5l2.5 2.5L8 3"
-              stroke="white"
+              d="M2 6l3 3 5-5"
+              stroke="var(--color-text-hover)"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -173,7 +173,7 @@ export default function ContentPage() {
             <input
               className={inputClass}
               readOnly
-              defaultValue="https://feeds.rythmify.com/users/rythmify:users:483320034/sounds.rss"
+              defaultValue="https://feeds.soundcloud.com/users/soundcloud:users:483320034/sounds.rss"
             />
           </div>
           <div className="w-64">
@@ -244,8 +244,8 @@ export default function ContentPage() {
         </div>
       </div>
 
-      {/* ─ Cancel + Save ── */}
-      <div className=" left-0 right-0 flex items-center justify-end gap-4 px-8 py-4 bg-[var(--color-bg)] ">
+      {/* ── Sticky Footer: Cancel + Save ── */}
+      <div className="fixed bottom-0 left-0 right-0 flex items-center justify-end gap-4 px-8 py-4 bg-[var(--color-bg)] border-t border-[var(--color-border)]">
         <button className="text-sm text-[var(--color-text-hover)] hover:opacity-70 transition-opacity duration-150">
           Cancel
         </button>

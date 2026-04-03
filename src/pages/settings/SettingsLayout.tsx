@@ -50,7 +50,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
                     relative px-4 pb-3 text-xl font-bold transition-colors duration-150
                     ${
                       active
-                        ? " after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-text-hover)] after:content-['']"
+                        ? " after:absolute after:bottom-0 text-[var(--color-text-hover)] after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-text-hover)] after:content-['']"
                         : "text-[var(--color-text)] hover:text-[var(--color-text-hover)]"
                     }
                   `}

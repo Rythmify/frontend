@@ -310,10 +310,10 @@ function BasicInformation() {
 
 function ConnectedApplications() {
   const apps = [
-    "SoundCloud.com",
-    "SoundCloud iOS",
-    "SoundCloud Checkout",
-    "m.soundcloud.com",
+    "Rythmify.com",
+    "Rythmify iOS",
+    "Rythmify Checkout",
+    "m.rythmify.com",
   ];
   return (
     <div>
