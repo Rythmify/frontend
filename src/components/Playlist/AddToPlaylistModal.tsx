@@ -30,7 +30,6 @@ const AddToPlaylistModal = ({
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [allTracks, setAllTracks] = useState<Track[]>([]);
 
   // Create tab state
   const [playlistTitle, setPlaylistTitle] = useState(
@@ -50,19 +49,22 @@ const AddToPlaylistModal = ({
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    getTracks()
-      .then((data) => setAllTracks(data))
-      .catch(console.error);
-  }, []);
-
   const handleAdd = async (playlistId: string) => {
     setAdding(playlistId);
     try {
-      await addTrackToPlaylist(playlistId, String(trackId));
+      console.log("Calling addTrackToPlaylist", playlistId, trackId);
+      const res = await addTrackToPlaylist(playlistId, String(trackId));
+      console.log("Response:", res);
       setSuccess(playlistId);
+      setPlaylists((prev) =>
+        prev.map((pl) =>
+          pl.playlist_id === playlistId
+            ? { ...pl, track_count: res.data.track_count }
+            : pl,
+        ),
+      );
     } catch (err) {
-      console.error(err);
+      console.error("handleAdd failed:", err);
     } finally {
       setAdding(null);
     }
@@ -149,6 +151,7 @@ const AddToPlaylistModal = ({
             <h2 className="text-[22px] font-bold text-text-upload px-2 py-2">
               Create a playlist
             </h2>
+            <div className="h-[2px] bg-bg-inverted mx-2" />
           </div>
         )}
 
@@ -165,19 +168,34 @@ const AddToPlaylistModal = ({
             {playlists.map((playlist) => (
               <div key={playlist.playlist_id} className="p-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-text-upload font-bold text-sm">
-                      {playlist.name}
-                    </h3>
-                    <p className="text-text-upload text-xs">
-                      {playlist.track_count}
-                    </p>
+                  <div className="flex items-center gap-3 flex-1">
+                    <img
+                      src={
+                        (playlist as Playlist & { cover_image?: string })
+                          .cover_image ||
+                        "https://picsum.photos/seed/default/80/80"
+                      }
+                      alt={`${playlist.name} cover`}
+                      className="w-12 h-12 rounded-sm object-cover"
+                    />
+                    <div>
+                      <h3 className="text-text-upload font-bold text-sm">
+                        {playlist.name}
+                      </h3>
+                      <p className="text-text-upload text-xs">
+                        {playlist.track_count}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleAdd(playlist.playlist_id)}
-                      disabled={adding === playlist.playlist_id}
-                      className=" bg-input-bg text-text-upload text-sm font-bold px-3 py-1.5 rounded-sm hover:text-[#838383] transition-colors disabled:opacity-50 cursor-pointer"
+                      disabled={
+                        adding === playlist.playlist_id ||
+                        success === playlist.playlist_id
+                      }
+                      className="bg-input-bg text-text-upload text-sm font-bold px-3 py-1.5 rounded-sm 
+    hover:text-[#838383] transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       Add to playlist
                     </button>
