@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import UploadCoverImage from "../../../../components/Upload/UploadCoverImage";
+import UploadCoverImage from "../UploadCoverImage";
 
 globalThis.URL.createObjectURL = vi.fn(() => "blob:mock-url");
 
@@ -48,30 +48,21 @@ describe("UploadCoverImage", () => {
   it("shows image preview after upload", async () => {
     render(<UploadCoverImage onImageSelect={mockSelect} />);
     const input = screen.getByTestId("cover-image-input") as HTMLInputElement;
-    await userEvent.upload(
-      input,
-      new File(["img"], "cover.jpg", { type: "image/jpeg" }),
-    );
+    await userEvent.upload(input, new File(["img"], "cover.jpg", { type: "image/jpeg" }));
     expect(screen.getByAltText(/artwork preview/i)).toBeInTheDocument();
   });
 
   it("shows replace image text after upload", async () => {
     render(<UploadCoverImage onImageSelect={mockSelect} />);
     const input = screen.getByTestId("cover-image-input") as HTMLInputElement;
-    await userEvent.upload(
-      input,
-      new File(["img"], "cover.jpg", { type: "image/jpeg" }),
-    );
+    await userEvent.upload(input, new File(["img"], "cover.jpg", { type: "image/jpeg" }));
     expect(screen.getByText(/replace image/i)).toBeInTheDocument();
   });
 
   it("hides add new artwork text after upload", async () => {
     render(<UploadCoverImage onImageSelect={mockSelect} />);
     const input = screen.getByTestId("cover-image-input") as HTMLInputElement;
-    await userEvent.upload(
-      input,
-      new File(["img"], "cover.jpg", { type: "image/jpeg" }),
-    );
+    await userEvent.upload(input, new File(["img"], "cover.jpg", { type: "image/jpeg" }));
     expect(screen.queryByText(/add new artwork/i)).not.toBeInTheDocument();
   });
 

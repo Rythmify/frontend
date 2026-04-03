@@ -4,17 +4,16 @@ import type { Message } from '../../services/api/messaging/conversationApi';
 import { MessageBox } from './MessageBox';
 import type { ResolvedEmbed } from './MessageBox';
 import MessageCell from './messagecell';
-import { useAuthStore } from '@/stores/auth.store' 
+
 interface SendMessageFormProps {
   conversationId: string;
   existingMessages: Message[];
   loadingMessages: boolean;
   onMessageSent: (msg: Message) => void;
-  ParticipantInfo: {
+  currentUser: {
     display_name: string;
     profile_picture?: string | null;
   };
-  
 }
 
 export default function SendMessageForm({
@@ -22,7 +21,7 @@ export default function SendMessageForm({
   existingMessages,
   loadingMessages,
   onMessageSent,
-  ParticipantInfo,
+  currentUser,
 }: SendMessageFormProps) {
   const [value, setValue]         = useState('');
   const [embed, setEmbed]         = useState<ResolvedEmbed | null>(null);
@@ -46,32 +45,15 @@ export default function SendMessageForm({
       setValue('');
       setEmbed(null);
       setBoxKey(k => k + 1);
-    }  catch (err: unknown) {
-    const axiosError = err as { response?: { status: number } }
-    if (axiosError.response?.status === 403) {
-      setError('Unable to send message to this user.')
-    } else {
-      setError('Failed to send message. Please try again.')
-    }
+    } catch {
+      setError('Failed to send message. Please try again.');
     } finally {
       setIsSending(false);
     }
   };
 
-const user = useAuthStore(state => state.user)
-const getSenderInfo = (senderId: string) => {
-  if (senderId === user?.id) {
-    return {
-      display_name: 'Me',
-      profile_picture: user?.avatar??null
-    };
-  }
-  return ParticipantInfo;
-};
-
   return (
     <div className="flex flex-col gap-4">
-
       {loadingMessages ? (
         <div className="text-sm text-[#666] text-center py-4">Loading messages…</div>
       ) : (
@@ -79,8 +61,8 @@ const getSenderInfo = (senderId: string) => {
           <MessageCell
             key={msg.id}
             message={msg}
-            displayName={getSenderInfo(msg.sender_id).display_name}
-            profilePicture={getSenderInfo(msg.sender_id).profile_picture}
+            displayName={currentUser.display_name}
+            profilePicture={currentUser.profile_picture}
           />
         ))
       )}
@@ -101,7 +83,7 @@ const getSenderInfo = (senderId: string) => {
           <button
             onClick={handleSend}
             disabled={isSending}
-            className="px-5 py-2 text-sm font-semibold text-black transition-colors bg-white rounded-lg hover:text-[color:#838383] disabled:opacity-50"
+            className="px-5 py-2 text-sm font-semibold text-black transition-colors bg-white rounded-lg hover:bg-gray-100 disabled:opacity-50"
           >
             {isSending ? 'Sending…' : 'Send'}
           </button>

@@ -64,7 +64,7 @@ function saveToken(token: string) {
 }
 
 function clearToken() {
-  localStorage.removeItem('auth_token');
+  localStorage.removeItem('token');
 }
 
 // Auth API functions 

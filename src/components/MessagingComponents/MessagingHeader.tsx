@@ -6,7 +6,6 @@ function MessagingHeader() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div className="container">
     <div className="flex items-center justify-between pt-5 mb-10 w-0.5 gap-49">
       <h1 className="text-2xl font-bold text-white weight-500">Messages</h1>
 
@@ -20,7 +19,6 @@ function MessagingHeader() {
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <ModalNewMessageBody onClose={() => setIsOpen(false)} />
       </Modal>
-    </div>
     </div>
   )
 }

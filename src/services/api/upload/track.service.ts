@@ -174,20 +174,3 @@ export async function setTrackVisibility(trackId: string, is_public: boolean) {
 
   return res.data;
 }
-
-// ─── Genre API ────────────────────────────────────────────────────────────────
- 
-/** GET /genres — fetch all available genres. Falls back to empty array on failure. */
-export async function getGenres(): Promise<string[]> {
-  try {
-    const res = await axiosInstance.get<{
-      data: { genres: string[] };
-    }>("/genres");
- 
-    const genres = res.data?.data?.genres ?? [];
-    return genres.length > 0 ? genres : [];
-  } catch {
-    // Backend unreachable or endpoint not implemented yet — caller handles fallback
-    return [];
-  }
-}

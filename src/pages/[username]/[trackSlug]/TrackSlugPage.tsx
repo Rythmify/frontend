@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import TrackHero from "./components/TrackHero";
 import TrackActions from "./components/TrackActions";
 import TrackList from "./components/TrackList";
@@ -15,7 +15,6 @@ export default function TrackSlugPage() {
     username: string;
     trackSlug: string;
   }>();
-  const navigate = useNavigate();
 
   const [track, setTrack] = useState<Track | null>(null);
   const [relatedTracks, setRelatedTracks] = useState<Track[]>([]);
@@ -77,7 +76,6 @@ export default function TrackSlugPage() {
       usePlayerStore.getState().togglePlay();
     } else {
       setPlayerTrack(t, [track!, ...relatedTracks].filter(Boolean) as Track[]);
-      navigate(`/${t.artistUsername}/${t.trackSlug}`);
     }
   };
 

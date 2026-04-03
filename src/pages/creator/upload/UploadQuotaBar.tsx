@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
-import SmallCloudIcon from "../../pages/creator/upload/SmallCloudIcon";
-import {
-  getUploadQuota,
-  type QuotaData,
-} from "@/services/api/upload/quota.service";
-import { useNavigate } from "react-router-dom";
+import SmallCloudIcon from "./SmallCloudIcon";
+import { getUploadQuota, type QuotaData } from "@/services/api/upload/quota.service";
 
 const UploadQuotaBar = () => {
   const [quota, setQuota] = useState<QuotaData | null>(null);
@@ -23,7 +19,6 @@ const UploadQuotaBar = () => {
       ? Math.min((quota.usedTracks / quota.trackLimit!) * 100, 100)
       : 100;
   const displayPercentage = percentage.toFixed(2);
-  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -40,9 +35,7 @@ const UploadQuotaBar = () => {
 
         {/* Text */}
         <span className="text-sm font-bold text-text-upload whitespace-nowrap">
-          {isUnlimited
-            ? "Unlimited uploads"
-            : `${displayPercentage}% of uploads used`}
+          {isUnlimited ? "Unlimited uploads" : `${displayPercentage}% of uploads used`}
         </span>
 
         {/*Progress bar*/}
@@ -63,11 +56,10 @@ const UploadQuotaBar = () => {
 
       {/*Button*/}
       <button
-        data-test="get-unlimited-uploads-button-quota-bar"
+      data-test="get-unlimited-uploads-button"
         type="button"
-        onClick={() => navigate("/creator/checkout")}
         className="shrink-0 flex items-center justify-center bg-bg py-2.5 px-6
-          outline-[#383838] outline-[0.2px] light:hover:bg-[#e8e8e8] hover:bg-[#353535] text-text-upload text-sm font-bold
+          outline-[#383838] outline-[0.2px] hover:bg-[#e8e8e8] dark:hover:bg-[#353535] text-text-upload text-sm font-bold
           outline-offset-[-1.5px] rounded-full transition-all whitespace-nowrap cursor-pointer"
       >
         Get unlimited uploads

@@ -1,20 +1,10 @@
-import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
 import TrackCard from "@/components/UI/Card";
 import { mockRecentlyPlayedItems } from "@/services/mocks/discover";
-import { getRecentlyPlayed } from "@/services/api/discover.service";
-import type { RecentlyPlayedEntry } from "@/services/api/discover.service";
 
 // ─── Component ────────────────────────────────────────────
 const RecentlyPlayed = () => {
-  const [apiItems, setApiItems] = useState<RecentlyPlayedEntry[] | null>(null);
-
-  useEffect(() => {
-    getRecentlyPlayed().then(setApiItems).catch(() => {});
-    // Silent fail — mock is the fallback until backend returns full track data
-  }, []);
-
-  const items = mockRecentlyPlayedItems; // TODO: replace with apiItems once TrackSummary includes artistName + coverUrl
+  const items = mockRecentlyPlayedItems;
 
   return (
     <HorizontalCarousel title="Recently played" data-section="recently-played">

@@ -7,11 +7,7 @@ import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { mockLikedTracks } from "@/components/Profile/MockData/mock";
-import { mockLikedTracks } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
-import { TrackCard } from "../../components/track";
-import { mockTracks } from "../../services/mocks/tracks";
-import type { Track } from "../../types/track";
 import {
   getMyProfile,
   getUserById,
@@ -35,16 +31,10 @@ export default function UsernamePage() {
   const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
     null,
   );
-  const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
-    null,
-  );
   const [followers, setFollowers] = useState<UserSummary[]>([]);
   const [following, setFollowing] = useState<UserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
-  const [profileTracks, setProfileTracks] = useState<Track[]>([]);
-  const followingCount = currentUser?.following_ids?.length ?? 0;
-  const initiallyFollowing = useRef<boolean | null>(null);
   const followingCount = currentUser?.following_ids?.length ?? 0;
   const initiallyFollowing = useRef<boolean | null>(null);
 
@@ -53,29 +43,7 @@ export default function UsernamePage() {
   const isOwner = !username || username === currentUser.username;
 
   useEffect(() => {
-    // Load tracks for this profile (owner → all mock tracks, others → first 3)
-    // TODO: replace with real API call — e.g. getTracks({ username })
-    setProfileTracks(isOwner ? mockTracks : mockTracks.slice(0, 3));
-  }, [isOwner]);
-
-  useEffect(() => {
     if (isOwner) {
-      // GET /users/me
-      getMyProfile().then((profile) => {
-        setProfileData(profile);
-        setStats({
-          followers: profile.followers_count,
-          following: profile.following_count,
-          tracks: mockTracks.length, // TODO: real count from API
-        });
-        setUser({
-          ...currentUser,
-          bio: profile.bio || "",
-          location: [(profile as OwnUser).city, (profile as OwnUser).country]
-            .filter(Boolean)
-            .join(", ") || currentUser.location,
-        });
-      }).catch(console.error);
       getMyProfile()
         .then((profile) => {
           setProfileData(profile);
@@ -101,10 +69,6 @@ export default function UsernamePage() {
             setFollowers(res.items);
             setStats((s) => ({ ...s, followers: res.meta.total }));
           })
-          .then((res) => {
-            setFollowers(res.items);
-            setStats((s) => ({ ...s, followers: res.meta.total }));
-          })
           .catch(console.error);
         getFollowing(currentUser.id, { limit: 100 })
           .then((res) => {
@@ -114,16 +78,6 @@ export default function UsernamePage() {
           .catch(console.error);
       }
     } else {
-      getUserById(username!)
-        .then((profile) => {
-          setProfileData(profile);
-          setStats({
-            followers: profile.followers_count,
-            following: profile.following_count,
-            tracks: 0,
-          });
-        })
-        .catch(console.error);
       getUserById(username!)
         .then((profile) => {
           setProfileData(profile);
@@ -145,7 +99,6 @@ export default function UsernamePage() {
         })
         .catch(console.error);
 
-
       getFollowing(profileData.id, { limit: 100 })
         .then((res) => {
           setFollowing(res.items);
@@ -158,21 +111,9 @@ export default function UsernamePage() {
           setIsFollowing(status.is_following);
           initiallyFollowing.current = status.is_following;
         })
-        .then((status) => {
-          setIsFollowing(status.is_following);
-          initiallyFollowing.current = status.is_following;
-        })
         .catch(console.error);
     }
   }, [profileData?.id, isOwner]);
-
-  useEffect(() => {
-    if (!isOwner && profileData) {
-      const nowFollowing =
-        currentUser?.following_ids?.includes(profileData.id) ?? false;
-      setIsFollowing(nowFollowing);
-    }
-  }, [currentUser?.following_ids, profileData?.id, isOwner]);
 
   useEffect(() => {
     if (!isOwner && profileData) {
@@ -196,13 +137,6 @@ export default function UsernamePage() {
   const storageKey = `likedTracks_${isOwner ? currentUser.username : username}`;
 
   const followerDelta =
-    initiallyFollowing.current === null
-      ? 0
-      : isFollowing === initiallyFollowing.current
-        ? 0
-        : isFollowing
-          ? 1
-          : -1;
     initiallyFollowing.current === null
       ? 0
       : isFollowing === initiallyFollowing.current
@@ -243,16 +177,12 @@ export default function UsernamePage() {
   const displayedStats = isOwner
     ? { ...stats, following: followingCount }
     : { ...stats, followers: stats.followers + followerDelta };
-    ? { ...stats, following: followingCount }
-    : { ...stats, followers: stats.followers + followerDelta };
 
   const user = isOwner
     ? currentUser
     : {
         ...currentUser,
         username: profileData?.username || username || currentUser.username,
-        displayName:
-          profileData?.display_name || username || currentUser.username,
         displayName:
           profileData?.display_name || username || currentUser.username,
         bio: profileData?.bio || "",
@@ -295,57 +225,24 @@ export default function UsernamePage() {
       />
 
       <div className="flex gap-6 py-6 items-start">
-        <div className="flex-1 min-w-0">
-          {profileTracks.length > 0 ? (
-            <>
-              <h2
-                style={{
-                  color: "#fff",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  marginBottom: 12,
-                }}
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
+          <p
+            data-test="empty-state-message"
+            className="text-white font-bold text-17px"
+          >
+            Seems a little quiet over here
+          </p>
+          {isOwner &&
+            selectedTab !== "Playlists" &&
+            selectedTab !== "Reposts" && (
+              <button
+                data-test="upload-now-button"
+                onClick={() => navigate("/upload")}
+                className="cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
               >
-                Recent
-              </h2>
-              {profileTracks.map((t) => (
-                <TrackCard
-                  key={t.id}
-                  track={t}
-                  onCopyLink={() => {
-                    navigator.clipboard.writeText(
-                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`
-                    );
-                  }}
-                  onEdit={() => navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)}
-                  onReplaceFile={() => console.log("[TrackCard] replace file:", t.id)}
-                  onDelete={() => console.log("[TrackCard] delete:", t.id)}
-                  onDistribute={() => console.log("[TrackCard] distribute:", t.id)}
-                  onAddToPlaylist={() => {}}
-                />
-              ))}
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-4 py-16">
-              <p
-                data-test="empty-state-message"
-                className="text-white font-bold text-17px"
-              >
-                Seems a little quiet over here
-              </p>
-              {isOwner &&
-                selectedTab !== "Playlists" &&
-                selectedTab !== "Reposts" && (
-                  <button
-                    data-test="upload-now-button"
-                    onClick={() => navigate("/upload")}
-                    className="cursor-pointer px-3.5 py-1.5 text-md bg-white text-black hover:text-[#737272] font-bold rounded"
-                  >
-                    Upload now
-                  </button>
-                )}
-            </div>
-          )}
+                Upload now
+              </button>
+            )}
         </div>
         <div>
           <ProfileSidebar

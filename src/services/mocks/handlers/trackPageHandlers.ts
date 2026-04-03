@@ -2,8 +2,6 @@ import { http, HttpResponse } from "msw";
 import { mockUsers } from "../users";
 import type { Track } from "../../../types/track";
 
-
-
 const BASE = "*/api/v1";
 
 const mockTracksJson: Track[] = [
@@ -26,7 +24,6 @@ const mockTracksJson: Track[] = [
       55, 65, 75, 30, 80, 50, 40, 90, 60, 35, 70, 55, 45, 80,
     ],
     audioUrl: "/audio/Track 1.mp3",
-    trackSlug: "lege-cy-ghaliaa-msh-awl-mara",
     isPrivate: false,
     madeFor: "Shahd Yehya",
   },
@@ -49,7 +46,6 @@ const mockTracksJson: Track[] = [
       60, 70, 80, 35, 85, 55, 45, 95, 65, 40, 75, 60, 50, 85,
     ],
     audioUrl: "/audio/Track 2.mp3",
-    trackSlug: "seneen",
     isPrivate: false,
     madeFor: undefined,
   },
@@ -72,7 +68,6 @@ const mockTracksJson: Track[] = [
       50, 60, 70, 25, 75, 45, 35, 85, 55, 30, 65, 50, 40, 75,
     ],
     audioUrl: "/audio/Track 3.mp3",
-    trackSlug: "shababek",
     isPrivate: false,
     madeFor: undefined,
   },
@@ -95,7 +90,6 @@ const mockTracksJson: Track[] = [
       55, 65, 75, 30, 80, 50, 40, 90, 60, 35, 70, 55, 45, 80,
     ],
     audioUrl: "/audio/Track 4.mp3",
-    trackSlug: "mafish",
     isPrivate: false,
     madeFor: undefined,
   },
@@ -118,7 +112,6 @@ const mockTracksJson: Track[] = [
       50, 60, 70, 25, 75, 45, 35, 85, 55, 30, 65, 50, 40, 75,
     ],
     audioUrl: "/audio/Track 5.mp3",
-    trackSlug: "elwa2t-eldaye3",
     isPrivate: false,
     madeFor: undefined,
   },
@@ -136,16 +129,9 @@ export const trackPageHandlers = [
   }),
 
   http.get(`${BASE}/:username/:slug`, ({ params }) => {
-    const slug = (params.slug as string).toLowerCase();
-    
-    // Helper to roughly slugify a title for matching
-    const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    
-    // Find a track where the slugified title includes the URL slug
     const track =
-      mockTracksJson.find((t) => slugify(t.title).includes(slug)) ??
-      mockTracksJson[slug.length % mockTracksJson.length]; // Deterministic fallback
-      
+      mockTracksJson.find((t) => t.artistUsername === params.username) ??
+      mockTracksJson[0];
     return HttpResponse.json(track);
   }),
 

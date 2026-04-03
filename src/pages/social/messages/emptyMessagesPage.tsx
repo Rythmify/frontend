@@ -12,7 +12,7 @@ const MessagesPage = () => {
       <MessagingHeader />
 
       {/* Empty state */}
-      <div className="container px-4  flex flex-col items-center justify-center flex-grow w-full text-center pt-43">
+      <div className="container flex flex-col items-center justify-center flex-grow w-full text-center pt-43">
         <p className="font-semibold text-white text-s">
           You have no messages
         </p>

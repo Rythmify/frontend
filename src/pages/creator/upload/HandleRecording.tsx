@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import toWav from "../../../services/api/upload/audioTranscoder";
 
 interface HandleRecordingProps {
   isRecording: boolean;
@@ -80,7 +79,6 @@ const HandleRecording = ({
           deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
         },
       });
-
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
@@ -89,13 +87,14 @@ const HandleRecording = ({
       };
 
       recorder.onstop = () => {
-        const mimeType = recorder.mimeType || "audio/ogg; codecs=opus"; //MIME type of browser's recording format
-        const segmentBlob = new Blob(chunks, { type: mimeType });
+        const segmentBlob = new Blob(chunks, {
+          type: "audio/ogg; codecs=opus",
+        });
         setAudioSegments((prev) => [...prev, segmentBlob]);
       };
 
       mediaRecorderRef.current = recorder;
-      recorder.start(250);
+      recorder.start();
     } catch (err) {
       console.error("Microphone access denied", err);
     }
@@ -161,55 +160,27 @@ const HandleRecording = ({
 
   //stop icon function to stop the recording and save it without deleting it
   const handleStop = () => {
-    if (!isRecording && !isPaused) return;
-
-    const segmentDuration = seconds - currentSegmentStart;
-    const finalize = async (segments: Blob[]) => {
-      // Merge all recorded segments into one blob
-      const rawBlob = new Blob(segments, {
-        type: segments[0]?.type ?? "audio/ogg",
-      });
-
-      // Transcode to WAV so the backend can process it
-      try {
-        const wavBlob = await toWav(rawBlob);
-        onFinish(wavBlob);
-      } catch (err) {
-        console.error(
-          "WAV transcoding failed, sending raw blob as fallback:",
-          err,
-        );
-        onFinish(rawBlob);
+    if (isRecording || isPaused) {
+      // If we stop while recording, stop the recorder first to trigger onstop
+      if (isRecording && !isPaused) {
+        mediaRecorderRef.current?.stop();
+        const segmentDuration = seconds - currentSegmentStart;
+        if (segmentDuration > 0) {
+          setHistory([...history, segmentDuration]);
+        }
       }
-    };
 
-    if (isRecording && !isPaused) {
-      const recorder = mediaRecorderRef.current;
-      if (recorder) {
-        const originalOnStop = recorder.onstop;
-        recorder.onstop = (e) => {
-          originalOnStop?.call(recorder, e);
-          setTimeout(() => {
-            setAudioSegments((prev) => {
-              finalize(prev);
-              return prev;
-            });
-            setIsRecording(false);
-            setIsPaused(false);
-            setIsRecordingFinished(true);
-          }, 0);
-        };
-        recorder.stop();
-        if (segmentDuration > 0) setHistory([...history, segmentDuration]);
-      }
-    } else if (isPaused) {
-      setAudioSegments((prev) => {
-        finalize(prev);
-        return prev;
-      });
-      setIsRecording(false);
-      setIsPaused(false);
-      setIsRecordingFinished(true);
+      // timeout to ensure the last segment is pushed to audioSegments
+      setTimeout(() => {
+        setAudioSegments((prev) => {
+          const finalBlob = new Blob(prev, { type: "audio/wav" });
+          onFinish(finalBlob);
+          return prev;
+        });
+        setIsRecording(false);
+        setIsPaused(false);
+        setIsRecordingFinished(true);
+      }, 150);
     }
   };
 

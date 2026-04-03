@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Modal } from "@/components/UI/Modal";
-import QuitUploadModal from "@/components/Upload/QuitUploadModal";
+import QuitUploadModal from "@/pages/creator/upload/QuitUploadModal";
 
 const UploadLayout = () => {
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ const UploadLayout = () => {
                 </button>
               </div>
             )}
-            {isDetailsMode && !uploadSuccess && uploadProgress > 0 && (
+            { isDetailsMode && !uploadSuccess && uploadProgress > 0&& (
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-32 h-1.5 flex items-center gap-[2px]">
                   <div
@@ -73,9 +73,7 @@ const UploadLayout = () => {
                   <div className="h-full flex-1 border-t-2 border-dashed border-[#555]" />
                 </div>
                 <span className="text-xs text-text-upload whitespace-nowrap">
-                  {uploadProgress < 90
-                    ? `Uploading ${uploadProgress}%`
-                    : "Processing..."}
+                  {uploadProgress < 90 ? `Uploading ${uploadProgress}%` : "Processing..."}
                 </span>
               </div>
             )}

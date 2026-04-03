@@ -1,17 +1,12 @@
 import HorizontalCarousel from "./HorizontalCarousel";
 import UserCard from "@/components/UI/UserCard";
 import { mockSuggestedUsers } from "@/services/mocks/discover";
-import type { User } from "@/types/user";
 
-interface NewCrewForYouProps {
-  users?: User[];
-}
 // ─── Component ────────────────────────────────────────────
-const NewCrewForYou = ({ users }: NewCrewForYouProps) => {
-  const displayUsers = users ?? mockSuggestedUsers;
+const NewCrewForYou = () => {
   return (
     <HorizontalCarousel title="New crew, suggested for you">
-      {displayUsers.map((user) => (
+      {mockSuggestedUsers.map((user) => (
         <UserCard key={user.id} user={user} />
       ))}
     </HorizontalCarousel>

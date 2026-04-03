@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import HandleRecording from "./HandleRecording";
-import MicSelector from "../../../components/Upload/MicSelector";
+import MicSelector from "./MicSelector";
 
 const RecordSection = ({ onFinish }: { onFinish: (data: Blob) => void }) => {
   const [isExpanded, setIsExpanded] = useState(false);
