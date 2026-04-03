@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import CloudUploadIcon from "./CloudUploadIcon";
+import CloudUploadIcon from "../../pages/creator/upload/CloudUploadIcon";
 
 const DropZone = ({ onUpload }: { onUpload: (file: File) => void }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);

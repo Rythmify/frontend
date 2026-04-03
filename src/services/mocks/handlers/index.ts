@@ -1,14 +1,15 @@
-import { messageHandlers } from './messageHandlers';
-import { authHandlers } from './authHandlers';
-import { trackHandlers } from "./trackHandlers";        // upload API handlers 
-import { trackPageHandlers as trackPageHandlers } from "./trackPageHandlers"; // track page handlers 
-import { discoverHandlers } from './discoverHandlers';
-
+import { messageHandlers } from "./messageHandlers";
+import { authHandlers } from "./authHandlers";
+import { trackHandlers } from "./trackHandlers"; // upload API handlers
+import { playlistHandlers } from "./playlistHandlers"; // playlist API handlers
+import { trackPageHandlers as trackPageHandlers } from "./trackPageHandlers"; // track page handlers
+import { discoverHandlers } from "./discoverHandlers";
 
 export const handlers = [
+  ...trackHandlers, // upload/artist studio handlers
   ...authHandlers,
+  ...playlistHandlers,
   ...messageHandlers,
-  ...trackHandlers,      // upload/artist studio handlers
-  ...trackPageHandlers,  // track detail page + users handlers
+  ...trackPageHandlers, // track detail page + users handlers
   ...discoverHandlers,
 ];
