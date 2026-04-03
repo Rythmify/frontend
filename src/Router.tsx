@@ -38,7 +38,9 @@ const HomePage = lazy(() => import("@/pages/home/HomePage"));
 const SigninPage = lazy(() => import("@/pages/signin/SigninPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/signin/ResetPassword"));
 const VerifyEmailPage = lazy(() => import("@/pages/signin/VerifyEmailPage"));
-const CompleteProfilePage = lazy(() => import("@/pages/signin/CompleteProfilePage"));
+const CompleteProfilePage = lazy(
+  () => import("@/pages/signin/CompleteProfilePage"),
+);
 
 // Download
 const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
