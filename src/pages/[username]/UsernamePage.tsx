@@ -6,9 +6,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  mockLikedTracks,
-} from "@/components/Profile/MockData/mock";
+import { mockLikedTracks } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
 import { mockTracks } from "../../services/mocks/tracks";
@@ -33,12 +31,16 @@ export default function UsernamePage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(null);
+  const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
+    null,
+  );
   const [followers, setFollowers] = useState<UserSummary[]>([]);
   const [following, setFollowing] = useState<UserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
+  const followingCount = currentUser?.following_ids?.length ?? 0;
+  const initiallyFollowing = useRef<boolean | null>(null);
 
   if (!currentUser) return null;
 
@@ -71,7 +73,10 @@ export default function UsernamePage() {
 
       if (currentUser.id) {
         getFollowers(currentUser.id, { limit: 100 })
-          .then((res) => setFollowers(res.items))
+          .then((res) => {
+            setFollowers(res.items);
+            setStats((s) => ({ ...s, followers: res.meta.total }));
+          })
           .catch(console.error);
         getFollowing(currentUser.id, { limit: 100 })
           .then((res) => {
@@ -81,27 +86,27 @@ export default function UsernamePage() {
           .catch(console.error);
       }
     } else {
-      // GET /users/{user_id} — backend accepts username in path
-      getUserById(username!).then((profile) => {
-        setProfileData(profile);
-        setStats({
-          followers: profile.followers_count,
-          following: profile.following_count,
-          tracks: 0,
-        });
-      }).catch(console.error);
+      getUserById(username!)
+        .then((profile) => {
+          setProfileData(profile);
+          setStats({
+            followers: profile.followers_count,
+            following: profile.following_count,
+            tracks: 0,
+          });
+        })
+        .catch(console.error);
     }
   }, [username, isOwner]);
 
-  // Once we have the visited profile's UUID, fetch their social lists + follow status
   useEffect(() => {
     if (!isOwner && profileData) {
       getFollowers(profileData.id, { limit: 100 })
         .then((res) => {
           setFollowers(res.items);
-          setStats((s) => ({ ...s, followers: res.meta.total }));
         })
         .catch(console.error);
+
       getFollowing(profileData.id, { limit: 100 })
         .then((res) => {
           setFollowing(res.items);
@@ -109,12 +114,22 @@ export default function UsernamePage() {
         })
         .catch(console.error);
 
-      // GET /users/{user_id}/follow-status
       getFollowStatus(profileData.id)
-        .then((status) => setIsFollowing(status.is_following))
+        .then((status) => {
+          setIsFollowing(status.is_following);
+          initiallyFollowing.current = status.is_following;
+        })
         .catch(console.error);
     }
   }, [profileData?.id, isOwner]);
+
+  useEffect(() => {
+    if (!isOwner && profileData) {
+      const nowFollowing =
+        currentUser?.following_ids?.includes(profileData.id) ?? false;
+      setIsFollowing(nowFollowing);
+    }
+  }, [currentUser?.following_ids, profileData?.id, isOwner]);
 
   const getActiveTab = () => {
     const path = location.pathname;
@@ -129,11 +144,14 @@ export default function UsernamePage() {
   const selectedTab = getActiveTab();
   const storageKey = `likedTracks_${isOwner ? currentUser.username : username}`;
 
-  // Track the initial follow state so we can compute a follower delta for the
-  // stats display without waiting for a full refetch
-  const initiallyFollowing = useRef(isFollowing);
   const followerDelta =
-    isFollowing === initiallyFollowing.current ? 0 : isFollowing ? 1 : -1;
+    initiallyFollowing.current === null
+      ? 0
+      : isFollowing === initiallyFollowing.current
+        ? 0
+        : isFollowing
+          ? 1
+          : -1;
 
   const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
     const stored = localStorage.getItem(storageKey);
@@ -165,26 +183,22 @@ export default function UsernamePage() {
   };
 
   const displayedStats = isOwner
-    ? stats
-    : {
-        ...stats,
-        followers: stats.followers + followerDelta,
-      };
+    ? { ...stats, following: followingCount }
+    : { ...stats, followers: stats.followers + followerDelta };
 
-  // Adapt API response back to the camelCase User shape ProfileHeader expects
   const user = isOwner
     ? currentUser
     : {
         ...currentUser,
         username: profileData?.username || username || currentUser.username,
-        displayName: profileData?.display_name || username || currentUser.username,
+        displayName:
+          profileData?.display_name || username || currentUser.username,
         bio: profileData?.bio || "",
         avatar: profileData?.profile_picture || "",
         coverUrl: profileData?.cover_photo || "",
         location: (profileData as PublicUser | null)?.location || "",
       };
 
-  // Adapt UserSummary[] → the shape ProfileSidebar expects
   const followersMapped = followers.map((u) => ({
     username: u.user_id,
     displayName: u.display_name,
@@ -296,7 +310,6 @@ export default function UsernamePage() {
           user={user}
           onClose={() => setShowEdit(false)}
           onSave={(data) => {
-            // PATCH /users/me with the updated fields
             updateMyProfile({
               display_name: data.displayName,
               first_name: data.firstName,
@@ -306,7 +319,6 @@ export default function UsernamePage() {
               country: data.country,
             }).catch(console.error);
 
-            // Optimistically update auth store so UI reflects the change immediately
             setUser({
               ...currentUser,
               displayName: data.displayName,
