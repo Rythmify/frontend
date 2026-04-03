@@ -1,8 +1,10 @@
 import type { Track } from "@/types/track";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Tooltip } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
+import AddToPlaylistModal from "@/components/Playlist/AddToPlaylistModal";
+import { createPortal } from "react-dom";
 
 // ─── Props ────────────────────────────────────────────────
 interface TrackCardProps {
@@ -99,7 +101,11 @@ const tooltipStyles = {
 
 // ─── Component ────────────────────────────────────────────
 const TrackCard = ({ track }: TrackCardProps) => {
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [liked, setLiked] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
 
@@ -174,20 +180,64 @@ const TrackCard = ({ track }: TrackCardProps) => {
             </Tooltip>
 
             {/* More Button */}
-            <Tooltip
-              content="More"
-              showArrow={true}
-              placement="bottom"
-              classNames={tooltipStyles}
+            <div
+              ref={menuRef}
+              className="relative"
+              onClick={(e) => e.stopPropagation()}
             >
-              <button
-                className={styles.actionButton}
-                onClick={(e) => e.stopPropagation()}
-                data-test="button-more"
+              <Tooltip
+                content="More"
+                showArrow
+                placement="bottom"
+                classNames={tooltipStyles}
               >
-                <i className={`fa-solid fa-ellipsis ${styles.actionIcon}`}></i>
-              </button>
-            </Tooltip>
+                <button
+                  className={styles.actionButton}
+                  data-test="button-more"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const rect = (
+                      e.currentTarget as HTMLElement
+                    ).getBoundingClientRect();
+                    setMenuPos({
+                      top: rect.bottom + window.scrollY,
+                      left: rect.right - 176,
+                    });
+                    setShowMoreMenu((prev) => !prev);
+                  }}
+                >
+                  <i
+                    className={`fa-solid fa-ellipsis ${showMoreMenu ? "text-accent" : styles.actionIcon}`}
+                  />
+                </button>
+              </Tooltip>
+
+              {showMoreMenu &&
+                createPortal(
+                  <div
+                    style={{ top: menuPos.top, left: menuPos.left }}
+                    className="fixed z-[9999] bg-bg w-44 border font-bold border-[#353535] rounded shadow-xl overflow-hidden "
+                  >
+                    <button
+                      className="w-full text-left px-3 py-2 text-[14px] text-white hover:text-[#717171] cursor-pointer transition-colors flex items-center gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMoreMenu(false);
+                        setShowPlaylistModal(true);
+                      }}
+                    >
+                      <svg
+                        viewBox="0 0 16 16"
+                        className="w-4 h-4 fill-current shrink-0 hover:text-[#717171] cursor-pointer"
+                      >
+                        <path d="M3.25 7V4.75H1v-1.5h2.25V1h1.5v2.25H7v1.5H4.75V7h-1.5zM9 4.75h6v-1.5H9v1.5zM15 9.875H1v-1.5h14v1.5zM1 15h14v-1.5H1V15z" />
+                      </svg>
+                      Add to playlist
+                    </button>
+                  </div>,
+                  document.body,
+                )}
+            </div>
           </div>
         </div>
       </div>
@@ -197,6 +247,14 @@ const TrackCard = ({ track }: TrackCardProps) => {
       <p className={styles.artist} data-test="trackcard-artist">
         {track.artistName}
       </p>
+
+      {showPlaylistModal && (
+        <AddToPlaylistModal
+          trackTitle={track.title}
+          trackId={track.id}
+          onClose={() => setShowPlaylistModal(false)}
+        />
+      )}
     </div>
   );
 };

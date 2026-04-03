@@ -208,8 +208,11 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
                 className="w-full bg-transparent text-sm border-b border-border py-2 outline-none focus:border-bg-inverted  hover:border-bg-inverted placeholder:text-text-upload/40"
               />
             </div>
-            
+
             {/* Privacy Section */}
+            <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
+              Track Privacy
+            </label>
             <PrivacyToggle value={privacy} onChange={setPrivacy} />
 
             {/* Error Display */}

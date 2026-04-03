@@ -8,9 +8,6 @@ interface PrivacyToggleProps {
 function PrivacyToggle({ value, onChange }: PrivacyToggleProps) {
   return (
     <div>
-      <label className="flex items-center gap-1 text-xs font-bold mb-1 tracking-wide">
-        Track Privacy
-      </label>
       <div className="flex gap-10 text-sm py-2">
         <label className="flex items-center gap-3 cursor-pointer group">
           <input
