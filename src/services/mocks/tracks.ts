@@ -1,9 +1,4 @@
 import type { Track } from "../../types/track";
-import track1 from "../assets/audio/Track 1.mp3";
-import track2 from "../assets/audio/Track 2.mp3";
-import track3 from "../assets/audio/Track 3.mp3";
-import track4 from "../assets/audio/Track 4.mp3";
-import track5 from "../assets/audio/Track 5.mp3";
 
 export const mockTracks: Track[] = [
   {
@@ -24,7 +19,7 @@ export const mockTracks: Track[] = [
       70, 45, 80, 60, 35, 90, 50, 40, 75, 65, 55, 80, 30, 60, 45, 70, 85, 40,
       55, 65, 75, 30, 80, 50, 40, 90, 60, 35, 70, 55, 45, 80,
     ],
-    audioUrl: track1,
+    audioUrl: "",
     isPrivate: false,
     madeFor: "Shahd Yehya",
   },
@@ -46,7 +41,7 @@ export const mockTracks: Track[] = [
       75, 50, 85, 65, 40, 95, 55, 45, 80, 70, 60, 85, 35, 65, 50, 75, 90, 45,
       60, 70, 80, 35, 85, 55, 45, 95, 65, 40, 75, 60, 50, 85,
     ],
-    audioUrl: track2,
+    audioUrl: "",
     isPrivate: false,
     madeFor: undefined,
   },
@@ -68,7 +63,7 @@ export const mockTracks: Track[] = [
       65, 40, 75, 55, 30, 85, 45, 35, 70, 60, 50, 75, 25, 55, 40, 65, 80, 35,
       50, 60, 70, 25, 75, 45, 35, 85, 55, 30, 65, 50, 40, 75,
     ],
-    audioUrl: track3,
+    audioUrl: "",
     isPrivate: false,
     madeFor: undefined,
   },
@@ -90,7 +85,7 @@ export const mockTracks: Track[] = [
       70, 45, 80, 60, 35, 90, 50, 40, 75, 65, 55, 80, 30, 60, 45, 70, 85, 40,
       55, 65, 75, 30, 80, 50, 40, 90, 60, 35, 70, 55, 45, 80,
     ],
-    audioUrl: track4,
+    audioUrl: "",
     isPrivate: false,
     madeFor: undefined,
   },
@@ -112,7 +107,7 @@ export const mockTracks: Track[] = [
       65, 40, 75, 55, 30, 85, 45, 35, 70, 60, 50, 75, 25, 55, 40, 65, 80, 35,
       50, 60, 70, 25, 75, 45, 35, 85, 55, 30, 65, 50, 40, 75,
     ],
-    audioUrl: track5,
+    audioUrl: "",
     isPrivate: false,
     madeFor: undefined,
   },

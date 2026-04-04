@@ -1,5 +1,5 @@
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
-import TrackCard from "@/components/UI/Card";
+import TrackCard from "@/components/UI/card/Card";
 import { mockDiscoverTracks } from "@/services/mocks/discover";
 
 // ─── Component ────────────────────────────────────────────
