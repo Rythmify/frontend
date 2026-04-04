@@ -5,6 +5,7 @@ interface HorizontalCarouselProps {
   title: string;
   children: React.ReactNode;
   "data-section"?: string;
+  titleClassName?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -54,6 +55,7 @@ const HorizontalCarousel = ({
   title,
   children,
   "data-section": dataSection,
+  titleClassName,
 }: HorizontalCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
@@ -123,7 +125,7 @@ const HorizontalCarousel = ({
       data-section={dataSection}
     >
       {/* Title */}
-      <h2 className={styles.title} data-test="carousel-title">
+      <h2 className={titleClassName ?? styles.title} data-test="carousel-title">
         {title}
       </h2>
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 
 export default function SetsPage() {
@@ -89,9 +89,7 @@ export default function SetsPage() {
           ))}
         </HorizontalCarousel>
       </div>
-      <div className="py-2 px-4">
-        <GuestPageFooter></GuestPageFooter>
-      </div>
+      
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-
+import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 const tabs = [
   { label: "Overview", path: "/you/library" },
   { label: "Likes", path: "/you/likes" },
@@ -38,7 +38,12 @@ export default function LibraryLayout() {
         })}
       </nav>
 
-      <Outlet />
+      <div className="px-4">
+        <Outlet />
+      </div>
+      <div className="py-2 px-4">
+              <GuestPageFooter></GuestPageFooter>
+            </div>
     </div>
   );
 }
