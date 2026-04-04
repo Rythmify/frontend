@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 
-
 function ArtistsSectionGuest() {
   const navigate = useNavigate();
   const handleUploadClick = () => {
@@ -98,7 +97,7 @@ function ArtistsSectionGuest() {
 
         <button
           onClick={handleUploadClick}
-          className="bg-[#121212] text-white cursor-pointer transition-colors  px-3 py-1.5 font-bold text-[22px] rounded-sm"
+          className="bg-[#121212] text-white hover:text-[#717171] cursor-pointer transition-colors  px-3 py-1.5 font-bold text-[22px] rounded-sm"
         >
           Join Now
         </button>

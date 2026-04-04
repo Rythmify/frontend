@@ -1,5 +1,6 @@
 import type { Track } from "../../types/track";
 
+// Audio files live in /public/audio/ — reference via URL string, not import
 export const mockTracks: Track[] = [
   {
     id: 1,
@@ -19,7 +20,8 @@ export const mockTracks: Track[] = [
       70, 45, 80, 60, 35, 90, 50, 40, 75, 65, 55, 80, 30, 60, 45, 70, 85, 40,
       55, 65, 75, 30, 80, 50, 40, 90, 60, 35, 70, 55, 45, 80,
     ],
-    audioUrl: "",
+    audioUrl: "/audio/Track 1.mp3",
+    trackSlug: "lege-cy-ghaliaa-msh-awl-mara",
     isPrivate: false,
     madeFor: "Shahd Yehya",
   },
@@ -41,9 +43,9 @@ export const mockTracks: Track[] = [
       75, 50, 85, 65, 40, 95, 55, 45, 80, 70, 60, 85, 35, 65, 50, 75, 90, 45,
       60, 70, 80, 35, 85, 55, 45, 95, 65, 40, 75, 60, 50, 85,
     ],
-    audioUrl: "",
+    audioUrl: "/audio/Track 2.mp3",
+    trackSlug: "seneen",
     isPrivate: false,
-    madeFor: undefined,
   },
   {
     id: 3,
@@ -63,9 +65,9 @@ export const mockTracks: Track[] = [
       65, 40, 75, 55, 30, 85, 45, 35, 70, 60, 50, 75, 25, 55, 40, 65, 80, 35,
       50, 60, 70, 25, 75, 45, 35, 85, 55, 30, 65, 50, 40, 75,
     ],
-    audioUrl: "",
+    audioUrl: "/audio/Track 3.mp3",
+    trackSlug: "shababek",
     isPrivate: false,
-    madeFor: undefined,
   },
   {
     id: 4,
@@ -85,9 +87,9 @@ export const mockTracks: Track[] = [
       70, 45, 80, 60, 35, 90, 50, 40, 75, 65, 55, 80, 30, 60, 45, 70, 85, 40,
       55, 65, 75, 30, 80, 50, 40, 90, 60, 35, 70, 55, 45, 80,
     ],
-    audioUrl: "",
+    audioUrl: "/audio/Track 4.mp3",
+    trackSlug: "mafish",
     isPrivate: false,
-    madeFor: undefined,
   },
   {
     id: 5,
@@ -107,9 +109,9 @@ export const mockTracks: Track[] = [
       65, 40, 75, 55, 30, 85, 45, 35, 70, 60, 50, 75, 25, 55, 40, 65, 80, 35,
       50, 60, 70, 25, 75, 45, 35, 85, 55, 30, 65, 50, 40, 75,
     ],
-    audioUrl: "",
+    audioUrl: "/audio/Track 5.mp3",
+    trackSlug: "elwa2t-eldaye3",
     isPrivate: false,
-    madeFor: undefined,
   },
 ];
 
