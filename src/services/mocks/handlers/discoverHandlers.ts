@@ -9,7 +9,10 @@ import type {
   Pagination,
   SuggestedUser,
   ListMeta,
+  BuzzingPlaylist,
+  ApiTrack,
 } from "../../api/discover.service";
+import type { PublicUser } from "../../mocks/User.service";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -18,7 +21,7 @@ const mockMixes: PersonalMix[] = [
     id: "mix-1",
     label: "Mixed for You",
     flavor: "listening_history",
-    cover_url: "https://picsum.photos/200/200?random=301",
+    cover_image: "https://picsum.photos/200/200?random=301",
     track_count: 27,
     generated_at: "2026-04-01T00:00:00Z",
   },
@@ -26,33 +29,110 @@ const mockMixes: PersonalMix[] = [
     id: "mix-2",
     label: "Based on Your Recent Listening",
     flavor: "taste_profile",
-    cover_url: "https://picsum.photos/200/200?random=302",
+    cover_image: "https://picsum.photos/200/200?random=302",
     track_count: 19,
     generated_at: "2026-04-01T00:00:00Z",
   },
 ];
 
+const mockMixTracks: FeedTrack[] = [
+  {
+    id: "track-m1",
+    title: "Starboy",
+    artist: {
+      id: "artist-weeknd",
+      display_name: "The Weeknd",
+      username: "theweeknd",
+      avatar: "https://picsum.photos/50/50?random=701",
+      follower_count: 7891000,
+    },
+    genre: "Pop",
+    duration: 230,
+    play_count: 80000,
+    like_count: 4000,
+    cover_url: "https://picsum.photos/200/200?random=701",
+    stream_url: "https://example.com/audio/starboy.mp3",
+    created_at: "2026-01-01T00:00:00Z",
+  },
+  {
+    id: "track-m2",
+    title: "Levitating",
+    artist: {
+      id: "artist-dua",
+      display_name: "Dua Lipa",
+      username: "dualipa",
+      avatar: "https://picsum.photos/50/50?random=702",
+      follower_count: 5200000,
+    },
+    genre: "Pop",
+    duration: 203,
+    play_count: 65000,
+    like_count: 3200,
+    cover_url: "https://picsum.photos/200/200?random=702",
+    stream_url: "https://example.com/audio/levitating.mp3",
+    created_at: "2026-01-15T00:00:00Z",
+  },
+  {
+    id: "track-m3",
+    title: "SICKO MODE",
+    artist: {
+      id: "artist-travis",
+      display_name: "Travis Scott",
+      username: "travisscott",
+      avatar: "https://picsum.photos/50/50?random=703",
+      follower_count: 6234000,
+    },
+    genre: "Hip-Hop",
+    duration: 312,
+    play_count: 92000,
+    like_count: 5100,
+    cover_url: "https://picsum.photos/200/200?random=703",
+    stream_url: "https://example.com/audio/sicko-mode.mp3",
+    created_at: "2026-02-01T00:00:00Z",
+  },
+  {
+    id: "track-m4",
+    title: "Bad Guy",
+    artist: {
+      id: "artist-billie",
+      display_name: "Billie Eilish",
+      username: "billieeilish",
+      avatar: "https://picsum.photos/50/50?random=704",
+      follower_count: 4500000,
+    },
+    genre: "Alternative",
+    duration: 194,
+    play_count: 71000,
+    like_count: 3800,
+    cover_url: "https://picsum.photos/200/200?random=704",
+    stream_url: "https://example.com/audio/bad-guy.mp3",
+    created_at: "2026-02-15T00:00:00Z",
+  },
+];
+
 const mockHotTrack: FeedTrack = {
-  track_id: "track-hot-1",
+  id: "track-hot-1",
   title: "Blinding Lights",
-  artist_id: "artist-1",
-  artist_username: "theweeknd",
-  artist_display_name: "The Weeknd",
+  artist: {
+    id: "artist-weeknd",
+    display_name: "The Weeknd",
+    username: "theweeknd",
+    avatar: "https://picsum.photos/150/150?random=401",
+    follower_count: 7891000,
+  },
   cover_url: "https://picsum.photos/200/200?random=401",
   genre: "Synthwave",
-  genre_id: "genre-synthwave",
   like_count: 5678,
-  repost_count: 2341,
   play_count: 45600,
-  comment_count: 892,
   duration: 200,
-  uploaded_at: "2026-03-01T09:15:00Z",
-  audio_url: "https://example.com/audio/blinding-lights.mp3",
+  stream_url: "https://example.com/audio/blinding-lights.mp3",
+  created_at: "2026-03-01T09:15:00Z",
 };
 
 const mockHotForYou: HotForYou = {
   track: mockHotTrack,
-  valid_until: "2026-04-02T00:00:00Z",
+  reason: "Trending in Synthwave · Matches your taste",
+  valid_until: "2026-04-04T00:00:00Z",
 };
 
 const mockStations: HomeStation[] = [
@@ -60,30 +140,49 @@ const mockStations: HomeStation[] = [
     id: "station-1",
     name: "Based on Drake",
     seed_artist: {
-      id: "artist-drake",
+      user_id: "artist-drake",
       display_name: "Drake",
-      username: "drake",
-      avatar_url: "https://picsum.photos/150/150?random=501",
+      role: "artist",
+      is_verified: true,
     },
-    cover_url: "https://picsum.photos/200/200?random=501",
+    cover_image: "https://picsum.photos/200/200?random=501",
     track_count: 50,
   },
   {
     id: "station-2",
     name: "Based on SZA",
     seed_artist: {
-      id: "artist-sza",
+      user_id: "artist-sza",
       display_name: "SZA",
-      username: "sza",
-      avatar_url: "https://picsum.photos/150/150?random=502",
+      role: "artist",
+      is_verified: true,
     },
-    cover_url: "https://picsum.photos/200/200?random=502",
+    cover_image: "https://picsum.photos/200/200?random=502",
     track_count: 50,
   },
 ];
 
-// "New crew for you" uses the same shape as suggested users —
-// artists_to_watch will be updated to SuggestedUser[] in the service file later.
+const mockBuzzingPlaylists: BuzzingPlaylist[] = [
+  {
+    id: "bp-1",
+    title: "Buzzing Hip Hop & Rap",
+    genre: "Hip Hop & Rap",
+    genre_id: null,
+    cover_image: "https://picsum.photos/200/200?random=601",
+    is_new: true,
+    track_count: 20,
+  },
+  {
+    id: "bp-2",
+    title: "Buzzing Pop",
+    genre: "Pop",
+    genre_id: null,
+    cover_image: "https://picsum.photos/200/200?random=602",
+    is_new: false,
+    track_count: 18,
+  },
+];
+
 const mockSuggestedUsers: SuggestedUser[] = [
   {
     user_id: "user-su-1",
@@ -193,10 +292,45 @@ const mockListeningHistoryPagination: Pagination = {
   total_pages: 1,
 };
 
+// Generic ApiTrack used for the /tracks/:trackId handler.
+// The id is overridden per-request using params.trackId.
+const mockApiTrackBase: Omit<ApiTrack, "id"> = {
+  title: "Mock Track",
+  user_id: "artist-mock",
+  genre: "Electronic",
+  duration: 210,
+  play_count: 1000,
+  like_count: 50,
+  repost_count: 10,
+  comment_count: 5,
+  stream_url: "https://example.com/audio/mock.mp3",
+  cover_url: "https://picsum.photos/200/200?random=999",
+  waveform_url: null,
+  created_at: "2026-03-01T00:00:00Z",
+  is_public: true,
+};
+
+// Generic PublicUser used for the /users/:userId handler.
+const mockPublicUserBase: Omit<PublicUser, "id"> = {
+  username: "mock-artist",
+  display_name: "Mock Artist",
+  bio: null,
+  location: null,
+  gender: null,
+  role: "artist",
+  profile_picture: "https://picsum.photos/150/150?random=800",
+  cover_photo: null,
+  is_private: false,
+  is_verified: false,
+  followers_count: 1200,
+  following_count: 50,
+  created_at: "2025-01-01T00:00:00Z",
+};
+
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
 export const discoverHandlers = [
-  // GET /home — main discover page data (all sections in one call)
+  // GET /home — main discover page data
   http.get("*/home", () => {
     return HttpResponse.json({
       data: {
@@ -204,10 +338,17 @@ export const discoverHandlers = [
         more_of_what_you_like: mockMixes,
         hot_for_you: mockHotForYou,
         discover_with_stations: mockStations,
-        // Same shape as suggested users — service file type will be updated later
-        artists_to_watch: mockSuggestedUsers,
+        artists_to_watch: mockBuzzingPlaylists,
       },
       message: "Home data fetched successfully.",
+    });
+  }),
+
+  // GET /home/mixes/:mixId/tracks — tracks for a personal mix
+  http.get("*/home/mixes/:mixId/tracks", ({ params }) => {
+    const mix = mockMixes.find((m) => m.id === params.mixId) ?? mockMixes[0];
+    return HttpResponse.json({
+      data: { mix, tracks: mockMixTracks },
     });
   }),
 
@@ -226,13 +367,34 @@ export const discoverHandlers = [
     });
   }),
 
-  // GET /users/suggested — suggested artists to follow (sidebar + new crew)
+  // GET /users/suggested — suggested artists (UserSummary only — no avatar/followers)
   http.get("*/users/suggested", () => {
     return HttpResponse.json({
       data: {
         items: mockSuggestedUsers,
         meta: mockSuggestedMeta,
       },
+    });
+  }),
+
+  // GET /users/:userId — full public user profile (used in two-step artist fetch)
+  http.get("*/users/:userId", ({ params }) => {
+    return HttpResponse.json({
+      data: {
+        ...mockPublicUserBase,
+        id: params.userId as string,
+        username: `artist-${params.userId}`,
+      } satisfies PublicUser,
+    });
+  }),
+
+  // GET /tracks/:trackId — full track data (used in two-step fetch for history/recently-played)
+  http.get("*/tracks/:trackId", ({ params }) => {
+    return HttpResponse.json({
+      data: {
+        ...mockApiTrackBase,
+        id: params.trackId as string,
+      } satisfies ApiTrack,
     });
   }),
 ];

@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
-import TrackCard from "@/components/UI/Card";
+import TrackCard from "@/components/UI/card/Card";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
-import { mockDiscoverTracks } from "@/mocks/discover";
+import { mockDiscoverTracks } from "@/services/mocks/discover";
 import DiscoverSideBar from "@/components/discover/sidebar/DiscoverSideBar";
 import RecentlyPlayed from "@/components/discover/RecentlyPlayed";
 import AlbumsForYou from "@/components/discover/AlbumsForYou";
 import NewCrewForYou from "@/components/discover/NewCrewForYou";
 import { getHome } from "@/services/api/discover.service";
 import type { HomeData } from "@/services/api/discover.service";
-import { mapSuggestedToUser } from "@/services/api/discover.mapper";
 
 const DiscoverPageAuth = () => {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
@@ -38,7 +37,7 @@ const DiscoverPageAuth = () => {
           </HorizontalCarousel>
           <RecentlyPlayed />
           <AlbumsForYou />
-          <NewCrewForYou users={homeData?.artists_to_watch.map(mapSuggestedToUser)} />
+          <NewCrewForYou />
         </div>
 
         {/* Sidebar — 30% */}
