@@ -66,7 +66,7 @@ const ConversationHeader = ({
         <button
           data-test="conversation-profile-button"
           className="p-2 text-sm font-bold text-text hover:text-text-hover"
-          onClick={() => navigate(`/users/${reciepiantId}`)}
+          onClick={() => navigate(`/${recipientName}`)}
         >
           {recipientName}
         </button>
