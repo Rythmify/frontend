@@ -38,10 +38,10 @@ export default function LibraryLayout() {
         })}
       </nav>
 
-      <div className="px-4">
+      <div className="px-2">
         <Outlet />
       </div>
-      <div className="py-2 px-4">
+      <div className="py-9 my-5 px-4">
               <GuestPageFooter></GuestPageFooter>
             </div>
     </div>
