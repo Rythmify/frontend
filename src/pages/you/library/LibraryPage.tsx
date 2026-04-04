@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
+import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import {
   getRecentlyPlayed,
   getTrackById,
@@ -139,7 +140,7 @@ export default function LibraryPage() {
     : mockRecentlyPlayedTracks;
 
   const recentEmpties = padToGrid(Math.min(displayedRecent.length, GRID_SIZE));
-  const likeEmpties = padToGrid(Math.min(mockRecentlyPlayedTracks.length, GRID_SIZE));
+
   const playlistEmpties = padToGrid(Math.min(playlists.length, GRID_SIZE));
   const followingEmpties = padToGrid(Math.min(followingUsers.length, GRID_SIZE));
 
@@ -157,12 +158,11 @@ export default function LibraryPage() {
 
       {/* Likes */}
       <Section title="Likes">
-        {mockRecentlyPlayedTracks.slice(0, GRID_SIZE).map((track) => (
-          <TrackCard key={track.id} track={track} widthClassName={CARD_WIDTH} />
-        ))}
-        {Array.from({ length: likeEmpties }).map((_, i) => (
-          <EmptySlot key={`empty-l-${i}`} />
-        ))}
+        <LikesContent
+          tracks={mockRecentlyPlayedTracks}
+          showControls={false}
+          maxItems={GRID_SIZE}
+        />
       </Section>
 
       {/* Playlists */}
