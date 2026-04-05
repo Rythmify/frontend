@@ -34,7 +34,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
     <div className="container px-4 md:px-8 lg:px-20 bg-[var(--color-bg)]">
       {/* ── Settings Title + Tabs ── */}
       <div>
-        <div className="container px-6 max-w-[var(--container-max)]">
+        <div className=" max-w-[var(--container-max)]">
           <h1 className="text-[var(--color-text-hover)] pt-8 pb-5 text-2xl font-bold">
             Settings
           </h1>
@@ -64,13 +64,13 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
       </div>
 
       {/* ── Content ── */}
-      <main className="flex-1 container px-6 max-w-[var(--container-max)] py-8">
+      <main className="flex-1  max-w-[var(--container-max)] py-8">
         {children}
       </main>
 
       {/* ── Footer ── */}
       <footer className=" mt-auto">
-        <div className="container px-6 max-w-[var(--container-max)] py-6">
+        <div className=" max-w-[var(--container-max)] py-6">
           <div className="flex flex-wrap gap-y-1 text-xs text-[var(--color-text)]">
             {FOOTER_LINKS.map((link, index) => (
               <span key={link} className="flex cursor-pointer items-center">

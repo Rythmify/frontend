@@ -19,39 +19,35 @@ function SecurityIcon() {
       <div className="w-full h-full rounded-xl bg-[var(--color-input-bg)] flex items-center justify-center">
         {/* Lock */}
         <svg
-          width="28"
-          height="28"
-          viewBox="0 0 24 24"
-          fill="none"
-          className="text-white"
+          viewBox="0 0 88 96"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
         >
           <path
-            d="M7 10V7a5 5 0 0110 0v3"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <rect
-            x="5"
-            y="10"
-            width="14"
-            height="10"
-            rx="2"
-            stroke="currentColor"
-            strokeWidth="2"
-          />
-          <circle cx="12" cy="15" r="1.5" fill="currentColor" />
+            d="M44 50.4167C42.4812 50.4167 41.25 51.6479 41.25 53.1667C41.25 54.6854 42.4812 55.9167 44 55.9167C45.5188 55.9167 46.75 54.6854 46.75 53.1667C46.75 51.6479 45.5188 50.4167 44 50.4167Z"
+            fill="currentColor"
+          ></path>
+          <path
+            d="M44 8.25C34.381 8.25 26.5833 16.0477 26.5833 25.6667V33.9167H18.3333C16.8145 33.9167 15.5833 35.1479 15.5833 36.6667V73.3333C15.5833 74.8521 16.8145 76.0833 18.3333 76.0833H69.6667C71.1854 76.0833 72.4167 74.8521 72.4167 73.3333V36.6667C72.4167 35.1479 71.1854 33.9167 69.6667 33.9167H61.4167V25.6667C61.4167 16.0477 53.619 8.25 44 8.25ZM55.9167 25.6667V33.9167H32.0833V25.6667C32.0833 19.0853 37.4186 13.75 44 13.75C50.5814 13.75 55.9167 19.0853 55.9167 25.6667ZM52.25 53.1667C52.25 56.7595 49.9533 59.816 46.748 60.9479V65.0833H41.248V60.9465C38.0448 59.8134 35.75 56.758 35.75 53.1667C35.75 48.6103 39.4437 44.9167 44 44.9167C48.5563 44.9167 52.25 48.6103 52.25 53.1667Z"
+            fill="currentColor"
+          ></path>
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M72.0207 70.5C71.1226 68.9444 68.8774 68.9444 67.9793 70.5L57.587 88.5C56.6889 90.0556 57.8115 92 59.6077 92H80.3923C82.1885 92 83.3111 90.0556 82.413 88.5L72.0207 70.5ZM71 76.3333V83.3333H69V76.3333H71ZM71.5 86.8333C71.5 87.6618 70.8284 88.3333 70 88.3333C69.1716 88.3333 68.5 87.6618 68.5 86.8333C68.5 86.0049 69.1716 85.3333 70 85.3333C70.8284 85.3333 71.5 86.0049 71.5 86.8333Z"
+            fill="#CF0000"
+          ></path>
         </svg>
       </div>
 
       {/* Warning triangle */}
-      <div className="absolute -bottom-1 -right-1">
+      {/* <div className="absolute -bottom-1 -right-1">
         <svg width="18" height="18" viewBox="0 0 24 24">
           <path d="M12 3L2 21h20L12 3z" fill="#ef4444" />
           <rect x="11" y="9" width="2" height="5" fill="white" />
           <rect x="11" y="16" width="2" height="2" fill="white" />
         </svg>
-      </div>
+      </div> */}
     </div>
   );
 }
