@@ -1,5 +1,5 @@
 import HorizontalCarousel from "./HorizontalCarousel";
-import UserCard from "@/components/UI/UserCard/UserCard";
+import UserCard from "@/components/UI/UserCard";
 import { mockSuggestedUsers } from "@/services/mocks/discover";
 
 // ─── Component ────────────────────────────────────────────

@@ -1,13 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ArtistToolsCard from "./ArtistToolsCard";
 import TrackItem from "@/components/UI/TrackItem";
 import TrackListSection from "@/components/UI/TrackListSection/TrackListSection";
 import ArtistListSection from "@/components/UI/ArtistListSection";
 import GoMobileSection from "@/components/UI/GoMobile";
-import { getSuggestedArtists, getListeningHistory, getTrackById } from "@/services/api/discover.service";
-import { mapApiUserToArtist, mapApiTrackToTrack } from "@/services/api/discover.mapper";
-import { getUserById } from "@/services/mocks/User.service";
-import type { Track } from "@/types/track";
 
 // ─── Mock Data ────────────────────────────────────────────
 const mockLikedTracks = [
@@ -76,6 +72,37 @@ const mockListeningHistory = [
   },
 ];
 
+const mockSuggestedArtistsData = [
+  {
+    username: "fatma-amin",
+    avatar: "https://picsum.photos/48/48?random=10",
+    followers: 45200,
+    tracks: 23,
+    isVerified: true,
+  },
+  {
+    username: "moh-elghaleez",
+    avatar: "https://picsum.photos/48/48?random=11",
+    followers: 38500,
+    tracks: 18,
+    isVerified: false,
+  },
+  {
+    username: "league-of-legends",
+    avatar: "https://picsum.photos/48/48?random=12",
+    followers: 1200000,
+    tracks: 45,
+    isVerified: true,
+  },
+  {
+    username: "shahd-music",
+    avatar: "https://picsum.photos/48/48?random=13",
+    followers: 28300,
+    tracks: 12,
+    isVerified: false,
+  },
+];
+
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
   sidebar: `
@@ -86,63 +113,15 @@ const styles = {
 
 // ─── Component ────────────────────────────────────────────
 const DiscoverSidebar = () => {
-  const [suggestedArtists, setSuggestedArtists] = useState<
-    ReturnType<typeof mapApiUserToArtist>[]
-  >([]);
-  const [artistsLoading, setArtistsLoading] = useState(true);
-  const [artistsError, setArtistsError] = useState<string | null>(null);
-  const [historyTracks, setHistoryTracks] = useState<Track[] | null>(null);
+  const [suggestedArtists, setSuggestedArtists] = useState(
+    mockSuggestedArtistsData,
+  );
 
-  // Two-step fetch: get suggested user IDs → fetch full profile per user.
-  useEffect(() => {
-    getSuggestedArtists({ limit: 10 })
-      .then((res) =>
-        Promise.all(
-          res.items.map((suggestedUser) => getUserById(suggestedUser.user_id)),
-        ),
-      )
-      .then((fullProfiles) => {
-        setSuggestedArtists(fullProfiles.map(mapApiUserToArtist));
-      })
-      .catch((err: Error) => {
-        setArtistsError(err.message);
-      })
-      .finally(() => {
-        setArtistsLoading(false);
-      });
-  }, []);
-
-  // Two-step fetch: get listening history → fetch full track data per entry.
-  useEffect(() => {
-    getListeningHistory({ limit: 3 })
-      .then(({ data: historyEntries }) =>
-        Promise.all(
-          historyEntries.map((historyEntry) => getTrackById(historyEntry.track.id)),
-        ),
-      )
-      .then((fullTracks) => setHistoryTracks(fullTracks.map(mapApiTrackToTrack)))
-      .catch(() => {}); // silent — mock is the fallback
-  }, []);
-
-  // Shuffle the already-loaded list — no extra network call needed.
   const handleRefreshArtists = () => {
-    setSuggestedArtists((prev) => [...prev].sort(() => Math.random() - 0.5));
+    console.log("Refreshing suggested artists...");
+    const shuffled = [...suggestedArtists].sort(() => Math.random() - 0.5);
+    setSuggestedArtists(shuffled);
   };
-
-  // Normalize API tracks to the flat shape TrackItem expects.
-  // Falls back to mockListeningHistory when the fetch hasn't resolved yet.
-  const listeningItems = (
-    historyTracks?.map((track) => ({
-      id: String(track.id),
-      title: track.title,
-      artist: track.artistName,
-      coverUrl: track.coverUrl,
-      plays: track.playCount,
-      likes: track.likeCount,
-      reposts: track.repostCount,
-      comments: track.commentCount,
-    })) ?? mockListeningHistory
-  ).slice(0, 3);
 
   return (
     <aside data-test="discover-sidebar" className={styles.sidebar}>
@@ -153,16 +132,12 @@ const DiscoverSidebar = () => {
 
       {/* Suggested Artists Section */}
       <div data-test="discover-sidebar-suggested-artists">
-        {artistsError ? (
-          <p className="text-xs text-text-secondary">{artistsError}</p>
-        ) : (
-          <ArtistListSection
-            title="ARTISTS YOU SHOULD FOLLOW"
-            artists={artistsLoading ? [] : suggestedArtists}
-            onRefresh={handleRefreshArtists}
-            maxDisplay={3}
-          />
-        )}
+        <ArtistListSection
+          title="ARTISTS YOU SHOULD FOLLOW"
+          artists={suggestedArtists}
+          onRefresh={handleRefreshArtists}
+          maxDisplay={3}
+        />
       </div>
 
       {/* Liked Tracks Section */}
@@ -176,7 +151,6 @@ const DiscoverSidebar = () => {
               key={track.id}
               {...track}
               initialLiked={true}
-              //TODO: waiting for back to implement engagement endpoints
               onUnlike={(id) => {
                 console.log("Unlike track:", id);
               }}
@@ -188,7 +162,7 @@ const DiscoverSidebar = () => {
       {/* Listening History Section */}
       <div data-test="discover-sidebar-listening-history">
         <TrackListSection title="LISTENING HISTORY" viewAllLink="/you/history">
-          {listeningItems.map((track) => (
+          {mockListeningHistory.slice(0, 3).map((track) => (
             <TrackItem key={track.id} {...track} initialLiked={false} />
           ))}
         </TrackListSection>
