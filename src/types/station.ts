@@ -4,7 +4,7 @@ export interface Station {
   seedArtist: {
     id: string;
     displayName: string;
-    username: string;
+    username?: string;
     avatarUrl?: string;
   };
   coverUrl: string | null;

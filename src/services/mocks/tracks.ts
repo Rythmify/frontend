@@ -117,4 +117,5 @@ export const mockTracks: Track[] = [
 
 export const mockTrack = mockTracks[0];
 
+// Config toggle: swap for real API when ready
 export const USE_MOCK_DATA = true;

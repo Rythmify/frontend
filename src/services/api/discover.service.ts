@@ -1,81 +1,92 @@
 import axiosInstance from "./axiosInstance";
 
 // =============================================================================
-// TYPES — API response shapes
+// TYPES — API response shapes (aligned to OpenAPI spec)
 // =============================================================================
 
 export interface FeedTrack {
-  track_id: string;
+  id: string;
   title: string;
-  artist_id: string;
-  artist_username: string;
-  artist_display_name: string;
-  cover_url: string;
-  genre: string;
-  genre_id: string;
-  like_count: number;
-  repost_count: number;
+  artist: {
+    id: string;
+    display_name: string;
+    avatar: string | null;
+    follower_count: number;
+    username?: string; // not in spec yet — ask backend to add for artist navigation
+  };
+  genre: string | null;
+  duration: number; // seconds
   play_count: number;
-  comment_count: number;
-  duration: number;
-  uploaded_at: string;
-  audio_url: string;
-  waveform_data?: number[];
+  like_count: number;
+  cover_url: string | null;
+  stream_url: string;
+  created_at: string;
 }
 
 export interface PersonalMix {
   id: string;
-  label: string; // e.g. "Mixed for Omar", "Based on your recent listening"
+  label: string;
   flavor: "listening_history" | "taste_profile";
-  cover_url: string | null;
+  cover_image: string | null;
   track_count: number;
-  generated_at: string; // ISO date — mixes are regenerated every 24h
+  generated_at: string;
 }
 
 export interface HotForYou {
   track: FeedTrack;
-  valid_until: string; // ISO date — cache expiry
+  reason: string;
+  valid_until: string;
 }
 
 export interface HomeStation {
   id: string;
   name: string;
   seed_artist: {
-    id: string;
+    user_id: string;
     display_name: string;
-    username: string;
-    avatar_url?: string;
+    role: "artist" | "listener" | "admin";
+    is_verified: boolean;
   };
-  cover_url: string | null;
+  cover_image: string | null;
+  track_count: number;
+}
+
+export interface BuzzingPlaylist {
+  id: string;
+  title: string;
+  genre: string;
+  genre_id: string | null;
+  cover_image: string | null;
+  is_new: boolean;
   track_count: number;
 }
 
 export interface HomeData {
-  mixed_for_you: PersonalMix[]; //
+  mixed_for_you: PersonalMix[];
   more_of_what_you_like: PersonalMix[];
-  hot_for_you: HotForYou | null; // why is it null?
+  hot_for_you: HotForYou | null;
   discover_with_stations: HomeStation[];
-  artists_to_watch: SuggestedUser[];
+  artists_to_watch: BuzzingPlaylist[];
 }
 
-// missing artist_name, cover_url, and audio_url.
+// Missing artist info — use getTrackById for full data.
 export interface TrackSummary {
   id: string;
   title: string;
   genre: string | null;
-  duration: number | null; // seconds, nullable if not set on the track
-  user_id: string; // the artist's user ID — use to link to their profile
+  duration: number | null;
+  user_id: string;
 }
 
 export interface RecentlyPlayedEntry {
   track: TrackSummary;
-  last_played_at: string; // ISO date — when this track was last played
+  last_played_at: string;
 }
 
 export interface ListeningHistoryEntry {
-  id: string; // UUID of this specific play event
+  id: string;
   track: TrackSummary;
-  played_at: string; // ISO date — when this specific play happened
+  played_at: string;
 }
 
 export interface Pagination {
@@ -85,7 +96,7 @@ export interface Pagination {
   total_pages: number;
 }
 
-// back returns buzzing playlist, check exact return type
+// Missing avatar, follower_count, username — use getUserById for full data.
 export interface SuggestedUser {
   user_id: string;
   email: string;
@@ -100,22 +111,51 @@ export interface ListMeta {
   limit: number;
   offset: number;
 }
+
+// ApiTrack — returned by GET /tracks/{track_id}.
+// Missing artist info (only user_id) — known gap until backend enriches the endpoint.
+export interface ApiTrack {
+  id: string;
+  title: string;
+  user_id: string;
+  genre: string | null;
+  duration: number | null;
+  play_count: number;
+  like_count: number;
+  repost_count: number;
+  comment_count: number;
+  stream_url: string | null;
+  cover_url: string | null;
+  waveform_url: string | null;
+  created_at: string;
+  is_public: boolean;
+}
+
 // =============================================================================
 // CONFIRMED ENDPOINTS
 // =============================================================================
 
-//GET /home, main call for discover page
+// GET /home — main call for the discover page
 export const getHome = async (): Promise<HomeData> => {
-  // axiosInstance.get<T> means: "I expect the response body to have this shape"
-  // The backend wraps everything in { data: ..., message: ... }
   const res = await axiosInstance.get<{ data: HomeData; message: string }>(
     "/home",
   );
-  // res.data is the full response body — we only need res.data.data (the payload)
   return res.data.data;
 };
 
-//GET /me/history, Used in the "Recently played" row on the discover page.
+/**
+ * Fetches the actual tracks for a personal mix (mixed_for_you or more_of_what_you_like).
+ */
+export const getMixTracks = async (
+  mixId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<FeedTrack[]> => {
+  const res = await axiosInstance.get<{
+    data: { mix: PersonalMix; tracks: FeedTrack[] };
+  }>(`/home/mixes/${mixId}/tracks`, { params });
+  return res.data.data.tracks;
+};
+
 export const getRecentlyPlayed = async (): Promise<RecentlyPlayedEntry[]> => {
   const res = await axiosInstance.get<{ data: RecentlyPlayedEntry[] }>(
     "/me/history",
@@ -123,9 +163,13 @@ export const getRecentlyPlayed = async (): Promise<RecentlyPlayedEntry[]> => {
   return res.data.data;
 };
 
+export const getTrackById = async (trackId: string): Promise<ApiTrack> => {
+  const res = await axiosInstance.get<{ data: ApiTrack }>(`/tracks/${trackId}`);
+  return res.data.data;
+};
+
 /**
- * GET /me/listening-history
- * Used in the "Listening history" list in the discover page sidebar (/you/history).
+ * Full paginated play history. Used in the sidebar listening history section.
  *
  * @param params.page  — page number, starts at 1 (default: 1)
  * @param params.limit — entries per page, max 100 (default: 20)
@@ -142,11 +186,11 @@ export const getListeningHistory = async (params?: {
 };
 
 /**
- * GET /users/suggested
- * Used in the "Artists you should follow" section in the discover sidebar.
+ * Returns UserSummary list (no avatar/followers/username).
+ * Use getUserById from User.service for full profile data.
  *
- * @param params.limit  — number of results
- * @param params.offset — pagination offset
+ * @param params.limit  — number of results (default: 20)
+ * @param params.offset — pagination offset (default: 0)
  */
 export const getSuggestedArtists = async (params?: {
   limit?: number;
@@ -157,24 +201,15 @@ export const getSuggestedArtists = async (params?: {
   }>("/users/suggested", { params });
   return res.data.data;
 };
+
 // =============================================================================
-// STUBS — endpoints not yet confirmed
+// STUBS — endpoints not yet implemented by backend
 // =============================================================================
 
-/**
- * TODO: awaiting backend confirmation
- * Will return album-style playlists recommended for the user.
- */
-export const getAlbumsForYou = async (): Promise<PersonalMix[]> => {
-  throw new Error(
-    "getAlbumsForYou: not implemented — awaiting backend confirmation",
-  );
+export const getAlbumsForYou = async (): Promise<ApiTrack[]> => {
+  throw new Error("getAlbumsForYou: not yet implemented by backend");
 };
 
-/**
- * TODO: awaiting Module 6 (Engagement) spec
- * Will return the authenticated user's liked tracks.
- */
 export const getLikedTracks = async (): Promise<FeedTrack[]> => {
   throw new Error("getLikedTracks: not implemented — awaiting Module 6 spec");
 };
