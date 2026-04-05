@@ -12,80 +12,50 @@ const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
 
 interface LikesContentProps {
   tracks: Track[];
-  /** Show the view toggle + filter bar. True on the Likes page, false in Overview. */
   showControls?: boolean;
-  /** Limit how many tracks to render (used by Overview). */
   maxItems?: number;
 }
 
 // ─── Component ────────────────────────────────────────────
 
-export default function LikesContent({
-  tracks,
-  showControls = true,
-  maxItems,
-}: LikesContentProps) {
+export default function LikesContent({ tracks, showControls = true, maxItems }: LikesContentProps) {
   const { view, setView } = useLikesViewStore();
   const [filter, setFilter] = useState("");
 
   const filtered = filter.trim()
-    ? tracks.filter(
-        (t) =>
-          t.title.toLowerCase().includes(filter.toLowerCase()) ||
-          t.artistName.toLowerCase().includes(filter.toLowerCase()),
-      )
+    ? tracks.filter(t =>
+        t.title.toLowerCase().includes(filter.toLowerCase()) ||
+        t.artistName.toLowerCase().includes(filter.toLowerCase()))
     : tracks;
 
   const displayed = maxItems ? filtered.slice(0, maxItems) : filtered;
 
   return (
     <div className="flex flex-col gap-6 w-full">
-      {/* Controls */}
       {showControls && (
         <div className="flex items-center justify-between">
-          <p className="text-white text-lg font-semibold">
-            Hear the tracks you've liked:
-          </p>
+          <p className="text-white text-lg font-semibold">Hear the tracks you've liked:</p>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="text-base">View</div>
-              <button
-                onClick={() => setView("grid")}
-                className={`w-10 h-10 flex items-center justify-center rounded transition-colors ${
-                  view === "grid"
-                    ? "bg-input-bg text-accent"
-                    : "bg-input-bg text-text-secondary hover:text-white"
-                }`}
-                data-test="likes-view-grid"
-              >
+              <button onClick={() => setView("grid")}
+                className={`w-10 h-10 flex items-center justify-center rounded transition-colors ${view === "grid" ? "bg-input-bg text-accent" : "bg-input-bg text-text-secondary hover:text-white"}`}
+                data-test="likes-view-grid">
                 <i className="fa-solid fa-border-all text-lg" />
               </button>
-              <button
-                onClick={() => setView("list")}
-                className={`w-10 h-10 flex items-center justify-center rounded transition-colors ${
-                  view === "list"
-                    ? "bg-input-bg text-accent"
-                    : "bg-input-bg text-text-secondary hover:text-white"
-                }`}
-                data-test="likes-view-list"
-              >
+              <button onClick={() => setView("list")}
+                className={`w-10 h-10 flex items-center justify-center rounded transition-colors ${view === "list" ? "bg-input-bg text-accent" : "bg-input-bg text-text-secondary hover:text-white"}`}
+                data-test="likes-view-list">
                 <i className="fa-solid fa-list text-lg" />
               </button>
             </div>
-
-            <input
-              type="text"
-              placeholder="Filter"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+            <input type="text" placeholder="Filter" value={filter} onChange={(e) => setFilter(e.target.value)}
               className="bg-input-bg text-white text-sm placeholder-gray-500 rounded px-3 py-2 w-80 focus:outline-none focus:ring-1 focus:ring-gray-600"
-              data-test="likes-filter"
-            />
+              data-test="likes-filter" />
           </div>
         </div>
       )}
 
-      {/* Content */}
       {displayed.length === 0 ? (
         <div className="flex items-center justify-center py-24">
           <p className="text-white font-bold text-2xl">
@@ -97,12 +67,11 @@ export default function LikesContent({
           {displayed.map((track) => (
             <GridTrackCard key={track.id} track={track} widthClassName={CARD_WIDTH} />
           ))}
-          {maxItems &&
-            Array.from({ length: Math.max(0, maxItems - displayed.length) }).map((_, i) => (
-              <div key={`empty-${i}`} className={`flex flex-col ${CARD_WIDTH}`}>
-                <div className="w-full aspect-square rounded-md bg-input-bg" />
-              </div>
-            ))}
+          {maxItems && Array.from({ length: Math.max(0, maxItems - displayed.length) }).map((_, i) => (
+            <div key={`empty-${i}`} className={`flex flex-col ${CARD_WIDTH}`}>
+              <div className="w-full aspect-square rounded-md bg-input-bg" />
+            </div>
+          ))}
         </div>
       ) : (
         <div className="flex flex-col">

@@ -9,7 +9,7 @@ export default function SetsPage() {
 
   const filterOptions = ["All", "Created", "Liked"];
   return (
-    <div className="container px-4 md:px-4 lg:px-20">
+    <div className="">
       <div className="flex justify-between items-center py-2 px-4">
         <div className=" text-white text-[17px] font-bold ">
           Hear your own playlists and the playlists you've liked:

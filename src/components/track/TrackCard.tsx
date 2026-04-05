@@ -150,9 +150,6 @@ function CardWaveform({ track, isActive, onWaveformClick, comments, pendingRatio
       });
 
     } else {
-      const hasPeaks = track.waveformData && track.waveformData.length > 0;
-      const durationSec = parseDur(track.duration);
-
       ws = WaveSurfer.create({
         container: containerRef.current!,
         waveColor: g,
@@ -160,22 +157,15 @@ function CardWaveform({ track, isActive, onWaveformClick, comments, pendingRatio
         barWidth: 2,
         barGap: 1,
         barRadius: 2,
-        ...(hasPeaks
-          ? { peaks: [track.waveformData], duration: durationSec }
-          : { url: track.audioUrl }),
+        url: track.audioUrl,
         interact: false,
       });
 
-      if (!hasPeaks) {
-        ws.on("decode", (dur) => {
-          if (durRef.current) durRef.current.textContent = fmt(dur);
-          setWaveformDuration(dur);
-          try { cachedPeaks.current = ws.exportPeaks(); } catch { /* ok */ }
-        });
-      } else {
-        if (durRef.current) durRef.current.textContent = fmt(durationSec);
-        setWaveformDuration(durationSec);
-      }
+      ws.on("decode", (dur) => {
+        if (durRef.current) durRef.current.textContent = fmt(dur);
+        setWaveformDuration(dur);
+        try { cachedPeaks.current = ws.exportPeaks(); } catch { /* ok */ }
+      });
     }
 
     wsRef.current = ws;

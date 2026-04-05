@@ -22,7 +22,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     postedAt: "2026-03-02T10:00:00Z",
     waveformData: Array.from({ length: 100 }, () => Math.random()),
     trackSlug: "butterfly-effect",
-    audioUrl: "https://example.com/audio/track1.mp3",
+    audioUrl: "/audio/Track 1.mp3",
     isPrivate: false,
   },
   {
@@ -42,7 +42,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     postedAt: "2026-02-28T14:30:00Z",
     waveformData: Array.from({ length: 100 }, () => Math.random()),
     trackSlug: "good-as-hell",
-    audioUrl: "https://example.com/audio/track2.mp3",
+    audioUrl: "/audio/Track 2.mp3",
     isPrivate: false,
   },
   {
@@ -62,7 +62,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     postedAt: "2026-03-01T09:15:00Z",
     waveformData: Array.from({ length: 100 }, () => Math.random()),
     trackSlug: "blinding-lights",
-    audioUrl: "https://example.com/audio/track3.mp3",
+    audioUrl: "/audio/Track 3.mp3",
     isPrivate: false,
   },
 ];
