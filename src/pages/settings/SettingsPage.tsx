@@ -317,20 +317,49 @@ function SocialNetworks({
             <div key={provider} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {provider === "google" && (
-                  <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
-                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853" />
-                    <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05" />
-                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335" />
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 18 18"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"
+                      fill="#EA4335"
+                    />
                   </svg>
                 )}
                 {provider === "facebook" && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="#1877F2"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
                   </svg>
                 )}
                 {provider === "apple" && (
-                  <svg width="16" height="16" viewBox="0 0 814 1000" fill="var(--color-text-hover)" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 814 1000"
+                    fill="var(--color-text-hover)"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.3-146.8-99.5C79 758.4 32 643.1 32 531.3c0-186.8 121.8-285.5 241.4-285.5 63.5 0 116.4 41.8 155.9 41.8 37.5 0 96.9-43.4 168.6-43.4 25.4 0 125.2 2.6 197.3 99.7zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z" />
                   </svg>
                 )}
@@ -343,7 +372,9 @@ function SocialNetworks({
                 disabled={disconnecting === provider}
                 className="text-sm text-[var(--color-text)] hover:text-[var(--color-text-hover)] transition-colors duration-150 disabled:opacity-50"
               >
-                {disconnecting === provider ? "Disconnecting…" : "Disconnect account"}
+                {disconnecting === provider
+                  ? "Disconnecting…"
+                  : "Disconnect account"}
               </button>
             </div>
           ))}
@@ -356,7 +387,13 @@ function SocialNetworks({
           onClick={() => handleConnect("facebook")}
           className="flex items-center gap-2 px-4 py-2 text-sm bg-[#1877F2] text-white rounded-[var(--radius-sm)] hover:opacity-90 transition-opacity duration-150"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="white"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
           </svg>
           Add Facebook account
@@ -365,11 +402,28 @@ function SocialNetworks({
           onClick={() => handleConnect("google")}
           className="flex items-center gap-2 px-4 py-2 text-sm border border-transparent bg-[var(--color-input-bg)] text-[var(--color-text-hover)] hover:brightness-110 transition-all duration-150 rounded-[var(--radius-sm)]"
         >
-          <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
-            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853" />
-            <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05" />
-            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335" />
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 18 18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+              fill="#4285F4"
+            />
+            <path
+              d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+              fill="#34A853"
+            />
+            <path
+              d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"
+              fill="#EA4335"
+            />
           </svg>
           Add Google account
         </button>
@@ -377,7 +431,13 @@ function SocialNetworks({
           onClick={() => handleConnect("apple")}
           className="flex items-center gap-2 px-4 py-2 text-sm border border-[var(--color-border)] bg-[var(--color-bg-inverted)] text-[var(--color-bg)] rounded-[var(--radius-sm)] hover:opacity-90 transition-opacity duration-150"
         >
-          <svg width="16" height="16" viewBox="0 0 814 1000" fill="var(--color-bg)" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 814 1000"
+            fill="var(--color-bg)"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.3-146.8-99.5C79 758.4 32 643.1 32 531.3c0-186.8 121.8-285.5 241.4-285.5 63.5 0 116.4 41.8 155.9 41.8 37.5 0 96.9-43.4 168.6-43.4 25.4 0 125.2 2.6 197.3 99.7zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z" />
           </svg>
           Add Apple account
@@ -385,14 +445,17 @@ function SocialNetworks({
       </div>
     </div>
   );
-
 }
 
-function Password({ onToast }: { onToast: (msg: string, type: "success" | "error") => void }) {
+function Password({
+  onToast,
+}: {
+  onToast: (msg: string, type: "success" | "error") => void;
+}) {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
- 
+
   const handleSend = async () => {
     if (!user?.email) return;
     setLoading(true);
@@ -406,7 +469,7 @@ function Password({ onToast }: { onToast: (msg: string, type: "success" | "error
       setLoading(false);
     }
   };
- 
+
   return (
     <div>
       <SectionTitle>Password</SectionTitle>
@@ -422,10 +485,14 @@ function Password({ onToast }: { onToast: (msg: string, type: "success" | "error
   );
 }
 
-function VerificationBadge({ onToast }: { onToast: (msg: string, type: "success" | "error") => void }) {
+function VerificationBadge({
+  onToast,
+}: {
+  onToast: (msg: string, type: "success" | "error") => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [requested, setRequested] = useState(false);
- 
+
   const handleRequest = async () => {
     setLoading(true);
     // No endpoint for this yet — placeholder
@@ -434,18 +501,34 @@ function VerificationBadge({ onToast }: { onToast: (msg: string, type: "success"
     setRequested(true);
     onToast("Verification request submitted!", "success");
   };
- 
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
         <h5 className="text-[var(--color-text-hover)] font-semibold">
           Verification badge
         </h5>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#1DA1F2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            stroke="#1DA1F2"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </div>
-      <OutlineButton onClick={handleRequest} loading={loading} disabled={requested}>
+      <OutlineButton
+        onClick={handleRequest}
+        loading={loading}
+        disabled={requested}
+      >
         {requested ? "Request submitted " : "Request verification"}
       </OutlineButton>
     </div>
@@ -472,7 +555,12 @@ function ChevronDown() {
   );
 }
 
-function SelectField({ children, value, onChange, defaultValue }: {
+function SelectField({
+  children,
+  value,
+  onChange,
+  defaultValue,
+}: {
   children: React.ReactNode;
   value?: string;
   onChange?: (v: string) => void;
@@ -603,13 +691,21 @@ function DeleteAccount() {
 // ── Account Page ──────────────────────────────────────────────
 
 function AccountPage() {
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type });
+  };
   return (
     <div className="max-w-2xl flex flex-col gap-10">
       <ChangeTheme />
-      <EmailAddresses />
-      <SocialNetworks />
-      <Password />
-      <VerificationBadge />
+      <EmailAddresses onToast={showToast} />
+      <SocialNetworks onToast={showToast} />
+      <Password onToast={showToast} />
+      <VerificationBadge onToast={showToast} />
       <BasicInformation />
       <ConnectedApplications />
       <DeleteAccount />
