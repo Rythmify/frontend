@@ -5,6 +5,7 @@ const tabs = [
   { label: "Likes", path: "/you/likes" },
   { label: "Playlists", path: "/you/sets" },
   { label: "Albums", path: "/you/albums" },
+  { label: "Stations", path: "/you/stations" },
   { label: "Following", path: "/you/following" },
   { label: "History", path: "/you/history" },
 ];

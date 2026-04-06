@@ -2,12 +2,15 @@ import { useState, useEffect } from "react";
 import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
+import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
+import StationCard from "@/components/UI/StationCard/StationCard";
+import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
 import {
   getRecentlyPlayed,
   getTrackById,
 } from "@/services/api/discover.service";
 import { mapApiTrackToTrack } from "@/services/api/discover.mapper";
-import { mockRecentlyPlayedTracks } from "@/services/mocks/discover";
+import { mockRecentlyPlayedTracks, mockRecentlyPlayedStations } from "@/services/mocks/discover";
 import { getMyPlaylists, getMyFollowing } from "@/services/api/library.service";
 import type { LibraryPlaylist, FollowingUser } from "@/services/api/library.service";
 import type { Track } from "@/types/track";
@@ -40,52 +43,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-// ─── Collection Card Component ────────────────────────────
-
-type CollectionCard = {
-  id: string;
-  title: string;
-  owner: string;
-  coverUrl: string | null;
-  isPrivate?: boolean;
-  isLiked?: boolean;
-};
-
-function CollectionCardItem({ item }: { item: CollectionCard }) {
-  const isEmpty = !item.coverUrl;
-
-  return (
-    <div className={`group flex flex-col gap-2 ${CARD_WIDTH}`}>
-      <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {!isEmpty && (
-          <img
-            src={item.coverUrl!}
-            alt={item.title}
-            className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200 cursor-pointer"
-          />
-        )}
-      </div>
-      {!isEmpty && (
-        <>
-          <p className="text-white text-sm font-semibold truncate w-full flex items-center gap-1 cursor-pointer">
-            {item.isPrivate && (
-              <i className="fa-solid fa-lock text-[10px] text-gray-400 shrink-0" />
-            )}
-            {item.isLiked && (
-              <i className="fa-solid fa-heart text-[10px] text-white shrink-0" />
-            )}
-            <span className="truncate">{item.title}</span>
-          </p>
-          <p className="text-gray-400 text-xs truncate w-full">{item.owner}</p>
-        </>
-      )}
-    </div>
-  );
-}
-
 // ─── Mappers ──────────────────────────────────────────────
 
-function mapPlaylistToCard(p: LibraryPlaylist): CollectionCard {
+function mapPlaylistToCard(p: LibraryPlaylist): PlaylistCardData {
   return {
     id: p.playlist_id,
     title: p.name,
@@ -111,7 +71,7 @@ function mapFollowingToUser(f: FollowingUser, index: number): User {
 
 export default function LibraryPage() {
   const [recentlyPlayed, setRecentlyPlayed] = useState<Track[]>([]);
-  const [playlists, setPlaylists] = useState<CollectionCard[]>([]);
+  const [playlists, setPlaylists] = useState<PlaylistCardData[]>([]);
   const [followingUsers, setFollowingUsers] = useState<User[]>([]);
 
   useEffect(() => {
@@ -140,7 +100,6 @@ export default function LibraryPage() {
     : mockRecentlyPlayedTracks;
 
   const recentEmpties = padToGrid(Math.min(displayedRecent.length, GRID_SIZE));
-
   const playlistEmpties = padToGrid(Math.min(playlists.length, GRID_SIZE));
   const followingEmpties = padToGrid(Math.min(followingUsers.length, GRID_SIZE));
 
@@ -168,7 +127,7 @@ export default function LibraryPage() {
       {/* Playlists */}
       <Section title="Playlists">
         {playlists.slice(0, GRID_SIZE).map((item) => (
-          <CollectionCardItem key={item.id} item={item} />
+          <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
         ))}
         {Array.from({ length: playlistEmpties }).map((_, i) => (
           <EmptySlot key={`empty-p-${i}`} />
@@ -179,6 +138,16 @@ export default function LibraryPage() {
       <Section title="Albums">
         {Array.from({ length: GRID_SIZE }).map((_, i) => (
           <EmptySlot key={`empty-a-${i}`} />
+        ))}
+      </Section>
+
+      {/* Stations */}
+      <Section title="Stations">
+        {mockRecentlyPlayedStations.slice(0, GRID_SIZE).map((station) => (
+          <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} />
+        ))}
+        {Array.from({ length: Math.max(0, GRID_SIZE - mockRecentlyPlayedStations.length) }).map((_, i) => (
+          <EmptySlot key={`empty-st-${i}`} />
         ))}
       </Section>
 
