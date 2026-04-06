@@ -143,8 +143,8 @@ export default function LibraryPage() {
 
       {/* Stations */}
       <Section title="Stations">
-        {mockRecentlyPlayedStations.slice(0, GRID_SIZE).map((station) => (
-          <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} />
+        {mockRecentlyPlayedStations.slice(0, GRID_SIZE).map((station, i) => (
+          <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} colorIndex={i} />
         ))}
         {Array.from({ length: Math.max(0, GRID_SIZE - mockRecentlyPlayedStations.length) }).map((_, i) => (
           <EmptySlot key={`empty-st-${i}`} />

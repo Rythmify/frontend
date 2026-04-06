@@ -96,7 +96,7 @@ export const mockRecentlyPlayedStations: (Station & { type: "station" })[] = [
   {
     type: "station",
     id: "st-a1b2c3d4",
-    name: "Based on Drake",
+    name: "Drake",
     seedArtist: {
       id: "artist-1",
       displayName: "Drake",
@@ -104,6 +104,11 @@ export const mockRecentlyPlayedStations: (Station & { type: "station" })[] = [
       avatarUrl:
         "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=150&h=150&fit=crop",
     },
+    artists: [
+      { avatarUrl: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=150&h=150&fit=crop", displayName: "Drake" },
+      { avatarUrl: "https://picsum.photos/150/150?random=42", displayName: "Artist 2" },
+      { avatarUrl: "https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=150&h=150&fit=crop", displayName: "Artist 3" },
+    ],
     coverUrl:
       "https://images.unsplash.com/photo-1503225671151-7e9f00e7dee2?w=300&h=300&fit=crop",
     trackCount: 50,
@@ -111,7 +116,7 @@ export const mockRecentlyPlayedStations: (Station & { type: "station" })[] = [
   {
     type: "station",
     id: "st-e5f6g7h8",
-    name: "Based on SZA",
+    name: "SZA",
     seedArtist: {
       id: "artist-2",
       displayName: "SZA",
@@ -119,6 +124,11 @@ export const mockRecentlyPlayedStations: (Station & { type: "station" })[] = [
       avatarUrl:
         "https://images.unsplash.com/photo-1516575334481-f410cf6b98bb?w=150&h=150&fit=crop",
     },
+    artists: [
+      { avatarUrl: "https://images.unsplash.com/photo-1516575334481-f410cf6b98bb?w=150&h=150&fit=crop", displayName: "SZA" },
+      { avatarUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&h=150&fit=crop", displayName: "Artist 2" },
+      { avatarUrl: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=150&h=150&fit=crop", displayName: "Artist 3" },
+    ],
     coverUrl:
       "https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=300&h=300&fit=crop",
     trackCount: 50,

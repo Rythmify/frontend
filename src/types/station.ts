@@ -7,6 +7,7 @@ export interface Station {
     username?: string;
     avatarUrl?: string;
   };
+  artists?: { avatarUrl?: string; displayName?: string }[];
   coverUrl: string | null;
   trackCount: number;
 }

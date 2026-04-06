@@ -16,8 +16,8 @@ export default function StationsPage() {
         </div>
       ) : (
         <div className="flex flex-wrap gap-6">
-          {stations.map((station) => (
-            <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} />
+          {stations.map((station, i) => (
+            <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} colorIndex={i} />
           ))}
         </div>
       )}
