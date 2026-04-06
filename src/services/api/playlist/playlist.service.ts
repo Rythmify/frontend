@@ -11,6 +11,7 @@ export interface Playlist {
   created_at: string;
   track_count: number;
   like_count: number;
+  cover_image?: string | null;
 }
 
 export interface PlaylistTrackItem {
@@ -53,6 +54,7 @@ export async function getMyPlaylists(params?: {
   limit?: number;
   offset?: number;
   q?: string;
+  filter?: "created" | "liked";
 }) {
   const res = await axiosInstance.get<{
     data: {
@@ -156,6 +158,23 @@ export async function getPlaylistEmbed(
     data: { embed_url: string; iframe_html: string };
     message: string;
   }>(`/playlists/${playlistId}/embed`, { params });
+
+  return res.data;
+}
+
+/** GET /playlists?mine=true&filter=liked — get playlists the user has liked */
+export async function getLikedPlaylists(params?: {
+  limit?: number;
+  offset?: number;
+  q?: string;
+}) {
+  const res = await axiosInstance.get<{
+    data: {
+      items: Playlist[];
+      meta: { limit: number; offset: number; total: number };
+    };
+    message: string;
+  }>("/playlists", { params: { ...params, mine: true, filter: "liked" } });
 
   return res.data;
 }
