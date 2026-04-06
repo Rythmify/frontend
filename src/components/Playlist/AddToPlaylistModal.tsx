@@ -77,7 +77,7 @@ const AddToPlaylistModal = ({
           setTracksToAdd([
             { id: trackId, title: "Track", artistName: "Unknown" },
           ]);
-          const related = await getRelatedTracks(trackId);
+          const related = await getRelatedTracks(Number(trackId));
           setRelatedTracks(related || []);
         }
       } catch (err) {
