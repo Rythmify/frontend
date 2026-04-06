@@ -1,7 +1,6 @@
 import { http, HttpResponse } from "msw";
 import type {
   Playlist,
-  PlaylistDetails,
   PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 
@@ -10,7 +9,7 @@ import type {
 const MOCK_OWNER_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 const SECRET_TOKEN = "mock-secret-token-xyz";
 
-let mockPlaylists: PlaylistDetails[] = [
+const mockPlaylists: PlaylistDetails[] = [
   {
     playlist_id: "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
     owner_user_id: MOCK_OWNER_ID,
@@ -150,7 +149,7 @@ let mockPlaylists: PlaylistDetails[] = [
 
 // ─── Liked playlists (owned by OTHER users, liked by the current user) ────────
 
-let mockLikedPlaylists: PlaylistDetails[] = [
+const mockLikedPlaylists: PlaylistDetails[] = [
   {
     playlist_id: "like1111-aaaa-bbbb-cccc-111111111111",
     owner_user_id: "other-user-0001",
@@ -307,7 +306,8 @@ const seedPlaylists: (PlaylistSeed & { tracks: PlaylistTrackItem[] })[] = [
     name: "أناشيد",
     description: null,
     is_public: false,
-    cover_image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&h=300&fit=crop",
+    cover_image:
+      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&h=300&fit=crop",
     created_at: "2026-01-10T00:00:00Z",
     track_count: 0,
     like_count: 0,
@@ -319,7 +319,8 @@ const seedPlaylists: (PlaylistSeed & { tracks: PlaylistTrackItem[] })[] = [
     name: "my songs",
     description: null,
     is_public: true,
-    cover_image: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=300&fit=crop",
+    cover_image:
+      "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=300&fit=crop",
     created_at: "2026-02-14T00:00:00Z",
     track_count: 0,
     like_count: 3,
@@ -341,7 +342,8 @@ const getMyPlaylistList = () =>
     created_at: p.created_at,
     track_count: p.track_count,
     like_count: p.like_count,
-    cover_image: (p as unknown as { cover_image?: string | null }).cover_image ?? null,
+    cover_image:
+      (p as unknown as { cover_image?: string | null }).cover_image ?? null,
   }));
 
 export const playlistHandlers = [
