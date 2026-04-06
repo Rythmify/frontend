@@ -6,6 +6,7 @@ import DiscoverSideBar from "@/components/discover/sidebar/DiscoverSideBar";
 import RecentlyPlayed from "@/components/discover/RecentlyPlayed";
 import AlbumsForYou from "@/components/discover/AlbumsForYou";
 import NewCrewForYou from "@/components/discover/NewCrewForYou";
+import DiscoverWithStations from "@/components/discover/DiscoverWithStations";
 import { getHome } from "@/services/api/discover.service";
 import type { HomeData } from "@/services/api/discover.service";
 
@@ -24,7 +25,7 @@ const DiscoverPageAuth = () => {
       {/* Two Column Layout */}
       <div className="flex gap-11 p-0">
         {/* Main Content — 70% */}
-        <div className="flex flex-col gap-10 flex-[8] min-w-0 pt-10">
+        <div className="flex flex-col gap-15 flex-[8] min-w-0 pt-10">
           {homeError && (
             <p className="text-xs text-text-secondary">{homeError}</p>
           )}
@@ -37,6 +38,7 @@ const DiscoverPageAuth = () => {
           </HorizontalCarousel>
           <RecentlyPlayed />
           <AlbumsForYou />
+          <DiscoverWithStations />
           <NewCrewForYou />
         </div>
 
