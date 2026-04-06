@@ -12,6 +12,7 @@ export interface Playlist {
   track_count: number;
   like_count: number;
   cover_image?: string | null;
+  is_album_view?: boolean; // indicates if the playlist is an album view rather than a user playlist
 }
 
 export interface PlaylistTrackItem {

@@ -73,41 +73,40 @@ export default function SetsPage() {
     <SkeletonCard key={i} />
   ));
 
-  const carouselContent = loading
-    ? skeletons
-    : visiblePlaylists.length > 0
-      ? visiblePlaylists.map((p) => (
-          <PlaylistCard key={p.playlist_id} playlist={p} />
-        ))
-      : [
-          <p key="empty" className="text-gray-400 text-sm py-6 px-1">
-            No playlists found.
-          </p>,
-        ];
-
   return (
-    <div className="container px-4 md:px-4 lg:px-20">
-      <SetsHeader
-        title="Hear your own playlists and the playlists you've liked:"
-        filterText={filterText}
-        setFilterText={setFilterText}
-        activeFilter={activeFilter}
-        setActiveFilter={setActiveFilter}
-        isDropdownOpen={isDropdownOpen}
-        setIsDropdownOpen={setIsDropdownOpen}
-        filterOptions={filterOptions}
-      />
+    <div className="container px-4 md:px-4 lg:px-20 min-h-screen flex flex-col">
+      {/* Header only if we have playlists or loading */}
+      {(visiblePlaylists.length > 0 || loading) && (
+        <SetsHeader
+          title="Your Playlists"
+          filterText={filterText}
+          setFilterText={setFilterText}
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          isDropdownOpen={isDropdownOpen}
+          setIsDropdownOpen={setIsDropdownOpen}
+          filterOptions={filterOptions}
+        />
+      )}
 
       {error && <p className="text-red-500 text-sm px-4 mt-2">{error}</p>}
-      
-      {/*if there are no playlists and no error show a message to create playlists*/}
-      {!loading && visiblePlaylists.length === 0 && !error && (
-        <p className="text-text-upload text-lg py-6 px-1 justify-center flex">
-          You haven't liked any playlists yet
-        </p>
-      )}
-      <div className="px-4 pt-2 pb-10">
-        <HorizontalCarousel title=" ">{carouselContent}</HorizontalCarousel>
+
+      <div className="flex px-4 pt-2 pb-10">
+        {loading ? (
+          <HorizontalCarousel title=" ">{skeletons}</HorizontalCarousel>
+        ) : visiblePlaylists.length > 0 ? (
+          <HorizontalCarousel title=" ">
+            {visiblePlaylists.map((p) => (
+              <PlaylistCard key={p.playlist_id} playlist={p} />
+            ))}
+          </HorizontalCarousel>
+        ) : (
+          <div className="flex flex-1 justify-center items-center ">
+            <p className="text-text-upload text-2xl font-bold text-center pt-16 pb-30">
+              You haven't created or liked any playlists yet.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="py-2 px-4">
