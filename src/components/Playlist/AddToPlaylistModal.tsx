@@ -11,6 +11,7 @@ import { Modal } from "../MessagingComponents/Modal";
 import PrivacyToggle from "@/components/Upload/PrivacyToggle";
 import { getRelatedTracks } from "@/services/mocks/Track.service";
 import type { Track } from "@/types/track";
+import { m } from "framer-motion";
 
 interface DisplayTrack {
   id: string | number;
@@ -103,7 +104,6 @@ const AddToPlaylistModal = ({
     }
   };
   const defaultPlaylistId = playlists[0]?.playlist_id;
-
   const handleCreate = async () => {
     if (!playlistTitle.trim()) return;
     setCreating(true);
@@ -112,8 +112,10 @@ const AddToPlaylistModal = ({
         name: playlistTitle.trim(),
         is_public: privacy === "public",
       });
-      await addTrackToPlaylist(res.data.playlist_id, String(trackId));
 
+      for (const t of tracksToAdd) {
+        await addTrackToPlaylist(res.data.playlist_id, String(t.id));
+      }
       // Add the new playlist to local state and switch to add tab
       const newPlaylist = res.data;
       setPlaylists((prev) => [
@@ -279,11 +281,37 @@ const AddToPlaylistModal = ({
               </div>
             </div>
 
+            {tracksToAdd.length > 0 && (
+              <div className=" pt-3">
+                {tracksToAdd.map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between py-1"
+                  >
+                    <span className="text-text-upload text-sm truncate">
+                      {t.artistName} - {t.title}
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        setTracksToAdd((prev) =>
+                          prev.filter((x) => x.id !== t.id),
+                        )
+                      }
+                      className="text-[#aaa] hover:text-white cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Related tracks */}
             {relatedTracks.length > 0 && (
-              <div className="mt-4 space-y-3 pb-2 max-h-96 overflow-y-auto border-t border-[#444]">
+              <div className="mt-4 space-y-3 pb-2 max-h-96 overflow-y-auto ">
                 <div className="px-2 py-2">
-                  <h3 className="text-sm font-bold text-text-upload">
+                  <h3 className="text-[17px] font-bold text-text-upload">
                     Looking for more tracks? Here are some from your likes.
                   </h3>
                 </div>
@@ -292,8 +320,12 @@ const AddToPlaylistModal = ({
                   <div key={t.id} className="p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
-                        <div className="w-12 h-12 rounded-sm bg-[#252525] flex items-center justify-center text-text-upload text-xs text-center px-2">
-                          {t.title.slice(0, 2).toUpperCase()}
+                        <div className="w-12 h-12 rounded-sm overflow-hidden bg-[#252525]">
+                          <img
+                            src={t.coverUrl}
+                            alt={`${t.title} cover`}
+                            className="w-full h-full object-cover rounded-sm"
+                          />
                         </div>
                         <div>
                           <h3 className="text-text-upload font-bold text-sm truncate">
