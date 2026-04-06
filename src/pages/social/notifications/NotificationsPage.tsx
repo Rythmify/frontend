@@ -4,7 +4,7 @@ import { fetchMyFollowing } from '@/services/api/notifications/notificationsAPI'
 import ArtistListSection from '@/components/UI/ArtistListSection'
 import NotificationHeader, { type FilterType } from '@/components/notificationsComponents/notificationHeader'
 import Spinner from '@/components/UI/Spinner'
-
+import GoMobileSection from '@/components/UI/GoMobile'
 interface Artist {
   username: string
   avatar?: string
@@ -79,6 +79,7 @@ const NotificationsPage = () => {
             viewAllLink="/followers"
             maxDisplay={4}
           />
+          <GoMobileSection />
         </div>
 
       </div>
