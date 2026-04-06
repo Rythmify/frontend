@@ -9,13 +9,14 @@ import { createPortal } from "react-dom";
 // ─── Props ────────────────────────────────────────────────
 interface TrackCardProps {
   track: Track;
+  widthClassName?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
-  card: `
+  card: (widthClassName?: string) => `
     group flex flex-col gap-2
-    w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]
+    ${widthClassName ?? "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"}
     cursor-pointer shrink-0
   `,
   imageWrapper: `
@@ -100,7 +101,7 @@ const tooltipStyles = {
 };
 
 // ─── Component ────────────────────────────────────────────
-const TrackCard = ({ track }: TrackCardProps) => {
+const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -127,7 +128,7 @@ const TrackCard = ({ track }: TrackCardProps) => {
 
   return (
     <div
-      className={styles.card}
+      className={styles.card(widthClassName)}
       onClick={() => navigate(`/${track.artistUsername}/${track.trackSlug}`)}
       data-test="card-track"
     >
