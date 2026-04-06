@@ -4,25 +4,19 @@ import {
   addTrackToPlaylist,
   createPlaylist,
   getPlaylist,
-  type Playlist,
-  type PlaylistTrackItem,
+} from "@/services/api/playlist/playlist.service";
+import type {
+  Playlist,
+  PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { Modal } from "../MessagingComponents/Modal";
 import PrivacyToggle from "@/components/Upload/PrivacyToggle";
-import { getRelatedTracks } from "@/services/mocks/Track.service";
+import { getTracks } from "@/services/mocks/Track.service";
 import type { Track } from "@/types/track";
-import { m } from "framer-motion";
-
-interface DisplayTrack {
-  id: string | number;
-  title: string;
-  artistName: string;
-}
 
 interface AddToPlaylistModalProps {
   trackId: string | number;
   trackTitle: string;
-  playlistId?: string; // if adding whole playlist
   onClose: () => void;
 }
 
@@ -30,15 +24,13 @@ const AddToPlaylistModal = ({
   trackId,
   trackTitle,
   onClose,
-  playlistId,
 }: AddToPlaylistModalProps) => {
   const [activeTab, setActiveTab] = useState<"add" | "create">("add");
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [tracksToAdd, setTracksToAdd] = useState<DisplayTrack[]>([]);
-  const [relatedTracks, setRelatedTracks] = useState<Track[]>([]);
+  const [allTracks, setAllTracks] = useState<Track[]>([]);
 
   // Create tab state
   const [playlistTitle, setPlaylistTitle] = useState(
@@ -57,53 +49,25 @@ const AddToPlaylistModal = ({
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
   useEffect(() => {
-    const fetchPlaylistsAndTracks = async () => {
-      try {
-        const res = await getMyPlaylists();
-        setPlaylists(res.data.items);
+    getTracks()
+      .then((data) => setAllTracks(data))
+      .catch(console.error);
+  }, []);
 
-        if (playlistId) {
-          const playlistRes = await getPlaylist(playlistId);
-          const tracks: DisplayTrack[] = (playlistRes.data.tracks || []).map(
-            (t) => ({
-              id: t.track_id,
-              title: t.title ?? "Untitled track",
-              artistName: "Unknown",
-            }),
-          );
-          setTracksToAdd(tracks);
-        } else if (trackId) {
-          setTracksToAdd([
-            { id: trackId, title: "Track", artistName: "Unknown" },
-          ]);
-          const related = await getRelatedTracks(trackId);
-          setRelatedTracks(related || []);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlaylistsAndTracks();
-  }, [trackId, playlistId]);
-
-  const handleAdd = async (pid: string) => {
-    setAdding(pid);
+  const handleAdd = async (playlistId: string) => {
+    setAdding(playlistId);
     try {
-      for (const t of tracksToAdd) {
-        await addTrackToPlaylist(pid, String(t.id));
-      }
-      setSuccess(pid);
+      await addTrackToPlaylist(playlistId, String(trackId));
+      setSuccess(playlistId);
     } catch (err) {
       console.error(err);
     } finally {
       setAdding(null);
     }
   };
-  const defaultPlaylistId = playlists[0]?.playlist_id;
+
   const handleCreate = async () => {
     if (!playlistTitle.trim()) return;
     setCreating(true);
@@ -112,10 +76,8 @@ const AddToPlaylistModal = ({
         name: playlistTitle.trim(),
         is_public: privacy === "public",
       });
+      await addTrackToPlaylist(res.data.playlist_id, String(trackId));
 
-      for (const t of tracksToAdd) {
-        await addTrackToPlaylist(res.data.playlist_id, String(t.id));
-      }
       // Add the new playlist to local state and switch to add tab
       const newPlaylist = res.data;
       setPlaylists((prev) => [
@@ -187,7 +149,6 @@ const AddToPlaylistModal = ({
             <h2 className="text-[22px] font-bold text-text-upload px-2 py-2">
               Create a playlist
             </h2>
-            <div className="h-[2px] bg-bg-inverted mx-2" />
           </div>
         )}
 
@@ -204,34 +165,19 @@ const AddToPlaylistModal = ({
             {playlists.map((playlist) => (
               <div key={playlist.playlist_id} className="p-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <img
-                      src={
-                        (playlist as Playlist & { cover_image?: string })
-                          .cover_image ||
-                        "https://picsum.photos/seed/default/80/80"
-                      }
-                      alt={`${playlist.name} cover`}
-                      className="w-12 h-12 rounded-sm object-cover"
-                    />
-                    <div>
-                      <h3 className="text-text-upload font-bold text-sm">
-                        {playlist.name}
-                      </h3>
-                      <p className="text-text-upload text-xs">
-                        {playlist.track_count}
-                      </p>
-                    </div>
+                  <div className="flex-1">
+                    <h3 className="text-text-upload font-bold text-sm">
+                      {playlist.name}
+                    </h3>
+                    <p className="text-text-upload text-xs">
+                      {playlist.track_count}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleAdd(playlist.playlist_id)}
-                      disabled={
-                        adding === playlist.playlist_id ||
-                        success === playlist.playlist_id
-                      }
-                      className="bg-input-bg text-text-upload text-sm font-bold px-3 py-1.5 rounded-sm 
-    hover:text-[#838383] transition-colors disabled:opacity-50 cursor-pointer"
+                      disabled={adding === playlist.playlist_id}
+                      className=" bg-input-bg text-text-upload text-sm font-bold px-3 py-1.5 rounded-sm hover:text-[#838383] transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       Add to playlist
                     </button>
@@ -280,80 +226,6 @@ const AddToPlaylistModal = ({
                 </button>
               </div>
             </div>
-
-            {tracksToAdd.length > 0 && (
-              <div className=" pt-3">
-                {tracksToAdd.map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between py-1"
-                  >
-                    <span className="text-text-upload text-sm truncate">
-                      {t.artistName} - {t.title}
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        setTracksToAdd((prev) =>
-                          prev.filter((x) => x.id !== t.id),
-                        )
-                      }
-                      className="text-[#aaa] hover:text-white cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Related tracks */}
-            {relatedTracks.length > 0 && (
-              <div className="mt-4 space-y-3 pb-2 max-h-96 overflow-y-auto ">
-                <div className="px-2 py-2">
-                  <h3 className="text-[17px] font-bold text-text-upload">
-                    Looking for more tracks? Here are some from your likes.
-                  </h3>
-                </div>
-
-                {relatedTracks.map((t) => (
-                  <div key={t.id} className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-12 h-12 rounded-sm overflow-hidden bg-[#252525]">
-                          <img
-                            src={t.coverUrl}
-                            alt={`${t.title} cover`}
-                            className="w-full h-full object-cover rounded-sm"
-                          />
-                        </div>
-                        <div>
-                          <h3 className="text-text-upload font-bold text-sm truncate">
-                            {t.title}
-                          </h3>
-                          <p className="text-text-upload text-xs truncate">
-                            {t.artistName}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() =>
-                            trackId &&
-                            defaultPlaylistId &&
-                            addTrackToPlaylist(defaultPlaylistId, String(t.id))
-                          }
-                          disabled={!defaultPlaylistId}
-                          className="bg-input-bg text-text-upload text-sm font-bold px-3 py-1.5 rounded-sm hover:text-[#838383] transition-colors disabled:opacity-50 cursor-pointer"
-                        >
-                          Add to Playlist
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </div>
