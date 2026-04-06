@@ -126,7 +126,7 @@ function Toast({
 
 type Theme = "Light" | "Dark" | "Automatic";
 
-function ChangeTheme({}) {
+function ChangeTheme() {
   const options: Theme[] = ["Light", "Dark", "Automatic"];
 
   const getInitial = (): Theme => {
@@ -147,7 +147,11 @@ function ChangeTheme({}) {
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
-    prefersDark ? root.classList.add("dark") : root.classList.remove("dark");
+    if (prefersDark) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
   } else {
     // No saved preference — default to dark
     root.classList.add("dark");
@@ -164,7 +168,11 @@ function ChangeTheme({}) {
       const prefersDark = window.matchMedia(
         "(prefers-color-scheme: dark)",
       ).matches;
-      prefersDark ? root.classList.add("dark") : root.classList.remove("dark");
+      if (prefersDark) {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
     }
   };
 

@@ -11,7 +11,11 @@ if (savedTheme === "Light") {
   root.classList.remove("dark");
 } else if (savedTheme === "Automatic") {
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  prefersDark ? root.classList.add("dark") : root.classList.remove("dark");
+  if (prefersDark) {
+    root.classList.add("dark");
+  } else {
+    root.classList.remove("dark");
+  }
 } else {
   // "Dark" or no preference — default to dark
   root.classList.add("dark");
