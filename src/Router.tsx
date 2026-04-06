@@ -94,7 +94,6 @@ const YouLikesPage = lazy(() => import("@/pages/you/likes/YouLikesPage"));
 const YouSetsPage = lazy(() => import("@/pages/you/sets/SetsPage"));
 const YouAlbumsPage = lazy(() => import("@/pages/you/albums/AlbumsPage"));
 const FollowingPage = lazy(() => import("@/pages/you/following/FollowingPage"));
-const YouFollowingPage = lazy(() => import("@/pages/you/following/YouFollowingPage"));
 const FollowerPage = lazy(() => import("@/pages/you/follower/FollowerPage"));
 const HistoryPage = lazy(() => import("@/pages/you/history/HistoryPage"));
 const StationsPage = lazy(() => import("@/pages/you/stations/StationsPage"));
@@ -255,12 +254,12 @@ export const router = createBrowserRouter([
                   { path: "likes", element: <Lazy component={YouLikesPage} /> },
                   { path: "sets", element: <Lazy component={YouSetsPage} /> },
                   { path: "albums", element: <Lazy component={YouAlbumsPage} /> },
-                  { path: "stations", element: <Lazy component={StationsPage} /> },
-                  { path: "following", element: <Lazy component={YouFollowingPage} /> },
+                  { path: "following", element: <Lazy component={FollowingPage} /> },
                   { path: "history", element: <Lazy component={HistoryPage} /> },
                 ],
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },
+              { path: "stations", element: <Lazy component={StationsPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
             ],
           },

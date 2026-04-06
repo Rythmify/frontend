@@ -61,8 +61,7 @@ export default function FollowingPage() {
   if (!user) return null;
 
   const handleTabChange = (tab: string) => {
-    const profileUsername = username ?? currentUser?.username;
-    const base = profileUsername ? `/${profileUsername}` : "/you";
+    const base = isOwner ? "/you" : `/${username}`;
     if (tab === "Likes") navigate(`${base}/likes`);
     if (tab === "Following") navigate(`${base}/following`);
     if (tab === "Followers") navigate(`${base}/follower`);
