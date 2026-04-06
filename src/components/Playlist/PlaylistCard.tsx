@@ -131,7 +131,7 @@ const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
   return (
     <div
       className={styles.card}
-      onClick={() => navigate(`/sets/${playlist.playlist_id}`)}
+      onClick={() => navigate(`/you/sets/${playlist.playlist_id}`)}
       data-test="playlist-card"
     >
       {/* Cover */}
@@ -239,7 +239,7 @@ const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowMoreMenu(false);
-                        navigate(`/sets/${playlist.playlist_id}`);
+                        navigate(`/you/sets/${playlist.playlist_id}`);
                       }}
                     >
                       <i className="fa-solid fa-list text-sm" />
