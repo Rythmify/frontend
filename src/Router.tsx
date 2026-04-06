@@ -38,7 +38,9 @@ const HomePage = lazy(() => import("@/pages/home/HomePage"));
 const SigninPage = lazy(() => import("@/pages/signin/SigninPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/signin/ResetPassword"));
 const VerifyEmailPage = lazy(() => import("@/pages/signin/VerifyEmailPage"));
-const CompleteProfilePage = lazy(() => import("@/pages/signin/CompleteProfilePage"));
+const CompleteProfilePage = lazy(
+  () => import("@/pages/signin/CompleteProfilePage"),
+);
 
 // Download
 const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
@@ -98,6 +100,9 @@ const FollowerPage = lazy(() => import("@/pages/you/follower/FollowerPage"));
 const HistoryPage = lazy(() => import("@/pages/you/history/HistoryPage"));
 const StationsPage = lazy(() => import("@/pages/you/stations/StationsPage"));
 const InsightsPage = lazy(() => import("@/pages/you/insights/InsightsPage"));
+const PlaylistSlugPage = lazy(
+  () => import("@/pages/you/sets/PlaylistSlugPage"),
+);
 
 // Settings
 const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage"));
@@ -250,17 +255,40 @@ export const router = createBrowserRouter([
               {
                 element: <Lazy component={LibraryLayout} />,
                 children: [
-                  { path: "library", element: <Lazy component={LibraryPage} /> },
+                  {
+                    path: "library",
+                    element: <Lazy component={LibraryPage} />,
+                  },
                   { path: "likes", element: <Lazy component={YouLikesPage} /> },
                   { path: "sets", element: <Lazy component={YouSetsPage} /> },
-                  { path: "albums", element: <Lazy component={YouAlbumsPage} /> },
-                  { path: "following", element: <Lazy component={FollowingPage} /> },
-                  { path: "history", element: <Lazy component={HistoryPage} /> },
+                  {
+                    path: "albums",
+                    element: <Lazy component={YouAlbumsPage} />,
+                  },
+                  {
+                    path: "following",
+                    element: <Lazy component={FollowingPage} />,
+                  },
+                  {
+                    path: "history",
+                    element: <Lazy component={HistoryPage} />,
+                  },
                 ],
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "stations", element: <Lazy component={StationsPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
+              {
+                path: "sets",
+                children: [
+                  { index: true, element: <Lazy component={YouSetsPage} /> },
+                  {
+                    path: ":playlistSlug",
+                    element: <Lazy component={PlaylistSlugPage} />,
+                  },
+                ],
+              },
+              { path: "albums", element: <Lazy component={YouAlbumsPage} /> },
             ],
           },
 
