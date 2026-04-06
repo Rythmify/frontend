@@ -329,13 +329,14 @@ export const messageHandlers = [
         );
       case "loading":
         return new Promise(() => {});
-      default:
+      default: {
         // use block-specific detail (unread messages) when in block test scenario
-       const detail = mockConfig.useBlockScenario
-  ? mockConversationDetailForBlock
-  : mockConversationDetail
+        const detail = mockConfig.useBlockScenario
+          ? mockConversationDetailForBlock
+          : mockConversationDetail;
 
-return HttpResponse.json(detail satisfies ConversationDetailResponse);
+        return HttpResponse.json(detail satisfies ConversationDetailResponse);
+      }
     }
   }),
 
