@@ -67,7 +67,7 @@ export default function TwoFactorPage() {
           </div>
         </div>
 
-        <button className="w-fit mt-4 px-3 py-3 text-sm font-semibold rounded-full bg-[var(--color-text-hover)] text-black hover:brightness-90 transition">
+        <button className="w-fit mt-4 px-3 py-3 text-sm font-semibold rounded-full bg-[var(--color-text-hover)] text-[var(--color-bg)] hover:brightness-90 transition">
           Enable Two-Factor Auth (2FA)
         </button>
       </div>
