@@ -1,5 +1,5 @@
 import React from 'react'
-interface SetsHeaterProps {
+interface SetsHeaderProps {
   filterText: string;
   setFilterText: (text: string) => void;
   activeFilter: string;
@@ -18,7 +18,7 @@ function SetsHeader({
   setIsDropdownOpen,
   filterOptions,
   title
-}: SetsHeaterProps) {
+}: SetsHeaderProps) {
   return (
     <div className="flex justify-between items-center py-2 px-4">
         <div className=" text-white text-[17px] font-bold ">
