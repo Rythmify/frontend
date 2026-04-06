@@ -4,6 +4,7 @@ import type {
   UnreadCountResponse,
   SuccessMessageResponse,
   Notification,
+  FollowingSearchResponse,
 } from '@/services/api/notifications/notificationsAPI';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
@@ -59,6 +60,13 @@ const mockNotifications: Notification[] = [
   },
 ]
 
+const mockFollowers = [
+  { id: 'u1', username: 'nour_abosaif',  display_name: 'NourAbosaif04', profile_picture: null, is_verified: false },
+  { id: 'u3', username: 'gamila',        display_name: 'Gamila',        profile_picture: null, is_verified: false },
+  { id: 'u4', username: 'alyaa_mohamed', display_name: 'Alyaa Mohamed', profile_picture: null, is_verified: false },
+  { id: 'u5', username: 'rana_ahmed',    display_name: 'rana ahmed',    profile_picture: null, is_verified: false },
+]
+
 // in-memory store so delete/read mutations persist during the session
 let notifications = [...mockNotifications]
 
@@ -80,6 +88,65 @@ export const resetNotificationMockConfig = () => {
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
 export const notificationHandlers = [
+
+  // ── Specific routes first ──────────────────────────────────────────────────
+
+  // GET /notifications/unread-count
+  http.get('*/notifications/unread-count', () => {
+    return HttpResponse.json({
+      success: true,
+      data: { unread_count: notifications.filter(n => !n.is_read).length },
+    } satisfies UnreadCountResponse)
+  }),
+
+  // POST /notifications/read-all
+  http.post('*/notifications/read-all', () => {
+    notifications = notifications.map(n => ({ ...n, is_read: true }))
+    return HttpResponse.json({
+      data: { success: true },
+      message: 'All notifications marked as read.',
+    } satisfies SuccessMessageResponse)
+  }),
+
+  // PATCH /notifications/:notificationId/read
+  http.patch('*/notifications/:notificationId/read', ({ params }) => {
+    const { notificationId } = params
+    const index = notifications.findIndex(n => n.id === notificationId)
+
+    if (index === -1) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Notification not found.' } },
+        { status: 404 }
+      )
+    }
+
+    notifications[index] = { ...notifications[index], is_read: true }
+    return HttpResponse.json({
+      data: { success: true },
+      message: 'Notification marked as read.',
+    } satisfies SuccessMessageResponse)
+  }),
+
+  // DELETE /notifications/:notificationId
+  http.delete('*/notifications/:notificationId', ({ params }) => {
+    const { notificationId } = params
+    const exists = notifications.find(n => n.id === notificationId)
+
+    if (!exists) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Notification not found.' } },
+        { status: 404 }
+      )
+    }
+
+    notifications = notifications.filter(n => n.id !== notificationId)
+    return HttpResponse.json({
+      data: { success: true },
+      message: 'Notification deleted.',
+    } satisfies SuccessMessageResponse)
+  }),
+
+  // ── Generic route last ─────────────────────────────────────────────────────
 
   // GET /notifications
   http.get('*/notifications', ({ request }) => {
@@ -140,58 +207,41 @@ export const notificationHandlers = [
     }
   }),
 
-  // GET /notifications/unread-count
-  http.get('*/notifications/unread-count', () => {
+  // ── Following ──────────────────────────────────────────────────────────────
+
+  // GET /users/me/following
+  http.get('*/users/me/following', ({ request }) => {
+    const url    = new URL(request.url)
+    const q      = url.searchParams.get('q') ?? ''
+    const limit  = parseInt(url.searchParams.get('limit')  ?? '10')
+    const offset = parseInt(url.searchParams.get('offset') ?? '0')
+
+    const filtered = q.trim()
+      ? mockFollowers.filter(
+          u =>
+            u.display_name.toLowerCase().includes(q.toLowerCase()) ||
+            u.username.toLowerCase().includes(q.toLowerCase())
+        )
+      : mockFollowers
+
+    const sliced      = filtered.slice(offset, offset + limit)
+    const total_items = filtered.length
+    const total_pages = Math.ceil(total_items / limit)
+    const page        = Math.floor(offset / limit) + 1
+
     return HttpResponse.json({
       success: true,
-      data: { unread_count: notifications.filter(n => !n.is_read).length },
-    } satisfies UnreadCountResponse)
-  }),
-
-  // POST /notifications/read-all
-  http.post('*/notifications/read-all', () => {
-    notifications = notifications.map(n => ({ ...n, is_read: true }))
-    return HttpResponse.json({
-      data: { success: true },
-      message: 'All notifications marked as read.',
-    } satisfies SuccessMessageResponse)
-  }),
-
-  // PATCH /notifications/:notificationId/read
-  http.patch('*/notifications/:notificationId/read', ({ params }) => {
-    const { notificationId } = params
-    const index = notifications.findIndex(n => n.id === notificationId)
-
-    if (index === -1) {
-      return HttpResponse.json(
-        { error: { code: 'NOT_FOUND', message: 'Notification not found.' } },
-        { status: 404 }
-      )
-    }
-
-    notifications[index] = { ...notifications[index], is_read: true }
-    return HttpResponse.json({
-      data: { success: true },
-      message: 'Notification marked as read.',
-    } satisfies SuccessMessageResponse)
-  }),
-
-  // DELETE /notifications/:notificationId
-  http.delete('*/notifications/:notificationId', ({ params }) => {
-    const { notificationId } = params
-    const exists = notifications.find(n => n.id === notificationId)
-
-    if (!exists) {
-      return HttpResponse.json(
-        { error: { code: 'NOT_FOUND', message: 'Notification not found.' } },
-        { status: 404 }
-      )
-    }
-
-    notifications = notifications.filter(n => n.id !== notificationId)
-    return HttpResponse.json({
-      data: { success: true },
-      message: 'Notification deleted.',
-    } satisfies SuccessMessageResponse)
+      data: {
+        items: sliced,
+        pagination: {
+          page,
+          per_page:    limit,
+          total_items,
+          total_pages,
+          has_next: offset + limit < total_items,
+          has_prev: offset > 0,
+        },
+      },
+    } satisfies FollowingSearchResponse)
   }),
 ]

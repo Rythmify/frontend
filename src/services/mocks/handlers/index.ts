@@ -5,6 +5,7 @@ import { trackPageHandlers as trackPageHandlers } from "./trackPageHandlers"; //
 import { discoverHandlers } from "./discoverHandlers";
 import { feedHandlers } from "./feedHandlers";
 import { playlistHandlers } from "./playlistHandlers"; // playlist API handlers
+import { notificationHandlers } from "./notificationHandlers";
 
 export const handlers = [
   ...trackHandlers, // upload/artist studio handlers
@@ -14,4 +15,5 @@ export const handlers = [
   ...trackPageHandlers, // track detail page + users handlers
   ...discoverHandlers,
   ...feedHandlers,
+  ...notificationHandlers,
 ];
