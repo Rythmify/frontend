@@ -6,13 +6,14 @@ import type { User } from "@/types/user";
 // ─── Props ────────────────────────────────────────────────
 interface UserCardProps {
   user: User;
+  widthClassName?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
-  card: `
+  card: (widthClassName?: string) => `
     group flex flex-col items-center gap-2
-    w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]
+    ${widthClassName ?? "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"}
     cursor-pointer shrink-0
   `,
   avatarWrapper: `
@@ -66,7 +67,7 @@ const getInitial = (name: string): string => {
 };
 
 // ─── Component ────────────────────────────────────────────
-const UserCard = ({ user }: UserCardProps) => {
+const UserCard = ({ user, widthClassName }: UserCardProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -75,7 +76,7 @@ const UserCard = ({ user }: UserCardProps) => {
 
   return (
     <div
-      className={styles.card}
+      className={styles.card(widthClassName)}
       onClick={handleClick}
       data-test={`user-card-${user.username}`}
     >

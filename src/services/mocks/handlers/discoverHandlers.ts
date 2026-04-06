@@ -327,6 +327,46 @@ const mockPublicUserBase: Omit<PublicUser, "id"> = {
   created_at: "2025-01-01T00:00:00Z",
 };
 
+// ─── Mock Following ───────────────────────────────────────────────────────────
+
+const mockFollowingUsers = [
+  {
+    id: "user-f1",
+    display_name: "Travis Scott",
+    username: "travisscott",
+    profile_picture: "https://picsum.photos/150/150?random=101",
+    is_verified: true,
+  },
+  {
+    id: "user-f2",
+    display_name: "Dua Lipa",
+    username: "dualipa",
+    profile_picture: "https://picsum.photos/150/150?random=102",
+    is_verified: true,
+  },
+  {
+    id: "user-f3",
+    display_name: "Billie Eilish",
+    username: "billieeilish",
+    profile_picture: "https://picsum.photos/150/150?random=103",
+    is_verified: true,
+  },
+  {
+    id: "user-f4",
+    display_name: "Drake",
+    username: "drake",
+    profile_picture: "https://picsum.photos/150/150?random=104",
+    is_verified: true,
+  },
+  {
+    id: "user-f5",
+    display_name: "SZA",
+    username: "sza",
+    profile_picture: "https://picsum.photos/150/150?random=105",
+    is_verified: false,
+  },
+];
+
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
 export const discoverHandlers = [
@@ -373,6 +413,17 @@ export const discoverHandlers = [
       data: {
         items: mockSuggestedUsers,
         meta: mockSuggestedMeta,
+      },
+    });
+  }),
+
+  // GET /users/me/following — list of users the current user follows
+  http.get("*/users/me/following", () => {
+    return HttpResponse.json({
+      data: {
+        items: mockFollowingUsers,
+        total: mockFollowingUsers.length,
+        query: null,
       },
     });
   }),
