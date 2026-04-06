@@ -289,6 +289,60 @@ function nextPosition(playlist: PlaylistDetails): number {
 }
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
+interface PlaylistDetails extends Playlist {
+  tracks: PlaylistTrackItem[];
+}
+
+const generateId = () => `playlist-${Math.random().toString(36).slice(2, 10)}`;
+
+// ─── Richer seeded playlists ──────────────────────────────
+interface PlaylistSeed extends Playlist {
+  cover_image: string | null;
+}
+
+const seedPlaylists: (PlaylistSeed & { tracks: PlaylistTrackItem[] })[] = [
+  {
+    playlist_id: "0001",
+    owner_user_id: "12345",
+    name: "أناشيد",
+    description: null,
+    is_public: false,
+    cover_image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&h=300&fit=crop",
+    created_at: "2026-01-10T00:00:00Z",
+    track_count: 0,
+    like_count: 0,
+    tracks: [],
+  },
+  {
+    playlist_id: "0002",
+    owner_user_id: "12345",
+    name: "my songs",
+    description: null,
+    is_public: true,
+    cover_image: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=300&fit=crop",
+    created_at: "2026-02-14T00:00:00Z",
+    track_count: 0,
+    like_count: 3,
+    tracks: [],
+  },
+];
+
+const playlists: Record<string, PlaylistDetails> = Object.fromEntries(
+  seedPlaylists.map((p) => [p.playlist_id, p as unknown as PlaylistDetails]),
+);
+
+const getMyPlaylistList = () =>
+  Object.values(playlists).map((p) => ({
+    playlist_id: p.playlist_id,
+    owner_user_id: p.owner_user_id,
+    name: p.name,
+    description: p.description,
+    is_public: p.is_public,
+    created_at: p.created_at,
+    track_count: p.track_count,
+    like_count: p.like_count,
+    cover_image: (p as unknown as { cover_image?: string | null }).cover_image ?? null,
+  }));
 
 export const playlistHandlers = [
   // POST /playlists — create a playlist
