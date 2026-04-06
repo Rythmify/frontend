@@ -7,7 +7,7 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "/api",
 });
 
-// Track endpoints
+// Track endpoints 
 
 /** GET /api/tracks */
 export async function getTracks(): Promise<Track[]> {
@@ -24,23 +24,21 @@ export async function getTrackById(id: number): Promise<Track> {
 /** GET /api/:username/:slug */
 export async function getTrackBySlug(
   username: string,
-  slug: string,
+  slug: string
 ): Promise<Track> {
   const { data } = await api.get<Track>(`/${username}/${slug}`);
   return data;
 }
 
 /** GET /api/tracks/:id/related */
-export async function getRelatedTracks(
-  trackId: number | string,
-): Promise<Track[]> {
+export async function getRelatedTracks(trackId: number): Promise<Track[]> {
   const { data } = await api.get<Track[]>(`/tracks/${trackId}/related`);
   return Array.isArray(data) ? data : [];
 }
 
 /** POST /api/tracks/:id/like */
 export async function likeTrack(
-  id: number,
+  id: number
 ): Promise<{ liked: boolean; likeCount: number }> {
   const { data } = await api.post(`/tracks/${id}/like`);
   return data;
@@ -48,7 +46,7 @@ export async function likeTrack(
 
 /** DELETE /api/tracks/:id/like */
 export async function unlikeTrack(
-  id: number,
+  id: number
 ): Promise<{ liked: boolean; likeCount: number }> {
   const { data } = await api.delete(`/tracks/${id}/like`);
   return data;
@@ -56,7 +54,7 @@ export async function unlikeTrack(
 
 /** POST /api/tracks/:id/repost */
 export async function repostTrack(
-  id: number,
+  id: number
 ): Promise<{ reposted: boolean; repostCount: number }> {
   const { data } = await api.post(`/tracks/${id}/repost`);
   return data;
@@ -72,7 +70,7 @@ export async function getTrackComments(trackId: number) {
 export async function postComment(
   trackId: number,
   text: string,
-  timestamp: number,
+  timestamp: number
 ) {
   const { data } = await api.post(`/tracks/${trackId}/comments`, {
     text,

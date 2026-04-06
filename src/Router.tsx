@@ -38,9 +38,7 @@ const HomePage = lazy(() => import("@/pages/home/HomePage"));
 const SigninPage = lazy(() => import("@/pages/signin/SigninPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/signin/ResetPassword"));
 const VerifyEmailPage = lazy(() => import("@/pages/signin/VerifyEmailPage"));
-const CompleteProfilePage = lazy(
-  () => import("@/pages/signin/CompleteProfilePage"),
-);
+const CompleteProfilePage = lazy(() => import("@/pages/signin/CompleteProfilePage"));
 
 // Download
 const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
@@ -94,9 +92,6 @@ const LibraryPage = lazy(() => import("@/pages/you/library/LibraryPage"));
 const LikesPage = lazy(() => import("@/pages/you/likes/LikesPage"));
 const YouLikesPage = lazy(() => import("@/pages/you/likes/YouLikesPage"));
 const YouSetsPage = lazy(() => import("@/pages/you/sets/SetsPage"));
-const PlaylistSlugPage = lazy(
-  () => import("@/pages/you/sets/PlaylistSlugPage"),
-);
 const YouAlbumsPage = lazy(() => import("@/pages/you/albums/AlbumsPage"));
 const FollowingPage = lazy(() => import("@/pages/you/following/FollowingPage"));
 const FollowerPage = lazy(() => import("@/pages/you/follower/FollowerPage"));
@@ -252,19 +247,6 @@ export const router = createBrowserRouter([
             path: "you",
             children: [
               { index: true, element: <YouRedirect /> },
-              { path: "library", element: <Lazy component={LibraryPage} /> },
-              { path: "likes", element: <Lazy component={LikesPage} /> },
-              {
-                path: "sets",
-                children: [
-                  { index: true, element: <Lazy component={YouSetsPage} /> },
-                  {
-                    path: ":playlistSlug",
-                    element: <Lazy component={PlaylistSlugPage} />,
-                  },
-                ],
-              },
-              { path: "albums", element: <Lazy component={YouAlbumsPage} /> },
               {
                 element: <Lazy component={LibraryLayout} />,
                 children: [
