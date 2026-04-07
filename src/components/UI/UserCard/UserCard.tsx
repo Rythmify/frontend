@@ -23,8 +23,14 @@ const styles = {
   `,
   avatar: `
     w-full h-full object-cover
-    group-hover:brightness-75
     transition-all duration-200
+  `,
+  avatarOverlay: `
+    absolute inset-0
+    opacity-0 group-hover:opacity-100
+    transition-opacity duration-200
+    flex items-center justify-center
+    bg-black/30
   `,
   avatarPlaceholder: `
     w-full h-full
@@ -96,6 +102,13 @@ const UserCard = ({ user, widthClassName }: UserCardProps) => {
             {getInitial(user.displayName)}
           </div>
         )}
+
+        {/* Hover overlay */}
+        <div className={styles.avatarOverlay}>
+          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg">
+            <i className="fa-solid fa-play text-black text-sm ml-0.5" />
+          </div>
+        </div>
       </div>
 
       {/* Display Name + Verified Badge */}
