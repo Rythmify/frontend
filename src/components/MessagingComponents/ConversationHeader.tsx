@@ -6,6 +6,7 @@ import { BlockUserModal } from './BlockModal'
 import { ReportModal } from './ReportModal'
 import { SpamModal } from './SpamModal'
 import { markMessageReadState } from '@/services/api/messaging/conversationApi'
+import { unblockUser } from '@/services/api/messaging/conversationApi'
 
 interface ConversationHeaderProps {
   reciepiantId: string
@@ -26,15 +27,13 @@ const ConversationHeader = ({
 }: ConversationHeaderProps) => {
   const navigate = useNavigate()
 
-  const [isBlockOpen, setIsBlockOpen]   = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isSpamOpen, setIsSpamOpen]     = useState(false)
+  const [isBlockOpen, setIsBlockOpen]   = useState(false)
   const [loadingRead, setLoadingRead]   = useState(false)
-  // false = conversation is read → button shows "Mark as unread"
-  // true  = conversation is unread → button shows "Mark as read"
   const [isUnread, setIsUnread]         = useState(false)
+  const [isBlocked, setIsBlocked]       = useState(false)
 
-  // reset button to "Mark as unread" every time a new conversation is opened
   useEffect(() => {
     setIsUnread(false)
   }, [conversationId])
@@ -44,8 +43,6 @@ const ConversationHeader = ({
     setLoadingRead(true)
     try {
       await markMessageReadState(conversationId, lastMessageId, isUnread)
-      // is_read: false when isUnread=false (marking as unread)
-      // is_read: true  when isUnread=true  (marking as read)
       setIsUnread(prev => !prev)
       onReadStateChange(!isUnread)
     } finally {
@@ -53,8 +50,17 @@ const ConversationHeader = ({
     }
   }
 
+  const handleUnblock = async () => {
+    try {
+      await unblockUser(reciepiantId)
+      setIsBlocked(false)
+    } catch {
+      // silently fail
+    }
+  }
+
   return (
-    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3">
+    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3 sticky top-0 bg-your-background-color z-10">
 
       <div className="flex items-center gap-2 text-text">
         <button
@@ -68,9 +74,9 @@ const ConversationHeader = ({
         <button
           data-test="conversation-block-button"
           className="p-2 text-sm font-bold text-text-secondary hover:text-text-hover"
-          onClick={() => setIsBlockOpen(true)}
+          onClick={isBlocked ? handleUnblock : () => setIsBlockOpen(true)}
         >
-          Block
+          {isBlocked ? 'Unblock' : 'Block'}
         </button>
 
         <button
@@ -103,6 +109,10 @@ const ConversationHeader = ({
           userId={reciepiantId}
           username={recipientName}
           onClose={() => setIsBlockOpen(false)}
+          onBlocked={() => {
+            setIsBlocked(true)
+            setIsBlockOpen(false)
+          }}
         />
       </Modal>
 
