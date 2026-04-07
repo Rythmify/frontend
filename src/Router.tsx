@@ -260,7 +260,19 @@ export const router = createBrowserRouter([
                     element: <Lazy component={LibraryPage} />,
                   },
                   { path: "likes", element: <Lazy component={YouLikesPage} /> },
-                  { path: "sets", element: <Lazy component={YouSetsPage} /> },
+                  {
+                    path: "sets",
+                    children: [
+                      {
+                        index: true,
+                        element: <Lazy component={YouSetsPage} />,
+                      },
+                      {
+                        path: ":playlistSlug",
+                        element: <Lazy component={PlaylistSlugPage} />,
+                      },
+                    ],
+                  },
                   {
                     path: "albums",
                     element: <Lazy component={YouAlbumsPage} />,
@@ -278,17 +290,6 @@ export const router = createBrowserRouter([
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "stations", element: <Lazy component={StationsPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
-              {
-                path: "sets",
-                children: [
-                  { index: true, element: <Lazy component={YouSetsPage} /> },
-                  {
-                    path: ":playlistSlug",
-                    element: <Lazy component={PlaylistSlugPage} />,
-                  },
-                ],
-              },
-              { path: "albums", element: <Lazy component={YouAlbumsPage} /> },
             ],
           },
 
