@@ -14,6 +14,8 @@ export interface NotificationActor {
 export interface NotificationResource {
   type: 'track' | 'user' | 'playlist' | 'comment';
   id: string;
+  title?: string 
+  body?: string 
 }
 
 export interface Notification {

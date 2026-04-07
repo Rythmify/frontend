@@ -12,8 +12,8 @@ export const handlers = [
   ...authHandlers,
   ...playlistHandlers,
   ...messageHandlers,
+  ...notificationHandlers,
   ...trackPageHandlers, // track detail page + users handlers
   ...discoverHandlers,
   ...feedHandlers,
-  ...notificationHandlers,
 ];
