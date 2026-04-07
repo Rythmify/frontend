@@ -71,7 +71,7 @@ export default function StationCard({
 
         {/* Three artist circles */}
         {/* Circle 1 — top-left, small */}
-        <div className="absolute top-[6%] left-[4%] w-[36%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20 z-10">
+        <div className="absolute top-[6%] left-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20 z-10">
           {artists[0]?.avatarUrl ? (
             <img src={artists[0].avatarUrl} alt={artists[0].displayName ?? ""} className="w-full h-full object-cover" />
           ) : (
@@ -80,7 +80,7 @@ export default function StationCard({
         </div>
 
         {/* Circle 2 — center, largest */}
-        <div className="absolute top-[22%] left-[24%] w-[46%] aspect-square rounded-full overflow-hidden border-[2px] border-white/25 z-20">
+        <div className="absolute top-[22%] left-[24%] w-[50%] aspect-square rounded-full overflow-hidden border-[2px] border-white/25 z-20">
           {artists[1]?.avatarUrl ? (
             <img src={artists[1].avatarUrl} alt={artists[1].displayName ?? ""} className="w-full h-full object-cover" />
           ) : (
@@ -89,7 +89,7 @@ export default function StationCard({
         </div>
 
         {/* Circle 3 — bottom-right, small */}
-        <div className="absolute bottom-[14%] right-[4%] w-[34%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20 z-10">
+        <div className="absolute bottom-[14%] right-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20 z-10">
           {artists[2]?.avatarUrl ? (
             <img src={artists[2].avatarUrl} alt={artists[2].displayName ?? ""} className="w-full h-full object-cover" />
           ) : (
@@ -113,26 +113,22 @@ export default function StationCard({
         </div>
 
         {/* Hover overlay */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40">
-          {/* Dark overlay */}
-          <div className="absolute inset-0 bg-white/30" />
-
-          {/* Play button — center */}
-          <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40">
+          <div className="absolute inset-0 bg-black/30" />
+          <div />
+          <div className="flex items-center justify-center flex-1">
             <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg">
               <i className="fa-solid fa-play text-black text-lg ml-1" />
             </div>
           </div>
-
-          {/* Heart — bottom-right */}
-          <button className="absolute bottom-2 right-12 text-[#e74c3c] text-lg hover:scale-110 transition-transform">
-            <i className="fa-solid fa-heart" />
-          </button>
-
-          {/* Three dots — bottom-right */}
-          <button className="absolute bottom-3 right-3 text-white/80 text-sm hover:text-white transition-colors tracking-widest">
-            •••
-          </button>
+          <div className="flex items-center justify-end gap-2 px-2 pb-2">
+            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+              <i className="fa-sharp fa-regular fa-heart text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
+            </button>
+            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+              <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
+            </button>
+          </div>
         </div>
       </div>
 

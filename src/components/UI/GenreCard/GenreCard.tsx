@@ -53,25 +53,22 @@ export default function GenreCard({
         </div>
 
         {/* Hover overlay */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div />
+          <div className="flex items-center justify-center flex-1">
             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg">
               <i className="fa-solid fa-play text-black text-sm ml-0.5" />
             </div>
           </div>
-          <button
-            className="absolute bottom-2 right-10 text-[#e74c3c] text-base hover:scale-110 transition-transform z-10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <i className="fa-solid fa-heart" />
-          </button>
-          <button
-            className="absolute bottom-2.5 right-2.5 text-white/80 text-xs hover:text-white transition-colors tracking-widest z-10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            •••
-          </button>
+          <div className="flex items-center justify-end gap-2 px-2 pb-2">
+            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+              <i className="fa-sharp fa-regular fa-heart text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
+            </button>
+            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+              <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
+            </button>
+          </div>
         </div>
       </div>
 

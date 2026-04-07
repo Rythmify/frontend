@@ -11,8 +11,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     title: "Butterfly Effect",
     artistName: "Travis Scott",
     artistUsername: "travisscott",
-    coverUrl:
-      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=11",
     genre: "Hip-Hop",
     likeCount: 2543,
     repostCount: 845,
@@ -31,8 +30,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     title: "Good As Hell",
     artistName: "Lizzo",
     artistUsername: "lizzo",
-    coverUrl:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=12",
     genre: "R&B",
     likeCount: 3421,
     repostCount: 1203,
@@ -51,8 +49,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     title: "Blinding Lights",
     artistName: "The Weeknd",
     artistUsername: "theweeknd",
-    coverUrl:
-      "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=13",
     genre: "Synthwave",
     likeCount: 5678,
     repostCount: 2341,
@@ -73,8 +70,7 @@ export const mockRecentlyPlayedMixes: (Mix & { type: "mix" })[] = [
     id: "mix-1",
     label: "MIX 1",
     flavor: "listening_history",
-    coverUrl:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=21",
     trackCount: 27,
     generatedAt: "2026-03-20T00:00:00Z",
     
@@ -84,8 +80,7 @@ export const mockRecentlyPlayedMixes: (Mix & { type: "mix" })[] = [
     id: "mix-2",
     label: "More of What You Like",
     flavor: "taste_profile",
-    coverUrl:
-      "https://images.unsplash.com/photo-1511379938547-c1f69b13d835?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=22",
     trackCount: 19,
     generatedAt: "2026-03-19T00:00:00Z",
   
@@ -101,16 +96,14 @@ export const mockRecentlyPlayedStations: (Station & { type: "station" })[] = [
       id: "artist-1",
       displayName: "Drake",
       username: "drake",
-      avatarUrl:
-        "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=150&h=150&fit=crop",
+      avatarUrl: "https://picsum.photos/150/150?random=31",
     },
     artists: [
-      { avatarUrl: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=150&h=150&fit=crop", displayName: "Drake" },
-      { avatarUrl: "https://picsum.photos/150/150?random=42", displayName: "Artist 2" },
-      { avatarUrl: "https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=150&h=150&fit=crop", displayName: "Artist 3" },
+      { avatarUrl: "https://picsum.photos/150/150?random=31", displayName: "Drake" },
+      { avatarUrl: "https://picsum.photos/150/150?random=32", displayName: "Artist 2" },
+      { avatarUrl: "https://picsum.photos/150/150?random=33", displayName: "Artist 3" },
     ],
-    coverUrl:
-      "https://images.unsplash.com/photo-1503225671151-7e9f00e7dee2?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=31",
     trackCount: 50,
   },
   {
@@ -121,16 +114,14 @@ export const mockRecentlyPlayedStations: (Station & { type: "station" })[] = [
       id: "artist-2",
       displayName: "SZA",
       username: "sza",
-      avatarUrl:
-        "https://images.unsplash.com/photo-1516575334481-f410cf6b98bb?w=150&h=150&fit=crop",
+      avatarUrl: "https://picsum.photos/150/150?random=41",
     },
     artists: [
-      { avatarUrl: "https://images.unsplash.com/photo-1516575334481-f410cf6b98bb?w=150&h=150&fit=crop", displayName: "SZA" },
-      { avatarUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&h=150&fit=crop", displayName: "Artist 2" },
-      { avatarUrl: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=150&h=150&fit=crop", displayName: "Artist 3" },
+      { avatarUrl: "https://picsum.photos/150/150?random=41", displayName: "SZA" },
+      { avatarUrl: "https://picsum.photos/150/150?random=42", displayName: "Artist 2" },
+      { avatarUrl: "https://picsum.photos/150/150?random=43", displayName: "Artist 3" },
     ],
-    coverUrl:
-      "https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=41",
     trackCount: 50,
   },
 ];

@@ -1,54 +1,61 @@
-import type { PersonalMix } from "@/services/api/discover.service";
+// ─── Types ────────────────────────────────────────────────
 
-// ─── Badge colors per mix index ───────────────────────────
-
-const BADGE_COLORS: { bg: string; text: string }[] = [
-  { bg: "#333333", text: "#000000" }, // MIX 1 — dark gray
-  { bg: "#1a6de0", text: "#000000" }, // MIX 2 — blue
-  { bg: "#e8e8e8", text: "#000000" }, // MIX 3 — light
-  { bg: "#ff6600", text: "#000000" }, // MIX 4 — orange
-  { bg: "#ff0000", text: "#000000" }, // MIX 5 — red
-];
+export interface MadeForYouItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  coverUrl: string;
+  /** e.g. ["DAILY", "DROPS"] or ["WEEKLY", "WAVE"] */
+  badgeWords: [string, string];
+  badgeBg?: string;
+}
 
 // ─── Props ────────────────────────────────────────────────
 
-interface MixCardProps {
-  mix: PersonalMix;
-  index?: number;
+interface MadeForYouCardProps {
+  item: MadeForYouItem;
   widthClassName?: string;
 }
 
 // ─── Component ────────────────────────────────────────────
 
-export default function MixCard({
-  mix,
-  index = 0,
+export default function MadeForYouCard({
+  item,
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
-}: MixCardProps) {
-  const badge = BADGE_COLORS[index % BADGE_COLORS.length];
+}: MadeForYouCardProps) {
+  const bg = item.badgeBg ?? "#1a237e";
 
   return (
     <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {mix.cover_image && (
-          <img
-            src={mix.cover_image}
-            alt={mix.label}
-            className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
-          />
-        )}
+        <img
+          src={item.coverUrl}
+          alt={item.title}
+          className="w-full h-full object-cover transition-all duration-200"
+        />
 
-        {/* MIX badge — bottom-left */}
+        {/* SoundCloud logo — top-right */}
+        <div className="absolute top-2 right-2 opacity-70 z-10">
+          <i className="fa-brands fa-soundcloud text-white text-base" />
+        </div>
+
+        {/* Badge — bottom */}
         <div
-          className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm flex items-baseline gap-1"
-          style={{ backgroundColor: badge.bg }}
+          className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm flex items-baseline gap-1.5"
+          style={{ backgroundColor: bg }}
         >
           <span
-            className="text-2xl tracking-widest uppercase leading-none"
-            style={{ color: badge.text, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
+            className="text-2xl uppercase leading-none text-white"
+            style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontStyle: "italic" }}
           >
-            {mix.label}
+            {item.badgeWords[0]}
+          </span>
+          <span
+            className="text-2xl uppercase leading-none text-white"
+            style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
+          >
+            {item.badgeWords[1]}
           </span>
         </div>
 
@@ -72,10 +79,9 @@ export default function MixCard({
         </div>
       </div>
 
-      {/* Subtitle */}
-      <p className="text-text-secondary text-xs truncate">
-        {mix.track_count} tracks
-      </p>
+      {/* Text */}
+      <p className="text-white text-sm font-semibold truncate">{item.title}</p>
+      <p className="text-text-secondary text-xs truncate">{item.subtitle}</p>
     </div>
   );
 }
