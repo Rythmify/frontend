@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import { Bell, Mail, ChevronDown, MoreHorizontal, Menu, X, Search } from "lucide-react";
-
+import { disconnectSocket } from '@/services/api/messaging/socketService';
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -48,6 +48,7 @@ const MainNavbar = () => {
   }, []);
 
   const handleSignOut = () => {
+    disconnectSocket();
     logout();
     navigate("/logout");
   };
