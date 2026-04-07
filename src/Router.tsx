@@ -262,16 +262,7 @@ export const router = createBrowserRouter([
                   { path: "likes", element: <Lazy component={YouLikesPage} /> },
                   {
                     path: "sets",
-                    children: [
-                      {
-                        index: true,
-                        element: <Lazy component={YouSetsPage} />,
-                      },
-                      {
-                        path: ":playlistSlug",
-                        element: <Lazy component={PlaylistSlugPage} />,
-                      },
-                    ],
+                    element: <Lazy component={YouSetsPage} />,
                   },
                   {
                     path: "albums",
@@ -290,6 +281,12 @@ export const router = createBrowserRouter([
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "stations", element: <Lazy component={StationsPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
+
+              // Track Slug / Playlist Slug view
+              {
+                path: "sets/:playlistSlug",
+                element: <Lazy component={PlaylistSlugPage} />,
+              },
             ],
           },
 
