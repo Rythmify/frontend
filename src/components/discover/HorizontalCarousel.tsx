@@ -105,12 +105,32 @@ const HorizontalCarousel = ({
     scrollRef.current?.scrollBy({ left: distance, behavior: "smooth" });
   };
 
+  // Recheck arrow state whenever content changes (e.g. async data loads)
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
-    setAtEnd(
-      container.scrollLeft + container.clientWidth >= container.scrollWidth - 1,
-    );
+
+    const update = () => {
+      setAtStart(container.scrollLeft === 0);
+      setAtEnd(
+        container.scrollLeft + container.clientWidth >= container.scrollWidth - 1,
+      );
+    };
+
+    update();
+
+    // ResizeObserver: fires on window/container resize
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(container);
+
+    // MutationObserver: fires when async children are added/removed
+    const mutationObserver = new MutationObserver(update);
+    mutationObserver.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    };
   }, []);
 
   const handleNudge = (direction: "left" | "right") => {
