@@ -8,6 +8,7 @@ import AlbumsForYou from "@/components/discover/AlbumsForYou";
 import NewCrewForYou from "@/components/discover/NewCrewForYou";
 import DiscoverWithStations from "@/components/discover/DiscoverWithStations";
 import MixedForYou from "@/components/discover/MixedForYou";
+import TrendingByGenres from "@/components/discover/TrendingByGenres";
 import { getHome } from "@/services/api/discover.service";
 import type { HomeData } from "@/services/api/discover.service";
 
@@ -38,6 +39,7 @@ const DiscoverPageAuth = () => {
             ))}
           </HorizontalCarousel>
           <MixedForYou />
+          <TrendingByGenres />
           <RecentlyPlayed />
           <AlbumsForYou />
           <DiscoverWithStations />

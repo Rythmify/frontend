@@ -1,54 +1,54 @@
-import type { PersonalMix } from "@/services/api/discover.service";
+import type { BuzzingPlaylist } from "@/services/api/discover.service";
 
-// ─── Badge colors per mix index ───────────────────────────
+// ─── Badge colors per genre index ─────────────────────────
 
 const BADGE_COLORS: { bg: string; text: string }[] = [
-  { bg: "#333333", text: "#000000" }, // MIX 1 — dark gray
-  { bg: "#1a6de0", text: "#000000" }, // MIX 2 — blue
-  { bg: "#e8e8e8", text: "#000000" }, // MIX 3 — light
-  { bg: "#ff6600", text: "#000000" }, // MIX 4 — orange
-  { bg: "#ff0000", text: "#000000" }, // MIX 5 — red
+  { bg: "#333333", text: "#000000" },
+  { bg: "#1a6de0", text: "#000000" },
+  { bg: "#e8e8e8", text: "#000000" },
+  { bg: "#ff6600", text: "#000000" },
+  { bg: "#ff0000", text: "#000000" },
 ];
 
 // ─── Props ────────────────────────────────────────────────
 
-interface MixCardProps {
-  mix: PersonalMix;
+interface GenreCardProps {
+  item: BuzzingPlaylist;
   index?: number;
   widthClassName?: string;
 }
 
 // ─── Component ────────────────────────────────────────────
 
-export default function MixCard({
-  mix,
+export default function GenreCard({
+  item,
   index = 0,
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
-}: MixCardProps) {
+}: GenreCardProps) {
   const badge = BADGE_COLORS[index % BADGE_COLORS.length];
 
   return (
     <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {mix.cover_image && (
+        {item.cover_image && (
           <img
-            src={mix.cover_image}
-            alt={mix.label}
-            className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
+            src={item.cover_image}
+            alt={item.genre}
+            className="w-full h-full object-cover transition-all duration-200"
           />
         )}
 
-        {/* MIX badge — bottom-left */}
+        {/* Genre badge — bottom-left */}
         <div
-          className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm flex items-baseline gap-1"
+          className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm"
           style={{ backgroundColor: badge.bg }}
         >
           <span
             className="text-base tracking-widest uppercase leading-none"
             style={{ color: badge.text, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
           >
-            {mix.label}
+            {item.genre}
           </span>
         </div>
 
@@ -77,7 +77,7 @@ export default function MixCard({
 
       {/* Subtitle */}
       <p className="text-text-secondary text-xs truncate">
-        {mix.track_count} tracks
+        {item.track_count} tracks
       </p>
     </div>
   );

@@ -26,7 +26,6 @@ const styles = {
   image: `
     w-full h-full object-cover
     text-white
-    group-hover:brightness-75
     transition-all duration-200
   `,
   overlay: `
@@ -35,6 +34,9 @@ const styles = {
     justify-between
     opacity-0 group-hover:opacity-100
     transition-opacity duration-200
+  `,
+  overlayBg: `
+    absolute inset-0 bg-black/30
   `,
   overlayCenter: `
     flex items-center justify-center
@@ -46,15 +48,15 @@ const styles = {
   `,
   likeButton: `
     fa-sharp fa-regular fa-heart
-    text-[10px] text-black
+    text-[10px] text-white
   `,
   likeButtonActive: `
     fa-sharp fa-solid fa-heart
-    text-[10px] text-red-500
+    text-[10px] text-[#e74c3c]
   `,
   moreButton: `
     fa-solid fa-ellipsis
-    text-[10px] text-black
+    text-[10px] text-white
   `,
   playButton: `
     w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16
@@ -78,7 +80,7 @@ const styles = {
     group/btn
   `,
   actionIcon: `
-    text-[12px] text-black
+    text-[12px] text-white
     group-hover/btn:opacity-50
     transition-opacity duration-150
   `,
@@ -140,6 +142,9 @@ const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
           data-test="trackcard-image"
         />
         <div className={styles.overlay}>
+          {/* Dark overlay */}
+          <div className={styles.overlayBg} />
+
           {/* Top spacer */}
           <div />
 
