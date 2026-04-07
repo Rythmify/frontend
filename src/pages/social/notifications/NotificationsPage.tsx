@@ -5,6 +5,8 @@ import ArtistListSection from '@/components/UI/ArtistListSection'
 import NotificationHeader, { type FilterType } from '@/components/notificationsComponents/notificationHeader'
 import Spinner from '@/components/UI/Spinner'
 import GoMobileSection from '@/components/UI/GoMobile'
+import notificationCard from '@/components/notificationsComponents/notificationCard';
+import NotificationCard from '@/components/notificationsComponents/notificationCard'
 interface Artist {
   username: string
   avatar?: string
@@ -66,7 +68,14 @@ const NotificationsPage = () => {
           />
 
           {status === 'loading' && <Spinner />}
-          {status === 'success' && <p className="text-white">Here exist notifications</p>}
+
+          {status === 'success' && (
+             <div className="flex flex-col">
+               {notifications.map(n => (
+                <NotificationCard key={n.id} notification={n} />
+             ))}
+             </div> 
+          )}         
           {status === 'empty' && <p className="text-text-secondary">You don't have any notifications</p>}
           {status === 'error' && <p className="text-text-secondary">Something went wrong.</p>}
         </div>

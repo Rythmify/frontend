@@ -10,61 +10,81 @@ import type {
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
 const mockNotifications: Notification[] = [
+  // follow — has Follow button, navigates to profile
   {
     id: '1',
     type: 'follow',
-    actor: { id: 'u1', username: 'nour_abosaif', display_name: 'NourAbosaif04', profile_picture: null },
+    actor: { id: 'u1', username: 'farah_medhat', display_name: 'Farah medhat', profile_picture: null },
     resource: null,
     is_read: false,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
   },
+  // comment — no Follow button, navigates to track
   {
     id: '2',
-    type: 'repost',
-    actor: { id: 'u2', username: 'farah_medhat', display_name: 'Farah medhat', profile_picture: null },
-    resource: { type: 'track', id: 't1' },
+    type: 'comment',
+    actor: { id: 'u2', username: 'rana_ahmed', display_name: 'rana ahmed', profile_picture: null },
+    resource: { type: 'track', id: 'track-001', body: 'hiii' },
     is_read: false,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
   },
+  // follow — has Follow button, navigates to profile
   {
     id: '3',
-    type: 'like',
-    actor: { id: 'u2', username: 'farah_medhat', display_name: 'Farah medhat', profile_picture: null },
-    resource: { type: 'track', id: 't1' },
-    is_read: true,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '4',
     type: 'follow',
-    actor: { id: 'u3', username: 'gamila', display_name: 'Gamila', profile_picture: null },
+    actor: { id: 'u3', username: 'nour_abosaif', display_name: 'NourAbosaif04', profile_picture: null },
     resource: null,
     is_read: true,
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
   },
+  // repost — no Follow button, navigates to track
+  {
+    id: '4',
+    type: 'repost',
+    actor: { id: 'u4', username: 'farah_medhat2', display_name: 'Farah medhat', profile_picture: null },
+    resource: { type: 'track', id: 'track-002', title: 'voice memo - April 3, 2026 at 12:23 AM' },
+    is_read: true,
+    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
+  },
+  // like — no Follow button, navigates to track
   {
     id: '5',
-    type: 'comment',
-    actor: { id: 'u4', username: 'alyaa_mohamed', display_name: 'Alyaa Mohamed', profile_picture: null },
-    resource: { type: 'track', id: 't2' },
+    type: 'like',
+    actor: { id: 'u4', username: 'farah_medhat2', display_name: 'Farah medhat', profile_picture: null },
+    resource: { type: 'track', id: 'track-002', title: 'voice memo - April 3, 2026 at 12:23 AM' },
     is_read: true,
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
   },
+  // follow — has Follow button, navigates to profile
   {
     id: '6',
     type: 'follow',
-    actor: { id: 'u5', username: 'rana_ahmed', display_name: 'rana ahmed', profile_picture: null },
+    actor: { id: 'u5', username: 'gamila', display_name: 'Gamila', profile_picture: null },
     resource: null,
     is_read: true,
-    created_at: new Date('2026-03-07').toISOString(),
+    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // 6 days ago
+  },
+  // follow with profile picture — tests avatar rendering
+  {
+    id: '7',
+    type: 'follow',
+    actor: {
+      id: 'u6',
+      username: 'alyaa_mohamed',
+      display_name: 'Alyaa Mohamed',
+      profile_picture: 'https://i.pravatar.cc/150?img=5',
+    },
+    resource: null,
+    is_read: true,
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
   },
 ]
 
 const mockFollowers = [
-  { id: 'u1', username: 'nour_abosaif',  display_name: 'NourAbosaif04', profile_picture: null, is_verified: false },
-  { id: 'u3', username: 'gamila',        display_name: 'Gamila',        profile_picture: null, is_verified: false },
-  { id: 'u4', username: 'alyaa_mohamed', display_name: 'Alyaa Mohamed', profile_picture: null, is_verified: false },
-  { id: 'u5', username: 'rana_ahmed',    display_name: 'rana ahmed',    profile_picture: null, is_verified: false },
+  { id: 'u1', username: 'farah_medhat',  display_name: 'Farah medhat',  profile_picture: null, is_verified: false },
+  { id: 'u3', username: 'nour_abosaif',  display_name: 'NourAbosaif04', profile_picture: null, is_verified: false },
+  { id: 'u5', username: 'gamila',        display_name: 'Gamila',        profile_picture: null, is_verified: false },
+  { id: 'u6', username: 'alyaa_mohamed', display_name: 'Alyaa Mohamed', profile_picture: 'https://i.pravatar.cc/150?img=5', is_verified: false },
 ]
 
 // in-memory store so delete/read mutations persist during the session
