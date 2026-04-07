@@ -1,4 +1,6 @@
 import type { Station } from "@/types/station";
+import { useLikesStore } from "@/stores/likes.store";
+import { useHistoryStore } from "@/stores/history.store";
 
 // ─── Color Schemes ────────────────────────────────────────
 
@@ -52,6 +54,10 @@ export default function StationCard({
   widthClassName = "w-[200px]",
   colorIndex = 0,
 }: StationCardProps) {
+  const { isStationLiked, toggleStation } = useLikesStore();
+  const { addStation } = useHistoryStore();
+  const liked = isStationLiked(station.id);
+
   // Use the artists array if available, otherwise fall back to seedArtist for all 3
   const artists = station.artists?.length
     ? station.artists
@@ -114,16 +120,22 @@ export default function StationCard({
 
         {/* Hover overlay */}
         <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40">
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
           <div />
           <div className="flex items-center justify-center flex-1">
-            <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg">
+            <button
+              className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg"
+              onClick={(e) => { e.stopPropagation(); addStation(station); }}
+            >
               <i className="fa-solid fa-play text-black text-lg ml-1" />
-            </div>
+            </button>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
-              <i className="fa-sharp fa-regular fa-heart text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
+            <button
+              className="flex flex-col items-center gap-0.5 group/btn"
+              onClick={(e) => { e.stopPropagation(); toggleStation(station); }}
+            >
+              <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
             </button>
             <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />

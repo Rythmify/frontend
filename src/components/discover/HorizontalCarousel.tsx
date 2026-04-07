@@ -119,9 +119,18 @@ const HorizontalCarousel = ({
 
     update();
 
-    const observer = new ResizeObserver(update);
-    observer.observe(container);
-    return () => observer.disconnect();
+    // ResizeObserver: fires on window/container resize
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(container);
+
+    // MutationObserver: fires when async children are added/removed
+    const mutationObserver = new MutationObserver(update);
+    mutationObserver.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    };
   }, []);
 
   const handleNudge = (direction: "left" | "right") => {

@@ -1,4 +1,6 @@
+import type React from "react";
 import type { BuzzingPlaylist } from "@/services/api/discover.service";
+import { useLikesStore } from "@/stores/likes.store";
 
 // ─── Badge colors per genre index ─────────────────────────
 
@@ -26,6 +28,13 @@ export default function GenreCard({
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: GenreCardProps) {
   const badge = BADGE_COLORS[index % BADGE_COLORS.length];
+  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const liked = isPlaylistLiked(item.id);
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    togglePlaylist({ id: item.id, title: item.genre, owner: `${item.track_count} tracks`, coverUrl: item.cover_image });
+  };
 
   return (
     <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
@@ -54,7 +63,7 @@ export default function GenreCard({
 
         {/* Hover overlay */}
         <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
           <div />
           <div className="flex items-center justify-center flex-1">
             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg">
@@ -62,8 +71,8 @@ export default function GenreCard({
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
-              <i className="fa-sharp fa-regular fa-heart text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
+            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={handleLike}>
+              <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
             </button>
             <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />

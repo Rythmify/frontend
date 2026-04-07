@@ -10,11 +10,13 @@ import {
   getTrackById,
 } from "@/services/api/discover.service";
 import { mapApiTrackToTrack } from "@/services/api/discover.mapper";
-import { mockRecentlyPlayedTracks, mockRecentlyPlayedStations } from "@/services/mocks/discover";
+import { mockRecentlyPlayedTracks } from "@/services/mocks/discover";
 import { getMyPlaylists, getMyFollowing } from "@/services/api/library.service";
 import type { LibraryPlaylist, FollowingUser } from "@/services/api/library.service";
 import type { Track } from "@/types/track";
 import type { User } from "@/types/user";
+import { useLikesStore } from "@/stores/likes.store";
+import { useHistoryStore } from "@/stores/history.store";
 
 // ─── Constants ────────────────────────────────────────────
 
@@ -59,17 +61,20 @@ function mapFollowingToUser(f: FollowingUser, index: number): User {
 // ─── Page ─────────────────────────────────────────────────
 
 export default function LibraryPage() {
-  const [recentlyPlayed, setRecentlyPlayed] = useState<Track[]>([]);
+  const [recentlyPlayedApi, setRecentlyPlayedApi] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<PlaylistCardData[]>([]);
   const [followingUsers, setFollowingUsers] = useState<User[]>([]);
+
+  const { likedTracks, likedStations, likedPlaylists } = useLikesStore();
+  const { entries, getRecentTracks } = useHistoryStore();
 
   useEffect(() => {
     getRecentlyPlayed()
       .then((items) =>
         Promise.all(items.map((item) => getTrackById(item.track.id))),
       )
-      .then((tracks) => setRecentlyPlayed(tracks.map(mapApiTrackToTrack)))
-      .catch(() => setRecentlyPlayed(mockRecentlyPlayedTracks));
+      .then((tracks) => setRecentlyPlayedApi(tracks.map(mapApiTrackToTrack)))
+      .catch(() => setRecentlyPlayedApi(mockRecentlyPlayedTracks));
   }, []);
 
   useEffect(() => {
@@ -84,28 +89,39 @@ export default function LibraryPage() {
       .catch(() => setFollowingUsers([]));
   }, []);
 
-  const displayedRecent = recentlyPlayed.length ? recentlyPlayed : mockRecentlyPlayedTracks;
+  // History store tracks take priority; fall back to API / mock
+  const historyTracks = getRecentTracks();
+  const recentTracks = historyTracks.length
+    ? historyTracks
+    : recentlyPlayedApi.length
+      ? recentlyPlayedApi
+      : mockRecentlyPlayedTracks;
+
+  const likesDisplay = likedTracks;
+
+  // Liked stations (from store)
+  const stationsDisplay = likedStations;
+
+  // suppress unused warning — entries drives getRecentTracks reactivity
+  void entries;
 
   return (
     <div className="flex flex-col gap-12">
       {/* Recently Played */}
       <Section title="Recently played">
-        {displayedRecent.map((track) => (
+        {recentTracks.map((track) => (
           <TrackCard key={track.id} track={track} widthClassName={CARD_WIDTH} />
         ))}
       </Section>
 
       {/* Likes */}
       <Section title="Likes">
-        <LikesContent
-          tracks={mockRecentlyPlayedTracks}
-          showControls={false}
-        />
+        <LikesContent tracks={likesDisplay} showControls={false} />
       </Section>
 
       {/* Playlists */}
       <Section title="Playlists">
-        {playlists.map((item) => (
+        {[...playlists, ...likedPlaylists.filter((lp) => !playlists.some((p) => p.id === lp.id))].map((item) => (
           <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
         ))}
       </Section>
@@ -117,7 +133,7 @@ export default function LibraryPage() {
 
       {/* Stations */}
       <Section title="Stations">
-        {mockRecentlyPlayedStations.map((station, i) => (
+        {stationsDisplay.map((station, i) => (
           <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} colorIndex={i} />
         ))}
       </Section>

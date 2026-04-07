@@ -1,10 +1,8 @@
-import { mockRecentlyPlayedTracks } from "@/services/mocks/discover";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
-import type { Track } from "@/types/track";
+import { useLikesStore } from "@/stores/likes.store";
 
 export default function YouLikesPage() {
-  // TODO: replace with API call when the likes endpoint is available
-  const tracks: Track[] = mockRecentlyPlayedTracks;
+  const { likedTracks } = useLikesStore();
 
-  return <LikesContent tracks={tracks} showControls />;
+  return <LikesContent tracks={likedTracks} showControls />;
 }

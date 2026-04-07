@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import { Tooltip } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
+import { useLikesStore } from "@/stores/likes.store";
+import { useHistoryStore } from "@/stores/history.store";
 import AddToPlaylistModal from "@/components/Playlist/AddToPlaylistModal";
 import { createPortal } from "react-dom";
 
@@ -36,7 +38,7 @@ const styles = {
     transition-opacity duration-200
   `,
   overlayBg: `
-    absolute inset-0 bg-black/30
+    absolute inset-0 bg-black/30 pointer-events-none
   `,
   overlayCenter: `
     flex items-center justify-center
@@ -107,24 +109,26 @@ const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [liked, setLiked] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
+  const { isTrackLiked, toggleTrack } = useLikesStore();
+  const { addTrack } = useHistoryStore();
+
+  const liked = isTrackLiked(track.id);
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
 
   // Handler for play button click (play/pause toggle)
   const handlePlayClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click from firing
+    e.stopPropagation();
 
     if (currentTrack?.id === track.id) {
-      // Same track is already loaded, just toggle play/pause
       togglePlay();
     } else {
-      // Different track, set it and start playing
       setTrack(track);
+      addTrack(track);
     }
   };
 
@@ -174,7 +178,7 @@ const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLiked(!liked);
+                  toggleTrack(track);
                 }}
                 className={styles.actionButton}
                 data-test="button-like"
