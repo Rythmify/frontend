@@ -13,6 +13,7 @@ import type {
   ListeningHistoryEntry,
 } from "./discover.service";
 import type { PublicUser } from "@/services/mocks/User.service";
+import type { Playlist } from "@/services/api/playlist/playlist.service";
 import type { Mix } from "@/types/mix";
 import type { Track } from "@/types/track";
 import type { Station } from "@/types/station";
@@ -132,27 +133,20 @@ export function mapDiscoveryStation(api: DiscoveryStation): Station {
 // ─── Albums ───────────────────────────────────────────────────────────────────
 
 /**
- * DiscoveryAlbum → Track (adapted)
- * Albums are playlist/set objects, not tracks. This maps them onto the Track shape
- * so they render in TrackCard. album.name → title, owner_name → artistName.
- * audioUrl is empty — clicking play on an album should open the album, not stream.
+ * DiscoveryAlbum → Playlist
  */
-export function mapDiscoveryAlbum(api: DiscoveryAlbum): Track {
+export function mapDiscoveryAlbum(api: DiscoveryAlbum): Playlist {
   return {
-    id: api.id as unknown as number,
-    title: api.name,
-    artistName: api.owner_name,
-    artistUsername: "",
-    coverUrl: api.cover_image ?? "",
-    genre: "",
-    likeCount: api.like_count,
-    repostCount: 0,
-    playCount: 0,
-    commentCount: 0,
-    duration: "0:00",
-    postedAt: api.created_at ?? "",
-    audioUrl: "",
-    waveformData: [],
+    playlist_id: api.id,
+    owner_user_id: api.owner_id,
+    name: api.name,
+    description: null,
+    is_public: true,
+    cover_image: api.cover_image,
+    subtype: "album",
+    track_count: api.track_count,
+    like_count: api.like_count,
+    created_at: api.created_at ?? "",
   };
 }
 

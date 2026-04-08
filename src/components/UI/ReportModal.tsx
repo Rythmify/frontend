@@ -1,4 +1,4 @@
-import { handleExternalAbuse, handleExternalImpersonation, handleExternalOther, handleExternalTrademark } from "./externalhandler"
+import { handleExternalAbuse, handleExternalImpersonation, handleExternalOther, handleExternalTrademark } from "../MessagingComponents/externalhandler"
 interface ReportAccountModalProps {
   username?: string
   userId?: string

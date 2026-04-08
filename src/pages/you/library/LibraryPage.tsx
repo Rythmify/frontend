@@ -3,6 +3,7 @@ import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
+import AlbumCard from "@/components/Playlist/PlaylistCard";
 import StationCard from "@/components/UI/StationCard/StationCard";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
 import { getRecentlyPlayed } from "@/services/api/discover.service";
@@ -13,28 +14,39 @@ import type {
   LibraryPlaylist,
   FollowingUser,
 } from "@/services/api/library.service";
+import {
+  getMyPlaylists as getMyPlaylistsApi,
+  getLikedPlaylists,
+  type Playlist,
+} from "@/services/api/playlist/playlist.service";
 import type { Track } from "@/types/track";
 import type { User } from "@/types/user";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
+import { useAuthStore } from "@/stores/auth.store";
 
 // ─── Constants ────────────────────────────────────────────
 
-const TITLE_CLASS = "text-white font-semibold text-[19px] text-left pb-4";
+const TITLE_CLASS = "text-white font-semibold text-[19px] text-left";
 const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
 
 // ─── Helpers ──────────────────────────────────────────────
 
 function Section({
   title,
+  action,
   children,
 }: {
   title: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <h2 className={TITLE_CLASS}>{title}</h2>
+      <div className="flex items-center justify-between pb-4">
+        <h2 className={TITLE_CLASS}>{title}</h2>
+        {action}
+      </div>
       <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
         {children}
       </div>
@@ -42,13 +54,68 @@ function Section({
   );
 }
 
+type FilterOption = "All" | "Created" | "Liked";
+
+function FilterDropdown({
+  value,
+  onChange,
+}: {
+  value: FilterOption;
+  onChange: (v: FilterOption) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const options: FilterOption[] = ["All", "Created", "Liked"];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center justify-between gap-2 min-w-[90px] border border-[#444] rounded-sm py-1.5 px-3 bg-transparent text-[13px] text-white font-bold hover:border-text-secondary transition-all cursor-pointer focus:outline-none"
+      >
+        <span>{value}</span>
+        <svg
+          viewBox="0 0 24 24"
+          className={`w-3.5 h-3.5 fill-current transition-transform ${open ? "rotate-180" : ""}`}
+        >
+          <path d="M20.5303 9.53033L12 18.0607L3.46967 9.53033L4.53033 8.46967L12 15.9393L19.4697 8.46967L20.5303 9.53033Z" />
+        </svg>
+      </button>
+
+      {open && (
+        <ul className="absolute right-0 mt-1 w-full border border-text-secondary rounded-sm shadow-xl z-20 overflow-hidden bg-bg py-1">
+          {options.map((opt) => (
+            <li key={opt}>
+              <button
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+                className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors cursor-pointer ${
+                  value === opt
+                    ? "text-white font-bold"
+                    : "text-text-secondary hover:text-white hover:bg-bg"
+                }`}
+              >
+                {opt}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // ─── Mappers ──────────────────────────────────────────────
 
-function mapPlaylistToCard(p: LibraryPlaylist): PlaylistCardData {
+function mapPlaylistToCard(
+  p: LibraryPlaylist,
+  displayName: string,
+): PlaylistCardData {
   return {
     id: p.playlist_id,
     title: p.name,
-    owner: p.owner_user_id,
+    owner: displayName,
     coverUrl: p.cover_image,
     isPrivate: !p.is_public,
     isLiked: p.like_count > 0,
@@ -71,9 +138,17 @@ function mapFollowingToUser(f: FollowingUser, index: number): User {
 export default function LibraryPage() {
   const [recentlyPlayedApi, setRecentlyPlayedApi] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<PlaylistCardData[]>([]);
+  const [albums, setAlbums] = useState<Playlist[]>([]);
   const [followingUsers, setFollowingUsers] = useState<User[]>([]);
+  const [playlistFilter, setPlaylistFilter] = useState<FilterOption>("All");
 
-  const { likedTracks, likedStations, likedPlaylists } = useLikesStore();
+  const {
+    likedTracks,
+    likedStations,
+    likedPlaylists,
+    likedAlbums: storeLikedAlbums,
+  } = useLikesStore();
+  const { user } = useAuthStore();
   const { entries, getRecentTracks } = useHistoryStore();
 
   useEffect(() => {
@@ -84,7 +159,16 @@ export default function LibraryPage() {
 
   useEffect(() => {
     getMyPlaylists()
-      .then((items) => setPlaylists(items.map(mapPlaylistToCard)))
+      .then((items) =>
+        setPlaylists(
+          items.map((p) =>
+            mapPlaylistToCard(
+              p,
+              user?.displayName ?? user?.username ?? p.owner_user_id,
+            ),
+          ),
+        ),
+      )
       .catch(() => setPlaylists([]));
   }, []);
 
@@ -92,6 +176,26 @@ export default function LibraryPage() {
     getMyFollowing()
       .then((items) => setFollowingUsers(items.map(mapFollowingToUser)))
       .catch(() => setFollowingUsers([]));
+  }, []);
+
+  useEffect(() => {
+    Promise.all([
+      getMyPlaylistsApi({ limit: 50 }),
+      getLikedPlaylists({ limit: 50 }),
+    ])
+      .then(([created, liked]) => {
+        const createdAlbums = created.data.items.filter((p) => p.is_album_view);
+        const likedAlbums = liked.data.items.filter((p) => p.is_album_view);
+        const merged = [...createdAlbums, ...likedAlbums];
+        const seen = new Set<string>();
+        const unique = merged.filter((p) => {
+          if (seen.has(p.playlist_id)) return false;
+          seen.add(p.playlist_id);
+          return true;
+        });
+        setAlbums(unique);
+      })
+      .catch(() => setAlbums([]));
   }, []);
 
   // History store tracks take priority; fall back to API / mock
@@ -103,9 +207,19 @@ export default function LibraryPage() {
       : mockRecentlyPlayedTracks;
 
   const likesDisplay = likedTracks;
-
-  // Liked stations (from store)
   const stationsDisplay = likedStations;
+
+  const visiblePlaylists: PlaylistCardData[] = (() => {
+    if (playlistFilter === "Created") return playlists;
+    if (playlistFilter === "Liked") return likedPlaylists;
+    // All: merge created + liked, dedupe by id
+    const seen = new Set<string>();
+    return [...playlists, ...likedPlaylists].filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+  })();
 
   // suppress unused warning — entries drives getRecentTracks reactivity
   void entries;
@@ -125,20 +239,29 @@ export default function LibraryPage() {
       </Section>
 
       {/* Playlists */}
-      <Section title="Playlists">
-        {[
-          ...playlists,
-          ...likedPlaylists.filter(
-            (lp) => !playlists.some((p) => p.id === lp.id),
-          ),
-        ].map((item) => (
+      <Section
+        title="Playlists"
+        action={
+          <FilterDropdown value={playlistFilter} onChange={setPlaylistFilter} />
+        }
+      >
+        {visiblePlaylists.map((item) => (
           <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
         ))}
       </Section>
 
-      {/* Albums — Mariam's section */}
+      {/* Albums */}
       <Section title="Albums">
-        <span />
+        {(() => {
+          const seen = new Set<string>();
+          return [...albums, ...storeLikedAlbums]
+            .filter((p) => {
+              if (seen.has(p.playlist_id)) return false;
+              seen.add(p.playlist_id);
+              return true;
+            })
+            .map((p) => <AlbumCard key={p.playlist_id} playlist={p} />);
+        })()}
       </Section>
 
       {/* Stations */}

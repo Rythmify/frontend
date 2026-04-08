@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { blockUser, submitReport } from "../../services/api/messaging/conversationApi"
-import CheckBox from "./CheckBox"
+import CheckBox from "../MessagingComponents/CheckBox"
 
 interface BlockUserModalProps {
   username?: string
