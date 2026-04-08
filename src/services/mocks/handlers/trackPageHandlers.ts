@@ -2,13 +2,11 @@ import { http, HttpResponse } from "msw";
 import { mockUsers } from "../users";
 import type { Track } from "../../../types/track";
 
-
-
 const BASE = "*/api/v1";
 
 const mockTracksJson: Track[] = [
   {
-    id: 1,
+    id: "198d5f30-8c20-4e0f-9a95-367f08e8b0b1",
     title: "Lege-Cy & Ghaliaa - Msh Awl Mara",
     artistName: "Lege-Cy",
     artistUsername: "lege-cy",
@@ -31,7 +29,7 @@ const mockTracksJson: Track[] = [
     madeFor: "Shahd Yehya",
   },
   {
-    id: 2,
+    id: "3f92b0c1-4d32-4861-a034-78e920d5f1a2",
     title: "Seneen",
     artistName: "Tul8te",
     artistUsername: "tul8te",
@@ -54,7 +52,7 @@ const mockTracksJson: Track[] = [
     madeFor: undefined,
   },
   {
-    id: 3,
+    id: "7c9e1d20-b3a1-4f0e-8d2a-567c8b9d0e1f",
     title: "Shababek'",
     artistName: "Mohamed Mounir",
     artistUsername: "mohamed-mounir",
@@ -77,7 +75,7 @@ const mockTracksJson: Track[] = [
     madeFor: undefined,
   },
   {
-    id: 4,
+    id: "f5e4d3c2-b1a0-4987-8765-43210abcdef0",
     title: "Mafish",
     artistName: "Donia Wael",
     artistUsername: "donia-wael",
@@ -100,7 +98,7 @@ const mockTracksJson: Track[] = [
     madeFor: undefined,
   },
   {
-    id: 5,
+    id: "0d1e2f3a-4b5c-6d7e-8f9a-0b1c2d3e4f5a",
     title: "Elwa2t Eldaye3",
     artistName: "Lege-Cy",
     artistUsername: "lege-cy",
@@ -125,46 +123,52 @@ const mockTracksJson: Track[] = [
 ];
 
 export const trackPageHandlers = [
-
   http.get(`${BASE}/tracks`, () => {
     return HttpResponse.json(mockTracksJson);
   }),
 
   http.get(`${BASE}/tracks/:id/related`, ({ params }) => {
-    const related = mockTracksJson.filter((t) => t.id !== Number(params.id));
+    const related = mockTracksJson.filter((t) => t.id !== params.id);
     return HttpResponse.json(related);
   }),
 
   http.get(`${BASE}/:username/:slug`, ({ params }) => {
     const slug = (params.slug as string).toLowerCase();
-    
+
     // Helper to roughly slugify a title for matching
-    const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    
+    const slugify = (text: string) =>
+      text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
     // Find a track where the slugified title includes the URL slug
     const track =
       mockTracksJson.find((t) => slugify(t.title).includes(slug)) ??
       mockTracksJson[slug.length % mockTracksJson.length]; // Deterministic fallback
-      
+
     return HttpResponse.json(track);
   }),
 
   http.post(`${BASE}/tracks/:id/like`, ({ params }) => {
-    const track = mockTracksJson.find((t) => t.id === Number(params.id));
-    if (!track) return HttpResponse.json({ error: "Track not found" }, { status: 404 });
+    const track = mockTracksJson.find((t) => t.id === params.id);
+    if (!track)
+      return HttpResponse.json({ error: "Track not found" }, { status: 404 });
     return HttpResponse.json({ liked: true, likeCount: track.likeCount + 1 });
   }),
 
   http.delete(`${BASE}/tracks/:id/like`, ({ params }) => {
-    const track = mockTracksJson.find((t) => t.id === Number(params.id));
-    if (!track) return HttpResponse.json({ error: "Track not found" }, { status: 404 });
+    const track = mockTracksJson.find((t) => t.id === params.id);
+    if (!track)
+      return HttpResponse.json({ error: "Track not found" }, { status: 404 });
     return HttpResponse.json({ liked: false, likeCount: track.likeCount - 1 });
   }),
 
   http.post(`${BASE}/tracks/:id/repost`, ({ params }) => {
-    const track = mockTracksJson.find((t) => t.id === Number(params.id));
-    if (!track) return HttpResponse.json({ error: "Track not found" }, { status: 404 });
-    return HttpResponse.json({ reposted: true, repostCount: track.repostCount + 1 });
+    const track = mockTracksJson.find((t) => t.id === params.id);
+    if (!track)
+      return HttpResponse.json({ error: "Track not found" }, { status: 404 });
+    return HttpResponse.json({
+      reposted: true,
+      repostCount: track.repostCount + 1,
+    });
   }),
 
   http.get(`${BASE}/tracks/:id/comments`, () => {
@@ -172,14 +176,17 @@ export const trackPageHandlers = [
   }),
 
   http.post(`${BASE}/tracks/:id/comments`, async ({ request, params }) => {
-    const body = await request.json() as { text: string; timestamp: number };
-    return HttpResponse.json({
-      id: Date.now(),
-      trackId: Number(params.id),
-      text: body.text,
-      timestamp: body.timestamp ?? 0,
-      createdAt: new Date().toISOString(),
-    }, { status: 201 });
+    const body = (await request.json()) as { text: string; timestamp: number };
+    return HttpResponse.json(
+      {
+        id: crypto.randomUUID(), // Using random UUID for the new comment
+        trackId: params.id as string, // Keeping trackId as string
+        text: body.text,
+        timestamp: body.timestamp ?? 0,
+        createdAt: new Date().toISOString(),
+      },
+      { status: 201 },
+    );
   }),
 
   http.get(`${BASE}/users`, () => {
@@ -188,19 +195,28 @@ export const trackPageHandlers = [
 
   http.get(`${BASE}/users/:username`, ({ params }) => {
     const user = mockUsers.find((u) => u.username === params.username);
-    if (!user) return HttpResponse.json({ error: "User not found" }, { status: 404 });
+    if (!user)
+      return HttpResponse.json({ error: "User not found" }, { status: 404 });
     return HttpResponse.json(user);
   }),
 
   http.post(`${BASE}/users/:username/follow`, ({ params }) => {
     const user = mockUsers.find((u) => u.username === params.username);
-    if (!user) return HttpResponse.json({ error: "User not found" }, { status: 404 });
-    return HttpResponse.json({ following: true, followerCount: user.followerCount + 1 });
+    if (!user)
+      return HttpResponse.json({ error: "User not found" }, { status: 404 });
+    return HttpResponse.json({
+      following: true,
+      followerCount: user.followerCount + 1,
+    });
   }),
 
   http.delete(`${BASE}/users/:username/follow`, ({ params }) => {
     const user = mockUsers.find((u) => u.username === params.username);
-    if (!user) return HttpResponse.json({ error: "User not found" }, { status: 404 });
-    return HttpResponse.json({ following: false, followerCount: user.followerCount - 1 });
+    if (!user)
+      return HttpResponse.json({ error: "User not found" }, { status: 404 });
+    return HttpResponse.json({
+      following: false,
+      followerCount: user.followerCount - 1,
+    });
   }),
 ];
