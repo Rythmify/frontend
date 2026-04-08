@@ -14,24 +14,6 @@ import type {
 } from "../../api/discover.service";
 import type { PublicUser } from "../../mocks/User.service";
 
-// Local-only shape for the /tracks/:trackId handler (not exported from service)
-interface MockApiTrack {
-  id: string;
-  title: string;
-  user_id: string;
-  genre: string;
-  duration: number;
-  play_count: number;
-  like_count: number;
-  repost_count: number;
-  comment_count: number;
-  stream_url: string;
-  cover_url: string;
-  waveform_url: string | null;
-  created_at: string;
-  is_public: boolean;
-}
-
 // ─── Mock Discovery Tracks ────────────────────────────────────────────────────
 
 const mockDiscoveryTracks: DiscoveryTrack[] = [
@@ -401,24 +383,6 @@ const mockFollowingUsers = [
   },
 ];
 
-// ─── Mock API Track (local only) ──────────────────────────────────────────────
-
-const mockApiTrackBase: Omit<MockApiTrack, "id"> = {
-  title: "Mock Track",
-  user_id: "artist-mock",
-  genre: "Electronic",
-  duration: 210,
-  play_count: 1000,
-  like_count: 50,
-  repost_count: 10,
-  comment_count: 5,
-  stream_url: "https://example.com/audio/mock.mp3",
-  cover_url: "https://picsum.photos/200/200?random=999",
-  waveform_url: null,
-  created_at: "2026-03-01T00:00:00Z",
-  is_public: true,
-};
-
 // ─── Mock Public User ─────────────────────────────────────────────────────────
 
 const mockPublicUserBase: Omit<PublicUser, "id"> = {
@@ -519,16 +483,6 @@ export const discoverHandlers = [
         id: params.userId as string,
         username: `artist-${params.userId}`,
       } satisfies PublicUser,
-    });
-  }),
-
-  // GET /tracks/:trackId — full track data
-  http.get("*/tracks/:trackId", ({ params }) => {
-    return HttpResponse.json({
-      data: {
-        ...mockApiTrackBase,
-        id: params.trackId as string,
-      } satisfies MockApiTrack,
     });
   }),
 ];
