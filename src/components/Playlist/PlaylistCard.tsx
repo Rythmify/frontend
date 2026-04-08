@@ -11,9 +11,9 @@ import { useLikesStore } from "@/stores/likes.store";
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
-  card: `
+  card: (widthClassName: string) => `
     group flex flex-col gap-2
-    w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]
+    ${widthClassName}
     cursor-pointer shrink-0
   `,
   imageWrapper: `
@@ -74,7 +74,7 @@ const tooltipStyles = {
   tooltip: "bg-gray-700",
 };
 
-const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
+const PlaylistCard = ({ playlist, widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]" }: { playlist: Playlist; widthClassName?: string }) => {
   const navigate = useNavigate();
   const { isAlbumLiked, toggleAlbum } = useLikesStore();
   const liked = isAlbumLiked(playlist.playlist_id);
@@ -132,7 +132,7 @@ const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
 
   return (
     <div
-      className={styles.card}
+      className={styles.card(widthClassName)}
       onClick={() => navigate(`/you/sets/${playlist.playlist_id}`)}
       data-test="playlist-card"
     >

@@ -143,7 +143,10 @@ export default function PlaylistCard({
           </div>
 
           {/* Bottom Actions */}
-          <div className="flex items-center justify-end gap-2 px-2 pb-2">
+          <div
+            className="flex items-center justify-end gap-2 px-2 pb-2"
+            data-test={`playlist-card-like-${item.id}`}
+          >
             <Tooltip content="Like" showArrow classNames={tooltipStyles}>
               <button
                 className="flex items-center justify-center w-7 h-7 group/btn"
@@ -159,6 +162,7 @@ export default function PlaylistCard({
             </Tooltip>
             <Tooltip content="More" showArrow classNames={tooltipStyles}>
               <button
+                data-test={`playlist-card-more-${item.id}`}
                 className="flex items-center justify-center w-7 h-7 group/btn"
                 onClick={handleOpenMore}
               >

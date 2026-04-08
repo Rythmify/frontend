@@ -233,9 +233,9 @@ const SC_BTN: React.CSSProperties = {
   minWidth: 32,
 };
 
-function ScBtn({ icon, label, tooltip, onClick, active = false, dataTest }: {
+function ScBtn({ icon, label, tooltip, onClick, active = false, "data-test": dataTest }: {
   icon: React.ReactNode; label?: string; tooltip?: string;
-  onClick?: () => void; active?: boolean; dataTest?: string;
+  onClick?: () => void; active?: boolean; "data-test"?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -329,7 +329,9 @@ function MoreDropdown({ isOwner, liked, onLike, onAddToNext, onAddToPlaylist, on
   );
 }
 
-// TrackCard 
+// TrackCard
+
+const EMPTY_COMMENTS: TrackComment[] = [];
 
 export interface TrackCardProps {
   track: Track;
@@ -346,7 +348,7 @@ export interface TrackCardProps {
 
 export default function TrackCard({
   track,
-  comments = [],
+  comments = EMPTY_COMMENTS,
   onCommentSubmit,
   repostedBy, onCopyLink, onAddToPlaylist, onEdit, onReplaceFile, onDelete, onDistribute,
 }: TrackCardProps) {
@@ -554,10 +556,10 @@ export default function TrackCard({
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {isOwner ? (
                 <>
-                  <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowShare(true)} dataTest="track-card-btn-share" />
-                  <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} dataTest="track-card-btn-copy" />
-                  <ScBtn icon={<TbArrowsExchange size={17} />} tooltip="Replace File" onClick={onReplaceFile} dataTest="track-card-btn-replace" />
-                  <ScBtn icon={<LuPencil size={13} />} tooltip="Edit" onClick={onEdit} dataTest="track-card-btn-edit" />
+                  <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowShare(true)} data-test="track-card-btn-share" />
+                  <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} data-test="track-card-btn-copy" />
+                  <ScBtn icon={<TbArrowsExchange size={17} />} tooltip="Replace File" onClick={onReplaceFile} data-test="track-card-btn-replace" />
+                  <ScBtn icon={<LuPencil size={13} />} tooltip="Edit" onClick={onEdit} data-test="track-card-btn-edit" />
                   <MoreDropdown
                     isOwner
                     liked={liked}
@@ -571,10 +573,10 @@ export default function TrackCard({
                 </>
               ) : (
                 <>
-                  <ScBtn icon={<FaHeart size={13} />} label={fmtN(likeCount)} active={liked} tooltip="Like" onClick={handleLike} dataTest="track-card-btn-like" />
-                  <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} tooltip="Repost" onClick={() => {}} dataTest="track-card-btn-repost" />
-                  <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowShare(true)} dataTest="track-card-btn-share" />
-                  <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} dataTest="track-card-btn-copy" />
+                  <ScBtn icon={<FaHeart size={13} />} label={fmtN(likeCount)} active={liked} tooltip="Like" onClick={handleLike} data-test="track-card-btn-like" />
+                  <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} tooltip="Repost" onClick={() => {}} data-test="track-card-btn-repost" />
+                  <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowShare(true)} data-test="track-card-btn-share" />
+                  <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} data-test="track-card-btn-copy" />
                   <MoreDropdown isOwner={false} onAddToNext={() => {}} onAddToPlaylist={onAddToPlaylist} />
                 </>
               )}

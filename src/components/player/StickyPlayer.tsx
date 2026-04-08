@@ -3,10 +3,12 @@ import "../../services/audioService";
 import { seekAudio } from "../../services/audioService";
 import { Link } from "react-router-dom";
 import { usePlayerStore } from "../../stores/player.store";
+import { useLikesStore } from "../../stores/likes.store";
+import { useAuthStore } from "../../stores/auth.store";
 import PlayerControls from "./PlayerControls";
 import ProgressBar from "./ProgressBar";
 import VolumeSlider from "./VolumeSlider";
-import { FaHeart, FaUserPlus } from "react-icons/fa";
+import { FaHeart, FaUserPlus, FaUserCheck } from "react-icons/fa";
 import { MdQueueMusic } from "react-icons/md";
 
 export default function StickyPlayer() {
@@ -16,11 +18,17 @@ export default function StickyPlayer() {
     duration,
     volume,
     isMuted,
-    isLiked,
     setVolume,
     toggleMute,
-    toggleLike,
   } = usePlayerStore();
+
+  const { isTrackLiked, toggleTrack } = useLikesStore();
+  const { user, toggleFollow } = useAuthStore();
+
+  const isLiked = currentTrack ? isTrackLiked(currentTrack.id) : false;
+  const isFollowing = currentTrack
+    ? (user?.following_ids ?? []).includes(currentTrack.artistUsername)
+    : false;
 
   if (!currentTrack) return null;
 
@@ -81,7 +89,7 @@ export default function StickyPlayer() {
       {/* 4. Like */}
       <button
         data-test="player-button-like"
-        onClick={toggleLike}
+        onClick={() => currentTrack && toggleTrack(currentTrack)}
         className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer text-base
           ${isLiked ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
       >
@@ -91,9 +99,11 @@ export default function StickyPlayer() {
       {/* 5. Follow */}
       <button
         data-test="player-button-follow"
-        className="w-10 h-10 flex items-center justify-center shrink-0 text-white hover:text-text-muted transition-colors duration-150 cursor-pointer text-base"
+        onClick={() => currentTrack && toggleFollow(currentTrack.artistUsername)}
+        className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer text-base
+          ${isFollowing ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
       >
-        <FaUserPlus />
+        {isFollowing ? <FaUserCheck /> : <FaUserPlus />}
       </button>
 
       {/* 6. Queue */}
