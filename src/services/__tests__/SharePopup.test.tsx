@@ -8,10 +8,12 @@ beforeAll(() => {
     clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
   });
 });
-afterAll(() => { vi.restoreAllMocks(); });
+afterAll(() => {
+  vi.restoreAllMocks();
+});
 
 const track: Track = {
-  id: 1,
+  id: "f5e4d3c2-b1a0-4987-8765-43210abcdef7",
   title: "Test Song",
   artistName: "Test Artist",
   artistUsername: "test-artist",

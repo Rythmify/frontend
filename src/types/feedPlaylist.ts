@@ -1,7 +1,7 @@
 import type { Track } from "@/types/track";
 
 export interface FeedPlaylist {
-  id: number;
+  id: string;
   title: string;
   artistName: string;
   artistUsername: string;

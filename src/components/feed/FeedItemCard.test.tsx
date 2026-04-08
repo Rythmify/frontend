@@ -23,14 +23,14 @@ const trackItem: TrackFeedItem = {
   content_type: "track",
   created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
   user: {
-    id: 1,
+    id: "687293a0-f8d2-4e5a-9c71-2b0d3e1f4a5c",
     username: "nourabosaif04",
     displayName: "NourAbosaif04",
     avatar: "https://example.com/avatar.jpg",
     followers: 320,
   },
   track: {
-    id: 1,
+    id: "f5e4d3c2-b1a0-4987-8765-43210abcdef7",
     title: "Test Track",
     artistName: "Test Artist",
     artistUsername: "test-artist",
@@ -53,14 +53,14 @@ const playlistItem: PlaylistFeedItem = {
   content_type: "playlist",
   created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
   user: {
-    id: 2,
+    id: "687293a0-f8d2-4e5a-9c71-2b0d3e1f4a5c",
     username: "alyaa-moh",
     displayName: "Alyaa Mohamed",
     avatar: "https://example.com/avatar2.jpg",
     followers: 500,
   },
   playlist: {
-    id: 1,
+    id: "f5e4d3c2-b1a0-4987-8765-43210abcdef8",
     title: "Test Playlist",
     artistName: "Alyaa Mohamed",
     artistUsername: "alyaa-moh",

@@ -11,7 +11,8 @@ vi.mock("react-router-dom", () => ({
 }));
 
 const baseUser = {
-  id: 1,
+  // Changed id from number to UUID string
+  id: "687293a0-f8d2-4e5a-9c71-2b0d3e1f4a5c",
   username: "travis-scott",
   displayName: "Travis Scott",
   avatar: "https://example.com/avatar.jpg",
@@ -66,9 +67,7 @@ describe("UserCard", () => {
 
   it("navigates to /{username} on click", async () => {
     render(<UserCard user={baseUser} />);
-    await userEvent.click(
-      screen.getByTestId(`user-card-${baseUser.username}`),
-    );
+    await userEvent.click(screen.getByTestId(`user-card-${baseUser.username}`));
     expect(mockNavigate).toHaveBeenCalledWith(`/${baseUser.username}`);
   });
 
