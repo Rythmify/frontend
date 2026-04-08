@@ -3,6 +3,9 @@ import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import { Bell, Mail, ChevronDown, MoreHorizontal, Menu, X, Search } from "lucide-react";
 import { disconnectSocket } from '@/services/api/messaging/socketService';
+import NotificationCard from '@/components/notificationsComponents/notificationCard';
+import { fetchNotifications, type Notification } from '@/services/api/notifications/notificationsAPI';
+
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -13,6 +16,8 @@ const MainNavbar = () => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   const avatarRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -29,6 +34,26 @@ const MainNavbar = () => {
   const toggle = (setter: React.Dispatch<React.SetStateAction<boolean>>) => {
     closeAll();
     setter((prev) => !prev);
+  };
+
+  const handleNotificationsToggle = async () => {
+    const willOpen = !showNotifications;
+    closeAll();
+    setShowNotifications(willOpen);
+
+    if (!willOpen) {
+      return;
+    }
+
+    setNotificationsLoading(true);
+    try {
+      const res = await fetchNotifications(1, 6, false);
+      setNotifications(res.data.items ?? []);
+    } catch {
+      setNotifications([]);
+    } finally {
+      setNotificationsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -156,7 +181,7 @@ const MainNavbar = () => {
           <div ref={notifRef} className="relative">
             <button
               data-test="btn-notifications"
-              onClick={() => toggle(setShowNotifications)}
+              onClick={handleNotificationsToggle}
               className="text-text-secondary hover:text-text transition-colors"
             >
               <Bell size={22} className="hover:text-text-hover mt-2" />
@@ -171,7 +196,21 @@ const MainNavbar = () => {
                   </Link>
                 </div>
                 <div className="py-2 max-h-[300px] overflow-y-auto">
-                  <div className="px-4 py-3 text-md text-text-muted text-center">No new notifications</div>
+                  {notificationsLoading ? (
+                    <div className="px-4 py-3 text-md text-text-muted text-center">Loading notifications...</div>
+                  ) : notifications.length === 0 ? (
+                    <div className="px-4 py-3 text-md text-text-muted text-center">No new notifications</div>
+                  ) : (
+                    <div className="flex flex-col">
+                      {notifications.map((notification) => (
+                        <NotificationCard
+                          key={notification.id}
+                          notification={notification}
+                          showActions={false}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="border-t border-border px-4 py-2">
                   <Link to="/notifications" className="text-xs font-medium text-text hover:text-text-secondary block text-center" onClick={closeAll}>

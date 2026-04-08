@@ -91,7 +91,7 @@ const NotificationsPage = () => {
           {status === 'success' && (
             <div className="flex flex-col">
               {notifications.map(n => (
-                <NotificationCard key={n.id} notification={n} />
+                <NotificationCard key={n.id} notification={n} showActions={true} />
               ))}
             </div>
           )}
