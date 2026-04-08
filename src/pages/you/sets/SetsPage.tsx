@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import SetsHeader from "@/components/Playlist/SetsHeader";
 import {

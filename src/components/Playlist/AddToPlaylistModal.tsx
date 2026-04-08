@@ -77,7 +77,7 @@ const AddToPlaylistModal = ({
         } else if (trackId) {
           setTracksToAdd([{ id: trackId, title: trackTitle, artistName }]);
           // Fetch suggestions
-          const related = await getRelatedTracks(Number(trackId));
+          const related = await getRelatedTracks(trackId);
           setRelatedTracks(related || []);
         }
       } catch (err) {

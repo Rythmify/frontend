@@ -1,5 +1,5 @@
 export interface Track {
-  id: number;
+  id: string;
   title: string;
   artistName: string;
   artistUsername: string; // for profile link
