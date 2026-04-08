@@ -25,7 +25,7 @@ const NotificationsPage = () => {
   const [selectedType, setSelectedType]   = useState<FilterType>('all')
   const [recentFollowers, setRecentFollowers] = useState<Artist[]>([])
 
-  const { fetchUnreadCount, markAllAsRead, unreadCount } = useNotificationStore()
+  const { fetchUnreadCount, unreadCount } = useNotificationStore()
 
   const loadNotifications = useCallback(async (type: FilterType) => {
     setStatus('loading')
@@ -57,11 +57,7 @@ const NotificationsPage = () => {
     }
   }, [])
 
-  const handleMarkAllAsRead = async () => {
-    await markAllAsRead()
-    // Optimistically flip all local notifications to read
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
-  }
+  
 
   const handleTypeChange = (type: FilterType) => {
     if (type === selectedType) return   // already selected, no re-fetch needed
@@ -83,21 +79,12 @@ const NotificationsPage = () => {
 
         {/* Main Content */}
         <div className="flex flex-col gap-10 flex-[8] min-w-0 pt-10">
-          <div className="flex items-center justify-between">
+
             <NotificationHeader
               selectedType={selectedType}
               onTypeChange={handleTypeChange}
             />
-            {unreadCount > 0 && (
-              <button
-                data-test="btn-mark-all-as-read"
-                onClick={handleMarkAllAsRead}
-                className="text-xs font-bold text-text-secondary hover:text-white transition-colors"
-              >
-                Mark all as read ({unreadCount})
-              </button>
-            )}
-          </div>
+        
 
           {status === 'loading' && <Spinner data-test="notifications-loading" />}
 

@@ -33,6 +33,8 @@ const buildActionText = (n: Notification): string => {
 
 const styles = {
   row:            `flex items-center gap-4 py-4 border-b border-border cursor-pointer`,
+  unreadDot:      `w-2 h-2 rounded-full bg-red-500 flex-shrink-0`,
+  unreadDotHidden:`w-2 h-2 flex-shrink-0`,
   avatar:         `w-11 h-11 rounded-full bg-[#333] flex-shrink-0 overflow-hidden`,
   avatarImg:      `w-full h-full object-cover`,
   avatarFallback: `w-full h-full flex items-center justify-center`,
@@ -66,8 +68,8 @@ interface NotificationCardProps {
 const NotificationCard = ({ notification: n, showActions = true }: NotificationCardProps) => {
   const navigate = useNavigate()
 
-  const [menuOpen, setMenuOpen]       = useState(false)
-  const [isBlockOpen, setIsBlockOpen] = useState(false)
+  const [menuOpen, setMenuOpen]         = useState(false)
+  const [isBlockOpen, setIsBlockOpen]   = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
 
   const handleCellClick = () => {
@@ -81,6 +83,9 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
   return (
     <>
       <div data-test={`notification-card-${n.id}`} className={styles.row} onClick={handleCellClick}>
+
+        {/* Unread dot */}
+        <div className={n.is_read ? styles.unreadDotHidden : styles.unreadDot} />
 
         {/* Avatar */}
         <div data-test={`notification-avatar-${n.id}`} className={styles.avatar}>
