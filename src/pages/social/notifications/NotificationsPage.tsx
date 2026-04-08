@@ -1,6 +1,6 @@
 // NotificationsPage.tsx
 import { useState, useEffect, useCallback } from 'react'
-import { fetchNotifications, type Notification } from '@/services/api/notifications/notificationsAPI'
+import { fetchNotifications, type Notification, type NotificationType } from '@/services/api/notifications/notificationsAPI'
 import { fetchMyFollowing } from '@/services/api/notifications/notificationsAPI'
 import ArtistListSection from '@/components/UI/ArtistListSection'
 import NotificationHeader, { type FilterType } from '@/components/notificationsComponents/notificationHeader'
@@ -27,10 +27,12 @@ const NotificationsPage = () => {
 
   const { fetchUnreadCount, markAllAsRead, unreadCount } = useNotificationStore()
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(async (type: FilterType) => {
     setStatus('loading')
     try {
-      const res = await fetchNotifications(1, 50, false)
+      // 'all' means no type filter — pass undefined so the param is omitted
+      const typeParam = type === 'all' ? undefined : type as NotificationType
+      const res = await fetchNotifications(1, 50, false, typeParam)
       const items = res.data.items
       setNotifications(items)
       setStatus(items.length === 0 ? 'empty' : 'success')
@@ -59,11 +61,19 @@ const NotificationsPage = () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
   }
 
+  const handleTypeChange = (type: FilterType) => {
+    if (type === selectedType) return   // already selected, no re-fetch needed
+    setSelectedType(type)
+  }
+
   useEffect(() => {
-    loadNotifications()
+    loadNotifications(selectedType)
+  }, [selectedType, loadNotifications])
+
+  useEffect(() => {
     loadRecentFollowers()
     fetchUnreadCount()  // initialize global unread count on page mount
-  }, [loadNotifications, loadRecentFollowers, fetchUnreadCount])
+  }, [loadRecentFollowers, fetchUnreadCount])
 
   return (
     <div className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg">
@@ -74,7 +84,7 @@ const NotificationsPage = () => {
           <div className="flex items-center justify-between">
             <NotificationHeader
               selectedType={selectedType}
-              onTypeChange={setSelectedType}
+              onTypeChange={handleTypeChange}
             />
             {unreadCount > 0 && (
               <button
