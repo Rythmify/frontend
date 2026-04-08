@@ -52,7 +52,9 @@ const NotificationsPage = () => {
           isVerified: u.is_verified,
         }))
       )
-    } catch {}
+    } catch {
+      // silently fail — sidebar is non-critical
+    }
   }, [])
 
   const handleMarkAllAsRead = async () => {
