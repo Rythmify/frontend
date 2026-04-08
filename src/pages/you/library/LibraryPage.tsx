@@ -31,7 +31,7 @@ import { useAuthStore } from "@/stores/auth.store";
 // ─── Constants ────────────────────────────────────────────
 
 const TITLE_CLASS = "text-white font-semibold text-[19px] text-left";
-const CARD_WIDTH = "w-[180px] sm:w-[200px] md:w-[220px] lg:w-[240px]";
+const CARD_WIDTH = "w-[180px] sm:w-[200px] md:w-[220px] lg:w-[230px]";
 
 // ─── Helpers ──────────────────────────────────────────────
 
@@ -303,7 +303,7 @@ export default function LibraryPage() {
 
       {/* Likes */}
       <Section title="Likes" dataTest="library-likes">
-        <LikesContent tracks={likesDisplay} showControls={false} />
+        <LikesContent tracks={likesDisplay} showControls={false} widthClassName={CARD_WIDTH} />
       </Section>
 
       {/* Playlists */}
@@ -332,7 +332,7 @@ export default function LibraryPage() {
               seen.add(p.playlist_id);
               return true;
             })
-            .map((p) => <AlbumCard key={p.playlist_id} playlist={p} />);
+            .map((p) => <AlbumCard key={p.playlist_id} playlist={p} widthClassName={CARD_WIDTH} />);
         })()}
       </Section>
 
