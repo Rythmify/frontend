@@ -56,10 +56,10 @@ export default function PlaylistCard({ item, widthClassName = "w-[200px]" }: Pla
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => { e.stopPropagation(); togglePlaylist(item); }}>
+            <button data-test={`playlist-card-like-${item.id}`} className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => { e.stopPropagation(); togglePlaylist(item); }}>
               <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
             </button>
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+            <button data-test={`playlist-card-more-${item.id}`} className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
             </button>
           </div>

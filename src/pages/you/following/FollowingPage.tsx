@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -43,20 +43,54 @@ export default function FollowingPage() {
     ).values(),
   );
 
-  // Use real data when available, fall back to mock
-  const following = apiFollowing
-    ? apiFollowing.map((u) => ({
-        username: u.user_id,        // used as key and nav target (UUID)
-        displayName: u.display_name,
-        avatar: "",                 // UserSummary has no avatar per spec
-        isVerified: u.is_verified,
-        followers: 0,               // UserSummary has no follower_count per spec
-      }))
-    : isOwner
-      ? allMockUsers.filter((u) =>
-          currentUser?.following_ids?.includes(u.username),
-        )
-      : (mockUserFollowing[username || ""] ?? []);
+  // Build following list with user.following_ids as source of truth (same as Library)
+  const following = useMemo(() => {
+    if (!isOwner) {
+      // Viewing someone else's profile — use API or mock as before
+      if (apiFollowing) {
+        return apiFollowing.map((u) => ({
+          username: u.user_id,
+          displayName: u.display_name,
+          avatar: "",
+          isVerified: u.is_verified,
+          followers: 0,
+        }));
+      }
+      return mockUserFollowing[username || ""] ?? [];
+    }
+
+    // Viewing own profile — source of truth is following_ids
+    const followingIds = new Set(currentUser?.following_ids ?? []);
+
+    // API users filtered to only those still followed
+    const fromApi = apiFollowing
+      ? apiFollowing
+          .filter((u) => followingIds.has(u.user_id))
+          .map((u) => ({
+            username: u.user_id,
+            displayName: u.display_name,
+            avatar: "",
+            isVerified: u.is_verified,
+            followers: 0,
+          }))
+      : allMockUsers
+          .filter((u) => followingIds.has(u.username))
+          .map((u) => ({ ...u, followers: u.followers ?? 0 }));
+
+    // Locally followed users not covered by API/mock
+    const coveredUsernames = new Set(fromApi.map((u) => u.username));
+    const extraUsers = (currentUser?.following_ids ?? [])
+      .filter((id) => !coveredUsernames.has(id))
+      .map((id) => ({
+        username: id,
+        displayName: id,
+        avatar: "",
+        isVerified: false,
+        followers: 0,
+      }));
+
+    return [...fromApi, ...extraUsers];
+  }, [apiFollowing, isOwner, currentUser?.following_ids, allMockUsers, username]);
 
   if (!user) return null;
 
