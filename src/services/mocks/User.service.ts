@@ -1,4 +1,3 @@
-
 import axiosInstance from "../api/axiosInstance";
 import axios from "axios";
 import type { MockUser } from "../mocks/users";
@@ -112,20 +111,23 @@ export async function updateMyProfile(payload: {
   city?: string | null;
   country?: string | null;
 }): Promise<OwnUser> {
-  const res = await axiosInstance.patch<{ data: OwnUser }>("/users/me", payload);
+  const res = await axiosInstance.patch<{ data: OwnUser }>(
+    "/users/me",
+    payload,
+  );
   return res.data.data;
 }
 
 /** POST /users/me/avatar — multipart/form-data */
 export async function uploadAvatar(
-  file: File
+  file: File,
 ): Promise<{ profile_picture: string }> {
   const form = new FormData();
   form.append("avatar", file);
   const res = await axiosInstance.post<{ data: { profile_picture: string } }>(
     "/users/me/avatar",
     form,
-    { headers: { "Content-Type": "multipart/form-data" } }
+    { headers: { "Content-Type": "multipart/form-data" } },
   );
   return res.data.data;
 }
@@ -137,14 +139,14 @@ export async function deleteAvatar(): Promise<void> {
 
 /** POST /users/me/cover — multipart/form-data */
 export async function uploadCover(
-  file: File
+  file: File,
 ): Promise<{ cover_photo: string }> {
   const form = new FormData();
   form.append("cover", file);
   const res = await axiosInstance.post<{ data: { cover_photo: string } }>(
     "/users/me/cover",
     form,
-    { headers: { "Content-Type": "multipart/form-data" } }
+    { headers: { "Content-Type": "multipart/form-data" } },
   );
   return res.data.data;
 }
@@ -157,7 +159,7 @@ export async function deleteCover(): Promise<void> {
 /** GET /users/me/genres */
 export async function getMyGenres(): Promise<string[]> {
   const res = await axiosInstance.get<{ data: { genres: string[] } }>(
-    "/users/me/genres"
+    "/users/me/genres",
   );
   return res.data.data.genres;
 }
@@ -166,7 +168,7 @@ export async function getMyGenres(): Promise<string[]> {
 export async function replaceMyGenres(genres: string[]): Promise<string[]> {
   const res = await axiosInstance.put<{ data: { genres: string[] } }>(
     "/users/me/genres",
-    { genres }
+    { genres },
   );
   return res.data.data.genres;
 }
@@ -175,7 +177,7 @@ export async function replaceMyGenres(genres: string[]): Promise<string[]> {
 export async function updatePrivacy(is_private: boolean): Promise<boolean> {
   const res = await axiosInstance.patch<{ data: { is_private: boolean } }>(
     "/users/me/privacy",
-    { is_private }
+    { is_private },
   );
   return res.data.data.is_private;
 }
@@ -210,11 +212,11 @@ export async function getFollowStatus(userId: string): Promise<{
 /** GET /users/{user_id}/followers */
 export async function getFollowers(
   userId: string,
-  params?: { limit?: number; offset?: number }
+  params?: { limit?: number; offset?: number },
 ): Promise<UserListData> {
   const res = await axiosInstance.get<{ data: UserListData }>(
     `/users/${userId}/followers`,
-    { params }
+    { params },
   );
   return res.data.data;
 }
@@ -222,11 +224,11 @@ export async function getFollowers(
 /** GET /users/{user_id}/following */
 export async function getFollowing(
   userId: string,
-  params?: { limit?: number; offset?: number }
+  params?: { limit?: number; offset?: number },
 ): Promise<UserListData> {
   const res = await axiosInstance.get<{ data: UserListData }>(
     `/users/${userId}/following`,
-    { params }
+    { params },
   );
   return res.data.data;
 }

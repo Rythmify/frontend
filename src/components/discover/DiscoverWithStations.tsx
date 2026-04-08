@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
 import StationCard from "@/components/UI/StationCard/StationCard";
 import { getHome } from "@/services/api/discover.service";
-import { mapHomeStation } from "@/services/api/discover.mapper";
+import { mapDiscoveryStation } from "@/services/api/discover.mapper";
 import { mockRecentlyPlayedStations } from "@/services/mocks/discover";
 import type { Station } from "@/types/station";
 
@@ -11,7 +11,9 @@ const DiscoverWithStations = () => {
 
   useEffect(() => {
     getHome()
-      .then((data) => setStations(data.discover_with_stations.map(mapHomeStation)))
+      .then((data) =>
+        setStations(data.discover_with_stations.map(mapDiscoveryStation)),
+      )
       .catch(() => setStations(mockRecentlyPlayedStations));
   }, []);
 

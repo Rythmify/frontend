@@ -5,14 +5,14 @@ import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
 import StationCard from "@/components/UI/StationCard/StationCard";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
-import {
-  getRecentlyPlayed,
-  getTrackById,
-} from "@/services/api/discover.service";
-import { mapApiTrackToTrack } from "@/services/api/discover.mapper";
+import { getRecentlyPlayed } from "@/services/api/discover.service";
+import { mapRecentlyPlayedEntry } from "@/services/api/discover.mapper";
 import { mockRecentlyPlayedTracks } from "@/services/mocks/discover";
 import { getMyPlaylists, getMyFollowing } from "@/services/api/library.service";
-import type { LibraryPlaylist, FollowingUser } from "@/services/api/library.service";
+import type {
+  LibraryPlaylist,
+  FollowingUser,
+} from "@/services/api/library.service";
 import type { Track } from "@/types/track";
 import type { User } from "@/types/user";
 import { useLikesStore } from "@/stores/likes.store";
@@ -25,11 +25,19 @@ const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
 
 // ─── Helpers ──────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-3">
       <h2 className={TITLE_CLASS}>{title}</h2>
-      <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">{children}</div>
+      <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
+        {children}
+      </div>
     </div>
   );
 }
@@ -70,10 +78,7 @@ export default function LibraryPage() {
 
   useEffect(() => {
     getRecentlyPlayed()
-      .then((items) =>
-        Promise.all(items.map((item) => getTrackById(item.track.id))),
-      )
-      .then((tracks) => setRecentlyPlayedApi(tracks.map(mapApiTrackToTrack)))
+      .then((items) => setRecentlyPlayedApi(items.map(mapRecentlyPlayedEntry)))
       .catch(() => setRecentlyPlayedApi(mockRecentlyPlayedTracks));
   }, []);
 
@@ -121,7 +126,12 @@ export default function LibraryPage() {
 
       {/* Playlists */}
       <Section title="Playlists">
-        {[...playlists, ...likedPlaylists.filter((lp) => !playlists.some((p) => p.id === lp.id))].map((item) => (
+        {[
+          ...playlists,
+          ...likedPlaylists.filter(
+            (lp) => !playlists.some((p) => p.id === lp.id),
+          ),
+        ].map((item) => (
           <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
         ))}
       </Section>
@@ -134,7 +144,12 @@ export default function LibraryPage() {
       {/* Stations */}
       <Section title="Stations">
         {stationsDisplay.map((station, i) => (
-          <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} colorIndex={i} />
+          <StationCard
+            key={station.id}
+            station={station}
+            widthClassName={CARD_WIDTH}
+            colorIndex={i}
+          />
         ))}
       </Section>
 

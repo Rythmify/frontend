@@ -1,5 +1,10 @@
 import type React from "react";
-import type { BuzzingPlaylist } from "@/services/api/discover.service";
+interface BuzzingPlaylist {
+  id: string;
+  genre: string;
+  cover_image: string | null;
+  track_count: number;
+}
 import { useLikesStore } from "@/stores/likes.store";
 
 // ─── Badge colors per genre index ─────────────────────────

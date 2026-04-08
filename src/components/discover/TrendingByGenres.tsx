@@ -1,18 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
 import GenreCard from "@/components/UI/GenreCard/GenreCard";
-import { getHome } from "@/services/api/discover.service";
-import type { BuzzingPlaylist } from "@/services/api/discover.service";
+
+interface BuzzingPlaylist {
+  id: string;
+  genre: string;
+  cover_image: string | null;
+  track_count: number;
+}
 
 const TrendingByGenres = () => {
-  const [genres, setGenres] = useState<BuzzingPlaylist[]>([]);
-
-  useEffect(() => {
-    getHome()
-      .then((data) => setGenres(data.artists_to_watch))
-      .catch(() => {});
-  }, []);
-
+  const [genres] = useState<BuzzingPlaylist[]>([]);
   if (genres.length === 0) return null;
 
   return (

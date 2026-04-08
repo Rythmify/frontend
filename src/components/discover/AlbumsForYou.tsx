@@ -3,7 +3,7 @@ import HorizontalCarousel from "./HorizontalCarousel";
 import TrackCard from "@/components/UI/card/Card";
 import { mockAlbumsForYou } from "@/services/mocks/discover";
 import { getAlbumsForYou } from "@/services/api/discover.service";
-import { mapApiTrackToTrack } from "@/services/api/discover.mapper";
+import { mapDiscoveryAlbum } from "@/services/api/discover.mapper";
 import type { Track } from "@/types/track";
 
 // ─── Component ────────────────────────────────────────────
@@ -12,7 +12,7 @@ const AlbumsForYou = () => {
 
   useEffect(() => {
     getAlbumsForYou()
-      .then((albumTracks) => setApiTracks(albumTracks.map(mapApiTrackToTrack)))
+      .then((res) => setApiTracks(res.data.map(mapDiscoveryAlbum)))
       .catch(() => {}); // stub throws — mock is the fallback until backend implements this
   }, []);
 
