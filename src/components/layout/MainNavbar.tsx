@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
+import { useNotificationStore } from '@/stores/notification.store';
 import { Bell, Mail, ChevronDown, MoreHorizontal, Menu, X, Search } from "lucide-react";
 import { disconnectSocket } from '@/services/api/messaging/socketService';
 import NotificationCard from '@/components/notificationsComponents/notificationCard';
@@ -8,6 +9,7 @@ import { fetchNotifications, type Notification } from '@/services/api/notificati
 
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
+  const { unreadCount, fetchUnreadCount } = useNotificationStore();
   const navigate = useNavigate();
 
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
@@ -55,6 +57,10 @@ const MainNavbar = () => {
       setNotificationsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -182,9 +188,14 @@ const MainNavbar = () => {
             <button
               data-test="btn-notifications"
               onClick={handleNotificationsToggle}
-              className="text-text-secondary hover:text-text transition-colors"
+              className="relative text-text-secondary hover:text-text transition-colors"
             >
               <Bell size={22} className="hover:text-text-hover mt-2" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </button>
 
             {showNotifications && (
