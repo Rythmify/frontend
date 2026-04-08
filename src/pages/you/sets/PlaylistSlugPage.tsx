@@ -29,12 +29,6 @@ function PlaylistSlugPage() {
     currentTrack,
   } = usePlayerStore();
 
-  useEffect(() => {
-    if (playlist) {
-      // Format: Stream [Owner] | Listen to [Playlist Name] playlist online for free on SoundCloud
-      document.title = `Stream ${playlist.owner_user_id} | Listen to ${playlist.name} playlist online for free on SoundCloud`;
-    }
-  }, [playlist]);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,7 +102,7 @@ function PlaylistSlugPage() {
   return (
     <div
       data-test="playlist-slug-page"
-      className="flex-1 w-full bg-black min-h-screen"
+      className="flex-1 w-full bg-bg min-h-screen"
     >
       {/* Hero Section using the fetched playlist data */}
       <PlaylistHero
@@ -124,12 +118,19 @@ function PlaylistSlugPage() {
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           {/* Left Column: Actions and Track List */}
           <div className="flex-1 min-w-0">
-            <PlaylistActions />
+            <PlaylistActions
+              playlist={playlist}
+              onAddToNextUp={() => {
+                // Logic to add all tracks to queue if needed
+                console.log("Adding all tracks to queue");
+              }}
+            />
+
             <div className="mt-8">
-              <h2 className="text-[var(--color-text-muted)] text-xs uppercase tracking-widest font-semibold mb-4">
-                Related Tracks
+              <h2 className="text-[var(--color-text-muted)] text-xs uppercase tracking-widest font-semibold mb-4 border-b border-[#333] pb-2">
+                Tracks
               </h2>
-              {/* Render playlist tracks */}
+
               <div className="space-y-1">
                 {playlist.tracks.map((track, index) => (
                   <div
