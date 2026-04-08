@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import SettingsLayout from "@/pages/settings/SettingsLayout";
 import { useAuthStore, type User } from "@/stores/auth.store";
 import {
   changeEmail,
+  deleteMyAccount,
   forgotPassword,
   updateMeAccount,
   disconnectProvider,
@@ -184,6 +185,19 @@ const MONTHS = [
   "October",
   "November",
   "December",
+] as const;
+const DELETE_ACCOUNT_REASONS = [
+  "I have another account",
+  "I want to make a new account",
+  "There aren't enough privacy options",
+  "I am no longer creating content for this account",
+  "I had copyright issues with a track or tracks",
+  "I don't want to subscribe to Rythmify Pro anymore",
+  "I switched to another music or audio service",
+  "My account got hacked",
+  "I can't remove my tracks",
+  "People are harassing me",
+  "Too much spam on the platform",
 ] as const;
 
 function ChangeTheme() {
@@ -946,9 +960,148 @@ function ConnectedApplications() {
   );
 }
 
-function DeleteAccount() {
+function DeleteAccountModal({
+  onClose,
+  onConfirm,
+}: {
+  onClose: () => void;
+  onConfirm: () => Promise<boolean>;
+}) {
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [otherReason, setOtherReason] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const toggleReason = (reason: string) => {
+    setSelectedReasons((current) =>
+      current.includes(reason)
+        ? current.filter((item) => item !== reason)
+        : [...current, reason],
+    );
+  };
+
+  const handleDelete = async () => {
+    if (!confirmed || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const deleted = await onConfirm();
+      if (deleted) {
+        onClose();
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <button className="text-sm self-start fint-bold text-[var(--color-error)] ">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+      <div className="relative w-full max-w-xl rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-5 py-5 text-[var(--color-text-hover)] shadow-[var(--shadow-md)]">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-[var(--color-text)] transition hover:text-[var(--color-text-hover)]"
+          aria-label="Close delete account modal"
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path
+              d="M5 5l10 10M15 5L5 15"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+
+        <h2 className="mb-5 text-2xl font-bold tracking-tight text-[var(--color-text-hover)]">
+          Delete account
+        </h2>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <p className="mb-3 text-base font-semibold text-[var(--color-text-hover)]">
+              Why are you choosing to delete your account?
+            </p>
+            <div className="flex flex-col gap-2">
+              {DELETE_ACCOUNT_REASONS.map((reason) => (
+                <label
+                  key={reason}
+                  className="flex cursor-pointer items-start gap-2.5 text-sm font-semibold text-[var(--color-text-hover)]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedReasons.includes(reason)}
+                    onChange={() => toggleReason(reason)}
+                    className="mt-0.5 h-4 w-4 rounded border border-[var(--color-border-light)] bg-transparent accent-[var(--color-accent)]"
+                  />
+                  <span>{reason}</span>
+                </label>
+              ))}
+
+              <div className="flex flex-col gap-2.5">
+                <label className="flex cursor-pointer items-start gap-2.5 text-sm font-semibold text-[var(--color-text-hover)]">
+                  <input
+                    type="checkbox"
+                    checked={selectedReasons.includes("other")}
+                    onChange={() => toggleReason("other")}
+                    className="mt-0.5 h-4 w-4 rounded border border-[var(--color-border-light)] bg-transparent accent-[var(--color-accent)]"
+                  />
+                  <span>Other, please specify</span>
+                </label>
+                <textarea
+                  value={otherReason}
+                  onChange={(e) => setOtherReason(e.target.value)}
+                  rows={2}
+                  placeholder="Tell us more"
+                  className="min-h-[56px] rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-text-hover)] placeholder:text-[var(--color-text)] focus:outline-none focus:border-[var(--color-border-light)]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm font-semibold text-[var(--color-text-hover)]">
+            <input
+              type="checkbox"
+              checked={confirmed}
+              onChange={() => setConfirmed((value) => !value)}
+              className="mt-0.5 h-4 w-4 rounded border border-[var(--color-border-light)] bg-transparent accent-[var(--color-accent)]"
+            />
+            <span>
+              Yes, I want to delete my account and all my tracks, comments and
+              stats.
+            </span>
+          </label>
+
+          <div className="flex justify-end gap-3 pt-1">
+            <button
+              onClick={onClose}
+              disabled={isDeleting}
+              className="px-4 py-2 text-sm font-semibold text-[var(--color-text)] transition hover:text-[var(--color-text-hover)] disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={!confirmed || isDeleting}
+              className="rounded-[var(--radius-sm)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-border-light)] disabled:text-[var(--color-text)]"
+            >
+              {isDeleting ? "Deleting..." : "Delete my account"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteAccount({
+  onDeleteRequested,
+}: {
+  onDeleteRequested: () => void;
+}) {
+  return (
+    <button
+      onClick={onDeleteRequested}
+      className="text-sm self-start fint-bold text-[var(--color-error)] "
+    >
       Delete account
     </button>
   );
@@ -958,13 +1111,34 @@ function DeleteAccount() {
 
 function AccountPage() {
   const { logout } = useAuthStore();
+  const navigate = useNavigate();
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteMyAccount();
+      logout();
+      navigate("/", { replace: true });
+      return true;
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const message =
+        err?.response?.data?.error?.message ??
+        err?.response?.data?.message ??
+        (status
+          ? `Failed to delete account (${status}).`
+          : "Failed to delete account.");
+      showToast(message, "error");
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -992,8 +1166,14 @@ function AccountPage() {
         <VerificationBadge onToast={showToast} />
         <BasicInformation onToast={showToast} />
         <ConnectedApplications />
-        <DeleteAccount />
+        <DeleteAccount onDeleteRequested={() => setShowDeleteModal(true)} />
       </div>
+      {showDeleteModal && (
+        <DeleteAccountModal
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteAccount}
+        />
+      )}
       {toast && (
         <Toast
           message={toast.message}

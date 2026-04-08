@@ -68,6 +68,16 @@ export interface RegisterPayload {
   captcha_token: string;
 }
 
+export interface ContentSettings {
+  rss_title?: string | null;
+  rss_language?: string | null;
+  rss_category?: string | null;
+  rss_explicit?: boolean;
+  rss_show_email?: boolean;
+  default_include_in_rss?: boolean;
+  default_license_type?: "all_rights_reserved" | "creative_commons" | null;
+}
+
 // Token helpers
 
 function saveToken(token: string) {
@@ -213,6 +223,33 @@ export async function getMe() {
   const res = await axiosInstance.get<{
     data: UserProfile;
     message: string;
+  }>("/users/me");
+  return res.data;
+}
+
+/** GET /users/me/content-settings */
+export async function getMyContentSettings() {
+  const res = await axiosInstance.get<{
+    data: ContentSettings;
+    message?: string;
+  }>("/users/me/content-settings");
+  return res.data;
+}
+
+/** PATCH /users/me/content-settings */
+export async function updateMyContentSettings(data: ContentSettings) {
+  const res = await axiosInstance.patch<{
+    data: ContentSettings;
+    message?: string;
+  }>("/users/me/content-settings", data);
+  return res.data;
+}
+
+/** DELETE /users/me */
+export async function deleteMyAccount() {
+  const res = await axiosInstance.delete<{
+    data?: { success?: boolean };
+    message?: string;
   }>("/users/me");
   return res.data;
 }
