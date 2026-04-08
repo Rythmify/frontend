@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BlockUserModal } from "../BlockModal";
+import { BlockUserModal } from "../../UI/BlockModal";
 
 // ✅ Fix 1: Use the same @/ alias the component uses so the mock actually applies
 vi.mock("@/services/api/messaging/conversationApi", () => ({
