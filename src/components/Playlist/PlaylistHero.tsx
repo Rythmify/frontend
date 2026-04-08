@@ -76,7 +76,7 @@ export default function PlaylistHero({
           </button>
 
           {/* Title Block */}
-          <div className="flex flex-col gap-1 items-start">
+          <div className="flex flex-col items-start">
             <div className="bg-bg px-4 py-3">
               <h1 className="text-2xl md:text-3xl text-text-upload font-bold tracking-tight leading-tight">
                 {playlist.name}

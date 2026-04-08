@@ -6,7 +6,7 @@ import { BiRepost } from "react-icons/bi";
 import type { PlaylistDetails } from "@/services/api/playlist/playlist.service";
 import type { MockUser } from "../../services/mocks/users";
 import { followUser, unfollowUser } from "../../services/mocks/User.service";
-import type { useAuthStore } from "@/stores/auth.store";
+import { useAuthStore } from "@/stores/auth.store";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
@@ -19,39 +19,33 @@ export default function PlaylistSidebar({
 }: PlaylistSidebarProps) {
   const formatCount = (n: number | undefined) =>
     !n ? "0" : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
-
+  const { user } = useAuthStore();
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>
       <aside data-test="playlist-sidebar" className="flex flex-col w-full">
         {/* Made for / Creator Section */}
         <div
-          data-test="sidebar-made-for"
-          className="flex items-center gap-3 mb-5"
+          data-test="sidebar-made-for-playlist"
+          className="flex items-center gap-3 mb-5 px-4 py-2"
         >
           <img
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${playlist.owner_user_id}`}
+            src={user?.avatar}
             alt={playlist.owner_user_id}
             className="w-10 h-10 rounded-full object-cover shrink-0 bg-[#333]"
           />
           <div className="min-w-0">
-            <p className="text-[var(--color-text-muted)] text-[11px] font-semibold uppercase tracking-widest">
-              Made for
-            </p>
             <Link
               to={`/${playlist.owner_user_id}`}
-              className="text-[var(--color-text-hover)] text-sm font-bold truncate hover:text-white transition-colors block"
+              className="text-text-upload text-sm font-bold truncate hover:text-[#484848] transition-colors block"
             >
-              {playlist.owner_user_id}
+              Made for {user?.displayName}
             </Link>
           </div>
         </div>
 
-        <hr className="mb-5" />
-
         {/* Artists Featured Section */}
         <div data-test="sidebar-artists-featured">
-          <p className="text-[var(--color-text-hover)] text-[11px] font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-            <FaUserFriends className="text-gray-500" />
+          <p className="text-[var(--color-text-hover)] text-[12px] font-bold uppercase px-4 py-2 tracking-widest mb-4 flex items-center gap-2">
             Artists Featured
           </p>
           <div className="flex flex-col gap-4">
@@ -90,7 +84,7 @@ function StatItem({
   );
 }
 
-// Artist Card (Maintained from your TrackSidebar)
+// Artist Card
 function ArtistCard({ artist }: { artist: MockUser }) {
   const [following, setFollowing] = useState(artist.isFollowing);
   const [followerCount, setFollowerCount] = useState(artist.followerCount);
@@ -100,16 +94,13 @@ function ArtistCard({ artist }: { artist: MockUser }) {
       if (following) {
         await unfollowUser(artist.username);
         setFollowing(false);
-        // Change (c) to (c: number)
         setFollowerCount((c: number) => Math.max(0, c - 1));
       } else {
         await followUser(artist.username);
         setFollowing(true);
-        // Change (c) to (c: number)
         setFollowerCount((c: number) => c + 1);
       }
     } catch {
-      // Change (p) to (p: boolean)
       setFollowing((p: boolean) => !p);
     }
   };
@@ -117,7 +108,7 @@ function ArtistCard({ artist }: { artist: MockUser }) {
   return (
     <div
       data-test={`artist-card-${artist.username}`}
-      className="flex items-center gap-3"
+      className="flex items-center gap-3 px-4"
     >
       <Link to={`/${artist.username}`} className="shrink-0">
         <img
@@ -140,7 +131,6 @@ function ArtistCard({ artist }: { artist: MockUser }) {
             <FaUserFriends className="w-2.5 h-2.5" />
             {followerCount.toLocaleString()}
           </span>
-          <span>·</span>
           <span className="flex items-center gap-1">
             <FaMusic className="w-2.5 h-2.5" />
             {artist.trackCount}
@@ -152,12 +142,12 @@ function ArtistCard({ artist }: { artist: MockUser }) {
         onClick={handleFollow}
         className={`
           shrink-0 min-w-[70px] px-3 py-1
-          rounded-[var(--radius-sm)] text-[10px] font-bold
-          border transition-colors duration-150 cursor-pointer
+          rounded-[var(--radius-sm)] text-sm font-bold
+         transition-colors duration-150 cursor-pointer
           ${
             following
-              ? "bg-[var(--color-input-bg)] border-[var(--color-border-light)] text-[var(--color-text-hover)]"
-              : "bg-white border-white text-black hover:bg-gray-200"
+              ? "bg-[#303030] text-white "
+              : "bg-white text-bg hover:text-[#a0a0a0]"
           }
         `}
       >
