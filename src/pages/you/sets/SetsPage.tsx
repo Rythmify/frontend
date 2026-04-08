@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from "react";
-import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+import React, { useState } from "react";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
-import SetsHeader from "@/components/Playlist/SetsHeader";
-import {
-  getMyPlaylists,
-  getLikedPlaylists,
-  type Playlist,
-} from "@/services/api/playlist/playlist.service";
-import PlaylistCard from "@/components/Playlist/PlaylistCard";
+import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
+import { useLikesStore } from "@/stores/likes.store";
+
+const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
 
 const SkeletonCard = () => (
   <div className="flex flex-col gap-2 w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px] shrink-0 animate-pulse">
