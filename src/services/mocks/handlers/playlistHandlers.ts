@@ -4,11 +4,45 @@ import type {
   PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface PlaylistDetails extends Playlist {
+  tracks: PlaylistTrackItem[];
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const MOCK_OWNER_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 const SECRET_TOKEN = "mock-secret-token-xyz";
 
+const TRACK_IDS = {
+  t1: "11111111-1111-1111-1111-111111111111",
+  t2: "22222222-2222-2222-2222-222222222222",
+  t3: "33333333-3333-3333-3333-333333333333",
+  t4: "44444444-4444-4444-4444-444444444444",
+  t5: "55555555-5555-5555-5555-555555555555",
+  t6: "66666666-6666-6666-6666-666666666666",
+  t7: "77777777-7777-7777-7777-777777777777",
+  t8: "88888888-8888-8888-8888-888888888888",
+  t9: "99999999-9999-9999-9999-999999999999",
+  t10: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function toSummary(p: PlaylistDetails): Playlist {
+  const { tracks: _tracks, ...summary } = p;
+  return summary;
+}
+
+function nextPosition(playlist: PlaylistDetails): number {
+  if (playlist.tracks.length === 0) return 1;
+  return Math.max(...playlist.tracks.map((t) => t.position)) + 1;
+}
+
+// ─── Mock Data ────────────────────────────────────────────────────────────────
+
+// Single source of truth — all owned playlists live here
 const mockPlaylists: PlaylistDetails[] = [
   {
     playlist_id: "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
@@ -17,14 +51,16 @@ const mockPlaylists: PlaylistDetails[] = [
     description: "A collection of my favorite tracks",
     is_public: true,
     created_at: "2026-01-10T10:00:00Z",
-    track_count: 2,
+    track_count: 1,
     like_count: 5,
     cover_image: "https://picsum.photos/seed/my-favorites/300/300",
     tracks: [
       {
-        track_id: "track-1",
+        track_id: TRACK_IDS.t1,
         position: 1,
         added_at: "2026-01-10T10:01:00Z",
+        title: "Track One",
+        artist_name: "Artist A",
       },
     ],
   },
@@ -34,8 +70,9 @@ const mockPlaylists: PlaylistDetails[] = [
     name: "Secret Vibes",
     description: "Private playlist — shareable by token only",
     is_public: false,
+    secret_token: SECRET_TOKEN,
     created_at: "2026-02-01T08:00:00Z",
-    track_count: 1,
+    track_count: 0,
     like_count: 0,
     cover_image: "https://picsum.photos/seed/secret-vibes/300/300",
     tracks: [],
@@ -47,7 +84,7 @@ const mockPlaylists: PlaylistDetails[] = [
     description: "Chill beats for the road",
     is_public: true,
     created_at: "2026-03-05T22:00:00Z",
-    track_count: 3,
+    track_count: 0,
     like_count: 12,
     cover_image: "https://picsum.photos/seed/late-night/300/300",
     tracks: [],
@@ -59,14 +96,16 @@ const mockPlaylists: PlaylistDetails[] = [
     description: "High energy workout tracks",
     is_public: true,
     created_at: "2026-03-10T07:00:00Z",
-    track_count: 4,
+    track_count: 1,
     like_count: 20,
     cover_image: "https://picsum.photos/seed/gym-hits/300/300",
     tracks: [
       {
-        track_id: "track-2",
+        track_id: TRACK_IDS.t2,
         position: 1,
         added_at: "2026-01-10T10:01:00Z",
+        title: "Track Two",
+        artist_name: "Artist B",
       },
     ],
   },
@@ -83,34 +122,39 @@ const mockPlaylists: PlaylistDetails[] = [
     cover_image: "https://picsum.photos/seed/summer-2026/300/300",
     tracks: [
       {
-        track_id: "6",
+        track_id: TRACK_IDS.t6,
         position: 1,
         added_at: "2026-04-01T12:01:00Z",
         title: "Sahar El Leil",
+        artist_name: "Artist C",
       },
       {
-        track_id: "7",
+        track_id: TRACK_IDS.t7,
         position: 2,
         added_at: "2026-04-01T12:02:00Z",
         title: "Hayatak Maaky",
+        artist_name: "Artist C",
       },
       {
-        track_id: "8",
+        track_id: TRACK_IDS.t8,
         position: 3,
         added_at: "2026-04-01T12:03:00Z",
         title: "Nedaa El Qalb",
+        artist_name: "Artist D",
       },
       {
-        track_id: "9",
+        track_id: TRACK_IDS.t9,
         position: 4,
         added_at: "2026-04-01T12:04:00Z",
         title: "Mawgood",
+        artist_name: "Artist D",
       },
       {
-        track_id: "10",
+        track_id: TRACK_IDS.t10,
         position: 5,
         added_at: "2026-04-01T12:05:00Z",
         title: "Dawam",
+        artist_name: "Artist E",
       },
     ],
   },
@@ -126,28 +170,31 @@ const mockPlaylists: PlaylistDetails[] = [
     cover_image: "https://picsum.photos/seed/night-chills/300/300",
     tracks: [
       {
-        track_id: "3",
+        track_id: TRACK_IDS.t3,
         position: 1,
         added_at: "2026-04-02T21:01:00Z",
         title: "Shababek'",
+        artist_name: "Artist F",
       },
       {
-        track_id: "5",
+        track_id: TRACK_IDS.t5,
         position: 2,
         added_at: "2026-04-02T21:02:00Z",
         title: "Elwa2t Eldaye3",
+        artist_name: "Artist F",
       },
       {
-        track_id: "6",
+        track_id: TRACK_IDS.t6,
         position: 3,
         added_at: "2026-04-02T21:03:00Z",
         title: "Sahar El Leil",
+        artist_name: "Artist C",
       },
     ],
   },
 ];
 
-// ─── Liked playlists (owned by OTHER users, liked by the current user) ────────
+// ─── Liked playlists (owned by OTHER users, liked by current user) ─────────────
 
 const mockLikedPlaylists: PlaylistDetails[] = [
   {
@@ -157,14 +204,16 @@ const mockLikedPlaylists: PlaylistDetails[] = [
     description: "Deep house for Sunday mornings",
     is_public: true,
     created_at: "2026-01-20T09:00:00Z",
-    track_count: 5,
+    track_count: 1,
     like_count: 87,
     cover_image: "https://picsum.photos/seed/chill-house/300/300",
     tracks: [
       {
-        track_id: "track-1",
+        track_id: TRACK_IDS.t1,
         position: 1,
         added_at: "2026-01-10T10:01:00Z",
+        title: "Track One",
+        artist_name: "Artist A",
       },
     ],
   },
@@ -175,7 +224,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
     description: "Timeless Arabic songs",
     is_public: true,
     created_at: "2026-02-14T12:00:00Z",
-    track_count: 8,
+    track_count: 0,
     like_count: 210,
     cover_image: "https://picsum.photos/seed/arabic-classics/300/300",
     tracks: [],
@@ -187,7 +236,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
     description: "Focus beats for long sessions",
     is_public: true,
     created_at: "2026-03-01T14:00:00Z",
-    track_count: 12,
+    track_count: 0,
     like_count: 445,
     cover_image: "https://picsum.photos/seed/lofi-study/300/300",
     tracks: [],
@@ -199,7 +248,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
     description: "The best mahraganat tracks",
     is_public: true,
     created_at: "2026-03-15T18:00:00Z",
-    track_count: 6,
+    track_count: 0,
     like_count: 320,
     cover_image: "https://picsum.photos/seed/mahraganat/300/300",
     tracks: [],
@@ -217,28 +266,32 @@ const mockLikedPlaylists: PlaylistDetails[] = [
     cover_image: "https://picsum.photos/seed/edm-hits/300/300",
     tracks: [
       {
-        track_id: "2",
+        track_id: TRACK_IDS.t2,
         position: 1,
         added_at: "2026-01-05T20:01:00Z",
         title: "Seneen",
+        artist_name: "Artist G",
       },
       {
-        track_id: "6",
+        track_id: TRACK_IDS.t6,
         position: 2,
         added_at: "2026-01-05T20:02:00Z",
         title: "Sahar El Leil",
+        artist_name: "Artist C",
       },
       {
-        track_id: "8",
+        track_id: TRACK_IDS.t8,
         position: 3,
         added_at: "2026-01-05T20:03:00Z",
         title: "Nedaa El Qalb",
+        artist_name: "Artist D",
       },
       {
-        track_id: "9",
+        track_id: TRACK_IDS.t9,
         position: 4,
         added_at: "2026-01-05T20:04:00Z",
         title: "Mawgood",
+        artist_name: "Artist D",
       },
     ],
   },
@@ -254,108 +307,39 @@ const mockLikedPlaylists: PlaylistDetails[] = [
     cover_image: "https://picsum.photos/seed/jazz-cafe/300/300",
     tracks: [
       {
-        track_id: "3",
+        track_id: TRACK_IDS.t3,
         position: 1,
         added_at: "2026-02-20T11:01:00Z",
         title: "Shababek'",
+        artist_name: "Artist F",
       },
       {
-        track_id: "5",
+        track_id: TRACK_IDS.t5,
         position: 2,
         added_at: "2026-02-20T11:02:00Z",
         title: "Elwa2t Eldaye3",
+        artist_name: "Artist F",
       },
       {
-        track_id: "8",
+        track_id: TRACK_IDS.t8,
         position: 3,
         added_at: "2026-02-20T11:03:00Z",
         title: "Nedaa El Qalb",
+        artist_name: "Artist D",
       },
     ],
   },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function toSummary(p: PlaylistDetails): Playlist {
-  const { tracks: _tracks, ...summary } = p;
-  return summary;
-}
-
-function nextPosition(playlist: PlaylistDetails): number {
-  if (playlist.tracks.length === 0) return 1;
-  return Math.max(...playlist.tracks.map((t) => t.position)) + 1;
-}
-
 // ─── Handlers ─────────────────────────────────────────────────────────────────
-interface PlaylistDetails extends Playlist {
-  tracks: PlaylistTrackItem[];
-}
-
-const generateId = () => `playlist-${Math.random().toString(36).slice(2, 10)}`;
-
-// ─── Richer seeded playlists ──────────────────────────────
-interface PlaylistSeed extends Playlist {
-  cover_image: string | null;
-}
-
-const seedPlaylists: (PlaylistSeed & { tracks: PlaylistTrackItem[] })[] = [
-  {
-    playlist_id: "0001",
-    owner_user_id: "12345",
-    name: "أناشيد",
-    description: null,
-    is_public: false,
-    cover_image:
-      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&h=300&fit=crop",
-    created_at: "2026-01-10T00:00:00Z",
-    track_count: 0,
-    like_count: 0,
-    tracks: [],
-  },
-  {
-    playlist_id: "0002",
-    owner_user_id: "12345",
-    name: "my songs",
-    description: null,
-    is_public: true,
-    cover_image:
-      "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=300&fit=crop",
-    created_at: "2026-02-14T00:00:00Z",
-    track_count: 0,
-    like_count: 3,
-    tracks: [],
-  },
-];
-
-const playlists: Record<string, PlaylistDetails> = Object.fromEntries(
-  seedPlaylists.map((p) => [p.playlist_id, p as unknown as PlaylistDetails]),
-);
-
-const getMyPlaylistList = () =>
-  Object.values(playlists).map((p) => ({
-    playlist_id: p.playlist_id,
-    owner_user_id: p.owner_user_id,
-    name: p.name,
-    description: p.description,
-    is_public: p.is_public,
-    created_at: p.created_at,
-    track_count: p.track_count,
-    like_count: p.like_count,
-    cover_image:
-      (p as unknown as { cover_image?: string | null }).cover_image ?? null,
-  }));
 
 export const playlistHandlers = [
-  // POST /playlists — create a playlist
-  http.post("http://localhost:8080/api/v1/playlists", async ({ request }) => {
-    let body;
+  // ── POST /playlists — create a playlist ──────────────────────────────────────
+  http.post("*/playlists", async ({ request }) => {
+    // Service sends JSON for create
+    let body: { name?: string; description?: string; is_public?: boolean };
     try {
-      body = (await request.json()) as {
-        name: string;
-        description?: string;
-        is_public?: boolean;
-      };
+      body = (await request.json()) as typeof body;
     } catch {
       return HttpResponse.json(
         {
@@ -384,7 +368,9 @@ export const playlistHandlers = [
       created_at: new Date().toISOString(),
       track_count: 0,
       like_count: 0,
-      cover_image: `https://picsum.photos/seed/${encodeURIComponent(body.name)}/300/300`,
+      cover_image: `https://picsum.photos/seed/${encodeURIComponent(
+        body.name,
+      )}/300/300`,
       tracks: [],
     };
 
@@ -398,29 +384,29 @@ export const playlistHandlers = [
     );
   }),
 
-  // GET /playlists — handles mine=true + filter=created|liked
+  // ── GET /playlists — mine=true + optional filter=liked ───────────────────────
   http.get("*/playlists", ({ request }) => {
     const url = new URL(request.url);
     const mine = url.searchParams.get("mine") === "true";
-    const filter = url.searchParams.get("filter"); // "created" | "liked" | null
+    const filter = url.searchParams.get("filter");
     const q = url.searchParams.get("q")?.toLowerCase() ?? "";
-    const limit = parseInt(url.searchParams.get("limit") ?? "20");
-    const offset = parseInt(url.searchParams.get("offset") ?? "0");
+    const limit = parseInt(url.searchParams.get("limit") ?? "20", 10);
+    const offset = parseInt(url.searchParams.get("offset") ?? "0", 10);
+    const subtypeFilter = url.searchParams.get("subtype");
 
     let results: PlaylistDetails[];
 
     if (mine && filter === "liked") {
-      // Return the liked playlists list
       results = [...mockLikedPlaylists];
     } else if (mine) {
-      // Default: filter=created or omitted → own playlists
       results = mockPlaylists.filter((p) => p.owner_user_id === MOCK_OWNER_ID);
     } else {
-      // Public browse
       results = mockPlaylists.filter((p) => p.is_public);
     }
 
     if (q) results = results.filter((p) => p.name.toLowerCase().includes(q));
+    if (subtypeFilter)
+      results = results.filter((p) => p.subtype === subtypeFilter);
 
     const total = results.length;
     const items = results.slice(offset, offset + limit).map(toSummary);
@@ -431,8 +417,66 @@ export const playlistHandlers = [
     });
   }),
 
-  // GET /playlists/:id — get playlist details
-  http.get("*/playlists/:playlist_id", ({ request, params }) => {
+  // ── GET /playlists/:id/tracks — paginated track listing ──────────────────────
+  http.get("*/playlists/:playlist_id/tracks", ({ params, request }) => {
+    const { playlist_id } = params;
+    const url = new URL(request.url);
+    const secretToken = url.searchParams.get("secret_token");
+    const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+    const perPage = parseInt(url.searchParams.get("limit") ?? "20", 10);
+
+    const playlist =
+      mockPlaylists.find((p) => p.playlist_id === playlist_id) ??
+      mockLikedPlaylists.find((p) => p.playlist_id === playlist_id);
+
+    if (!playlist) {
+      return HttpResponse.json(
+        {
+          error: { code: "PLAYLIST_NOT_FOUND", message: "Playlist not found." },
+        },
+        { status: 404 },
+      );
+    }
+
+    if (!playlist.is_public) {
+      const isOwner = playlist.owner_user_id === MOCK_OWNER_ID;
+      if (!isOwner && secretToken !== SECRET_TOKEN) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "PLAYLIST_ACCESS_DENIED",
+              message: "You do not have access to this playlist.",
+            },
+          },
+          { status: 403 },
+        );
+      }
+    }
+
+    const totalItems = playlist.tracks.length;
+    const totalPages = Math.ceil(totalItems / perPage) || 1;
+    const start = (page - 1) * perPage;
+    const tracks = playlist.tracks.slice(start, start + perPage);
+
+    return HttpResponse.json({
+      data: {
+        playlist_id,
+        tracks,
+        pagination: {
+          page,
+          per_page: perPage,
+          total_items: totalItems,
+          total_pages: totalPages,
+          has_next: page < totalPages,
+          has_prev: page > 1,
+        },
+      },
+      message: "Playlist tracks fetched successfully.",
+    });
+  }),
+
+  // ── GET /playlists/:id — playlist details ────────────────────────────────────
+  http.get("*/playlists/:playlist_id", ({ params, request }) => {
     const { playlist_id } = params;
     const url = new URL(request.url);
     const secretToken = url.searchParams.get("secret_token");
@@ -451,9 +495,9 @@ export const playlistHandlers = [
       );
     }
 
-    if (!playlist.is_public && secretToken !== SECRET_TOKEN) {
+    if (!playlist.is_public) {
       const isOwner = playlist.owner_user_id === MOCK_OWNER_ID;
-      if (!isOwner) {
+      if (!isOwner && secretToken !== SECRET_TOKEN) {
         return HttpResponse.json(
           {
             error: {
@@ -472,16 +516,15 @@ export const playlistHandlers = [
     });
   }),
 
-  // PATCH /playlists/:id/tracks/reorder — must be before generic PATCH
+  // ── PATCH /playlists/:id/tracks/reorder — must precede generic PATCH ─────────
   http.patch(
     "*/playlists/:playlist_id/tracks/reorder",
     async ({ params, request }) => {
       const { playlist_id } = params;
-      let body;
+
+      let body: { items: { track_id: string; position: number }[] };
       try {
-        body = (await request.json()) as {
-          items: { track_id: string; position: number }[];
-        };
+        body = (await request.json()) as typeof body;
       } catch {
         return HttpResponse.json(
           {
@@ -537,27 +580,9 @@ export const playlistHandlers = [
     },
   ),
 
-  // PATCH /playlists/:id — update metadata
+  // ── PATCH /playlists/:id — update metadata (multipart/form-data) ─────────────
   http.patch("*/playlists/:playlist_id", async ({ params, request }) => {
     const { playlist_id } = params;
-    let body;
-    try {
-      body = (await request.json()) as {
-        name?: string;
-        description?: string | null;
-        is_public?: boolean;
-      };
-    } catch {
-      return HttpResponse.json(
-        {
-          error: {
-            code: "INVALID_JSON",
-            message: "Failed to parse request body",
-          },
-        },
-        { status: 400 },
-      );
-    }
 
     const playlist = mockPlaylists.find((p) => p.playlist_id === playlist_id);
     if (!playlist) {
@@ -569,9 +594,48 @@ export const playlistHandlers = [
       );
     }
 
-    if (body.name !== undefined) playlist.name = body.name;
-    if (body.description !== undefined) playlist.description = body.description;
-    if (body.is_public !== undefined) playlist.is_public = body.is_public;
+    // Service sends multipart/form-data for updates
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      return HttpResponse.json(
+        {
+          error: {
+            code: "INVALID_FORM_DATA",
+            message: "Failed to parse form data",
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    const name = formData.get("name");
+    const description = formData.get("description");
+    const isPublic = formData.get("is_public");
+    const subtype = formData.get("subtype");
+    const slug = formData.get("slug");
+    const releaseDate = formData.get("release_date");
+    const genreId = formData.get("genre_id");
+    const removeCoverImage = formData.get("remove_cover_image");
+    const coverImage = formData.get("cover_image");
+    const tags = formData.getAll("tags[]") as string[];
+
+    if (name !== null) playlist.name = name as string;
+    if (description !== null)
+      playlist.description = (description as string) || null;
+    if (isPublic !== null) playlist.is_public = isPublic === "true";
+    if (subtype !== null) playlist.subtype = subtype as Playlist["subtype"];
+    if (slug !== null) playlist.slug = slug as string;
+    if (releaseDate !== null)
+      playlist.release_date = (releaseDate as string) || null;
+    if (genreId !== null) playlist.genre_id = (genreId as string) || null;
+    if (tags.length > 0) playlist.tags = tags.map((id) => ({ id, name: id }));
+    if (removeCoverImage === "true") playlist.cover_image = null;
+    else if (coverImage instanceof File) {
+      // In a real mock you'd create an object URL; here we just keep the existing one
+      playlist.cover_image = URL.createObjectURL(coverImage);
+    }
 
     return HttpResponse.json({
       data: toSummary(playlist),
@@ -579,7 +643,7 @@ export const playlistHandlers = [
     });
   }),
 
-  // DELETE /playlists/:id/tracks/:track_id — must be before generic DELETE
+  // ── DELETE /playlists/:id/tracks/:track_id — must precede generic DELETE ──────
   http.delete("*/playlists/:playlist_id/tracks/:track_id", ({ params }) => {
     const { playlist_id, track_id } = params;
 
@@ -621,7 +685,7 @@ export const playlistHandlers = [
     });
   }),
 
-  // DELETE /playlists/:id — delete a playlist
+  // ── DELETE /playlists/:id — delete a playlist ─────────────────────────────────
   http.delete("*/playlists/:playlist_id", ({ params }) => {
     const { playlist_id } = params;
     const index = mockPlaylists.findIndex((p) => p.playlist_id === playlist_id);
@@ -642,108 +706,80 @@ export const playlistHandlers = [
     });
   }),
 
-  // POST /playlists/:id/tracks — add a track
-  http.post(
-    "http://localhost:8080/api/v1/playlists/:playlist_id/tracks",
-    async ({ params, request }) => {
-      try {
-        const { playlist_id } = params;
-        let body;
-        try {
-          body = (await request.json()) as {
-            track_id: string;
-            position?: number;
-          };
-        } catch {
-          return HttpResponse.json(
-            {
-              error: {
-                code: "INVALID_JSON",
-                message: "Failed to parse request body",
-              },
-            },
-            { status: 400 },
-          );
-        }
+  // ── POST /playlists/:id/tracks — add a track ──────────────────────────────────
+  http.post("*/playlists/:playlist_id/tracks", async ({ params, request }) => {
+    const { playlist_id } = params;
 
-        if (!body.track_id) {
-          return HttpResponse.json(
-            {
-              error: {
-                code: "VALIDATION_FAILED",
-                message: "track_id is required",
-              },
-            },
-            { status: 400 },
-          );
-        }
-
-        const playlist = mockPlaylists.find(
-          (p) => p.playlist_id === playlist_id,
-        );
-        if (!playlist) {
-          return HttpResponse.json(
-            {
-              error: {
-                code: "PLAYLIST_NOT_FOUND",
-                message: "Playlist not found.",
-              },
-            },
-            { status: 404 },
-          );
-        }
-
-        if (playlist.tracks.some((t) => t.track_id === body.track_id)) {
-          return HttpResponse.json(
-            {
-              error: {
-                code: "PLAYLIST_TRACK_ALREADY_EXISTS",
-                message: "Track already exists in this playlist.",
-              },
-            },
-            { status: 409 },
-          );
-        }
-
-        const insertPosition = body.position ?? nextPosition(playlist);
-        const newItem: PlaylistTrackItem = {
-          track_id: body.track_id,
-          position: insertPosition,
-          added_at: new Date().toISOString(),
-        };
-
-        if (body.position !== undefined) {
-          playlist.tracks = playlist.tracks.map((t) =>
-            t.position >= insertPosition
-              ? { ...t, position: t.position + 1 }
-              : t,
-          );
-        }
-
-        playlist.tracks.push(newItem);
-        playlist.tracks.sort((a, b) => a.position - b.position);
-        playlist.track_count = playlist.tracks.length;
-
-        return HttpResponse.json(
-          { data: playlist, message: "Track added to playlist successfully." },
-          { status: 201 },
-        );
-      } catch (error) {
-        console.error("POST /playlists/:playlist_id/tracks exception:", error);
-        return HttpResponse.json(
-          {
-            error: {
-              code: "HANDLER_EXCEPTION",
-              message: "Unexpected error in playlist track handler",
-            },
+    let body: { track_id: string; position?: number };
+    try {
+      body = (await request.json()) as typeof body;
+    } catch {
+      return HttpResponse.json(
+        {
+          error: {
+            code: "INVALID_JSON",
+            message: "Failed to parse request body",
           },
-          { status: 500 },
-        );
-      }
-    },
-  ),
+        },
+        { status: 400 },
+      );
+    }
 
-  // GET /playlists/:id/embed
+    if (!body.track_id) {
+      return HttpResponse.json(
+        {
+          error: { code: "VALIDATION_FAILED", message: "track_id is required" },
+        },
+        { status: 400 },
+      );
+    }
+
+    const playlist = mockPlaylists.find((p) => p.playlist_id === playlist_id);
+    if (!playlist) {
+      return HttpResponse.json(
+        {
+          error: { code: "PLAYLIST_NOT_FOUND", message: "Playlist not found." },
+        },
+        { status: 404 },
+      );
+    }
+
+    if (playlist.tracks.some((t) => t.track_id === body.track_id)) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: "PLAYLIST_TRACK_ALREADY_EXISTS",
+            message: "Track already exists in this playlist.",
+          },
+        },
+        { status: 409 },
+      );
+    }
+
+    const insertPosition = body.position ?? nextPosition(playlist);
+    const newItem: PlaylistTrackItem = {
+      track_id: body.track_id,
+      position: insertPosition,
+      added_at: new Date().toISOString(),
+    };
+
+    if (body.position !== undefined) {
+      playlist.tracks = playlist.tracks.map((t) =>
+        t.position >= insertPosition ? { ...t, position: t.position + 1 } : t,
+      );
+    }
+
+    playlist.tracks.push(newItem);
+    playlist.tracks.sort((a, b) => a.position - b.position);
+    playlist.track_count = playlist.tracks.length;
+
+    return HttpResponse.json(
+      { data: playlist, message: "Track added to playlist successfully." },
+      { status: 201 },
+    );
+  }),
+
+  // ── GET /playlists/:id/embed ───────────────────────────────────────────────────
   http.get("*/playlists/:playlist_id/embed", ({ params, request }) => {
     const { playlist_id } = params;
     const url = new URL(request.url);
