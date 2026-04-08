@@ -83,7 +83,7 @@ const CreatePlaylistTab = ({
         <TracksToAddList
           tracks={tracksToAdd}
           isPlaylist={isPlaylist}
-          onRemove={isPlaylist ? handleRemove : undefined}
+          onRemove={handleRemove}
         />
       )}
 

@@ -8,7 +8,7 @@ interface DisplayTrack {
 interface TracksToAddListProps {
   tracks: DisplayTrack[];
   isPlaylist: boolean; // playlist = scrollable list with X; single track
-  onRemove?: (id: string) => void;
+  onRemove: (id: string) => void;
 }
 
 const TracksToAddList = ({
@@ -62,27 +62,21 @@ const TracksToAddList = ({
           </div>
 
           {/* X button */}
-          { onRemove && (
-            <button
-              onClick={() => onRemove(track.id)}
-              className="shrink-0 text-[#666] hover:text-white transition-colors cursor-pointer p-1"
-              aria-label="Remove track"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="currentColor"
-              >
-                <path
-                  d="M10.5 1.5 6 6m0 0L1.5 10.5M6 6 1.5 1.5M6 6l4.5 4.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-          )}
+
+          <button
+            onClick={() => onRemove(track.id)}
+            className="shrink-0 text-[#666] hover:text-white transition-colors cursor-pointer p-1"
+            aria-label="Remove track"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <path
+                d="M10.5 1.5 6 6m0 0L1.5 10.5M6 6 1.5 1.5M6 6l4.5 4.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
         </div>
       ))}
     </div>
