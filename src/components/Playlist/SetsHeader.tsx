@@ -1,34 +1,28 @@
-import React, { useState, useEffect } from "react";
-import GuestPageFooter from "@/components/Upload/GuestPageFooter";
-import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
-import SetsHeader from "@/components/Playlist/SetsHeader";
-import {
-  getMyPlaylists,
-  getLikedPlaylists,
-  type Playlist,
-} from "@/services/api/playlist/playlist.service";
-import PlaylistCard from "@/components/Playlist/PlaylistCard";
-
-const SkeletonCard = () => (
-  <div className="flex flex-col gap-2 w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px] shrink-0 animate-pulse">
-    <div className="w-full aspect-square rounded-md bg-[#303030]" />
-    <div className="h-3 bg-[#303030] rounded w-3/4" />
-    <div className="h-3 bg-[#303030] rounded w-1/2" />
-  </div>
-);
-
-export default function SetsPage() {
-  const [filterText, setFilterText] = useState("");
-  const [activeFilter, setActiveFilter] = useState("All");
-  const { likedPlaylists } = useLikesStore();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const filterOptions = ["All", "Created", "Liked"];
+import React from 'react'
+interface SetsHeaderProps {
+  filterText: string;
+  setFilterText: (text: string) => void;
+  activeFilter: string;
+  setActiveFilter: (filter: string) => void;
+  isDropdownOpen: boolean;
+  setIsDropdownOpen: (open: boolean) => void;
+  filterOptions: string[];
+  title:string;
+}
+function SetsHeader({
+  filterText,
+  setFilterText,
+  activeFilter,
+  setActiveFilter,
+  isDropdownOpen,
+  setIsDropdownOpen,
+  filterOptions,
+  title
+}: SetsHeaderProps) {
   return (
-    <div className="">
-      <div className="flex justify-between items-center py-2 px-4">
+    <div className="flex justify-between items-center py-2 px-4">
         <div className=" text-white text-[17px] font-bold ">
-          Hear your own playlists and the playlists you've liked:
+          {title}
         </div>
 
         <div className="flex-1" />
@@ -72,7 +66,7 @@ export default function SetsPage() {
             </button>
 
             {isDropdownOpen && (
-              <ul className=" py-2 absolute right-0 mt-1 w-full border font-bold border-text-secondary rounded-sm shadow-xl z-20 overflow-hidden">
+              <ul className=" py-2 absolute right-0 mt-1 w-full border font-bold bg-bg border-text-secondary rounded-sm shadow-xl z-20 overflow-hidden">
                 {filterOptions.map((option) => (
                   <li key={option}>
                     <button
@@ -95,18 +89,7 @@ export default function SetsPage() {
           </div>
         </div>
       </div>
-      <div className="px-4 pt-2 pb-10">
-        <HorizontalCarousel title=" ">
-          {likedPlaylists.length === 0 ? (
-            <p className="text-text-secondary text-sm py-6">No liked playlists yet.</p>
-          ) : (
-            likedPlaylists.map((item) => (
-              <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
-            ))
-          )}
-        </HorizontalCarousel>
-      </div>
-      
-    </div>
-  );
+  )
 }
+
+export default SetsHeader
