@@ -38,7 +38,7 @@ export default function PlaylistActions({
     <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
       <div
         data-test="playlist-action-bar"
-        className="flex flex-row items-center bg-bg gap-2 py-4"
+        className="flex flex-row items-center gap-2 py-4"
       >
         {/* Like Button */}
         <ActionButton
@@ -52,7 +52,9 @@ export default function PlaylistActions({
           }
           active={liked}
         >
-          <FaHeart className={`text-[14px] ${liked ? "text-accent" : ""}`} />
+          <FaHeart
+            className={`text-[14px] ${liked ? "text-[#f50]" : "text-white"}`}
+          />
           {liked ? "Liked" : "Like"}
         </ActionButton>
 
@@ -79,7 +81,7 @@ export default function PlaylistActions({
           </ActionButton>
 
           {moreOpen && (
-            <div className="absolute left-0 top-full mt-1 bg-[#1a1a1a] border rounded-sm shadow-xl z-50 min-w-[190px] py-1">
+            <div className="absolute left-0 top-full mt-1 bg-[#1a1a1a] border border-[#333] rounded-sm shadow-xl z-50 min-w-[190px] py-1">
               <DropdownItem
                 icon={<FaAddToPlaylist />}
                 label="Add to playlist"
@@ -122,23 +124,21 @@ function ActionButton({
   children,
   onClick,
   active = false,
+  className = "",
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
+  className?: string;
 }) {
   return (
     <button
       onClick={onClick}
       className={`
         flex items-center gap-2 px-3 py-1.5 h-[32px]
-        text-[13px] font-medium rounded-[4px] border
-        transition-colors duration-150 cursor-pointer
-        ${
-          active
-            ? "bg-[#333] border-[#f50] text-white"
-            : "bg-[#1a1a1a] border-[#333] text-[#ccc] hover:border-[#555] hover:text-white"
-        }
+        rounded-[4px] transition-colors duration-150 cursor-pointer
+        bg-[#303030] font-bold text-white text-[14px] 
+        ${className}
       `}
     >
       {children}
@@ -146,7 +146,6 @@ function ActionButton({
   );
 }
 
-// Dropdown Item for the "More" menu
 function DropdownItem({
   icon,
   label,

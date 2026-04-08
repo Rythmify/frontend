@@ -121,7 +121,6 @@ function PlaylistSlugPage() {
             <PlaylistActions
               playlist={playlist}
               onAddToNextUp={() => {
-                // Logic to add all tracks to queue if needed
                 console.log("Adding all tracks to queue");
               }}
             />
