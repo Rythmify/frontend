@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
-import SetsHeader from "@/components/Playlist/SetsHeader";
+import SetsHeader from "@/components/playlist/SetsHeader";
 import {
   getMyPlaylists,
   getLikedPlaylists,
