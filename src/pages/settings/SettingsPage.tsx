@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { useGoogleLogin } from "@react-oauth/google";
-import { googleLogin } from "@/services/auth.service";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import SettingsLayout from "@/pages/settings/SettingsLayout";
-import { useAuthStore } from "@/stores/auth.store";
+import { useAuthStore, type User } from "@/stores/auth.store";
 import {
+  changeEmail,
   forgotPassword,
   updateMeAccount,
   disconnectProvider,
+  type UserProfile,
 } from "@/services/auth.service";
 
 // ── Sub-components ────────────────────────────────────────────
@@ -18,6 +18,45 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
       {children}
     </h5>
   );
+}
+
+function mapProfileToStoreUser(profile: UserProfile, currentUser: User | null): User {
+  const displayName =
+    profile.display_name ?? profile.displayName ?? currentUser?.displayName ?? "";
+  const firstName =
+    profile.first_name ?? profile.firstName ?? currentUser?.firstName ?? "";
+  const lastName =
+    profile.last_name ?? profile.lastName ?? currentUser?.lastName ?? "";
+  const avatar =
+    profile.profile_picture ?? profile.avatar ?? currentUser?.avatar;
+  const coverUrl =
+    profile.cover_photo ?? profile.coverUrl ?? currentUser?.coverUrl;
+  const city = profile.city ?? currentUser?.city;
+  const country = profile.country ?? currentUser?.country;
+
+  return {
+    id: profile.id,
+    username: profile.username ?? currentUser?.username ?? "",
+    displayName,
+    firstName,
+    lastName,
+    bio: profile.bio ?? currentUser?.bio ?? "",
+    email: profile.email ?? currentUser?.email ?? "",
+    avatar,
+    coverUrl,
+    role: profile.role ?? currentUser?.role ?? "listener",
+    isPro: currentUser?.isPro ?? false,
+    city,
+    country,
+    location:
+      [city, country].filter(Boolean).join(", ") || currentUser?.location,
+    following_ids:
+      profile.following_ids ?? currentUser?.following_ids ?? [],
+    followers_ids:
+      profile.followers_ids ?? currentUser?.followers_ids,
+    date_of_birth: profile.date_of_birth ?? currentUser?.date_of_birth ?? null,
+    gender: profile.gender ?? currentUser?.gender ?? null,
+  };
 }
 
 function OutlineButton({
@@ -125,6 +164,27 @@ function Toast({
 // ── Theme ─────────────────────────────────────────────────────
 
 type Theme = "Light" | "Dark" | "Automatic";
+const CONNECTED_APPS_STORAGE_KEY = "settings-connected-applications";
+const DEFAULT_CONNECTED_APPS = [
+  "Rythmify.com",
+  "Rythmify iOS",
+  "Rythmify Checkout",
+  "m.rythmify.com",
+];
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
 
 function ChangeTheme() {
   const options: Theme[] = ["Light", "Dark", "Automatic"];
@@ -220,7 +280,6 @@ function EmailAddresses({
     setLoading(true);
     try {
       // POST /auth/change-email — sends verification to new email
-      const { changeEmail } = await import("@/services/auth.service");
       await changeEmail(newEmail.trim());
       onToast("Verification email sent to " + newEmail, "success");
       setShowInput(false);
@@ -593,25 +652,160 @@ function SelectField({
   );
 }
 
-function BasicInformation() {
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+function BasicInformation({
+  onToast,
+}: {
+  onToast: (msg: string, type: "success" | "error") => void;
+}) {
+  const { user, setUser, logout } = useAuthStore();
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
-  const genders = ["Indicate gender", "Male", "Female", "Prefer not to say"];
+  const [month, setMonth] = useState("January");
+  const [day, setDay] = useState("1");
+  const [year, setYear] = useState(String(currentYear));
+  const [gender, setGender] = useState<"" | "male" | "female">("");
+  const [lastSyncedDateOfBirth, setLastSyncedDateOfBirth] = useState("");
+  const [lastSyncedGender, setLastSyncedGender] = useState<"" | "male" | "female">("");
+  const [hasUserEdited, setHasUserEdited] = useState(false);
+  const [hasEditedBirthDate, setHasEditedBirthDate] = useState(false);
+  const [hasEditedGender, setHasEditedGender] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving">("idle");
+
+  useEffect(() => {
+    const syncedDateOfBirth = user?.date_of_birth ?? "";
+    const syncedGender = (user?.gender ?? "") as "" | "male" | "female";
+
+    if (syncedDateOfBirth) {
+      const [savedYear, savedMonth, savedDay] = syncedDateOfBirth.split("-");
+      const monthIndex = Number(savedMonth) - 1;
+      if (savedYear) setYear(savedYear);
+      if (savedDay) setDay(String(Number(savedDay)));
+      if (monthIndex >= 0 && monthIndex < MONTHS.length) {
+        setMonth(MONTHS[monthIndex]);
+      }
+    } else {
+      setMonth("January");
+      setDay("1");
+      setYear(String(currentYear));
+    }
+
+    setGender(syncedGender);
+    setLastSyncedDateOfBirth(syncedDateOfBirth);
+    setLastSyncedGender(syncedGender);
+    setHasUserEdited(false);
+    setHasEditedBirthDate(false);
+    setHasEditedGender(false);
+  }, [currentYear, user?.date_of_birth, user?.gender]);
+
+  useEffect(() => {
+    if (!hasUserEdited || !gender) return;
+
+    if (!localStorage.getItem("auth_token")) {
+      setHasUserEdited(false);
+      setHasEditedBirthDate(false);
+      setHasEditedGender(false);
+      setSaveState("idle");
+      onToast("Session expired. Please sign in again.", "error");
+      return;
+    }
+
+    const candidateDateOfBirth = `${year}-${String(
+      MONTHS.indexOf(month as (typeof MONTHS)[number]) + 1,
+    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const payload: {
+      gender?: "male" | "female";
+      date_of_birth?: string;
+    } = {};
+
+    if (hasEditedGender && lastSyncedGender !== gender) {
+      payload.gender = gender;
+    }
+
+    if (
+      hasEditedBirthDate &&
+      lastSyncedDateOfBirth !== candidateDateOfBirth
+    ) {
+      const normalizedCandidate = new Date(`${candidateDateOfBirth}T00:00:00`);
+      const normalizedDateOfBirth = `${String(
+        normalizedCandidate.getFullYear(),
+      )}-${String(normalizedCandidate.getMonth() + 1).padStart(2, "0")}-${String(
+        normalizedCandidate.getDate(),
+      ).padStart(2, "0")}`;
+
+      if (normalizedDateOfBirth !== candidateDateOfBirth) {
+        setHasUserEdited(false);
+        onToast("Please choose a valid birth date.", "error");
+        return;
+      }
+
+      payload.date_of_birth = candidateDateOfBirth;
+    }
+
+    if (!payload.gender && !payload.date_of_birth) {
+      setHasUserEdited(false);
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      setSaveState("saving");
+      setHasUserEdited(false);
+      try {
+        const response = await updateMeAccount(payload);
+        const nextUser = mapProfileToStoreUser(response.data, user);
+        setUser(nextUser);
+        setLastSyncedDateOfBirth(
+          nextUser.date_of_birth ??
+            payload.date_of_birth ??
+            lastSyncedDateOfBirth,
+        );
+        setLastSyncedGender((nextUser.gender ?? gender) as "" | "male" | "female");
+        setHasEditedBirthDate(false);
+        setHasEditedGender(false);
+      } catch (err: any) {
+        const status = err?.response?.status;
+        const message =
+          err?.response?.data?.error?.message ??
+          err?.response?.data?.message ??
+          "Failed to update basic information.";
+
+        if (status === 401) {
+          logout();
+          setHasEditedBirthDate(false);
+          setHasEditedGender(false);
+          onToast("Session expired. Please sign in again.", "error");
+          return;
+        }
+
+        if (status === 429) {
+          setHasEditedBirthDate(false);
+          setHasEditedGender(false);
+          onToast("Too many requests. Please wait a moment and try again.", "error");
+          return;
+        }
+
+        onToast(message, "error");
+      } finally {
+        setSaveState("idle");
+      }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    day,
+    gender,
+    hasEditedBirthDate,
+    hasEditedGender,
+    hasUserEdited,
+    lastSyncedDateOfBirth,
+    lastSyncedGender,
+    logout,
+    month,
+    onToast,
+    setUser,
+    user,
+    year,
+  ]);
 
   return (
     <div>
@@ -622,17 +816,38 @@ function BasicInformation() {
             Birth date
           </label>
           <div className="flex gap-2">
-            <SelectField defaultValue="July">
-              {months.map((m) => (
+            <SelectField
+              value={month}
+              onChange={(value) => {
+                setMonth(value);
+                setHasUserEdited(true);
+                setHasEditedBirthDate(true);
+              }}
+            >
+              {MONTHS.map((m) => (
                 <option key={m}>{m}</option>
               ))}
             </SelectField>
-            <SelectField defaultValue="1">
+            <SelectField
+              value={day}
+              onChange={(value) => {
+                setDay(value);
+                setHasUserEdited(true);
+                setHasEditedBirthDate(true);
+              }}
+            >
               {days.map((d) => (
                 <option key={d}>{d}</option>
               ))}
             </SelectField>
-            <SelectField defaultValue="2005">
+            <SelectField
+              value={year}
+              onChange={(value) => {
+                setYear(value);
+                setHasUserEdited(true);
+                setHasEditedBirthDate(true);
+              }}
+            >
               {years.map((y) => (
                 <option key={y}>{y}</option>
               ))}
@@ -643,43 +858,86 @@ function BasicInformation() {
           <label className="block text-xs text-[var(--color-text)] mb-2">
             Gender <span className="text-[var(--color-error)]">*</span>
           </label>
-          <SelectField defaultValue="Indicate gender">
-            {genders.map((g) => (
-              <option key={g}>{g}</option>
-            ))}
+          <SelectField
+            value={gender}
+            onChange={(value) => {
+              setGender(value as "" | "male" | "female");
+              setHasUserEdited(true);
+              setHasEditedGender(true);
+            }}
+          >
+            <option value="">Indicate gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
           </SelectField>
-          <p className="text-xs text-[var(--color-error)] mt-1">
-            Please indicate your gender.
-          </p>
+          {!gender && (
+            <p className="text-xs text-[var(--color-error)] mt-1">
+              Please indicate your gender.
+            </p>
+          )}
         </div>
       </div>
+      {saveState === "saving" && (
+        <p className="mt-3 text-xs text-[var(--color-text)]">
+          Saving basic information...
+        </p>
+      )}
     </div>
   );
 }
 
 function ConnectedApplications() {
-  const apps = [
-    "Rythmify.com",
-    "Rythmify iOS",
-    "Rythmify Checkout",
-    "m.rythmify.com",
-  ];
+  const [apps, setApps] = useState<string[]>(() => {
+    const savedApps = localStorage.getItem(CONNECTED_APPS_STORAGE_KEY);
+    if (!savedApps) return DEFAULT_CONNECTED_APPS;
+
+    try {
+      const parsed = JSON.parse(savedApps);
+      return Array.isArray(parsed) ? parsed : DEFAULT_CONNECTED_APPS;
+    } catch {
+      return DEFAULT_CONNECTED_APPS;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(CONNECTED_APPS_STORAGE_KEY, JSON.stringify(apps));
+  }, [apps]);
+
+  const revokeApp = (appName: string) => {
+    setApps((current) => current.filter((app) => app !== appName));
+  };
+
+  const revokeAll = () => {
+    setApps([]);
+  };
+
   return (
     <div>
       <SectionTitle>Connected applications</SectionTitle>
       <div className="flex flex-col">
+        {apps.length === 0 && (
+          <p className="text-sm text-[var(--color-text)]">
+            No connected applications.
+          </p>
+        )}
         {apps.map((app) => (
           <div key={app} className="flex items-center justify-between py-3 ">
             <span className="text-sm text-[var(--color-text-hover)]">
               {app}
             </span>
-            <button className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer">
+            <button
+              onClick={() => revokeApp(app)}
+              className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer"
+            >
               Revoke access
             </button>
           </div>
         ))}
         <div className="flex justify-end pt-3">
-          <button className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer">
+          <button
+            onClick={revokeAll}
+            className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer"
+          >
             Revoke all
           </button>
         </div>
@@ -699,6 +957,7 @@ function DeleteAccount() {
 // ── Account Page ──────────────────────────────────────────────
 
 function AccountPage() {
+  const { logout } = useAuthStore();
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -707,17 +966,42 @@ function AccountPage() {
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
   };
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      logout();
+      setToast({
+        message: "Session expired. Please sign in again.",
+        type: "error",
+      });
+    };
+
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => {
+      window.removeEventListener("auth:session-expired", handleSessionExpired);
+    };
+  }, [logout]);
+
   return (
-    <div className="max-w-2xl flex flex-col gap-10">
-      <ChangeTheme />
-      <EmailAddresses onToast={showToast} />
-      <SocialNetworks onToast={showToast} />
-      <Password onToast={showToast} />
-      <VerificationBadge onToast={showToast} />
-      <BasicInformation />
-      <ConnectedApplications />
-      <DeleteAccount />
-    </div>
+    <>
+      <div className="max-w-2xl flex flex-col gap-10">
+        <ChangeTheme />
+        <EmailAddresses onToast={showToast} />
+        <SocialNetworks onToast={showToast} />
+        <Password onToast={showToast} />
+        <VerificationBadge onToast={showToast} />
+        <BasicInformation onToast={showToast} />
+        <ConnectedApplications />
+        <DeleteAccount />
+      </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </>
   );
 }
 
