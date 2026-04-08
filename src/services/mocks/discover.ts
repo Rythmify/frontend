@@ -2,6 +2,7 @@ import type { Track } from "@/types/track";
 import type { Mix } from "@/types/mix";
 import type { Station } from "@/types/station";
 import type { User } from "@/types/user";
+import type { Playlist } from "@/services/api/playlist/playlist.service";
 
 // ─── Recently Played Mocks ────────────────────────────────
 export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
@@ -142,7 +143,115 @@ export const mockRecentlyPlayedItems: RecentlyPlayedItem[] = [
   mockRecentlyPlayedStations[1],
 ];
 
-// ─── Albums For You Mocks ─────────────────────────────────
+// ─── Albums For You Mocks (Playlist-level) ───────────────
+export const mockAlbumPlaylists: Playlist[] = [
+  {
+    playlist_id: "album-mock-101",
+    owner_user_id: "luna-eclipse",
+    name: "Midnight Dreams",
+    description: "A journey through late-night soundscapes",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=101",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 12,
+    like_count: 45200,
+    created_at: "2024-03-15T10:30:00Z",
+  },
+  {
+    playlist_id: "album-mock-102",
+    owner_user_id: "coastal-sounds",
+    name: "Ocean Waves",
+    description: "Calm ambient sounds from the coast",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=102",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 9,
+    like_count: 32100,
+    created_at: "2024-03-14T15:20:00Z",
+  },
+  {
+    playlist_id: "album-mock-103",
+    owner_user_id: "sandy-horizons",
+    name: "Desert Sunrise",
+    description: "World music inspired by the desert",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=103",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 10,
+    like_count: 28900,
+    created_at: "2024-03-13T08:45:00Z",
+  },
+  {
+    playlist_id: "album-mock-104",
+    owner_user_id: "city-beats",
+    name: "Urban Nights",
+    description: "Hip hop beats from the city",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=104",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 14,
+    like_count: 67800,
+    created_at: "2024-03-12T20:15:00Z",
+  },
+  {
+    playlist_id: "album-mock-105",
+    owner_user_id: "natures-echo",
+    name: "Forest Whispers",
+    description: "Ambient sounds from deep in the forest",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=105",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 8,
+    like_count: 41200,
+    created_at: "2024-03-11T12:00:00Z",
+  },
+  {
+    playlist_id: "album-mock-106",
+    owner_user_id: "synth-wave",
+    name: "Neon Lights",
+    description: "Synthwave vibes for the night",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=106",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 11,
+    like_count: 89500,
+    created_at: "2024-03-10T18:30:00Z",
+  },
+  {
+    playlist_id: "album-mock-107",
+    owner_user_id: "alpine-tones",
+    name: "Mountain Echo",
+    description: "Folk music from the highlands",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=107",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 10,
+    like_count: 23400,
+    created_at: "2024-03-09T09:45:00Z",
+  },
+  {
+    playlist_id: "album-mock-108",
+    owner_user_id: "thunder-beats",
+    name: "Electric Storm",
+    description: "High-energy drum & bass",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=108",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 13,
+    like_count: 72100,
+    created_at: "2024-03-08T16:20:00Z",
+  },
+];
+
+// ─── Albums For You Mocks (Track-level, legacy) ───────────
 export const mockAlbumsForYou: Track[] = [
   {
     id: 101,
