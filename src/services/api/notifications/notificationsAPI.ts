@@ -151,11 +151,12 @@ export interface ReportCreatedResponse {
 export const fetchNotifications = async (
   page: number = 1,
   limit: number = 20,
-  unread_only: boolean = false
+  unread_only: boolean = false,
+  type?: NotificationType
 ): Promise<NotificationListResponse> => {
   const response = await axiosInstance.get<NotificationListResponse>(
     '/notifications',
-    { params: { page, limit, unread_only } }
+    { params: { page, limit, unread_only, ...(type ? { type } : {}) } }
   );
   return response.data;
 };
