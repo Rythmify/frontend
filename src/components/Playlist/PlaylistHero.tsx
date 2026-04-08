@@ -1,8 +1,8 @@
-import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { FaPlay, FaPause, FaLock, FaGlobeAmericas } from "react-icons/fa";
+import { FaPlay, FaPause, FaLock } from "react-icons/fa";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
-
+import { useAuthStore } from "@/stores/auth.store";
+import { useRef, useState, useEffect } from "react";
 interface Comment {
   id: number;
   avatarUrl: string;
@@ -13,22 +13,48 @@ interface PlaylistHeroProps {
   playlist: Playlist;
   isPlaying?: boolean;
   onPlayPause?: () => void;
+  onImageUpload?: (file: File) => void;
 }
 
 export default function PlaylistHero({
   playlist,
   isPlaying = false,
   onPlayPause,
+  onImageUpload,
 }: PlaylistHeroProps) {
   const heroRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuthStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  useEffect(() => {
+    setPreviewUrl(null);
+  }, [playlist.cover_image]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const localUrl = URL.createObjectURL(file);
+      setPreviewUrl(localUrl);
+
+      if (onImageUpload) {
+        onImageUpload(file);
+      }
+    }
+  };
 
   return (
     <div
       ref={heroRef}
       data-test="playlist-hero"
-      className="container m-auto px-4 md:px-8 lg:px-10 py-8 w-full flex flex-row items-stretch gap-10 relative overflow-hidden text-white"
+      className="container m-auto px-4 md:px-8 lg:px-5 py-6 w-full flex flex-row md:flex-row items-stretch gap-6 relative overflow-hidden"
       style={{
-        background: "#4a3a35",
+        background:
+          "linear-gradient(135deg, #6b7280 0%, #9ca3af 50%, #6b7280 100%)",
         minHeight: "380px",
       }}
     >
@@ -70,8 +96,10 @@ export default function PlaylistHero({
 
             {/* "Playlist owner" */}
             <div className="bg-[#0b0b0b] px-4 py-1.5">
-              <p className="text-[17px] text-text-secondary hover:text-[#484848] font-bold">
-                {playlist.owner_user_id}
+              <p className="text-[17px] text-text-secondary hover:text-[#484848] font-bold cursor-pointer transition-colors">
+                {user?.displayName === playlist.owner_user_id
+                  ? "You"
+                  : playlist.owner_user_id}
               </p>
             </div>
           </div>
@@ -105,8 +133,24 @@ export default function PlaylistHero({
             alt={playlist.name}
             className="w-64 h-64 lg:w-80 lg:h-80 object-cover shadow-2xl rounded-md border border-white/5"
           />
-          {/* Subtle overlay */}
-          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300"></div>
+
+          {/* Upload Button */}
+          <div className="absolute inset-0 transition-all flex flex-col justify-end items-center pb-4">
+            <button
+              data-test="button-upload-cover-hero-playlist"
+              onClick={handleUploadClick}
+              className="flex items-center gap-2 bg-bg hover:text-[#717171] text-white text-sm font-bold py-2.5 px-3 rounded-sm transition-colors cursor-pointer"
+            >
+              Replace image
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+          </div>
         </div>
       </div>
     </div>
