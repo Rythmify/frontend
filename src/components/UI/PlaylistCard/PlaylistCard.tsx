@@ -198,17 +198,6 @@ export default function PlaylistCard({
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMoreMenu(false);
-                navigate(playlistPath);
-              }}
-            >
-              <i className="fa-solid fa-list text-sm" />
-              View playlist
-            </button>
-            <button
-              className="w-full text-left px-3 py-2 text-[14px] text-white hover:bg-white/10 cursor-pointer transition-colors flex items-center gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMoreMenu(false);
                 setShowPlaylistModal(true);
               }}
             >

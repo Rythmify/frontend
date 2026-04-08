@@ -10,6 +10,9 @@ import {
 import { getUsers } from "../../../services/mocks/User.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
+import TrackList from "../../../components/Playlist/TrackList";
+import UploadFooter from "@/pages/creator/upload/UploadFooter";
+import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 
 function PlaylistSlugPage() {
   const { username, playlistSlug } = useParams<{
@@ -128,32 +131,11 @@ function PlaylistSlugPage() {
               <h2 className="text-[var(--color-text-muted)] text-xs uppercase tracking-widest font-semibold mb-4 border-b border-[#333] pb-2">
                 Tracks
               </h2>
-
-              <div className="space-y-1">
-                {playlist.tracks.map((track, index) => (
-                  <div
-                    key={track.track_id}
-                    className="group flex items-center gap-4 p-2 hover:bg-white/5 transition-colors cursor-pointer rounded-sm"
-                  >
-                    <span className="text-gray-500 text-xs w-4">
-                      {index + 1}
-                    </span>
-                    <img
-                      src={track.cover_image || ""}
-                      className="w-8 h-8 object-cover rounded-sm"
-                      alt=""
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">
-                        {track.title}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {track.artist_name}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <TrackList
+                tracks={playlist.tracks}
+                currentTrackId={currentTrack?.id}
+                isPlaying={isPlaying}
+              />
             </div>
           </div>
 
@@ -163,6 +145,7 @@ function PlaylistSlugPage() {
               playlist={playlist}
               featuredArtists={featuredArtists}
             />
+            <GuestPageFooter />
           </div>
         </div>
       </div>

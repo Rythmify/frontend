@@ -59,7 +59,9 @@ export default function PlaylistActions({
         </ActionButton>
 
         {/* Share Button */}
-        <ActionButton onClick={() => setShareOpen(true)}>
+        <ActionButton onClick={() => setShareOpen(true)}
+          active={shareOpen}
+        >
           <LuShare className="text-[16px]" />
           Share
         </ActionButton>
@@ -137,7 +139,12 @@ function ActionButton({
       className={`
         flex items-center gap-2 px-3 py-1.5 h-[32px]
         rounded-[4px] transition-colors duration-150 cursor-pointer
-        bg-[#303030] font-bold text-white text-[14px] 
+        bg-[#303030] font-bold text-[14px] 
+        ${
+          active
+            ? "text-accent" 
+            : "text-white border-transparent hover:text-[#717171]"
+        }
         ${className}
       `}
     >

@@ -36,7 +36,7 @@ export default function PlaylistSidebar({
           <div className="min-w-0">
             <Link
               to={`/${playlist.owner_user_id}`}
-              className="text-text-upload text-sm font-bold truncate hover:text-[#484848] transition-colors block"
+              className="text-text-upload text-sm font-bold truncate hover:text-[#717171] transition-colors block"
             >
               Made for {user?.displayName}
             </Link>
@@ -121,7 +121,7 @@ function ArtistCard({ artist }: { artist: MockUser }) {
       <div className="flex-1 min-w-0">
         <Link
           to={`/${artist.username}`}
-          className="text-[var(--color-text-hover)] text-sm font-semibold hover:text-white transition-colors truncate block"
+          className="text-[var(--color-text-hover)] text-sm font-semibold hover:text-[#717171] transition-colors truncate block"
         >
           {artist.displayName}
         </Link>
