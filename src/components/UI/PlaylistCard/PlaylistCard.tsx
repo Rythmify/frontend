@@ -11,12 +11,11 @@ import AddToPlaylistModal from "@/components/Playlist/AddToPlaylistModal";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// ─── Types ────────────────────────────────────────────────
-
 export type PlaylistCardData = {
   id: string;
   title: string;
   owner: string;
+  slug?: string | null;
   coverUrl: string | null;
   isPrivate?: boolean;
   isLiked?: boolean;
@@ -46,7 +45,7 @@ export default function PlaylistCard({
 
   // Local State
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [showPlaylistModal, setShowPlaylistModal] = useState(false); 
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [loadingPlay, setLoadingPlay] = useState(false);
 
@@ -61,7 +60,9 @@ export default function PlaylistCard({
     ? (user?.displayName ?? user?.username ?? item.owner)
     : item.owner;
 
-  // ── Handlers ─────────────────────────────────────────────
+  // SoundCloud navigation format: /[username]/sets/[slug]
+  const playlistPath = `/${item.owner}/sets/${item.slug || item.id}`;
+
   const handlePlayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if ((currentTrack as any)?.context?.playlist_id === item.id) {
@@ -104,7 +105,7 @@ export default function PlaylistCard({
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
-      onClick={() => navigate(`/you/sets/${item.id}`)}
+      onClick={() => navigate(playlistPath)}
       data-test="playlist-card"
     >
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
@@ -123,10 +124,10 @@ export default function PlaylistCard({
         {/* Hover overlay */}
         <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/20">
           <div />
-          
+
           {/* Play Button */}
           <div className="flex items-center justify-center flex-1">
-            <button 
+            <button
               className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
               onClick={handlePlayClick}
               disabled={loadingPlay}
@@ -134,7 +135,9 @@ export default function PlaylistCard({
               {loadingPlay ? (
                 <i className="fa-solid fa-spinner animate-spin text-black text-lg" />
               ) : (
-                <i className={`fa-solid ${isThisPlaylistPlaying ? "fa-pause" : "fa-play"} text-black text-base ${!isThisPlaylistPlaying && "ml-0.5"}`} />
+                <i
+                  className={`fa-solid ${isThisPlaylistPlaying ? "fa-pause" : "fa-play"} text-black text-base ${!isThisPlaylistPlaying && "ml-0.5"}`}
+                />
               )}
             </button>
           </div>
@@ -154,13 +157,14 @@ export default function PlaylistCard({
                 />
               </button>
             </Tooltip>
-
             <Tooltip content="More" showArrow classNames={tooltipStyles}>
               <button
                 className="flex items-center justify-center w-7 h-7 group/btn"
-                onClick={handleOpenMore} // FIXED: Connected handler
+                onClick={handleOpenMore}
               >
-                <i className={`fa-solid fa-ellipsis text-[12px] ${showMoreMenu ? "text-accent" : "text-white"} group-hover/btn:opacity-50 transition-opacity duration-150`} />
+                <i
+                  className={`fa-solid fa-ellipsis text-[12px] ${showMoreMenu ? "text-accent" : "text-white"} group-hover/btn:opacity-50 transition-opacity duration-150`}
+                />
               </button>
             </Tooltip>
           </div>
@@ -189,6 +193,17 @@ export default function PlaylistCard({
             className="fixed z-[9999] bg-bg w-44 border font-bold border-[#353535] rounded shadow-xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="w-full text-left px-3 py-2 text-[14px] text-white hover:bg-white/10 cursor-pointer transition-colors flex items-center gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMoreMenu(false);
+                navigate(playlistPath);
+              }}
+            >
+              <i className="fa-solid fa-list text-sm" />
+              View playlist
+            </button>
             <button
               className="w-full text-left px-3 py-2 text-[14px] text-white hover:bg-white/10 cursor-pointer transition-colors flex items-center gap-2"
               onClick={(e) => {

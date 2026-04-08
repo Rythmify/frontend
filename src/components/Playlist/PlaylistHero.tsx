@@ -77,8 +77,8 @@ export default function PlaylistHero({
 
           {/* Title Block */}
           <div className="flex flex-col gap-1 items-start">
-            <div className="bg-[#0b0b0b] px-4 py-3">
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-tight">
+            <div className="bg-bg px-4 py-3">
+              <h1 className="text-2xl md:text-3xl text-text-upload font-bold tracking-tight leading-tight">
                 {playlist.name}
               </h1>
 
@@ -95,11 +95,11 @@ export default function PlaylistHero({
             </div>
 
             {/* "Playlist owner" */}
-            <div className="bg-[#0b0b0b] px-4 py-1.5">
-              <p className="text-[17px] text-text-secondary hover:text-[#484848] font-bold cursor-pointer transition-colors">
+            <div className="bg-bg px-4 py-1.5">
+              <p className="text-[17px] text-text-upload hover:text-[#484848] font-bold cursor-pointer transition-colors">
                 {user?.displayName === playlist.owner_user_id
                   ? "You"
-                  : playlist.owner_user_id}
+                  : user?.displayName}
               </p>
             </div>
           </div>

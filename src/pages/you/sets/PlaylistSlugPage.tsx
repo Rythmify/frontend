@@ -1,26 +1,23 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "../../../components/Playlist/PlaylistSidebar";
 import PlaylistActions from "../../../components/Playlist/PlaylistActions";
 import PlaylistHero from "../../../components/Playlist/PlaylistHero";
 import {
-  getTrackBySlug,
-  getRelatedTracks,
-} from "../../../services/mocks/Track.service";
+  getPlaylist,
+  type PlaylistDetails,
+} from "@/services/api/playlist/playlist.service";
 import { getUsers } from "../../../services/mocks/User.service";
 import { usePlayerStore } from "../../../stores/player.store";
-import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../services/mocks/users";
-import type { Playlist } from "@/services/api/playlist/playlist.service";
 
 function PlaylistSlugPage() {
-  const { username = "samo-lotfy", trackSlug = "msh-awl-mara" } = useParams<{
+  const { username, playlistSlug } = useParams<{
     username: string;
-    trackSlug: string;
+    playlistSlug: string;
   }>();
 
-  const [playlist , setPlaylist] = useState<Track | null>(null);
-  const [relatedTracks, setRelatedTracks] = useState<Track[]>([]);
+  const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,88 +30,138 @@ function PlaylistSlugPage() {
   } = usePlayerStore();
 
   useEffect(() => {
+    if (playlist) {
+      // Format: Stream [Owner] | Listen to [Playlist Name] playlist online for free on SoundCloud
+      document.title = `Stream ${playlist.owner_user_id} | Listen to ${playlist.name} playlist online for free on SoundCloud`;
+    }
+  }, [playlist]);
+
+  useEffect(() => {
     let cancelled = false;
     async function fetchData() {
+      if (!playlistSlug) return;
+
       setLoading(true);
+      setError(null);
       try {
-        const [fetchedTrack, fetchedUsers] = await Promise.all([
-          getTrackBySlug(username, trackSlug),
+        // Fetch playlist details including tracks
+        const [playlistRes, fetchedUsers] = await Promise.all([
+          getPlaylist(playlistSlug, { include_tracks: true }),
           getUsers(),
         ]);
+
         if (cancelled) return;
 
-        setPlaylist(fetchedTrack);
+        setPlaylist(playlistRes.data);
         setFeaturedArtists(
           Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
         );
-        const related = await getRelatedTracks(String(fetchedTrack.id));
-        if (!cancelled) setRelatedTracks(related);
       } catch (err) {
-        if (!cancelled) setError("Failed to load track.");
+        if (!cancelled) setError("Failed to load playlist.");
+        console.error(err);
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
+
     fetchData();
     return () => {
       cancelled = true;
     };
-  }, [username, trackSlug]);
-
-  // Map Track data to Playlist interface for the Hero component
-  const playlistData = useMemo<Playlist | null>(() => {
-    if (!playlist ) return null;
-    return {
-      playlist_id: String(playlist .id),
-      owner_user_id: playlist .artistUsername,
-      name: playlist .title,
-      is_public: !playlist .isPrivate,
-      created_at: playlist .postedAt,
-      track_count: 1,
-      like_count: playlist .likeCount,
-      description: "",
-      repost_count: playlist .repostCount,
-    };
-  }, [playlist ]);
+  }, [playlistSlug]);
 
   const handleHeroPlayPause = () => {
-    if (currentTrack?.id === playlist ?.id) {
+    if (!playlist || !playlist.tracks.length) return;
+
+    const firstTrack = playlist.tracks[0];
+    const isThisPlaylistPlaying =
+      (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
+
+    if (isThisPlaylistPlaying) {
       togglePlay();
-    } else if (playlist ) {
-      setPlayerTrack(playlist );
+    } else {
+      // Set the first track and provide the playlist context for the queue
+      setPlayerTrack({
+        id: firstTrack.track_id,
+        context: {
+          type: "playlist",
+          playlist_id: playlist.playlist_id,
+          queue: playlist.tracks.map((t) => t.track_id),
+        },
+      } as any);
     }
   };
 
-  if (loading) return <div className="animate-pulse">Loading...</div>;
-  if (error || !playlist  || !playlistData)
-    return <div>{error || "Not found"}</div>;
+  if (loading)
+    return (
+      <div className="animate-pulse p-20 text-center text-white">
+        Loading playlist...
+      </div>
+    );
+  if (error || !playlist)
+    return (
+      <div className="p-20 text-center text-red-500">
+        {error || "Playlist not found."}
+      </div>
+    );
 
   return (
-    <div data-test="track-slug-page" className="flex-1 w-full">
-      {/* Hero Section */}
+    <div
+      data-test="playlist-slug-page"
+      className="flex-1 w-full bg-black min-h-screen"
+    >
+      {/* Hero Section using the fetched playlist data */}
       <PlaylistHero
-        playlist={playlistData}
-        isPlaying={isPlaying && currentTrack?.id === playlist .id}
+        playlist={playlist}
+        isPlaying={
+          isPlaying &&
+          (currentTrack as any)?.context?.playlist_id === playlist.playlist_id
+        }
         onPlayPause={handleHeroPlayPause}
       />
 
       <div className="container px-4 md:px-8 lg:px-20 mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          {/* Left Column */}
+          {/* Left Column: Actions and Track List */}
           <div className="flex-1 min-w-0">
             <PlaylistActions />
             <div className="mt-8">
               <h2 className="text-[var(--color-text-muted)] text-xs uppercase tracking-widest font-semibold mb-4">
                 Related Tracks
               </h2>
-              {/* Render TrackList here */}
+              {/* Render playlist tracks */}
+              <div className="space-y-1">
+                {playlist.tracks.map((track, index) => (
+                  <div
+                    key={track.track_id}
+                    className="group flex items-center gap-4 p-2 hover:bg-white/5 transition-colors cursor-pointer rounded-sm"
+                  >
+                    <span className="text-gray-500 text-xs w-4">
+                      {index + 1}
+                    </span>
+                    <img
+                      src={track.cover_image || ""}
+                      className="w-8 h-8 object-cover rounded-sm"
+                      alt=""
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">
+                        {track.title}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {track.artist_name}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="w-full lg:w-[280px] shrink-0">
-            <PlaylistSidebar />
-          </div>
+          {/* Right Column: Sidebar */}
+          {/* <div className="w-full lg:w-[280px] shrink-0">
+            <PlaylistSidebar featuredArtists={featuredArtists} />
+          </div> */}
         </div>
       </div>
     </div>
