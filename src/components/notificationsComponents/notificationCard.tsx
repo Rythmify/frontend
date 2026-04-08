@@ -32,17 +32,19 @@ const buildActionText = (n: Notification): string => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = {
-  row:            `flex items-center gap-4 py-4 border-b border-border cursor-pointer`,
+  row:            `flex items-center gap-4 cursor-pointer p-3`,
   unreadDot:      `w-2 h-2 rounded-full bg-red-500 flex-shrink-0`,
   unreadDotHidden:`w-2 h-2 flex-shrink-0`,
-  avatar:         `w-11 h-11 rounded-full bg-[#333] flex-shrink-0 overflow-hidden`,
+  avatarWrapper:  `relative w-11 h-11 flex-shrink-0 overflow-visible`,
+  avatar:         `w-full h-full rounded-full bg-[#EEEEEE] overflow-hidden`,
   avatarImg:      `w-full h-full object-cover`,
-  avatarFallback: `w-full h-full flex items-center justify-center`,
-  fallbackIcon:   `fa-solid fa-user text-[#666] text-lg`,
+  avatarFallback: `w-full h-full flex items-end justify-center `,
+  fallbackIcon:   `fa-solid fa-user text-[#CCCCCC] text-4xl`,
+  unreadDotOverlay:`absolute -top-1 -left-1 w-2 h-2 rounded-full bg-red-500 z-10`,
   content:        `flex-1 min-w-0`,
   textRow:        `text-sm text-white leading-snug`,
-  username:       `font-bold`,
-  actionText:     `font-normal text-white`,
+  username:       `font-bold mr-1`,
+  actionText:     `font-normal text-text-secondary`,
   timeRow:        `flex items-center gap-1 text-xs text-text-secondary mt-1`,
   timeIcon:       `fa-solid fa-user text-[10px]`,
   actions:        `flex items-center gap-2 flex-shrink-0`,
@@ -82,25 +84,27 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
 
   return (
     <>
-      <div data-test={`notification-card-${n.id}`} className={styles.row} onClick={handleCellClick}>
-
-        {/* Unread dot */}
-        <div className={n.is_read ? styles.unreadDotHidden : styles.unreadDot} />
+      <div data-test={`notification-card-${n.id}`} className={styles.row } onClick={handleCellClick}>
 
         {/* Avatar */}
-        <div data-test={`notification-avatar-${n.id}`} className={styles.avatar}>
-          {n.actor.profile_picture ? (
-            <img
-              data-test={`notification-avatar-img-${n.id}`}
-              src={n.actor.profile_picture}
-              alt={n.actor.display_name}
-              className={styles.avatarImg}
-            />
-          ) : (
-            <div data-test={`notification-avatar-fallback-${n.id}`} className={styles.avatarFallback}>
-              <i className={styles.fallbackIcon} />
-            </div>
-          )}
+        <div data-test={`notification-avatar-${n.id}`} className={styles.avatarWrapper}>
+          {/* Unread dot */}
+          {!n.is_read && <div className={styles.unreadDotOverlay} />}
+
+          <div className={styles.avatar}>
+            {n.actor.profile_picture ? (
+              <img
+                data-test={`notification-avatar-img-${n.id}`}
+                src={n.actor.profile_picture}
+                alt={n.actor.display_name}
+                className={styles.avatarImg}
+              />
+            ) : (
+              <div data-test={`notification-avatar-fallback-${n.id}`} className={styles.avatarFallback}>
+                <i className={styles.fallbackIcon} />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Text */}

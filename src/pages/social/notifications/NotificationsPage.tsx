@@ -89,7 +89,7 @@ const NotificationsPage = () => {
           {status === 'loading' && <Spinner data-test="notifications-loading" />}
 
           {status === 'success' && (
-            <div data-test="notifications-list" className="flex flex-col">
+            <div data-test="notifications-list" className="flex flex-col gap-2">
               {notifications.map(n => (
                 <NotificationCard key={n.id} notification={n} showActions={true} data-test={`notification-card-${n.id}`} />
               ))}
