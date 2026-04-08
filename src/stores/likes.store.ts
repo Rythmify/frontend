@@ -4,22 +4,26 @@ import type { Track } from "@/types/track";
 import type { Station } from "@/types/station";
 import type { PersonalMix } from "@/services/api/discover.service";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
+import type { Playlist } from "@/services/api/playlist/playlist.service";
 
 interface LikesStore {
   likedTracks: Track[];
   likedStations: Station[];
   likedMixes: PersonalMix[];
   likedPlaylists: PlaylistCardData[];
+  likedAlbums: Playlist[];
 
   toggleTrack: (track: Track) => void;
   toggleStation: (station: Station) => void;
   toggleMix: (mix: PersonalMix) => void;
   togglePlaylist: (playlist: PlaylistCardData) => void;
+  toggleAlbum: (album: Playlist) => void;
 
   isTrackLiked: (id: number | string) => boolean;
   isStationLiked: (id: string) => boolean;
   isMixLiked: (id: string) => boolean;
   isPlaylistLiked: (id: string) => boolean;
+  isAlbumLiked: (id: string) => boolean;
 }
 
 export const useLikesStore = create<LikesStore>()(
@@ -29,6 +33,7 @@ export const useLikesStore = create<LikesStore>()(
       likedStations: [],
       likedMixes: [],
       likedPlaylists: [],
+      likedAlbums: [],
 
       toggleTrack: (track) =>
         set((s) => ({
@@ -58,10 +63,18 @@ export const useLikesStore = create<LikesStore>()(
             : [playlist, ...s.likedPlaylists],
         })),
 
+      toggleAlbum: (album) =>
+        set((s) => ({
+          likedAlbums: s.likedAlbums.some((a) => a.playlist_id === album.playlist_id)
+            ? s.likedAlbums.filter((a) => a.playlist_id !== album.playlist_id)
+            : [album, ...s.likedAlbums],
+        })),
+
       isTrackLiked: (id) => get().likedTracks.some((t) => t.id === id),
       isStationLiked: (id) => get().likedStations.some((s) => s.id === id),
       isMixLiked: (id) => get().likedMixes.some((m) => m.id === id),
       isPlaylistLiked: (id) => get().likedPlaylists.some((p) => p.id === id),
+      isAlbumLiked: (id) => get().likedAlbums.some((a) => a.playlist_id === id),
     }),
     { name: "rythmify-likes" },
   ),
