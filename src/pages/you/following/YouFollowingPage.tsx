@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import FollowButton from "@/components/Profile/FollowButton/FollowButton";
@@ -32,17 +32,36 @@ export default function YouFollowingPage() {
     ).values(),
   );
 
-  const all = apiFollowing
-    ? apiFollowing.map((u) => ({
-        username: u.user_id,
-        displayName: u.display_name,
+  const all = useMemo(() => {
+    const followingIds = new Set(currentUser?.following_ids ?? []);
+
+    const fromApi = apiFollowing
+      ? apiFollowing
+          .filter((u) => followingIds.has(u.user_id))
+          .map((u) => ({
+            username: u.user_id,
+            displayName: u.display_name,
+            avatar: "",
+            isVerified: u.is_verified,
+            followers: 0,
+          }))
+      : allMockUsers
+          .filter((u) => followingIds.has(u.username))
+          .map((u) => ({ ...u, followers: u.followers ?? 0 }));
+
+    const coveredUsernames = new Set(fromApi.map((u) => u.username));
+    const extraUsers = (currentUser?.following_ids ?? [])
+      .filter((id) => !coveredUsernames.has(id))
+      .map((id) => ({
+        username: id,
+        displayName: id,
         avatar: "",
-        isVerified: u.is_verified,
+        isVerified: false,
         followers: 0,
-      }))
-    : allMockUsers.filter((u) =>
-        currentUser?.following_ids?.includes(u.username),
-      );
+      }));
+
+    return [...fromApi, ...extraUsers];
+  }, [apiFollowing, currentUser?.following_ids, allMockUsers]);
 
   const displayed = filter.trim()
     ? all.filter(
@@ -60,6 +79,7 @@ export default function YouFollowingPage() {
         </p>
         <input
           type="text"
+          data-test="you-following-filter"
           placeholder="Filter"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -78,6 +98,7 @@ export default function YouFollowingPage() {
           {displayed.map((u) => (
             <div key={u.username} className="flex flex-col items-center gap-2 group">
               <div
+                data-test={`you-following-avatar-${u.username}`}
                 className="w-full cursor-pointer aspect-square rounded-full overflow-hidden bg-text-muted"
                 onClick={() =>
                   navigate(`/${u.username.toLowerCase().replace(/\s+/g, "-")}`)
@@ -96,6 +117,7 @@ export default function YouFollowingPage() {
                 )}
               </span>
               <span
+                data-test={`you-following-count-${u.username}`}
                 className="text-text-secondary cursor-pointer text-xs flex items-center gap-1"
                 onClick={() =>
                   navigate(

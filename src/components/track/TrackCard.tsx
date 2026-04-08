@@ -329,7 +329,9 @@ function MoreDropdown({ isOwner, liked, onLike, onAddToNext, onAddToPlaylist, on
   );
 }
 
-// TrackCard 
+// TrackCard
+
+const EMPTY_COMMENTS: TrackComment[] = [];
 
 export interface TrackCardProps {
   track: Track;
@@ -346,7 +348,7 @@ export interface TrackCardProps {
 
 export default function TrackCard({
   track,
-  comments = [],
+  comments = EMPTY_COMMENTS,
   onCommentSubmit,
   repostedBy, onCopyLink, onAddToPlaylist, onEdit, onReplaceFile, onDelete, onDistribute,
 }: TrackCardProps) {

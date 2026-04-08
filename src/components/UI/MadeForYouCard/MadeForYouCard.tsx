@@ -36,7 +36,7 @@ export default function MadeForYouCard({
   };
 
   return (
-    <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
+    <div className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}>
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
         <img

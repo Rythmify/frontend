@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
 import AlbumCard from "@/components/Playlist/PlaylistCard";
 import StationCard from "@/components/UI/StationCard/StationCard";
+import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
+import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
+import type { PersonalMix } from "@/services/api/discover.service";
 import {
   getRecentlyPlayed,
   getTrackById,
@@ -28,36 +31,66 @@ import { useAuthStore } from "@/stores/auth.store";
 // ─── Constants ────────────────────────────────────────────
 
 const TITLE_CLASS = "text-white font-semibold text-[19px] text-left";
-const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
+const CARD_WIDTH = "w-[180px] sm:w-[200px] md:w-[220px] lg:w-[240px]";
 
 // ─── Helpers ──────────────────────────────────────────────
 
-function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function Section({
+  title,
+  action,
+  dataTest,
+  children,
+}: {
+  title: string;
+  action?: React.ReactNode;
+  dataTest?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-test={dataTest}>
       <div className="flex items-center justify-between pb-4">
-        <h2 className={TITLE_CLASS}>{title}</h2>
+        <h2
+          className={TITLE_CLASS}
+          data-test={dataTest ? `${dataTest}-title` : undefined}
+        >
+          {title}
+        </h2>
         {action}
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">{children}</div>
+      <div
+        className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide"
+        data-test={dataTest ? `${dataTest}-cards` : undefined}
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
 type FilterOption = "All" | "Created" | "Liked";
 
-function FilterDropdown({ value, onChange }: { value: FilterOption; onChange: (v: FilterOption) => void }) {
+function FilterDropdown({
+  value,
+  onChange,
+}: {
+  value: FilterOption;
+  onChange: (v: FilterOption) => void;
+}) {
   const [open, setOpen] = useState(false);
   const options: FilterOption[] = ["All", "Created", "Liked"];
 
   return (
     <div className="relative">
       <button
+        data-test="library-playlist-filter-toggle"
         onClick={() => setOpen((o) => !o)}
         className="flex items-center justify-between gap-2 min-w-[90px] border border-[#444] rounded-sm py-1.5 px-3 bg-transparent text-[13px] text-white font-bold hover:border-text-secondary transition-all cursor-pointer focus:outline-none"
       >
         <span>{value}</span>
-        <svg viewBox="0 0 24 24" className={`w-3.5 h-3.5 fill-current transition-transform ${open ? "rotate-180" : ""}`}>
+        <svg
+          viewBox="0 0 24 24"
+          className={`w-3.5 h-3.5 fill-current transition-transform ${open ? "rotate-180" : ""}`}
+        >
           <path d="M20.5303 9.53033L12 18.0607L3.46967 9.53033L4.53033 8.46967L12 15.9393L19.4697 8.46967L20.5303 9.53033Z" />
         </svg>
       </button>
@@ -67,9 +100,15 @@ function FilterDropdown({ value, onChange }: { value: FilterOption; onChange: (v
           {options.map((opt) => (
             <li key={opt}>
               <button
-                onClick={() => { onChange(opt); setOpen(false); }}
+                data-test={`library-playlist-filter-option-${opt.toLowerCase()}`}
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
                 className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors cursor-pointer ${
-                  value === opt ? "text-white font-bold" : "text-text-secondary hover:text-white hover:bg-bg"
+                  value === opt
+                    ? "text-white font-bold"
+                    : "text-text-secondary hover:text-white hover:bg-bg"
                 }`}
               >
                 {opt}
@@ -84,7 +123,10 @@ function FilterDropdown({ value, onChange }: { value: FilterOption; onChange: (v
 
 // ─── Mappers ──────────────────────────────────────────────
 
-function mapPlaylistToCard(p: LibraryPlaylist, displayName: string): PlaylistCardData {
+function mapPlaylistToCard(
+  p: LibraryPlaylist,
+  displayName: string,
+): PlaylistCardData {
   return {
     id: p.playlist_id,
     title: p.name,
@@ -95,7 +137,6 @@ function mapPlaylistToCard(p: LibraryPlaylist, displayName: string): PlaylistCar
   };
 }
 
-
 function mapFollowingToUser(f: FollowingUser, index: number): User {
   return {
     id: index + 1,
@@ -104,6 +145,24 @@ function mapFollowingToUser(f: FollowingUser, index: number): User {
     avatar: f.profile_picture ?? undefined,
     followers: 0,
     isVerified: f.is_verified,
+  };
+}
+
+function mixToCard(mix: PersonalMix): MadeForYouItem {
+  const words = mix.label.trim().split(/\s+/);
+  return {
+    id: mix.id,
+    title: mix.label,
+    subtitle:
+      mix.flavor === "listening_history"
+        ? "Based on listening history"
+        : "Based on your taste",
+    coverUrl: mix.cover_image ?? "https://picsum.photos/200/200?random=99",
+    badgeWords: [
+      (words[0] ?? "MIX").toUpperCase(),
+      (words[1] ?? "1").toUpperCase(),
+    ],
+    badgeBg: mix.flavor === "listening_history" ? "#1a237e" : "#1b5e20",
   };
 }
 
@@ -118,7 +177,7 @@ export default function LibraryPage() {
 
   const { likedTracks, likedStations, likedPlaylists, likedAlbums: storeLikedAlbums } = useLikesStore();
   const { user } = useAuthStore();
-  const { entries, getRecentTracks } = useHistoryStore();
+  const { entries } = useHistoryStore();
 
   useEffect(() => {
     getRecentlyPlayed()
@@ -131,7 +190,16 @@ export default function LibraryPage() {
 
   useEffect(() => {
     getMyPlaylists()
-      .then((items) => setPlaylists(items.map((p) => mapPlaylistToCard(p, user?.displayName ?? user?.username ?? p.owner_user_id))))
+      .then((items) =>
+        setPlaylists(
+          items.map((p) =>
+            mapPlaylistToCard(
+              p,
+              user?.displayName ?? user?.username ?? p.owner_user_id,
+            ),
+          ),
+        ),
+      )
       .catch(() => setPlaylists([]));
   }, []);
 
@@ -161,13 +229,14 @@ export default function LibraryPage() {
       .catch(() => setAlbums([]));
   }, []);
 
-  // History store tracks take priority; fall back to API / mock
-  const historyTracks = getRecentTracks();
-  const recentTracks = historyTracks.length
-    ? historyTracks
-    : recentlyPlayedApi.length
-      ? recentlyPlayedApi
-      : mockRecentlyPlayedTracks;
+  // History entries (all types) take priority; fall back to API/mock tracks
+  const recentEntries =
+    entries.length > 0
+      ? entries
+      : (recentlyPlayedApi.length > 0
+          ? recentlyPlayedApi
+          : mockRecentlyPlayedTracks
+        ).map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
 
   const likesDisplay = likedTracks;
   const stationsDisplay = likedStations;
@@ -175,7 +244,6 @@ export default function LibraryPage() {
   const visiblePlaylists: PlaylistCardData[] = (() => {
     if (playlistFilter === "Created") return playlists;
     if (playlistFilter === "Liked") return likedPlaylists;
-    // All: merge created + liked, dedupe by id
     const seen = new Set<string>();
     return [...playlists, ...likedPlaylists].filter((p) => {
       if (seen.has(p.id)) return false;
@@ -184,27 +252,70 @@ export default function LibraryPage() {
     });
   })();
 
-  // suppress unused warning — entries drives getRecentTracks reactivity
-  void entries;
+  const displayedFollowing = useMemo(() => {
+    const followingSet = new Set(user?.following_ids ?? []);
+    const fromApi = followingUsers.filter((u) => followingSet.has(u.username));
+    const apiUsernames = new Set(fromApi.map((u) => u.username));
+    const extraUsers: User[] = (user?.following_ids ?? [])
+      .filter((username) => !apiUsernames.has(username))
+      .map((username, i) => ({
+        id: -(i + 1),
+        username,
+        displayName: username,
+        followers: 0,
+      }));
+    return [...fromApi, ...extraUsers];
+  }, [followingUsers, user?.following_ids]);
 
   return (
     <div className="flex flex-col gap-12">
       {/* Recently Played */}
-      <Section title="Recently played">
-        {recentTracks.map((track) => (
-          <TrackCard key={track.id} track={track} widthClassName={CARD_WIDTH} />
-        ))}
+      <Section title="Recently played" dataTest="library-recently-played">
+        {recentEntries.map((entry, i) => {
+          if (entry.type === "track")
+            return (
+              <TrackCard
+                key={`track-${entry.item.id}`}
+                track={entry.item}
+                widthClassName={CARD_WIDTH}
+              />
+            );
+          if (entry.type === "station")
+            return (
+              <StationCard
+                key={`station-${entry.item.id}`}
+                station={entry.item}
+                widthClassName={CARD_WIDTH}
+                colorIndex={i}
+              />
+            );
+          if (entry.type === "mix")
+            return (
+              <MadeForYouCard
+                key={`mix-${entry.item.id}`}
+                item={mixToCard(entry.item)}
+                widthClassName={CARD_WIDTH}
+              />
+            );
+          return null;
+        })}
       </Section>
 
       {/* Likes */}
-      <Section title="Likes">
+      <Section title="Likes" dataTest="library-likes">
         <LikesContent tracks={likesDisplay} showControls={false} />
       </Section>
 
       {/* Playlists */}
       <Section
         title="Playlists"
-        action={<FilterDropdown value={playlistFilter} onChange={setPlaylistFilter} />}
+        dataTest="library-playlists"
+        action={
+          <FilterDropdown
+            value={playlistFilter}
+            onChange={setPlaylistFilter}
+          />
+        }
       >
         {visiblePlaylists.map((item) => (
           <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
@@ -212,30 +323,35 @@ export default function LibraryPage() {
       </Section>
 
       {/* Albums */}
-      <Section title="Albums">
+      <Section title="Albums" dataTest="library-albums">
         {(() => {
           const seen = new Set<string>();
-          return [...albums, ...storeLikedAlbums].filter((p) => {
-            if (seen.has(p.playlist_id)) return false;
-            seen.add(p.playlist_id);
-            return true;
-          }).map((p) => (
-            <AlbumCard key={p.playlist_id} playlist={p} />
-          ));
+          return [...albums, ...storeLikedAlbums]
+            .filter((p) => {
+              if (seen.has(p.playlist_id)) return false;
+              seen.add(p.playlist_id);
+              return true;
+            })
+            .map((p) => <AlbumCard key={p.playlist_id} playlist={p} />);
         })()}
       </Section>
 
       {/* Stations */}
-      <Section title="Stations">
+      <Section title="Stations" dataTest="library-stations">
         {stationsDisplay.map((station, i) => (
-          <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} colorIndex={i} />
+          <StationCard
+            key={station.id}
+            station={station}
+            widthClassName={CARD_WIDTH}
+            colorIndex={i}
+          />
         ))}
       </Section>
 
       {/* Following */}
-      <Section title="Following">
-        {followingUsers.map((user) => (
-          <UserCard key={user.id} user={user} widthClassName={CARD_WIDTH} />
+      <Section title="Following" dataTest="library-following">
+        {displayedFollowing.map((u) => (
+          <UserCard key={u.id} user={u} widthClassName={CARD_WIDTH} />
         ))}
       </Section>
     </div>

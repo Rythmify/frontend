@@ -14,6 +14,7 @@ interface HistoryStore {
   addTrack: (track: Track) => void;
   addStation: (station: Station) => void;
   addMix: (mix: PersonalMix) => void;
+  clearHistory: () => void;
   getRecentTracks: () => Track[];
   getRecentStations: () => Station[];
 }
@@ -58,6 +59,8 @@ export const useHistoryStore = create<HistoryStore>()(
             playedAt: new Date().toISOString(),
           }),
         })),
+
+      clearHistory: () => set({ entries: [] }),
 
       getRecentTracks: () =>
         get()
