@@ -1,2 +1,2 @@
-export { default as PlaylistCard } from "./PlaylistCard";
-export type { PlaylistCardProps } from "./PlaylistCard";
+export { default as PlaylistComponent } from "./PlaylistComponent";
+export type { PlaylistComponentProps } from "./PlaylistComponent";

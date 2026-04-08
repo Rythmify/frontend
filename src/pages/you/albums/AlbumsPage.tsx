@@ -6,7 +6,7 @@ import {
   getLikedPlaylists,
   type Playlist,
 } from "@/services/api/playlist/playlist.service";
-import PlaylistCard from "@/components/Playlist/PlaylistCard";
+import PlaylistCard from "@/components/playlist/PlaylistCard";
 import { useLikesStore } from "@/stores/likes.store";
 
 const SkeletonCard = () => (

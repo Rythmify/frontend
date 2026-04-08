@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
-import PlaylistCard from "@/components/Playlist/PlaylistCard";
+import PlaylistCard from "@/components/playlist/PlaylistCard";
 import { mockAlbumPlaylists } from "@/services/mocks/discover";
 import {
   getMyPlaylists,

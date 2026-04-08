@@ -3,7 +3,7 @@ import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
-import AlbumCard from "@/components/Playlist/PlaylistCard";
+import AlbumCard from "@/components/playlist/PlaylistCard";
 import StationCard from "@/components/UI/StationCard/StationCard";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
 import {

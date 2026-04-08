@@ -1,9 +1,9 @@
-import { PlaylistCard } from "@/components/playlist";
+import { PlaylistComponent } from "@/components/playlist";
 import { mockPlaylists } from "@/services/mocks/playlists";
 
 /**
  * SetsPage – Search › Playlists tab
- * Renders a vertical list of PlaylistCard components.
+ * Renders a vertical list of PlaylistComponent components.
  * Mock data is used until the real API is wired up.
  */
 export default function SetsPage() {
@@ -17,7 +17,7 @@ export default function SetsPage() {
       </p>
 
       {mockPlaylists.map((playlist) => (
-        <PlaylistCard
+        <PlaylistComponent
           key={playlist.id}
           playlist={playlist}
           onCopyLink={() => navigator.clipboard.writeText(window.location.href)}
