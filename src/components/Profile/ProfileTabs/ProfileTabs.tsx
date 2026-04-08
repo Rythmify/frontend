@@ -6,14 +6,14 @@ interface TabButtonProps {
   children: React.ReactNode;
   onSelect: () => void;
   isSelected: boolean;
-  dataTest?: string;
+  "data-test"?: string;
 }
 
 function TabButton({
   children,
   onSelect,
   isSelected,
-  dataTest,
+  "data-test": dataTest,
 }: TabButtonProps) {
   return (
     <button
@@ -71,7 +71,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             key={tab.label}
             isSelected={selectedTab === tab.label}
             onSelect={() => onTabChange?.(tab.label)}
-            dataTest={`tab-${tab.label.toLowerCase().replace(/\s+/g, "-")}`}
+            data-test={`tab-${tab.label.toLowerCase().replace(/\s+/g, "-")}`}
           >
             {tab.label}
           </TabButton>

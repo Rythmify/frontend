@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
@@ -38,12 +39,12 @@ const CARD_WIDTH = "w-[180px] sm:w-[200px] md:w-[220px] lg:w-[230px]";
 function Section({
   title,
   action,
-  dataTest,
+  "data-test": dataTest,
   children,
 }: {
   title: string;
   action?: React.ReactNode;
-  dataTest?: string;
+  "data-test"?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -270,7 +271,7 @@ export default function LibraryPage() {
   return (
     <div className="flex flex-col gap-12">
       {/* Recently Played */}
-      <Section title="Recently played" dataTest="library-recently-played">
+      <Section title="Recently played" data-test="library-recently-played">
         {recentEntries.map((entry, i) => {
           if (entry.type === "track")
             return (
@@ -302,14 +303,26 @@ export default function LibraryPage() {
       </Section>
 
       {/* Likes */}
-      <Section title="Likes" dataTest="library-likes">
+      <Section
+        title="Likes"
+        data-test="library-likes"
+        action={
+          <Link
+            to="/discover"
+            data-test="library-likes-browse"
+            className="text-text-secondary text-sm hover:text-white transition-colors"
+          >
+            Browse trending playlists
+          </Link>
+        }
+      >
         <LikesContent tracks={likesDisplay} showControls={false} widthClassName={CARD_WIDTH} />
       </Section>
 
       {/* Playlists */}
       <Section
         title="Playlists"
-        dataTest="library-playlists"
+        data-test="library-playlists"
         action={
           <FilterDropdown
             value={playlistFilter}
@@ -323,7 +336,7 @@ export default function LibraryPage() {
       </Section>
 
       {/* Albums */}
-      <Section title="Albums" dataTest="library-albums">
+      <Section title="Albums" data-test="library-albums">
         {(() => {
           const seen = new Set<string>();
           return [...albums, ...storeLikedAlbums]
@@ -337,7 +350,19 @@ export default function LibraryPage() {
       </Section>
 
       {/* Stations */}
-      <Section title="Stations" dataTest="library-stations">
+      <Section
+        title="Stations"
+        data-test="library-stations"
+        action={
+          <Link
+            to="/discover"
+            data-test="library-stations-browse"
+            className="text-text-secondary text-sm hover:text-white transition-colors"
+          >
+            Browse trending playlists
+          </Link>
+        }
+      >
         {stationsDisplay.map((station, i) => (
           <StationCard
             key={station.id}
@@ -349,7 +374,7 @@ export default function LibraryPage() {
       </Section>
 
       {/* Following */}
-      <Section title="Following" dataTest="library-following">
+      <Section title="Following" data-test="library-following">
         {displayedFollowing.map((u) => (
           <UserCard key={u.id} user={u} widthClassName={CARD_WIDTH} />
         ))}
