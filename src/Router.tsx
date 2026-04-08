@@ -99,6 +99,9 @@ const FollowerPage = lazy(() => import("@/pages/you/follower/FollowerPage"));
 const HistoryPage = lazy(() => import("@/pages/you/history/HistoryPage"));
 const StationsPage = lazy(() => import("@/pages/you/stations/StationsPage"));
 const InsightsPage = lazy(() => import("@/pages/you/insights/InsightsPage"));
+const PlaylistSlugPage = lazy(
+  () => import("@/pages/you/sets/PlaylistSlugPage"),
+);
 
 // Settings
 const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage"));
@@ -262,6 +265,12 @@ export const router = createBrowserRouter([
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
+
+              // Track Slug / Playlist Slug view
+              {
+                path: "sets/:playlistSlug",
+                element: <Lazy component={PlaylistSlugPage} />,
+              },
             ],
           },
 
