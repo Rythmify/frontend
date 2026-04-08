@@ -14,8 +14,8 @@ export interface NotificationActor {
 export interface NotificationResource {
   type: 'track' | 'user' | 'playlist' | 'comment';
   id: string;
-  title?: string 
-  body?: string 
+  title?: string;
+  body?: string;
 }
 
 export interface Notification {
@@ -76,6 +76,25 @@ export interface FollowingSearchResponse {
   };
 }
 
+// ─── Follow Types ─────────────────────────────────────────────────────────────
+
+export interface FollowData {
+  follower_id: string;
+  followed_id: string;
+  created_at: string;
+}
+
+/** 201 — followed successfully */
+export interface FollowCreatedResponse {
+  data: FollowData;
+  message: string;
+}
+
+/** 200 — already following */
+export interface FollowAlreadyExistsResponse {
+  message: string;
+}
+
 // ─── Block Types ──────────────────────────────────────────────────────────────
 
 export interface BlockData {
@@ -98,7 +117,11 @@ export interface BlockAlreadyExistsResponse {
 // ─── Report Types ─────────────────────────────────────────────────────────────
 
 export type ReportResourceType = 'track' | 'user';
-export type ReportReason = 'copyright' | 'inappropriate' | 'spam' | 'impersonation';
+export type ReportReason =
+  | 'copyright'
+  | 'inappropriate'
+  | 'spam'
+  | 'impersonation';
 
 export interface ReportRequest {
   resource_type: ReportResourceType;
@@ -138,20 +161,22 @@ export const fetchNotifications = async (
 };
 
 // GET /notifications/unread-count
-export const fetchUnreadNotificationCount = async (): Promise<UnreadCountResponse> => {
-  const response = await axiosInstance.get<UnreadCountResponse>(
-    '/notifications/unread-count'
-  );
-  return response.data;
-};
+export const fetchUnreadNotificationCount =
+  async (): Promise<UnreadCountResponse> => {
+    const response = await axiosInstance.get<UnreadCountResponse>(
+      '/notifications/unread-count'
+    );
+    return response.data;
+  };
 
 // POST /notifications/read-all
-export const markAllNotificationsRead = async (): Promise<SuccessMessageResponse> => {
-  const response = await axiosInstance.post<SuccessMessageResponse>(
-    '/notifications/read-all'
-  );
-  return response.data;
-};
+export const markAllNotificationsRead =
+  async (): Promise<SuccessMessageResponse> => {
+    const response = await axiosInstance.post<SuccessMessageResponse>(
+      '/notifications/read-all'
+    );
+    return response.data;
+  };
 
 // PATCH /notifications/:notificationId/read
 export const markNotificationRead = async (
@@ -188,6 +213,23 @@ export const fetchMyFollowing = async (
   return response.data;
 };
 
+// POST /users/:userId/follow
+export const followUser = async (
+  userId: string
+): Promise<FollowCreatedResponse | FollowAlreadyExistsResponse> => {
+  const response = await axiosInstance.post<
+    FollowCreatedResponse | FollowAlreadyExistsResponse
+  >(`/users/${userId}/follow`);
+
+  return response.data;
+};
+
+// DELETE /users/:userId/follow
+export const unfollowUser = async (userId: string): Promise<void> => {
+  await axiosInstance.delete(`/users/${userId}/follow`);
+};
+
+// ─── Block API Functions ──────────────────────────────────────────────────────
 
 // POST /users/:userId/block
 export const blockUser = async (
@@ -196,6 +238,7 @@ export const blockUser = async (
   const response = await axiosInstance.post<
     BlockCreatedResponse | BlockAlreadyExistsResponse
   >(`/users/${userId}/block`);
+
   return response.data;
 };
 
@@ -203,6 +246,7 @@ export const blockUser = async (
 export const unblockUser = async (userId: string): Promise<void> => {
   await axiosInstance.delete(`/users/${userId}/block`);
 };
+
 // ─── Report API Functions ─────────────────────────────────────────────────────
 
 // POST /reports
