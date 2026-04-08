@@ -29,7 +29,6 @@ function PlaylistSlugPage() {
     currentTrack,
   } = usePlayerStore();
 
-
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
@@ -159,9 +158,12 @@ function PlaylistSlugPage() {
           </div>
 
           {/* Right Column: Sidebar */}
-          {/* <div className="w-full lg:w-[280px] shrink-0">
-            <PlaylistSidebar featuredArtists={featuredArtists} />
-          </div> */}
+          <div className="w-full lg:w-[280px] shrink-0">
+            <PlaylistSidebar
+              playlist={playlist}
+              featuredArtists={featuredArtists}
+            />
+          </div>
         </div>
       </div>
     </div>

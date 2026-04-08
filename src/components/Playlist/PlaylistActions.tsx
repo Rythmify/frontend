@@ -73,7 +73,7 @@ export default function PlaylistActions({
         {/* More Dropdown */}
         <div ref={moreRef} className="relative">
           <ActionButton
-            onClick={() => setMoreOpen((p) => !p)}
+            onClick={() => setMoreOpen((p: boolean) => !p)}
             active={moreOpen}
           >
             <FaEllipsisH className="text-[14px]" />
