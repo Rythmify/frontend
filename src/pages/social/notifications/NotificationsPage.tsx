@@ -1,12 +1,14 @@
+// NotificationsPage.tsx
 import { useState, useEffect, useCallback } from 'react'
-import { fetchNotifications, type Notification } from '@/services/api/notifications/notificationsAPI'
+import { fetchNotifications, type Notification, type NotificationType } from '@/services/api/notifications/notificationsAPI'
 import { fetchMyFollowing } from '@/services/api/notifications/notificationsAPI'
 import ArtistListSection from '@/components/UI/ArtistListSection'
 import NotificationHeader, { type FilterType } from '@/components/notificationsComponents/notificationHeader'
 import Spinner from '@/components/UI/Spinner'
 import GoMobileSection from '@/components/UI/GoMobile'
-import notificationCard from '@/components/notificationsComponents/notificationCard';
 import NotificationCard from '@/components/notificationsComponents/notificationCard'
+import { useNotificationStore } from '@/stores/notification.store'
+
 interface Artist {
   username: string
   avatar?: string
@@ -21,12 +23,16 @@ const NotificationsPage = () => {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [status, setStatus]               = useState<Status>('loading')
   const [selectedType, setSelectedType]   = useState<FilterType>('all')
-  const [recentFollowers, setRecentFollowers] = useState<Artist[]>([])   // 👈 1. state here
+  const [recentFollowers, setRecentFollowers] = useState<Artist[]>([])
 
-  const loadNotifications = useCallback(async () => {
+  const { fetchUnreadCount, unreadCount } = useNotificationStore()
+
+  const loadNotifications = useCallback(async (type: FilterType) => {
     setStatus('loading')
     try {
-      const res = await fetchNotifications(1, 50, false)
+      // 'all' means no type filter — pass undefined so the param is omitted
+      const typeParam = type === 'all' ? undefined : type as NotificationType
+      const res = await fetchNotifications(1, 50, false, typeParam)
       const items = res.data.items
       setNotifications(items)
       setStatus(items.length === 0 ? 'empty' : 'success')
@@ -35,7 +41,7 @@ const NotificationsPage = () => {
     }
   }, [])
 
-  const loadRecentFollowers = useCallback(async () => {        
+  const loadRecentFollowers = useCallback(async () => {
     try {
       const res = await fetchMyFollowing(undefined, 4, 0)
       setRecentFollowers(
@@ -51,38 +57,52 @@ const NotificationsPage = () => {
     }
   }, [])
 
-  useEffect(() => {                                              
-    loadNotifications()
+  
+
+  const handleTypeChange = (type: FilterType) => {
+    if (type === selectedType) return   // already selected, no re-fetch needed
+    setSelectedType(type)
+  }
+
+  useEffect(() => {
+    loadNotifications(selectedType)
+  }, [selectedType, loadNotifications])
+
+  useEffect(() => {
     loadRecentFollowers()
-  }, [loadNotifications, loadRecentFollowers])
+    fetchUnreadCount()  // initialize global unread count on page mount
+  }, [loadRecentFollowers, fetchUnreadCount])
 
   return (
-    <div className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg">
+    <div data-test="notifications-page" className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg">
       <div className="flex gap-11 p-0">
 
-        {/* Main Content — 70% */}
+        {/* Main Content */}
         <div className="flex flex-col gap-10 flex-[8] min-w-0 pt-10">
-          <NotificationHeader
-            selectedType={selectedType}
-            onTypeChange={setSelectedType}
-          />
 
-          {status === 'loading' && <Spinner />}
+            <NotificationHeader
+              selectedType={selectedType}
+              onTypeChange={handleTypeChange}
+            />
+        
+
+          {status === 'loading' && <Spinner data-test="notifications-loading" />}
 
           {status === 'success' && (
-             <div className="flex flex-col">
-               {notifications.map(n => (
-                <NotificationCard key={n.id} notification={n} />
-             ))}
-             </div> 
-          )}         
-          {status === 'empty' && <p className="text-text-secondary">You don't have any notifications</p>}
-          {status === 'error' && <p className="text-text-secondary">Something went wrong.</p>}
+            <div data-test="notifications-list" className="flex flex-col">
+              {notifications.map(n => (
+                <NotificationCard key={n.id} notification={n} showActions={true} data-test={`notification-card-${n.id}`} />
+              ))}
+            </div>
+          )}
+
+          {status === 'empty' && <p data-test="notifications-empty">You don't have any notifications</p>}
+          {status === 'error'  && <p data-test="notifications-error">Something went wrong.</p>}
         </div>
 
-        {/* Sidebar — 30% */}
+        {/* Sidebar */}
         <div className="flex flex-col gap-6 flex-[2] ps-2 pt-8">
-          <ArtistListSection             
+          <ArtistListSection
             title="RECENT FOLLOWERS"
             artists={recentFollowers}
             viewAllLink="/followers"
