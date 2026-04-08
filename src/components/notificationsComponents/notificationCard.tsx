@@ -58,6 +58,7 @@ const styles = {
 interface NotificationCardProps {
   notification: Notification
   showActions?: boolean
+  'data-test'?: string
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -79,31 +80,32 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
 
   return (
     <>
-      <div className={styles.row} onClick={handleCellClick}>
+      <div data-test={`notification-card-${n.id}`} className={styles.row} onClick={handleCellClick}>
 
         {/* Avatar */}
-        <div className={styles.avatar}>
+        <div data-test={`notification-avatar-${n.id}`} className={styles.avatar}>
           {n.actor.profile_picture ? (
             <img
+              data-test={`notification-avatar-img-${n.id}`}
               src={n.actor.profile_picture}
               alt={n.actor.display_name}
               className={styles.avatarImg}
             />
           ) : (
-            <div className={styles.avatarFallback}>
+            <div data-test={`notification-avatar-fallback-${n.id}`} className={styles.avatarFallback}>
               <i className={styles.fallbackIcon} />
             </div>
           )}
         </div>
 
         {/* Text */}
-        <div className={styles.content}>
+        <div data-test={`notification-content-${n.id}`} className={styles.content}>
           <p className={styles.textRow}>
-            <span className={styles.username}>{n.actor.display_name}</span>
+            <span data-test={`notification-username-${n.id}`} className={styles.username}>{n.actor.display_name}</span>
             {'  '}
-            <span className={styles.actionText}>{buildActionText(n)}</span>
+            <span data-test={`notification-action-text-${n.id}`} className={styles.actionText}>{buildActionText(n)}</span>
           </p>
-          <div className={styles.timeRow}>
+          <div data-test={`notification-time-${n.id}`} className={styles.timeRow}>
             <i className={styles.timeIcon} />
             {formatRelativeTime(n.created_at)}
           </div>
@@ -111,6 +113,7 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
 
         {/* Actions */}
         <div
+          data-test={`notification-actions-${n.id}`}
           className={styles.actions}
           onClick={e => e.stopPropagation()}
         >
@@ -120,8 +123,9 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
 
           {/* 3 dots */}
           {showActions && (
-            <div className={styles.dropdownWrapper}>
+            <div data-test={`notification-menu-wrapper-${n.id}`} className={styles.dropdownWrapper}>
               <button
+                data-test={`notification-menu-btn-${n.id}`}
                 className={styles.dotsBtn}
                 onClick={() => setMenuOpen(p => !p)}
               >
@@ -129,14 +133,16 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
               </button>
 
               {menuOpen && (
-                <div className={styles.dropdown}>
+                <div data-test={`notification-menu-${n.id}`} className={styles.dropdown}>
                   <button
+                    data-test={`notification-block-btn-${n.id}`}
                     className={styles.dropdownItem}
                     onClick={() => { setIsBlockOpen(true); setMenuOpen(false) }}
                   >
                     Block {n.actor.display_name}
                   </button>
                   <button
+                    data-test={`notification-report-btn-${n.id}`}
                     className={styles.dropdownItem}
                     onClick={() => { setIsReportOpen(true); setMenuOpen(false) }}
                   >

@@ -76,7 +76,7 @@ const NotificationsPage = () => {
   }, [loadRecentFollowers, fetchUnreadCount])
 
   return (
-    <div className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg">
+    <div data-test="notifications-page" className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg">
       <div className="flex gap-11 p-0">
 
         {/* Main Content */}
@@ -88,6 +88,7 @@ const NotificationsPage = () => {
             />
             {unreadCount > 0 && (
               <button
+                data-test="btn-mark-all-as-read"
                 onClick={handleMarkAllAsRead}
                 className="text-xs font-bold text-text-secondary hover:text-white transition-colors"
               >
@@ -96,18 +97,18 @@ const NotificationsPage = () => {
             )}
           </div>
 
-          {status === 'loading' && <Spinner />}
+          {status === 'loading' && <Spinner data-test="notifications-loading" />}
 
           {status === 'success' && (
-            <div className="flex flex-col">
+            <div data-test="notifications-list" className="flex flex-col">
               {notifications.map(n => (
-                <NotificationCard key={n.id} notification={n} showActions={true} />
+                <NotificationCard key={n.id} notification={n} showActions={true} data-test={`notification-card-${n.id}`} />
               ))}
             </div>
           )}
 
-          {status === 'empty' && <p className="text-text-secondary">You don't have any notifications</p>}
-          {status === 'error'  && <p className="text-text-secondary">Something went wrong.</p>}
+          {status === 'empty' && <p data-test="notifications-empty">You don't have any notifications</p>}
+          {status === 'error'  && <p data-test="notifications-error">Something went wrong.</p>}
         </div>
 
         {/* Sidebar */}
