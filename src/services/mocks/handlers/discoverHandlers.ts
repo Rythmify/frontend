@@ -19,7 +19,7 @@ import type { PublicUser } from "../../mocks/User.service";
 const mockMixes: PersonalMix[] = [
   {
     id: "mix-1",
-    label: "Mixed for You",
+    label: "MIX 1",
     flavor: "listening_history",
     cover_image: "https://picsum.photos/200/200?random=301",
     track_count: 27,
@@ -27,10 +27,34 @@ const mockMixes: PersonalMix[] = [
   },
   {
     id: "mix-2",
-    label: "Based on Your Recent Listening",
+    label: "MIX 2",
     flavor: "taste_profile",
     cover_image: "https://picsum.photos/200/200?random=302",
     track_count: 19,
+    generated_at: "2026-04-01T00:00:00Z",
+  },
+  {
+    id: "mix-3",
+    label: "MIX 3",
+    flavor: "listening_history",
+    cover_image: "https://picsum.photos/200/200?random=303",
+    track_count: 23,
+    generated_at: "2026-04-01T00:00:00Z",
+  },
+  {
+    id: "mix-4",
+    label: "MIX 4",
+    flavor: "taste_profile",
+    cover_image: "https://picsum.photos/200/200?random=304",
+    track_count: 31,
+    generated_at: "2026-04-01T00:00:00Z",
+  },
+  {
+    id: "mix-5",
+    label: "MIX 5",
+    flavor: "listening_history",
+    cover_image: "https://picsum.photos/200/200?random=305",
+    track_count: 15,
     generated_at: "2026-04-01T00:00:00Z",
   },
 ];

@@ -10,35 +10,26 @@ import {
   getTrackById,
 } from "@/services/api/discover.service";
 import { mapApiTrackToTrack } from "@/services/api/discover.mapper";
-import { mockRecentlyPlayedTracks, mockRecentlyPlayedStations } from "@/services/mocks/discover";
+import { mockRecentlyPlayedTracks } from "@/services/mocks/discover";
 import { getMyPlaylists, getMyFollowing } from "@/services/api/library.service";
 import type { LibraryPlaylist, FollowingUser } from "@/services/api/library.service";
 import type { Track } from "@/types/track";
 import type { User } from "@/types/user";
+import { useLikesStore } from "@/stores/likes.store";
+import { useHistoryStore } from "@/stores/history.store";
 
 // ─── Constants ────────────────────────────────────────────
 
-const GRID_SIZE = 6;
 const TITLE_CLASS = "text-white font-semibold text-[19px] text-left pb-4";
 const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
 
 // ─── Helpers ──────────────────────────────────────────────
 
-const EmptySlot = () => (
-  <div className={`flex flex-col ${CARD_WIDTH}`}>
-    <div className="w-full aspect-square rounded-md bg-input-bg" />
-  </div>
-);
-
-function padToGrid(count: number) {
-  return Math.max(0, GRID_SIZE - count);
-}
-
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3">
       <h2 className={TITLE_CLASS}>{title}</h2>
-      <div className="flex gap-8">{children}</div>
+      <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">{children}</div>
     </div>
   );
 }
@@ -70,17 +61,20 @@ function mapFollowingToUser(f: FollowingUser, index: number): User {
 // ─── Page ─────────────────────────────────────────────────
 
 export default function LibraryPage() {
-  const [recentlyPlayed, setRecentlyPlayed] = useState<Track[]>([]);
+  const [recentlyPlayedApi, setRecentlyPlayedApi] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<PlaylistCardData[]>([]);
   const [followingUsers, setFollowingUsers] = useState<User[]>([]);
+
+  const { likedTracks, likedStations, likedPlaylists } = useLikesStore();
+  const { entries, getRecentTracks } = useHistoryStore();
 
   useEffect(() => {
     getRecentlyPlayed()
       .then((items) =>
         Promise.all(items.map((item) => getTrackById(item.track.id))),
       )
-      .then((tracks) => setRecentlyPlayed(tracks.map(mapApiTrackToTrack)))
-      .catch(() => setRecentlyPlayed(mockRecentlyPlayedTracks));
+      .then((tracks) => setRecentlyPlayedApi(tracks.map(mapApiTrackToTrack)))
+      .catch(() => setRecentlyPlayedApi(mockRecentlyPlayedTracks));
   }, []);
 
   useEffect(() => {
@@ -95,69 +89,59 @@ export default function LibraryPage() {
       .catch(() => setFollowingUsers([]));
   }, []);
 
-  const displayedRecent = recentlyPlayed.length
-    ? recentlyPlayed
-    : mockRecentlyPlayedTracks;
+  // History store tracks take priority; fall back to API / mock
+  const historyTracks = getRecentTracks();
+  const recentTracks = historyTracks.length
+    ? historyTracks
+    : recentlyPlayedApi.length
+      ? recentlyPlayedApi
+      : mockRecentlyPlayedTracks;
 
-  const recentEmpties = padToGrid(Math.min(displayedRecent.length, GRID_SIZE));
-  const playlistEmpties = padToGrid(Math.min(playlists.length, GRID_SIZE));
-  const followingEmpties = padToGrid(Math.min(followingUsers.length, GRID_SIZE));
+  const likesDisplay = likedTracks;
+
+  // Liked stations (from store)
+  const stationsDisplay = likedStations;
+
+  // suppress unused warning — entries drives getRecentTracks reactivity
+  void entries;
 
   return (
     <div className="flex flex-col gap-12">
       {/* Recently Played */}
       <Section title="Recently played">
-        {displayedRecent.slice(0, GRID_SIZE).map((track) => (
+        {recentTracks.map((track) => (
           <TrackCard key={track.id} track={track} widthClassName={CARD_WIDTH} />
-        ))}
-        {Array.from({ length: recentEmpties }).map((_, i) => (
-          <EmptySlot key={`empty-r-${i}`} />
         ))}
       </Section>
 
       {/* Likes */}
       <Section title="Likes">
-        <LikesContent
-          tracks={mockRecentlyPlayedTracks}
-          showControls={false}
-          maxItems={GRID_SIZE}
-        />
+        <LikesContent tracks={likesDisplay} showControls={false} />
       </Section>
 
       {/* Playlists */}
       <Section title="Playlists">
-        {playlists.slice(0, GRID_SIZE).map((item) => (
+        {[...playlists, ...likedPlaylists.filter((lp) => !playlists.some((p) => p.id === lp.id))].map((item) => (
           <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
-        ))}
-        {Array.from({ length: playlistEmpties }).map((_, i) => (
-          <EmptySlot key={`empty-p-${i}`} />
         ))}
       </Section>
 
       {/* Albums — Mariam's section */}
       <Section title="Albums">
-        {Array.from({ length: GRID_SIZE }).map((_, i) => (
-          <EmptySlot key={`empty-a-${i}`} />
-        ))}
+        <span />
       </Section>
 
       {/* Stations */}
       <Section title="Stations">
-        {mockRecentlyPlayedStations.slice(0, GRID_SIZE).map((station) => (
-          <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} />
-        ))}
-        {Array.from({ length: Math.max(0, GRID_SIZE - mockRecentlyPlayedStations.length) }).map((_, i) => (
-          <EmptySlot key={`empty-st-${i}`} />
+        {stationsDisplay.map((station, i) => (
+          <StationCard key={station.id} station={station} widthClassName={CARD_WIDTH} colorIndex={i} />
         ))}
       </Section>
 
       {/* Following */}
       <Section title="Following">
-        {followingUsers.slice(0, GRID_SIZE).map((user) => (
+        {followingUsers.map((user) => (
           <UserCard key={user.id} user={user} widthClassName={CARD_WIDTH} />
-        ))}
-        {Array.from({ length: followingEmpties }).map((_, i) => (
-          <EmptySlot key={`empty-f-${i}`} />
         ))}
       </Section>
     </div>

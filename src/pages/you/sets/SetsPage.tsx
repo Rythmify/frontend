@@ -1,10 +1,15 @@
 import React, { useState } from "react";
 
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
+import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
+import { useLikesStore } from "@/stores/likes.store";
+
+const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
 
 export default function SetsPage() {
   const [filterText, setFilterText] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
+  const { likedPlaylists } = useLikesStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const filterOptions = ["All", "Created", "Liked"];
@@ -81,12 +86,13 @@ export default function SetsPage() {
       </div>
       <div className="px-4 pt-2 pb-10">
         <HorizontalCarousel title=" ">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="min-w-[160px] h-[160px] bg-[#303030] rounded-md "
-            />
-          ))}
+          {likedPlaylists.length === 0 ? (
+            <p className="text-text-secondary text-sm py-6">No liked playlists yet.</p>
+          ) : (
+            likedPlaylists.map((item) => (
+              <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
+            ))
+          )}
         </HorizontalCarousel>
       </div>
       
