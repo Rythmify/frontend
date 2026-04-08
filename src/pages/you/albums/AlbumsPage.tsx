@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import SetsHeader from "@/components/Playlist/SetsHeader";
 import {
@@ -8,6 +7,7 @@ import {
   type Playlist,
 } from "@/services/api/playlist/playlist.service";
 import PlaylistCard from "@/components/Playlist/PlaylistCard";
+import { useLikesStore } from "@/stores/likes.store";
 
 const SkeletonCard = () => (
   <div className="flex flex-col gap-2 w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px] shrink-0 animate-pulse">
@@ -16,15 +16,18 @@ const SkeletonCard = () => (
     <div className="h-3 bg-[#303030] rounded w-1/2" />
   </div>
 );
+
 export default function AlbumsPage() {
   const [filterText, setFilterText] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [createdAlbums, setCreatedAlbums] = useState<Playlist[]>([]);
-  const [likedAlbums, setLikedAlbums] = useState<Playlist[]>([]);
+  const [apiLikedAlbums, setApiLikedAlbums] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { likedAlbums: storeLikedAlbums } = useLikesStore();
 
   const filterOptions = ["All", "Created", "Liked"];
 
@@ -37,9 +40,8 @@ export default function AlbumsPage() {
           getMyPlaylists({ limit: 50 }),
           getLikedPlaylists({ limit: 50 }),
         ]);
-        // Only keep albums
         setCreatedAlbums(created.data.items.filter((p) => p.is_album_view));
-        setLikedAlbums(liked.data.items.filter((p) => p.is_album_view));
+        setApiLikedAlbums(liked.data.items.filter((p) => p.is_album_view));
       } catch (err) {
         setError("Failed to load albums. Please try again.");
         console.error(err);
@@ -50,6 +52,17 @@ export default function AlbumsPage() {
     fetchAlbums();
   }, []);
 
+  // Merge API liked albums with store liked albums (store takes priority / fills gaps)
+  const allLikedAlbums: Playlist[] = (() => {
+    const merged = [...apiLikedAlbums, ...storeLikedAlbums];
+    const seen = new Set<string>();
+    return merged.filter((p) => {
+      if (seen.has(p.playlist_id)) return false;
+      seen.add(p.playlist_id);
+      return true;
+    });
+  })();
+
   // Filter albums by search
   const match = (name: string) =>
     name.toLowerCase().includes(filterText.toLowerCase());
@@ -59,9 +72,9 @@ export default function AlbumsPage() {
     if (activeFilter === "Created")
       return createdAlbums.filter((p) => match(p.name));
     if (activeFilter === "Liked")
-      return likedAlbums.filter((p) => match(p.name));
-    // Merge created + liked albums, remove duplicates
-    const merged = [...createdAlbums, ...likedAlbums];
+      return allLikedAlbums.filter((p) => match(p.name));
+    // Merge created + liked, remove duplicates
+    const merged = [...createdAlbums, ...allLikedAlbums];
     const seen = new Set<string>();
     return merged.filter((p) => {
       if (seen.has(p.playlist_id)) return false;
@@ -76,7 +89,6 @@ export default function AlbumsPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header only if we have albums or loading */}
       {(visibleAlbums.length > 0 || loading) && (
         <SetsHeader
           title="Your Albums"
@@ -102,7 +114,7 @@ export default function AlbumsPage() {
             ))}
           </HorizontalCarousel>
         ) : (
-          <div className="flex flex-1 justify-center items-center ">
+          <div className="flex flex-1 justify-center items-center">
             <p className="text-text-upload text-2xl font-bold text-center pt-16 pb-30">
               You haven't liked any albums yet.
             </p>

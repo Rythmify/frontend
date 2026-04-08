@@ -7,6 +7,7 @@ import {
   getPlaylist,
 } from "@/services/api/playlist/playlist.service";
 import { usePlayerStore } from "@/stores/player.store";
+import { useLikesStore } from "@/stores/likes.store";
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
@@ -75,7 +76,8 @@ const tooltipStyles = {
 
 const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
   const navigate = useNavigate();
-  const [liked, setLiked] = useState(false);
+  const { isAlbumLiked, toggleAlbum } = useLikesStore();
+  const liked = isAlbumLiked(playlist.playlist_id);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
@@ -180,7 +182,7 @@ const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLiked((prev) => !prev);
+                  toggleAlbum(playlist);
                 }}
                 className={styles.actionButton}
                 data-test="button-like"

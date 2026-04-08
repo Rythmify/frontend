@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SpamModal } from "../SpamModal";
+import { SpamModal } from "../../UI/SpamModal";
 
 // ✅ Use the same alias the component uses internally
 vi.mock("@/services/api/messaging/conversationApi", () => ({
