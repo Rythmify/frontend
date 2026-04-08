@@ -2,6 +2,7 @@ import type { Track } from "@/types/track";
 import type { Mix } from "@/types/mix";
 import type { Station } from "@/types/station";
 import type { User } from "@/types/user";
+import type { Playlist } from "@/services/api/playlist/playlist.service";
 
 // ─── Recently Played Mocks ────────────────────────────────
 export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
@@ -11,8 +12,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     title: "Butterfly Effect",
     artistName: "Travis Scott",
     artistUsername: "travisscott",
-    coverUrl:
-      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=11",
     genre: "Hip-Hop",
     likeCount: 2543,
     repostCount: 845,
@@ -22,7 +22,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     postedAt: "2026-03-02T10:00:00Z",
     waveformData: Array.from({ length: 100 }, () => Math.random()),
     trackSlug: "butterfly-effect",
-    audioUrl: "https://example.com/audio/track1.mp3",
+    audioUrl: "/audio/Track 1.mp3",
     isPrivate: false,
   },
   {
@@ -31,8 +31,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     title: "Good As Hell",
     artistName: "Lizzo",
     artistUsername: "lizzo",
-    coverUrl:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=12",
     genre: "R&B",
     likeCount: 3421,
     repostCount: 1203,
@@ -42,7 +41,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     postedAt: "2026-02-28T14:30:00Z",
     waveformData: Array.from({ length: 100 }, () => Math.random()),
     trackSlug: "good-as-hell",
-    audioUrl: "https://example.com/audio/track2.mp3",
+    audioUrl: "/audio/Track 2.mp3",
     isPrivate: false,
   },
   {
@@ -51,8 +50,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     title: "Blinding Lights",
     artistName: "The Weeknd",
     artistUsername: "theweeknd",
-    coverUrl:
-      "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=13",
     genre: "Synthwave",
     likeCount: 5678,
     repostCount: 2341,
@@ -62,7 +60,7 @@ export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
     postedAt: "2026-03-01T09:15:00Z",
     waveformData: Array.from({ length: 100 }, () => Math.random()),
     trackSlug: "blinding-lights",
-    audioUrl: "https://example.com/audio/track3.mp3",
+    audioUrl: "/audio/Track 3.mp3",
     isPrivate: false,
   },
 ];
@@ -73,8 +71,7 @@ export const mockRecentlyPlayedMixes: (Mix & { type: "mix" })[] = [
     id: "mix-1",
     label: "MIX 1",
     flavor: "listening_history",
-    coverUrl:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=21",
     trackCount: 27,
     generatedAt: "2026-03-20T00:00:00Z",
     
@@ -84,8 +81,7 @@ export const mockRecentlyPlayedMixes: (Mix & { type: "mix" })[] = [
     id: "mix-2",
     label: "More of What You Like",
     flavor: "taste_profile",
-    coverUrl:
-      "https://images.unsplash.com/photo-1511379938547-c1f69b13d835?w=300&h=300&fit=crop",
+    coverUrl: "https://picsum.photos/300/300?random=22",
     trackCount: 19,
     generatedAt: "2026-03-19T00:00:00Z",
   
@@ -96,31 +92,37 @@ export const mockRecentlyPlayedStations: (Station & { type: "station" })[] = [
   {
     type: "station",
     id: "st-a1b2c3d4",
-    name: "Based on Drake",
+    name: "Drake",
     seedArtist: {
       id: "artist-1",
       displayName: "Drake",
       username: "drake",
-      avatarUrl:
-        "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=150&h=150&fit=crop",
+      avatarUrl: "https://picsum.photos/150/150?random=31",
     },
-    coverUrl:
-      "https://images.unsplash.com/photo-1503225671151-7e9f00e7dee2?w=300&h=300&fit=crop",
+    artists: [
+      { avatarUrl: "https://picsum.photos/150/150?random=31", displayName: "Drake" },
+      { avatarUrl: "https://picsum.photos/150/150?random=32", displayName: "Artist 2" },
+      { avatarUrl: "https://picsum.photos/150/150?random=33", displayName: "Artist 3" },
+    ],
+    coverUrl: "https://picsum.photos/300/300?random=31",
     trackCount: 50,
   },
   {
     type: "station",
     id: "st-e5f6g7h8",
-    name: "Based on SZA",
+    name: "SZA",
     seedArtist: {
       id: "artist-2",
       displayName: "SZA",
       username: "sza",
-      avatarUrl:
-        "https://images.unsplash.com/photo-1516575334481-f410cf6b98bb?w=150&h=150&fit=crop",
+      avatarUrl: "https://picsum.photos/150/150?random=41",
     },
-    coverUrl:
-      "https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=300&h=300&fit=crop",
+    artists: [
+      { avatarUrl: "https://picsum.photos/150/150?random=41", displayName: "SZA" },
+      { avatarUrl: "https://picsum.photos/150/150?random=42", displayName: "Artist 2" },
+      { avatarUrl: "https://picsum.photos/150/150?random=43", displayName: "Artist 3" },
+    ],
+    coverUrl: "https://picsum.photos/300/300?random=41",
     trackCount: 50,
   },
 ];
@@ -141,7 +143,115 @@ export const mockRecentlyPlayedItems: RecentlyPlayedItem[] = [
   mockRecentlyPlayedStations[1],
 ];
 
-// ─── Albums For You Mocks ─────────────────────────────────
+// ─── Albums For You Mocks (Playlist-level) ───────────────
+export const mockAlbumPlaylists: Playlist[] = [
+  {
+    playlist_id: "album-mock-101",
+    owner_user_id: "luna-eclipse",
+    name: "Midnight Dreams",
+    description: "A journey through late-night soundscapes",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=101",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 12,
+    like_count: 45200,
+    created_at: "2024-03-15T10:30:00Z",
+  },
+  {
+    playlist_id: "album-mock-102",
+    owner_user_id: "coastal-sounds",
+    name: "Ocean Waves",
+    description: "Calm ambient sounds from the coast",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=102",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 9,
+    like_count: 32100,
+    created_at: "2024-03-14T15:20:00Z",
+  },
+  {
+    playlist_id: "album-mock-103",
+    owner_user_id: "sandy-horizons",
+    name: "Desert Sunrise",
+    description: "World music inspired by the desert",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=103",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 10,
+    like_count: 28900,
+    created_at: "2024-03-13T08:45:00Z",
+  },
+  {
+    playlist_id: "album-mock-104",
+    owner_user_id: "city-beats",
+    name: "Urban Nights",
+    description: "Hip hop beats from the city",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=104",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 14,
+    like_count: 67800,
+    created_at: "2024-03-12T20:15:00Z",
+  },
+  {
+    playlist_id: "album-mock-105",
+    owner_user_id: "natures-echo",
+    name: "Forest Whispers",
+    description: "Ambient sounds from deep in the forest",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=105",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 8,
+    like_count: 41200,
+    created_at: "2024-03-11T12:00:00Z",
+  },
+  {
+    playlist_id: "album-mock-106",
+    owner_user_id: "synth-wave",
+    name: "Neon Lights",
+    description: "Synthwave vibes for the night",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=106",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 11,
+    like_count: 89500,
+    created_at: "2024-03-10T18:30:00Z",
+  },
+  {
+    playlist_id: "album-mock-107",
+    owner_user_id: "alpine-tones",
+    name: "Mountain Echo",
+    description: "Folk music from the highlands",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=107",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 10,
+    like_count: 23400,
+    created_at: "2024-03-09T09:45:00Z",
+  },
+  {
+    playlist_id: "album-mock-108",
+    owner_user_id: "thunder-beats",
+    name: "Electric Storm",
+    description: "High-energy drum & bass",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=108",
+    subtype: "album",
+    is_album_view: true,
+    track_count: 13,
+    like_count: 72100,
+    created_at: "2024-03-08T16:20:00Z",
+  },
+];
+
+// ─── Albums For You Mocks (Track-level, legacy) ───────────
 export const mockAlbumsForYou: Track[] = [
   {
     id: 101,
@@ -312,6 +422,95 @@ export const mockAlbumsForYou: Track[] = [
     waveformData: Array.from({ length: 100 }, () => Math.random()),
     trackSlug: "cosmic-dance",
     audioUrl: "https://example.com/audio/110.mp3",
+  },
+];
+
+// ─── More of What You Like Mocks ──────────────────────────────────────
+export const mockDiscoverTracks: Track[] = [
+  {
+    id: 201,
+    title: "Retrowave Nights",
+    artistName: "Neon Drive",
+    artistUsername: "neon-drive",
+    coverUrl: "https://picsum.photos/200/200?random=201",
+    genre: "Synthwave",
+    likeCount: 31400,
+    repostCount: 2100,
+    playCount: 610000,
+    commentCount: 312,
+    duration: "3:52",
+    postedAt: "2024-03-15T10:00:00Z",
+    waveformData: Array.from({ length: 100 }, () => Math.random()),
+    trackSlug: "retrowave-nights",
+    audioUrl: "https://example.com/audio/201.mp3",
+  },
+  {
+    id: 202,
+    title: "Deep Blue",
+    artistName: "Aqua Sound",
+    artistUsername: "aqua-sound",
+    coverUrl: "https://picsum.photos/200/200?random=202",
+    genre: "Ambient",
+    likeCount: 18900,
+    repostCount: 1300,
+    playCount: 430000,
+    commentCount: 198,
+    duration: "5:05",
+    postedAt: "2024-03-14T12:00:00Z",
+    waveformData: Array.from({ length: 100 }, () => Math.random()),
+    trackSlug: "deep-blue",
+    audioUrl: "https://example.com/audio/202.mp3",
+  },
+  {
+    id: 203,
+    title: "City Pulse",
+    artistName: "Metro Groove",
+    artistUsername: "metro-groove",
+    coverUrl: "https://picsum.photos/200/200?random=203",
+    genre: "House",
+    likeCount: 54200,
+    repostCount: 3800,
+    playCount: 980000,
+    commentCount: 674,
+    duration: "4:18",
+    postedAt: "2024-03-13T16:30:00Z",
+    waveformData: Array.from({ length: 100 }, () => Math.random()),
+    trackSlug: "city-pulse",
+    audioUrl: "https://example.com/audio/203.mp3",
+  },
+  {
+    id: 204,
+    title: "Solar Flare",
+    artistName: "Orbit Tunes",
+    artistUsername: "orbit-tunes",
+    coverUrl: "https://picsum.photos/200/200?random=204",
+    genre: "Electronic",
+    likeCount: 44700,
+    repostCount: 3100,
+    playCount: 820000,
+    commentCount: 521,
+    duration: "3:37",
+    postedAt: "2024-03-12T09:00:00Z",
+    waveformData: Array.from({ length: 100 }, () => Math.random()),
+    trackSlug: "solar-flare",
+    audioUrl: "https://example.com/audio/204.mp3",
+  },
+  {
+    id: 205,
+    title: "Jungle Rain",
+    artistName: "Tropica Beats",
+    artistUsername: "tropica-beats",
+    coverUrl: "https://picsum.photos/200/200?random=205",
+    genre: "World",
+    likeCount: 27300,
+    repostCount: 1900,
+    playCount: 510000,
+    commentCount: 289,
+    duration: "4:44",
+    postedAt: "2024-03-11T14:00:00Z",
+    waveformData: Array.from({ length: 100 }, () => Math.random()),
+    trackSlug: "jungle-rain",
+    audioUrl: "https://example.com/audio/205.mp3",
   },
 ];
 

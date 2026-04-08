@@ -1,0 +1,278 @@
+import axiosInstance from "../axiosInstance";
+
+function isUUID(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+    id,
+  );
+}
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type PlaylistSubtype =
+  | "playlist"
+  | "album"
+  | "ep"
+  | "single"
+  | "compilation";
+
+export interface PlaylistTag {
+  id: string;
+  name: string;
+}
+
+export interface Playlist {
+  playlist_id: string;
+  owner_user_id: string;
+  name: string;
+  slug?: string | null;
+  description: string | null;
+  is_public: boolean;
+  cover_image?: string | null;
+  subtype?: PlaylistSubtype;
+  release_date?: string | null;
+  genre_id?: string | null;
+  tags?: PlaylistTag[];
+  secret_token?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  track_count: number;
+  like_count: number;
+  repost_count?: number;
+  is_album_view?: boolean;
+}
+
+export interface PlaylistTrackItem {
+  track_id: string;
+  position: number;
+  added_at: string;
+  title?: string;
+  duration?: number | null;
+  cover_image?: string | null;
+  is_public?: boolean;
+  deleted_at?: string | null;
+  artist_name?: string | null;
+  artist_id?: string;
+}
+
+export interface PlaylistDetails extends Playlist {
+  tracks: PlaylistTrackItem[];
+}
+
+export interface CreatePlaylistPayload {
+  name: string;
+  description?: string;
+  is_public?: boolean;
+  subtype?: PlaylistSubtype;
+  slug?: string;
+  release_date?: string;
+  genre_id?: string;
+  tags?: string[]; // tag UUIDs
+}
+
+export interface UpdatePlaylistPayload {
+  name?: string;
+  description?: string | null;
+  is_public?: boolean;
+  cover_image?: File | null;
+  /** Set to true to remove the existing cover image */
+  remove_cover_image?: boolean;
+  subtype?: PlaylistSubtype;
+  slug?: string;
+  release_date?: string | null;
+  /** Send null to clear the existing genre */
+  genre_id?: string | null;
+  /** Replaces all existing playlist tags when provided */
+  tags?: string[];
+}
+
+export interface PlaylistTracksPage {
+  playlist_id: string;
+  tracks: PlaylistTrackItem[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total_items: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+}
+
+// ─── Playlist API functions ───────────────────────────────────────────────────
+
+/** POST /playlists — create a new playlist */
+export async function createPlaylist(payload: CreatePlaylistPayload) {
+  const res = await axiosInstance.post<{
+    data: Playlist;
+    message: string;
+  }>("/playlists", payload);
+  return res.data;
+}
+
+/** GET /playlists?mine=true — get authenticated user's own playlists */
+export async function getMyPlaylists(params?: {
+  limit?: number;
+  offset?: number;
+  q?: string;
+  filter?: "created" | "liked";
+  subtype?: PlaylistSubtype;
+  is_album_view?: boolean;
+}) {
+  const res = await axiosInstance.get<{
+    data: {
+      items: Playlist[];
+      meta: { limit: number; offset: number; total: number };
+    };
+    message: string;
+  }>("/playlists", { params: { ...params, mine: true } });
+  return res.data;
+}
+
+/** GET /playlists/:id — get playlist details with tracks */
+export async function getPlaylist(
+  playlistId: string,
+  params?: { secret_token?: string; include_tracks?: boolean },
+) {
+  const res = await axiosInstance.get<{
+    data: PlaylistDetails;
+    message: string;
+  }>(`/playlists/${playlistId}`, { params });
+  return res.data;
+}
+
+/**
+ * PATCH /playlists/:id — update playlist metadata.
+ * Sends multipart/form-data as required by the API spec.
+ */
+export async function updatePlaylist(
+  playlistId: string,
+  payload: UpdatePlaylistPayload,
+) {
+  const formData = new FormData();
+  if (payload.name !== undefined) formData.append("name", payload.name);
+  if (payload.description !== undefined)
+    formData.append("description", payload.description ?? "");
+  if (payload.is_public !== undefined)
+    formData.append("is_public", String(payload.is_public));
+  if (payload.cover_image) formData.append("cover_image", payload.cover_image);
+  if (payload.remove_cover_image) formData.append("remove_cover_image", "true");
+  if (payload.subtype) formData.append("subtype", payload.subtype);
+  if (payload.slug) formData.append("slug", payload.slug);
+  if (payload.release_date !== undefined)
+    formData.append("release_date", payload.release_date ?? "");
+  if (payload.genre_id !== undefined)
+    formData.append("genre_id", payload.genre_id ?? "");
+  if (payload.tags?.length)
+    payload.tags.forEach((id) => formData.append("tags[]", id));
+
+  const res = await axiosInstance.patch<{
+    data: Playlist;
+    message: string;
+  }>(`/playlists/${playlistId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+}
+
+/** DELETE /playlists/:id — delete a playlist */
+export async function deletePlaylist(playlistId: string) {
+  const res = await axiosInstance.delete<{
+    data: { success: boolean };
+    message: string;
+  }>(`/playlists/${playlistId}`);
+  return res.data;
+}
+
+/** POST /playlists/:id/tracks — add a track to a playlist */
+export async function addTrackToPlaylist(
+  playlistId: string,
+  trackId: string,
+  position?: number,
+) {
+  if (!isUUID(trackId)) {
+    throw new Error("trackId must be a valid UUID");
+  }
+
+  if (!isUUID(playlistId)) {
+    throw new Error("playlistId must be a valid UUID");
+  }
+
+  const res = await axiosInstance.post(`/playlists/${playlistId}/tracks`, {
+    track_id: trackId,
+    position,
+  });
+
+  return res.data;
+}
+
+/**
+ * GET /playlists/:id/tracks — paginated track list.
+ * Prefer over getPlaylist() when you only need the track list.
+ */
+export async function getPlaylistTracks(
+  playlistId: string,
+  params?: { secret_token?: string; page?: number; limit?: number },
+) {
+  const res = await axiosInstance.get<{
+    data: PlaylistTracksPage;
+    message: string;
+  }>(`/playlists/${playlistId}/tracks`, { params });
+  return res.data;
+}
+
+/** DELETE /playlists/:id/tracks/:trackId — remove a track from a playlist */
+export async function removeTrackFromPlaylist(
+  playlistId: string,
+  trackId: string,
+) {
+  const res = await axiosInstance.delete<{
+    data: PlaylistDetails;
+    message: string;
+  }>(`/playlists/${playlistId}/tracks/${trackId}`);
+  return res.data;
+}
+
+/** PATCH /playlists/:id/tracks/reorder — reorder tracks in a playlist */
+export async function reorderPlaylistTracks(
+  playlistId: string,
+  items: { track_id: string; position: number }[],
+) {
+  const res = await axiosInstance.patch<{
+    data: PlaylistDetails;
+    message: string;
+  }>(`/playlists/${playlistId}/tracks/reorder`, { items });
+  return res.data;
+}
+
+/** GET /playlists/:id/embed — get embed code for a playlist */
+export async function getPlaylistEmbed(
+  playlistId: string,
+  params?: {
+    secret_token?: string;
+    theme?: "light" | "dark";
+    autoplay?: boolean;
+    width?: number;
+    height?: number;
+  },
+) {
+  const res = await axiosInstance.get<{
+    data: { embed_url: string; iframe_html: string };
+    message: string;
+  }>(`/playlists/${playlistId}/embed`, { params });
+  return res.data;
+}
+
+/** GET /playlists?mine=true&filter=liked — get playlists the user has liked */
+export async function getLikedPlaylists(params?: {
+  limit?: number;
+  offset?: number;
+  q?: string;
+}) {
+  const res = await axiosInstance.get<{
+    data: {
+      items: Playlist[];
+      meta: { limit: number; offset: number; total: number };
+    };
+    message: string;
+  }>("/playlists", { params: { ...params, mine: true, filter: "liked" } });
+  return res.data;
+}
