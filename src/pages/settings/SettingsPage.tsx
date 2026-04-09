@@ -389,7 +389,7 @@ function SocialNetworks({
   };
 
   const handleConnect = (provider: Provider) => {
-    window.location.href = `/api/v1/auth/${provider}`;
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/${provider}`;
   };
 
   return (
@@ -773,9 +773,19 @@ function BasicInformation({
       setSaveState("saving");
       setHasUserEdited(false);
       try {
+        // const response = await updateMeAccount(payload);
+        // const nextUser = mapProfileToStoreUser(response.data, user);
+        // // setUser(nextUser);
+        // setUser({ ...nextUser });
         const response = await updateMeAccount(payload);
-        const nextUser = mapProfileToStoreUser(response.data, user);
-        setUser(nextUser);
+
+        // ✅ ALWAYS extract safely
+        const profile = response?.data ?? response;
+
+        const nextUser = mapProfileToStoreUser(profile, user);
+
+        // ✅ force new reference for Zustand persist
+        setUser({ ...nextUser });
         setLastSyncedDateOfBirth(
           nextUser.date_of_birth ??
             payload.date_of_birth ??
