@@ -38,7 +38,7 @@ export function mapPersonalMix(api: PersonalMix): Mix {
 
 export function mapFeedTrack(api: FeedTrack): Track {
   return {
-    id: api.id as unknown as number, // Track.id is legacy number; API returns UUID string
+    id: api.id as unknown as string, // Track.id is legacy number; API returns UUID string
     title: api.title,
     artistName: api.artist.display_name,
     artistUsername: api.artist.username ?? "", // gap — ask backend to add username to FeedTrack artist
@@ -75,7 +75,7 @@ export function mapHomeStation(api: HomeStation): Station {
  */
 export function mapApiTrackToTrack(api: ApiTrack): Track {
   return {
-    id: api.id as unknown as number,
+    id: api.id as unknown as string,
     title: api.title,
     artistName: "", // ApiTrack has user_id only — gap until backend enriches endpoint
     artistUsername: "",
@@ -117,7 +117,7 @@ export function mapSuggestedToArtist(user: SuggestedUser) {
 
 export function mapSuggestedToUser(user: SuggestedUser): User {
   return {
-    id: user.user_id as unknown as number, // User.id is legacy number; API returns UUID string
+    id: user.user_id as unknown as string, // User.id is legacy number; API returns UUID string
     username: user.display_name, // SuggestedUser has no separate username field
     displayName: user.display_name,
     avatar: undefined,
