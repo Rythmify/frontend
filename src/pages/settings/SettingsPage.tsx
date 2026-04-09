@@ -21,9 +21,15 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function mapProfileToStoreUser(profile: UserProfile, currentUser: User | null): User {
+function mapProfileToStoreUser(
+  profile: UserProfile,
+  currentUser: User | null,
+): User {
   const displayName =
-    profile.display_name ?? profile.displayName ?? currentUser?.displayName ?? "";
+    profile.display_name ??
+    profile.displayName ??
+    currentUser?.displayName ??
+    "";
   const firstName =
     profile.first_name ?? profile.firstName ?? currentUser?.firstName ?? "";
   const lastName =
@@ -51,10 +57,8 @@ function mapProfileToStoreUser(profile: UserProfile, currentUser: User | null): 
     country,
     location:
       [city, country].filter(Boolean).join(", ") || currentUser?.location,
-    following_ids:
-      profile.following_ids ?? currentUser?.following_ids ?? [],
-    followers_ids:
-      profile.followers_ids ?? currentUser?.followers_ids,
+    following_ids: profile.following_ids ?? currentUser?.following_ids ?? [],
+    followers_ids: profile.followers_ids ?? currentUser?.followers_ids,
     date_of_birth: profile.date_of_birth ?? currentUser?.date_of_birth ?? null,
     gender: profile.gender ?? currentUser?.gender ?? null,
   };
@@ -293,12 +297,17 @@ function EmailAddresses({
     if (!newEmail.trim()) return;
     setLoading(true);
     try {
-      // POST /auth/change-email — sends verification to new email
       await changeEmail(newEmail.trim());
+
       onToast("Verification email sent to " + newEmail, "success");
+
       setShowInput(false);
       setNewEmail("");
-    } catch {
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        onToast("Session expired. Please login again.", "error");
+        return;
+      }
       onToast("Failed to send verification email.", "error");
     } finally {
       setLoading(false);
@@ -380,7 +389,7 @@ function SocialNetworks({
   };
 
   const handleConnect = (provider: Provider) => {
-    onToast(`Redirecting to ${PROVIDER_LABELS[provider]} login…`, "success");
+    window.location.href = `/api/v1/auth/${provider}`;
   };
 
   return (
@@ -680,7 +689,9 @@ function BasicInformation({
   const [year, setYear] = useState(String(currentYear));
   const [gender, setGender] = useState<"" | "male" | "female">("");
   const [lastSyncedDateOfBirth, setLastSyncedDateOfBirth] = useState("");
-  const [lastSyncedGender, setLastSyncedGender] = useState<"" | "male" | "female">("");
+  const [lastSyncedGender, setLastSyncedGender] = useState<
+    "" | "male" | "female"
+  >("");
   const [hasUserEdited, setHasUserEdited] = useState(false);
   const [hasEditedBirthDate, setHasEditedBirthDate] = useState(false);
   const [hasEditedGender, setHasEditedGender] = useState(false);
@@ -736,10 +747,7 @@ function BasicInformation({
       payload.gender = gender;
     }
 
-    if (
-      hasEditedBirthDate &&
-      lastSyncedDateOfBirth !== candidateDateOfBirth
-    ) {
+    if (hasEditedBirthDate && lastSyncedDateOfBirth !== candidateDateOfBirth) {
       const normalizedCandidate = new Date(`${candidateDateOfBirth}T00:00:00`);
       const normalizedDateOfBirth = `${String(
         normalizedCandidate.getFullYear(),
@@ -773,7 +781,9 @@ function BasicInformation({
             payload.date_of_birth ??
             lastSyncedDateOfBirth,
         );
-        setLastSyncedGender((nextUser.gender ?? gender) as "" | "male" | "female");
+        setLastSyncedGender(
+          (nextUser.gender ?? gender) as "" | "male" | "female",
+        );
         setHasEditedBirthDate(false);
         setHasEditedGender(false);
       } catch (err: any) {
@@ -794,7 +804,10 @@ function BasicInformation({
         if (status === 429) {
           setHasEditedBirthDate(false);
           setHasEditedGender(false);
-          onToast("Too many requests. Please wait a moment and try again.", "error");
+          onToast(
+            "Too many requests. Please wait a moment and try again.",
+            "error",
+          );
           return;
         }
 
@@ -901,8 +914,11 @@ function BasicInformation({
 }
 
 function ConnectedApplications() {
+  const { user } = useAuthStore();
+
+  const storageKey = `settings-connected-applications-${user?.id}`;
   const [apps, setApps] = useState<string[]>(() => {
-    const savedApps = localStorage.getItem(CONNECTED_APPS_STORAGE_KEY);
+    const savedApps = localStorage.getItem(storageKey);
     if (!savedApps) return DEFAULT_CONNECTED_APPS;
 
     try {
@@ -914,7 +930,7 @@ function ConnectedApplications() {
   });
 
   useEffect(() => {
-    localStorage.setItem(CONNECTED_APPS_STORAGE_KEY, JSON.stringify(apps));
+    localStorage.setItem(storageKey, JSON.stringify(apps));
   }, [apps]);
 
   const revokeApp = (appName: string) => {
