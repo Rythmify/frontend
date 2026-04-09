@@ -91,7 +91,7 @@ export default function AlbumsPage() {
     <div className="min-h-screen flex flex-col">
       {(visibleAlbums.length > 0 || loading) && (
         <SetsHeader
-          title="Your Albums"
+          title="Hear your own albums and the albums you've liked:"
           filterText={filterText}
           setFilterText={setFilterText}
           activeFilter={activeFilter}

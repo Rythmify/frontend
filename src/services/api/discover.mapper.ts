@@ -36,7 +36,7 @@ function formatDuration(seconds: number): string {
  */
 export function mapDiscoveryTrack(api: DiscoveryTrack): Track {
   return {
-    id: api.id as unknown as number,
+    id: api.id as unknown as string,
     title: api.title,
     artistName: api.artist_name ?? "",
     artistUsername: "", // DiscoveryTrack has no username — navigate by user_id if needed
@@ -60,7 +60,7 @@ export function mapDiscoveryTrack(api: DiscoveryTrack): Track {
  */
 export function mapTrackSummaryToTrack(api: TrackSummary): Track {
   return {
-    id: api.id as unknown as number,
+    id: api.id as unknown as string,
     title: api.title,
     artistName: "", // user_id only — call getUserById(api.user_id) to get display_name
     artistUsername: "",
@@ -159,7 +159,7 @@ export function mapDiscoveryAlbum(api: DiscoveryAlbum): Playlist {
  */
 export function mapSuggestedArtistToUser(api: SuggestedArtist): User {
   return {
-    id: api.id as unknown as number,
+    id: api.id as unknown as string,
     username: api.username ?? api.display_name,
     displayName: api.display_name,
     avatar: api.profile_picture ?? undefined,
@@ -174,7 +174,7 @@ export function mapSuggestedArtistToUser(api: SuggestedArtist): User {
  */
 export function mapSuggestedUserToUser(api: SuggestedUser): User {
   return {
-    id: api.id as unknown as number,
+    id: api.id as unknown as string,
     username: api.username ?? api.display_name,
     displayName: api.display_name,
     avatar: api.profile_picture ?? undefined,

@@ -10,7 +10,7 @@ vi.mock("react-router-dom", () => ({
   useNavigate: () => vi.fn(),
 }));
 
-const makeTrack = (id: number, title = `Track ${id}`): Track => ({
+const makeTrack = (id: string, title = `Track ${id}`): Track => ({
   id,
   title,
   artistName: "Artist",
@@ -28,12 +28,18 @@ const makeTrack = (id: number, title = `Track ${id}`): Track => ({
   trackSlug: `track-${id}`,
 });
 
-const tracks = [makeTrack(1, "Song A"), makeTrack(2, "Song B"), makeTrack(3, "Song C")];
+const tracks = [
+  makeTrack("550e8400-e29b-41d4-a716-442655440000", "Song A"),
+  makeTrack("550e8400-e29b-41d4-a716-442655440001", "Song B"),
+  makeTrack("550e8400-e29b-41d4-a716-442655440002", "Song C"),
+];
 
 describe("TrackList", () => {
   const onTrackPlay = vi.fn();
 
-  beforeEach(() => { onTrackPlay.mockClear(); });
+  beforeEach(() => {
+    onTrackPlay.mockClear();
+  });
 
   it("renders the track list container", () => {
     render(<TrackList tracks={tracks} onTrackPlay={onTrackPlay} />);
@@ -66,7 +72,12 @@ describe("TrackList", () => {
 
   it("highlights the currently playing track", () => {
     render(
-      <TrackList tracks={tracks} currentTrackId={2} isPlaying={true} onTrackPlay={onTrackPlay} />
+      <TrackList
+        tracks={tracks}
+        currentTrackId={"550e8400-e29b-41d4-a716-446655440000"}
+        isPlaying={true}
+        onTrackPlay={onTrackPlay}
+      />,
     );
     expect(screen.getByTestId("button-play-track-2")).toBeInTheDocument();
   });

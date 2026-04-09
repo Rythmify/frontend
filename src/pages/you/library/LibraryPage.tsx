@@ -140,7 +140,7 @@ function mapPlaylistToCard(
 
 function mapFollowingToUser(f: FollowingUser, index: number): User {
   return {
-    id: index + 1,
+    id: String(index + 1),
     username: f.username,
     displayName: f.display_name,
     avatar: f.profile_picture ?? undefined,
@@ -262,7 +262,7 @@ export default function LibraryPage() {
     const extraUsers: User[] = (user?.following_ids ?? [])
       .filter((username) => !apiUsernames.has(username))
       .map((username, i) => ({
-        id: -(i + 1),
+        id: String(-(i + 1)),
         username,
         displayName: username,
         followers: 0,

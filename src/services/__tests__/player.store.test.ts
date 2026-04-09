@@ -11,7 +11,7 @@ vi.mock("../audioService", () => ({
   globalWaveSurfer: null,
 }));
 
-const makeTrack = (id: number, title = `Track ${id}`): Track => ({
+const makeTrack = (id: string, title = `Track ${id}`): Track => ({
   id,
   title,
   artistName: "Artist",
@@ -29,9 +29,9 @@ const makeTrack = (id: number, title = `Track ${id}`): Track => ({
   trackSlug: `track-${id}`,
 });
 
-const track1 = makeTrack(1, "Song A");
-const track2 = makeTrack(2, "Song B");
-const track3 = makeTrack(3, "Song C");
+const track1 = makeTrack("550e8400-e29b-41d4-a716-442655440000", "Song A");
+const track2 = makeTrack("550e8400-e29b-41d4-a716-442655440001", "Song B");
+const track3 = makeTrack("550e8400-e29b-41d4-a716-442655440002", "Song C");
 
 describe("player.store", () => {
   beforeEach(() => {

@@ -219,6 +219,7 @@ export const router = createBrowserRouter([
             element: <Lazy component={PopularTracksPage} />,
           },
           { path: ":trackSlug", element: <Lazy component={TrackSlugPage} /> },
+          { path: "sets/:playlistSlug", element: <Lazy component={PlaylistSlugPage} /> },
         ],
       },
     ],

@@ -3,7 +3,7 @@ import type { Track } from "../../types/track";
 // Audio files live in /public/audio/ — reference via URL string, not import
 export const mockTracks: Track[] = [
   {
-    id: 1,
+    id: "f5e4d3c2-b1a0-4987-8765-43210abcdef7",
     title: "Lege-Cy & Ghaliaa - Msh Awl Mara",
     artistName: "Lege-Cy",
     artistUsername: "lege-cy",
@@ -26,7 +26,7 @@ export const mockTracks: Track[] = [
     madeFor: "Shahd Yehya",
   },
   {
-    id: 2,
+    id: "f5e4d3c2-b1a0-4987-8765-43210abcdef8",
     title: "Seneen",
     artistName: "Tul8te",
     artistUsername: "tul8te",
@@ -48,7 +48,7 @@ export const mockTracks: Track[] = [
     isPrivate: false,
   },
   {
-    id: 3,
+    id: "f5e4d3c2-b1a0-4987-8765-43210abcdef9",
     title: "Shababek'",
     artistName: "Mohamed Mounir",
     artistUsername: "mohamed-mounir",
@@ -70,7 +70,7 @@ export const mockTracks: Track[] = [
     isPrivate: false,
   },
   {
-    id: 4,
+    id: "f5e4d3c2-b1a0-4987-8765-43210abcdef7",
     title: "Mafish",
     artistName: "Donia Wael",
     artistUsername: "donia-wael",
@@ -92,7 +92,7 @@ export const mockTracks: Track[] = [
     isPrivate: false,
   },
   {
-    id: 5,
+    id: "f5e4d3c2-b1a0-4987-8765-43210abcdef8",
     title: "Elwa2t Eldaye3",
     artistName: "Lege-Cy",
     artistUsername: "lege-cy",
