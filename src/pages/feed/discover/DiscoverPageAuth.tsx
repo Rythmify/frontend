@@ -18,12 +18,12 @@ const DiscoverPageAuth = () => {
   }, []);
 
   return (
-    <div className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg">
+    <div className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg" data-test="discover-page">
       <div className="flex gap-11 p-0">
         {/* Main Content */}
-        <div className="flex flex-col gap-20 flex-8 min-w-0 pt-10">
+        <div className="flex flex-col gap-20 flex-8 min-w-0 pt-10" data-test="discover-main-content">
           {homeError && (
-            <p className="text-xs text-text-secondary">{homeError}</p>
+            <p className="text-xs text-text-secondary" data-test="discover-error">{homeError}</p>
           )}
           <MoreOfWhatYouLike />
           <RecentlyPlayed />
@@ -36,7 +36,7 @@ const DiscoverPageAuth = () => {
         </div>
 
         {/* Sidebar */}
-        <div className="flex flex-col gap-6 flex-2 ps-2 pt-8">
+        <div className="flex flex-col gap-6 flex-2 ps-2 pt-8" data-test="discover-sidebar-container">
           <DiscoverSideBar />
         </div>
       </div>

@@ -24,11 +24,13 @@ const RecentlyPlayed = () => {
   const items: Track[] = tracks ?? mockFallback;
 
   return (
-    <HorizontalCarousel title="Recently played" data-section="recently-played">
-      {items.map((track) => (
-        <TrackCard key={track.id} track={track} />
-      ))}
-    </HorizontalCarousel>
+    <div data-test="section-recently-played">
+      <HorizontalCarousel title="Recently played">
+        {items.map((track) => (
+          <TrackCard key={track.id} track={track} />
+        ))}
+      </HorizontalCarousel>
+    </div>
   );
 };
 

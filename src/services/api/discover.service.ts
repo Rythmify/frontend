@@ -154,6 +154,7 @@ export const getHome = async (): Promise<HomeData> => {
   const res = await axiosInstance.get<{ data: HomeData; message: string }>(
     "/home",
   );
+  // res.data is the full response body — we only need res.data.data (the payload)
   return res.data.data;
 };
 

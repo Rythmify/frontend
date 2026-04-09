@@ -19,11 +19,13 @@ const AlbumsForYou = () => {
   }, []);
 
   return (
-    <HorizontalCarousel title="Albums for you" data-section="albums-for-you">
-      {albums.map((album) => (
-        <AlbumCard key={album.playlist_id} playlist={album} widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]" />
-      ))}
-    </HorizontalCarousel>
+    <div data-test="section-albums-for-you">
+      <HorizontalCarousel title="Albums for you">
+        {albums.map((album) => (
+          <AlbumCard key={album.playlist_id} playlist={album} widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]" />
+        ))}
+      </HorizontalCarousel>
+    </div>
   );
 };
 

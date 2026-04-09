@@ -20,11 +20,13 @@ const MoreOfWhatYouLike = () => {
   const items = tracks.length ? tracks : mockDiscoverTracks;
 
   return (
-    <HorizontalCarousel title="More of what you like">
-      {items.map((track) => (
-        <TrackCard key={track.id} track={track} />
-      ))}
-    </HorizontalCarousel>
+    <div data-test="section-more-of-what-you-like">
+      <HorizontalCarousel title="More of what you like">
+        {items.map((track) => (
+          <TrackCard key={track.id} track={track} />
+        ))}
+      </HorizontalCarousel>
+    </div>
   );
 };
 

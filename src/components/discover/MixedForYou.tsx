@@ -18,11 +18,13 @@ const MixedForYou = () => {
   if (mixes.length === 0) return null;
 
   return (
-    <HorizontalCarousel title={`Mixed for ${user?.displayName ?? user?.username ?? "You"}`}>
-      {mixes.map((mix, i) => (
-        <MixCard key={mix.id} mix={mix} index={i} />
-      ))}
-    </HorizontalCarousel>
+    <div data-test="section-mixed-for-you">
+      <HorizontalCarousel title={`Mixed for ${user?.displayName ?? user?.username ?? "You"}`}>
+        {mixes.map((mix, i) => (
+          <MixCard key={mix.id} mix={mix} index={i} />
+        ))}
+      </HorizontalCarousel>
+    </div>
   );
 };
 
