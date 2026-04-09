@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { useGoogleLogin } from "@react-oauth/google";
-import { googleLogin } from "@/services/auth.service";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import SettingsLayout from "@/pages/settings/SettingsLayout";
-import { useAuthStore } from "@/stores/auth.store";
+import { useAuthStore, type User } from "@/stores/auth.store";
 import {
+  changeEmail,
+  deleteMyAccount,
   forgotPassword,
   updateMeAccount,
   disconnectProvider,
+  type UserProfile,
 } from "@/services/auth.service";
 
 // ── Sub-components ────────────────────────────────────────────
@@ -20,21 +21,67 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+function mapProfileToStoreUser(
+  profile: UserProfile,
+  currentUser: User | null,
+): User {
+  const displayName =
+    profile.display_name ??
+    profile.displayName ??
+    currentUser?.displayName ??
+    "";
+  const firstName =
+    profile.first_name ?? profile.firstName ?? currentUser?.firstName ?? "";
+  const lastName =
+    profile.last_name ?? profile.lastName ?? currentUser?.lastName ?? "";
+  const avatar =
+    profile.profile_picture ?? profile.avatar ?? currentUser?.avatar;
+  const coverUrl =
+    profile.cover_photo ?? profile.coverUrl ?? currentUser?.coverUrl;
+  const city = profile.city ?? currentUser?.city;
+  const country = profile.country ?? currentUser?.country;
+
+  return {
+    id: profile.id,
+    username: profile.username ?? currentUser?.username ?? "",
+    displayName,
+    firstName,
+    lastName,
+    bio: profile.bio ?? currentUser?.bio ?? "",
+    email: profile.email ?? currentUser?.email ?? "",
+    avatar,
+    coverUrl,
+    role: profile.role ?? currentUser?.role ?? "listener",
+    isPro: currentUser?.isPro ?? false,
+    city,
+    country,
+    location:
+      [city, country].filter(Boolean).join(", ") || currentUser?.location,
+    following_ids: profile.following_ids ?? currentUser?.following_ids ?? [],
+    followers_ids: profile.followers_ids ?? currentUser?.followers_ids,
+    date_of_birth: profile.date_of_birth ?? currentUser?.date_of_birth ?? null,
+    gender: profile.gender ?? currentUser?.gender ?? null,
+  };
+}
+
 function OutlineButton({
   children,
   onClick,
   disabled,
   loading,
+  dataTest,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   loading?: boolean;
+  dataTest?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled || loading}
+      data-test={dataTest}
       className="px-4 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] hover:brightness-110 transition-all duration-150 rounded-[var(--radius-sm)]"
     >
       {loading && (
@@ -108,7 +155,11 @@ function Toast({
         </svg>
       )}
       {message}
-      <button onClick={onClose} className="ml-2 opacity-70 hover:opacity-100">
+      <button
+        onClick={onClose}
+        data-test="settings-toast-close-button"
+        className="ml-2 opacity-70 hover:opacity-100"
+      >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path
             d="M2 2l8 8M10 2l-8 8"
@@ -125,6 +176,40 @@ function Toast({
 // ── Theme ─────────────────────────────────────────────────────
 
 type Theme = "Light" | "Dark" | "Automatic";
+const CONNECTED_APPS_STORAGE_KEY = "settings-connected-applications";
+const DEFAULT_CONNECTED_APPS = [
+  "Rythmify.com",
+  "Rythmify iOS",
+  "Rythmify Checkout",
+  "m.rythmify.com",
+];
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+const DELETE_ACCOUNT_REASONS = [
+  "I have another account",
+  "I want to make a new account",
+  "There aren't enough privacy options",
+  "I am no longer creating content for this account",
+  "I had copyright issues with a track or tracks",
+  "I don't want to subscribe to Rythmify Pro anymore",
+  "I switched to another music or audio service",
+  "My account got hacked",
+  "I can't remove my tracks",
+  "People are harassing me",
+  "Too much spam on the platform",
+] as const;
 
 function ChangeTheme() {
   const options: Theme[] = ["Light", "Dark", "Automatic"];
@@ -193,6 +278,7 @@ function ChangeTheme() {
               name="theme"
               checked={selected === opt}
               onChange={() => handleChange(opt)}
+              data-test={`settings-theme-${opt.toLowerCase()}-input`}
               className="w-4 h-4 accent-[var(--color-text-hover)]"
             />
             <span className="text-sm text-[var(--color-text-hover)]">
@@ -219,13 +305,17 @@ function EmailAddresses({
     if (!newEmail.trim()) return;
     setLoading(true);
     try {
-      // POST /auth/change-email — sends verification to new email
-      const { changeEmail } = await import("@/services/auth.service");
       await changeEmail(newEmail.trim());
+
       onToast("Verification email sent to " + newEmail, "success");
+
       setShowInput(false);
       setNewEmail("");
-    } catch {
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        onToast("Session expired. Please login again.", "error");
+        return;
+      }
       onToast("Failed to send verification email.", "error");
     } finally {
       setLoading(false);
@@ -246,12 +336,14 @@ function EmailAddresses({
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="New email address"
+            data-test="settings-new-email-input"
             className="px-3 py-2 text-sm text-[var(--color-text-hover)] bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:outline-none focus:border-[var(--color-border-light)] w-64"
           />
           <OutlineButton
             onClick={handleAdd}
             loading={loading}
             disabled={!newEmail.trim()}
+            dataTest="settings-add-email-button"
           >
             Add
           </OutlineButton>
@@ -260,13 +352,17 @@ function EmailAddresses({
               setShowInput(false);
               setNewEmail("");
             }}
+            data-test="settings-cancel-add-email-button"
             className="text-sm text-[var(--color-text)] hover:text-[var(--color-text-hover)] transition-colors"
           >
             Cancel
           </button>
         </div>
       ) : (
-        <OutlineButton onClick={() => setShowInput(true)}>
+        <OutlineButton
+          onClick={() => setShowInput(true)}
+          dataTest="settings-show-add-email-button"
+        >
           Add an email address
         </OutlineButton>
       )}
@@ -307,7 +403,7 @@ function SocialNetworks({
   };
 
   const handleConnect = (provider: Provider) => {
-    onToast(`Redirecting to ${PROVIDER_LABELS[provider]} login…`, "success");
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/${provider}`;
   };
 
   return (
@@ -378,6 +474,7 @@ function SocialNetworks({
               <button
                 onClick={() => handleDisconnect(provider)}
                 disabled={disconnecting === provider}
+                data-test={`settings-disconnect-${provider}-button`}
                 className="text-sm text-[var(--color-text)] hover:text-[var(--color-text-hover)] transition-colors duration-150 disabled:opacity-50"
               >
                 {disconnecting === provider
@@ -393,6 +490,7 @@ function SocialNetworks({
       <div className="flex flex-wrap gap-3">
         <button
           onClick={() => handleConnect("facebook")}
+          data-test="settings-connect-facebook-button"
           className="flex items-center gap-2 px-4 py-2 text-sm bg-[#1877F2] text-white rounded-[var(--radius-sm)] hover:opacity-90 transition-opacity duration-150"
         >
           <svg
@@ -408,6 +506,7 @@ function SocialNetworks({
         </button>
         <button
           onClick={() => handleConnect("google")}
+          data-test="settings-connect-google-button"
           className="flex items-center gap-2 px-4 py-2 text-sm border border-transparent bg-[var(--color-input-bg)] text-[var(--color-text-hover)] hover:brightness-110 transition-all duration-150 rounded-[var(--radius-sm)]"
         >
           <svg
@@ -437,6 +536,7 @@ function SocialNetworks({
         </button>
         <button
           onClick={() => handleConnect("apple")}
+          data-test="settings-connect-apple-button"
           className="flex items-center gap-2 px-4 py-2 text-sm border border-[var(--color-border)] bg-[var(--color-bg-inverted)] text-[var(--color-bg)] rounded-[var(--radius-sm)] hover:opacity-90 transition-opacity duration-150"
         >
           <svg
@@ -481,7 +581,12 @@ function Password({
   return (
     <div>
       <SectionTitle>Password</SectionTitle>
-      <OutlineButton onClick={handleSend} loading={loading} disabled={sent}>
+      <OutlineButton
+        onClick={handleSend}
+        loading={loading}
+        disabled={sent}
+        dataTest="settings-send-password-reset-button"
+      >
         {sent ? "Reset link sent ✓" : "Send password-reset link"}
       </OutlineButton>
       {sent && (
@@ -536,6 +641,7 @@ function VerificationBadge({
         onClick={handleRequest}
         loading={loading}
         disabled={requested}
+        dataTest="settings-request-verification-button"
       >
         {requested ? "Request submitted " : "Request verification"}
       </OutlineButton>
@@ -568,11 +674,13 @@ function SelectField({
   value,
   onChange,
   defaultValue,
+  dataTest,
 }: {
   children: React.ReactNode;
   value?: string;
   onChange?: (v: string) => void;
   defaultValue?: string;
+  dataTest?: string;
 }) {
   const selectClass =
     "pr-9 pl-3 py-2 text-sm text-[var(--color-text-hover)] bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] appearance-none cursor-pointer w-full focus:outline-none focus:border-[var(--color-border-light)]";
@@ -583,6 +691,7 @@ function SelectField({
         value={value}
         defaultValue={defaultValue}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        data-test={dataTest}
       >
         {children}
       </select>
@@ -593,25 +702,172 @@ function SelectField({
   );
 }
 
-function BasicInformation() {
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+function BasicInformation({
+  onToast,
+}: {
+  onToast: (msg: string, type: "success" | "error") => void;
+}) {
+  const { user, setUser, logout } = useAuthStore();
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
-  const genders = ["Indicate gender", "Male", "Female", "Prefer not to say"];
+  const [month, setMonth] = useState("January");
+  const [day, setDay] = useState("1");
+  const [year, setYear] = useState(String(currentYear));
+  const [gender, setGender] = useState<"" | "male" | "female">("");
+  const [lastSyncedDateOfBirth, setLastSyncedDateOfBirth] = useState("");
+  const [lastSyncedGender, setLastSyncedGender] = useState<
+    "" | "male" | "female"
+  >("");
+  const [hasUserEdited, setHasUserEdited] = useState(false);
+  const [hasEditedBirthDate, setHasEditedBirthDate] = useState(false);
+  const [hasEditedGender, setHasEditedGender] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving">("idle");
+
+  useEffect(() => {
+    const syncedDateOfBirth = user?.date_of_birth ?? "";
+    const syncedGender = (user?.gender ?? "") as "" | "male" | "female";
+
+    if (syncedDateOfBirth) {
+      const [savedYear, savedMonth, savedDay] = syncedDateOfBirth.split("-");
+      const monthIndex = Number(savedMonth) - 1;
+      if (savedYear) setYear(savedYear);
+      if (savedDay) setDay(String(Number(savedDay)));
+      if (monthIndex >= 0 && monthIndex < MONTHS.length) {
+        setMonth(MONTHS[monthIndex]);
+      }
+    } else {
+      setMonth("January");
+      setDay("1");
+      setYear(String(currentYear));
+    }
+
+    setGender(syncedGender);
+    setLastSyncedDateOfBirth(syncedDateOfBirth);
+    setLastSyncedGender(syncedGender);
+    setHasUserEdited(false);
+    setHasEditedBirthDate(false);
+    setHasEditedGender(false);
+  }, [currentYear, user?.date_of_birth, user?.gender]);
+
+  useEffect(() => {
+    if (!hasUserEdited || !gender) return;
+
+    if (!localStorage.getItem("auth_token")) {
+      setHasUserEdited(false);
+      setHasEditedBirthDate(false);
+      setHasEditedGender(false);
+      setSaveState("idle");
+      onToast("Session expired. Please sign in again.", "error");
+      return;
+    }
+
+    const candidateDateOfBirth = `${year}-${String(
+      MONTHS.indexOf(month as (typeof MONTHS)[number]) + 1,
+    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const payload: {
+      gender?: "male" | "female";
+      date_of_birth?: string;
+    } = {};
+
+    if (hasEditedGender && lastSyncedGender !== gender) {
+      payload.gender = gender;
+    }
+
+    if (hasEditedBirthDate && lastSyncedDateOfBirth !== candidateDateOfBirth) {
+      const normalizedCandidate = new Date(`${candidateDateOfBirth}T00:00:00`);
+      const normalizedDateOfBirth = `${String(
+        normalizedCandidate.getFullYear(),
+      )}-${String(normalizedCandidate.getMonth() + 1).padStart(2, "0")}-${String(
+        normalizedCandidate.getDate(),
+      ).padStart(2, "0")}`;
+
+      if (normalizedDateOfBirth !== candidateDateOfBirth) {
+        setHasUserEdited(false);
+        onToast("Please choose a valid birth date.", "error");
+        return;
+      }
+
+      payload.date_of_birth = candidateDateOfBirth;
+    }
+
+    if (!payload.gender && !payload.date_of_birth) {
+      setHasUserEdited(false);
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      setSaveState("saving");
+      setHasUserEdited(false);
+      try {
+        // const response = await updateMeAccount(payload);
+        // const nextUser = mapProfileToStoreUser(response.data, user);
+        // // setUser(nextUser);
+        // setUser({ ...nextUser });
+        const response = await updateMeAccount(payload);
+
+        const profile = response?.data ?? response;
+
+        const nextUser = mapProfileToStoreUser(profile, user);
+
+        setUser({ ...nextUser });
+        setLastSyncedDateOfBirth(
+          nextUser.date_of_birth ??
+            payload.date_of_birth ??
+            lastSyncedDateOfBirth,
+        );
+        setLastSyncedGender(
+          (nextUser.gender ?? gender) as "" | "male" | "female",
+        );
+        setHasEditedBirthDate(false);
+        setHasEditedGender(false);
+      } catch (err: any) {
+        const status = err?.response?.status;
+        const message =
+          err?.response?.data?.error?.message ??
+          err?.response?.data?.message ??
+          "Failed to update basic information.";
+
+        if (status === 401) {
+          logout();
+          setHasEditedBirthDate(false);
+          setHasEditedGender(false);
+          onToast("Session expired. Please sign in again.", "error");
+          return;
+        }
+
+        if (status === 429) {
+          setHasEditedBirthDate(false);
+          setHasEditedGender(false);
+          onToast(
+            "Too many requests. Please wait a moment and try again.",
+            "error",
+          );
+          return;
+        }
+
+        onToast(message, "error");
+      } finally {
+        setSaveState("idle");
+      }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    day,
+    gender,
+    hasEditedBirthDate,
+    hasEditedGender,
+    hasUserEdited,
+    lastSyncedDateOfBirth,
+    lastSyncedGender,
+    logout,
+    month,
+    onToast,
+    setUser,
+    user,
+    year,
+  ]);
 
   return (
     <div>
@@ -622,17 +878,41 @@ function BasicInformation() {
             Birth date
           </label>
           <div className="flex gap-2">
-            <SelectField defaultValue="July">
-              {months.map((m) => (
+            <SelectField
+              value={month}
+              dataTest="settings-birth-month-select"
+              onChange={(value) => {
+                setMonth(value);
+                setHasUserEdited(true);
+                setHasEditedBirthDate(true);
+              }}
+            >
+              {MONTHS.map((m) => (
                 <option key={m}>{m}</option>
               ))}
             </SelectField>
-            <SelectField defaultValue="1">
+            <SelectField
+              value={day}
+              dataTest="settings-birth-day-select"
+              onChange={(value) => {
+                setDay(value);
+                setHasUserEdited(true);
+                setHasEditedBirthDate(true);
+              }}
+            >
               {days.map((d) => (
                 <option key={d}>{d}</option>
               ))}
             </SelectField>
-            <SelectField defaultValue="2005">
+            <SelectField
+              value={year}
+              dataTest="settings-birth-year-select"
+              onChange={(value) => {
+                setYear(value);
+                setHasUserEdited(true);
+                setHasEditedBirthDate(true);
+              }}
+            >
               {years.map((y) => (
                 <option key={y}>{y}</option>
               ))}
@@ -643,43 +923,92 @@ function BasicInformation() {
           <label className="block text-xs text-[var(--color-text)] mb-2">
             Gender <span className="text-[var(--color-error)]">*</span>
           </label>
-          <SelectField defaultValue="Indicate gender">
-            {genders.map((g) => (
-              <option key={g}>{g}</option>
-            ))}
+          <SelectField
+            value={gender}
+            dataTest="settings-gender-select"
+            onChange={(value) => {
+              setGender(value as "" | "male" | "female");
+              setHasUserEdited(true);
+              setHasEditedGender(true);
+            }}
+          >
+            <option value="">Indicate gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
           </SelectField>
-          <p className="text-xs text-[var(--color-error)] mt-1">
-            Please indicate your gender.
-          </p>
+          {!gender && (
+            <p className="text-xs text-[var(--color-error)] mt-1">
+              Please indicate your gender.
+            </p>
+          )}
         </div>
       </div>
+      {saveState === "saving" && (
+        <p className="mt-3 text-xs text-[var(--color-text)]">
+          Saving basic information...
+        </p>
+      )}
     </div>
   );
 }
 
 function ConnectedApplications() {
-  const apps = [
-    "Rythmify.com",
-    "Rythmify iOS",
-    "Rythmify Checkout",
-    "m.rythmify.com",
-  ];
+  const { user } = useAuthStore();
+
+  const storageKey = `settings-connected-applications-${user?.id}`;
+  const [apps, setApps] = useState<string[]>(() => {
+    const savedApps = localStorage.getItem(storageKey);
+    if (!savedApps) return DEFAULT_CONNECTED_APPS;
+
+    try {
+      const parsed = JSON.parse(savedApps);
+      return Array.isArray(parsed) ? parsed : DEFAULT_CONNECTED_APPS;
+    } catch {
+      return DEFAULT_CONNECTED_APPS;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(apps));
+  }, [apps]);
+
+  const revokeApp = (appName: string) => {
+    setApps((current) => current.filter((app) => app !== appName));
+  };
+
+  const revokeAll = () => {
+    setApps([]);
+  };
+
   return (
     <div>
       <SectionTitle>Connected applications</SectionTitle>
       <div className="flex flex-col">
+        {apps.length === 0 && (
+          <p className="text-sm text-[var(--color-text)]">
+            No connected applications.
+          </p>
+        )}
         {apps.map((app) => (
           <div key={app} className="flex items-center justify-between py-3 ">
             <span className="text-sm text-[var(--color-text-hover)]">
               {app}
             </span>
-            <button className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer">
+            <button
+              onClick={() => revokeApp(app)}
+              data-test={`settings-revoke-${app.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-button`}
+              className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer"
+            >
               Revoke access
             </button>
           </div>
         ))}
         <div className="flex justify-end pt-3">
-          <button className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer">
+          <button
+            onClick={revokeAll}
+            data-test="settings-revoke-all-apps-button"
+            className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer"
+          >
             Revoke all
           </button>
         </div>
@@ -688,9 +1017,156 @@ function ConnectedApplications() {
   );
 }
 
-function DeleteAccount() {
+function DeleteAccountModal({
+  onClose,
+  onConfirm,
+}: {
+  onClose: () => void;
+  onConfirm: () => Promise<boolean>;
+}) {
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [otherReason, setOtherReason] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const toggleReason = (reason: string) => {
+    setSelectedReasons((current) =>
+      current.includes(reason)
+        ? current.filter((item) => item !== reason)
+        : [...current, reason],
+    );
+  };
+
+  const handleDelete = async () => {
+    if (!confirmed || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const deleted = await onConfirm();
+      if (deleted) {
+        onClose();
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <button className="text-sm self-start fint-bold text-[var(--color-error)] ">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+      <div className="relative w-full max-w-xl rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-5 py-5 text-[var(--color-text-hover)] shadow-[var(--shadow-md)]">
+        <button
+          onClick={onClose}
+          data-test="settings-delete-account-modal-close-button"
+          className="absolute right-4 top-4 text-[var(--color-text)] transition hover:text-[var(--color-text-hover)]"
+          aria-label="Close delete account modal"
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path
+              d="M5 5l10 10M15 5L5 15"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+
+        <h2 className="mb-5 text-2xl font-bold tracking-tight text-[var(--color-text-hover)]">
+          Delete account
+        </h2>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <p className="mb-3 text-base font-semibold text-[var(--color-text-hover)]">
+              Why are you choosing to delete your account?
+            </p>
+            <div className="flex flex-col gap-2">
+              {DELETE_ACCOUNT_REASONS.map((reason) => (
+                <label
+                  key={reason}
+                  className="flex cursor-pointer items-start gap-2.5 text-sm font-semibold text-[var(--color-text-hover)]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedReasons.includes(reason)}
+                    onChange={() => toggleReason(reason)}
+                    data-test={`settings-delete-reason-${reason.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-input`}
+                    className="mt-0.5 h-4 w-4 rounded border border-[var(--color-border-light)] bg-transparent accent-[var(--color-accent)]"
+                  />
+                  <span>{reason}</span>
+                </label>
+              ))}
+
+              <div className="flex flex-col gap-2.5">
+                <label className="flex cursor-pointer items-start gap-2.5 text-sm font-semibold text-[var(--color-text-hover)]">
+                  <input
+                    type="checkbox"
+                    checked={selectedReasons.includes("other")}
+                    onChange={() => toggleReason("other")}
+                    data-test="settings-delete-reason-other-input"
+                    className="mt-0.5 h-4 w-4 rounded border border-[var(--color-border-light)] bg-transparent accent-[var(--color-accent)]"
+                  />
+                  <span>Other, please specify</span>
+                </label>
+                <textarea
+                  value={otherReason}
+                  onChange={(e) => setOtherReason(e.target.value)}
+                  rows={2}
+                  placeholder="Tell us more"
+                  data-test="settings-delete-other-reason-input"
+                  className="min-h-[56px] rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-text-hover)] placeholder:text-[var(--color-text)] focus:outline-none focus:border-[var(--color-border-light)]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm font-semibold text-[var(--color-text-hover)]">
+            <input
+              type="checkbox"
+              checked={confirmed}
+              onChange={() => setConfirmed((value) => !value)}
+              data-test="settings-delete-account-confirm-input"
+              className="mt-0.5 h-4 w-4 rounded border border-[var(--color-border-light)] bg-transparent accent-[var(--color-accent)]"
+            />
+            <span>
+              Yes, I want to delete my account and all my tracks, comments and
+              stats.
+            </span>
+          </label>
+
+          <div className="flex justify-end gap-3 pt-1">
+            <button
+              onClick={onClose}
+              disabled={isDeleting}
+              data-test="settings-delete-account-cancel-button"
+              className="px-4 py-2 text-sm font-semibold text-[var(--color-text)] transition hover:text-[var(--color-text-hover)] disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={!confirmed || isDeleting}
+              data-test="settings-delete-account-confirm-button"
+              className="rounded-[var(--radius-sm)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-border-light)] disabled:text-[var(--color-text)]"
+            >
+              {isDeleting ? "Deleting..." : "Delete my account"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteAccount({
+  onDeleteRequested,
+}: {
+  onDeleteRequested: () => void;
+}) {
+  return (
+    <button
+      onClick={onDeleteRequested}
+      data-test="settings-delete-account-button"
+      className="text-sm self-start fint-bold text-[var(--color-error)] "
+    >
       Delete account
     </button>
   );
@@ -699,25 +1175,78 @@ function DeleteAccount() {
 // ── Account Page ──────────────────────────────────────────────
 
 function AccountPage() {
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
   };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteMyAccount();
+      logout();
+      navigate("/", { replace: true });
+      return true;
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const message =
+        err?.response?.data?.error?.message ??
+        err?.response?.data?.message ??
+        (status
+          ? `Failed to delete account (${status}).`
+          : "Failed to delete account.");
+      showToast(message, "error");
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      logout();
+      setToast({
+        message: "Session expired. Please sign in again.",
+        type: "error",
+      });
+    };
+
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => {
+      window.removeEventListener("auth:session-expired", handleSessionExpired);
+    };
+  }, [logout]);
+
   return (
-    <div className="max-w-2xl flex flex-col gap-10">
-      <ChangeTheme />
-      <EmailAddresses onToast={showToast} />
-      <SocialNetworks onToast={showToast} />
-      <Password onToast={showToast} />
-      <VerificationBadge onToast={showToast} />
-      <BasicInformation />
-      <ConnectedApplications />
-      <DeleteAccount />
-    </div>
+    <>
+      <div className="max-w-2xl flex flex-col gap-10">
+        <ChangeTheme />
+        <EmailAddresses onToast={showToast} />
+        <SocialNetworks onToast={showToast} />
+        <Password onToast={showToast} />
+        <VerificationBadge onToast={showToast} />
+        <BasicInformation onToast={showToast} />
+        <ConnectedApplications />
+        <DeleteAccount onDeleteRequested={() => setShowDeleteModal(true)} />
+      </div>
+      {showDeleteModal && (
+        <DeleteAccountModal
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteAccount}
+        />
+      )}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </>
   );
 }
 
