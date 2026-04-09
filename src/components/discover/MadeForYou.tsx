@@ -38,18 +38,21 @@ function toMadeForYouItem(
 }
 
 const MadeForYou = () => {
-  const [items, setItems] = useState<MadeForYouItem[]>(FALLBACK_ITEMS);
+  const [items, setItems] = useState<MadeForYouItem[]>([]);
 
   useEffect(() => {
     getHome()
       .then((data) => {
-        if (!data.made_for_you) return;
+        if (!data.made_for_you) {
+          setItems(FALLBACK_ITEMS);
+          return;
+        }
         setItems([
           toMadeForYouItem(data.made_for_you.daily_mix, FALLBACK_ITEMS[0]),
           toMadeForYouItem(data.made_for_you.weekly_mix, FALLBACK_ITEMS[1]),
         ]);
       })
-      .catch(() => {});
+      .catch(() => setItems(FALLBACK_ITEMS));
   }, []);
 
   return (
