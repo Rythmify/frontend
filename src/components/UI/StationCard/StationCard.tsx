@@ -68,7 +68,7 @@ export default function StationCard({
       ];
 
   return (
-    <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
+    <div className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}>
       {/* ── Card art ─────────────────────────────────────── */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-[#0d0d1a]">
 
@@ -124,6 +124,7 @@ export default function StationCard({
           <div />
           <div className="flex items-center justify-center flex-1">
             <button
+              data-test={`station-card-play-${station.id}`}
               className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg"
               onClick={(e) => { e.stopPropagation(); addStation(station); }}
             >
@@ -132,12 +133,13 @@ export default function StationCard({
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
             <button
+              data-test={`station-card-like-${station.id}`}
               className="flex flex-col items-center gap-0.5 group/btn"
               onClick={(e) => { e.stopPropagation(); toggleStation(station); }}
             >
               <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
             </button>
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+            <button data-test={`station-card-more-${station.id}`} className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
             </button>
           </div>

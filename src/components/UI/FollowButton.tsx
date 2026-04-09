@@ -1,25 +1,40 @@
 import { useAuthStore } from "@/stores/auth.store";
+import { followUser, unfollowUser } from "@/services/api/notifications/notificationsAPI"; 
+import { useState } from "react";
 
 interface FollowButtonProps {
   username: string;
   className?: string;
 }
 
-export default function FollowButton({
-  username,
-  className,
-}: FollowButtonProps) {
+export default function FollowButton({ username, className }: FollowButtonProps) {
   const { user, toggleFollow } = useAuthStore();
   const isFollowing = user?.following_ids?.includes(username) ?? false;
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsLoading(true);
+    try {
+      if (isFollowing) {
+        await unfollowUser(username);
+      } else {
+        await followUser(username);
+      }
+      toggleFollow(username);
+    } catch (error) {
+      console.error("Failed to update follow status:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <button
       data-test={`follow-button-${username}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        toggleFollow(username);
-      }}
-      className={`cursor-pointer px-4 py-1.5 text-xs font-bold rounded hover:opacity-70 transition-opacity ${
+      onClick={handleClick}
+      disabled={isLoading}
+      className={`cursor-pointer px-4 py-1.5 text-xs font-bold rounded hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed ${
         isFollowing ? "bg-input-bg text-bg-inverted" : "bg-white text-black"
       } ${className ?? ""}`}
     >

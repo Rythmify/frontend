@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useLikesStore } from "@/stores/likes.store";
+import { useAuthStore } from "@/stores/auth.store";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // ─── Types ────────────────────────────────────────────────
 
@@ -21,18 +24,26 @@ interface PlaylistCardProps {
 // ─── Component ────────────────────────────────────────────
 
 export default function PlaylistCard({ item, widthClassName = "w-[200px]" }: PlaylistCardProps) {
-  const isEmpty = !item.coverUrl;
-  const [liked, setLiked] = useState(false);
+  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const { user } = useAuthStore();
+  const liked = isPlaylistLiked(item.id);
+  const ownerDisplay = UUID_RE.test(item.owner)
+    ? (user?.displayName ?? user?.username ?? item.owner)
+    : item.owner;
 
   return (
-    <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
+    <div className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}>
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {!isEmpty && (
+        {item.coverUrl ? (
           <img
-            src={item.coverUrl!}
+            src={item.coverUrl}
             alt={item.title}
             className="w-full h-full object-cover transition-all duration-200"
           />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <i className="fa-solid fa-music text-3xl text-gray-500" />
+          </div>
         )}
 
         {/* Hover overlay */}
@@ -45,29 +56,26 @@ export default function PlaylistCard({ item, widthClassName = "w-[200px]" }: Pla
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => { e.stopPropagation(); setLiked((v) => !v); }}>
+            <button data-test={`playlist-card-like-${item.id}`} className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => { e.stopPropagation(); togglePlaylist(item); }}>
               <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
             </button>
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+            <button data-test={`playlist-card-more-${item.id}`} className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
             </button>
           </div>
         </div>
       </div>
-      {!isEmpty && (
-        <>
-          <p className="text-white text-sm font-semibold truncate w-full flex items-center gap-1 cursor-pointer">
-            {item.isPrivate && (
-              <i className="fa-solid fa-lock text-[10px] text-gray-400 shrink-0" />
-            )}
-            {item.isLiked && (
-              <i className="fa-solid fa-heart text-[10px] text-white shrink-0" />
-            )}
-            <span className="truncate">{item.title}</span>
-          </p>
-          <p className="text-gray-400 text-xs truncate w-full">{item.owner}</p>
-        </>
-      )}
+
+      <p className="text-white text-sm font-semibold truncate w-full flex items-center gap-1 cursor-pointer">
+        {item.isPrivate && (
+          <i className="fa-solid fa-lock text-[10px] text-gray-400 shrink-0" />
+        )}
+        {item.isLiked && (
+          <i className="fa-solid fa-heart text-[10px] text-white shrink-0" />
+        )}
+        <span className="truncate">{item.title}</span>
+      </p>
+      <p className="text-gray-400 text-xs truncate w-full">{ownerDisplay}</p>
     </div>
   );
 }
