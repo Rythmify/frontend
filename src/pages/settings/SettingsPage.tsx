@@ -779,12 +779,10 @@ function BasicInformation({
         // setUser({ ...nextUser });
         const response = await updateMeAccount(payload);
 
-        // ✅ ALWAYS extract safely
         const profile = response?.data ?? response;
 
         const nextUser = mapProfileToStoreUser(profile, user);
 
-        // ✅ force new reference for Zustand persist
         setUser({ ...nextUser });
         setLastSyncedDateOfBirth(
           nextUser.date_of_birth ??
