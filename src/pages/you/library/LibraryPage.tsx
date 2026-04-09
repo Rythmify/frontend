@@ -10,14 +10,14 @@ import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
 import type { PersonalMix } from "@/services/api/discover.service";
-import {
-  getRecentlyPlayed,
-  getTrackById,
-} from "@/services/api/discover.service";
-import { mapApiTrackToTrack } from "@/services/api/discover.mapper";
+import { getRecentlyPlayed } from "@/services/api/discover.service";
+import { mapRecentlyPlayedEntry } from "@/services/api/discover.mapper";
 import { mockRecentlyPlayedTracks } from "@/services/mocks/discover";
 import { getMyPlaylists, getMyFollowing } from "@/services/api/library.service";
-import type { LibraryPlaylist, FollowingUser } from "@/services/api/library.service";
+import type {
+  LibraryPlaylist,
+  FollowingUser,
+} from "@/services/api/library.service";
 import {
   getMyPlaylists as getMyPlaylistsApi,
   getLikedPlaylists,
@@ -176,16 +176,18 @@ export default function LibraryPage() {
   const [followingUsers, setFollowingUsers] = useState<User[]>([]);
   const [playlistFilter, setPlaylistFilter] = useState<FilterOption>("All");
 
-  const { likedTracks, likedStations, likedPlaylists, likedAlbums: storeLikedAlbums } = useLikesStore();
+  const {
+    likedTracks,
+    likedStations,
+    likedPlaylists,
+    likedAlbums: storeLikedAlbums,
+  } = useLikesStore();
   const { user } = useAuthStore();
   const { entries } = useHistoryStore();
 
   useEffect(() => {
     getRecentlyPlayed()
-      .then((items) =>
-        Promise.all(items.map((item) => getTrackById(item.track.id))),
-      )
-      .then((tracks) => setRecentlyPlayedApi(tracks.map(mapApiTrackToTrack)))
+      .then((items) => setRecentlyPlayedApi(items.map(mapRecentlyPlayedEntry)))
       .catch(() => setRecentlyPlayedApi(mockRecentlyPlayedTracks));
   }, []);
 

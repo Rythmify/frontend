@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import type { FeedItem } from "@/types/feedItem";
-import TrackItem from "@/components/UI/TrackItem";
+import TrackCard from "@/components/track/TrackCard";
+import PlaylistCard from "../UI/PlaylistCard/PlaylistCard";
+// import type { FeedPlaylist } from "@/types/feedPlaylist";
+// import TrackItem from "@/components/UI/TrackItem";
 
 const timeAgo = (isoString: string): string => {
   const seconds = Math.floor(
@@ -27,19 +30,20 @@ const FeedItemCard = ({ item }: FeedItemCardProps) => {
   const cardBody =
     item.content_type === "track" ? (
       // TODO: swap for RectangularTrackCard (Shahd's module) when ready
-      <TrackItem
-        id={String(item.track.id)}
-        title={item.track.title}
-        artist={item.track.artistName}
-        coverUrl={item.track.coverUrl}
-        plays={item.track.playCount}
-        likes={item.track.likeCount}
-        reposts={item.track.repostCount}
-        comments={item.track.commentCount}
-        artistUsername={item.track.artistUsername}
-        trackSlug={item.track.trackSlug}
-        audioUrl={item.track.audioUrl}
-      />
+      // <TrackItem
+      //   id={String(item.track.id)}
+      //   title={item.track.title}
+      //   artist={item.track.artistName}
+      //   coverUrl={item.track.coverUrl}
+      //   plays={item.track.playCount}
+      //   likes={item.track.likeCount}
+      //   reposts={item.track.repostCount}
+      //   comments={item.track.commentCount}
+      //   artistUsername={item.track.artistUsername}
+      //   trackSlug={item.track.trackSlug}
+      //   audioUrl={item.track.audioUrl}
+      // />
+      <TrackCard track={item.track} disableComments />
     ) : (
       // TODO: swap for RectangularPlaylistCard (another module) when ready
       <div className="text-text-secondary text-sm p-3 border border-border rounded">
