@@ -9,12 +9,16 @@ import TrendingByGenres from "@/components/discover/TrendingByGenres";
 import MadeForYou from "@/components/discover/MadeForYou";
 import MoreOfWhatYouLike from "@/components/discover/MoreOfWhatYouLike";
 import { getHome } from "@/services/api/discover.service";
+import type { HomeData } from "@/services/api/discover.service";
 
 const DiscoverPageAuth = () => {
+  const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [homeError, setHomeError] = useState<string | null>(null);
 
   useEffect(() => {
-    getHome().catch((err: Error) => setHomeError(err.message));
+    getHome()
+      .then(setHomeData)
+      .catch((err: Error) => setHomeError(err.message));
   }, []);
 
   return (
@@ -25,13 +29,13 @@ const DiscoverPageAuth = () => {
           {homeError && (
             <p className="text-xs text-text-secondary" data-test="discover-error">{homeError}</p>
           )}
-          <MoreOfWhatYouLike />
+          <MoreOfWhatYouLike tracks={homeData?.more_of_what_you_like.tracks ?? []} />
           <RecentlyPlayed />
-          <MixedForYou />
+          <MixedForYou mixes={homeData?.mixed_for_you ?? []} />
           <AlbumsForYou />
-          <MadeForYou />
+          <MadeForYou madeForYou={homeData?.made_for_you ?? null} />
           <TrendingByGenres />
-          <DiscoverWithStations />
+          <DiscoverWithStations stations={homeData?.discover_with_stations ?? []} />
           <NewCrewForYou />
         </div>
 

@@ -108,12 +108,13 @@ export default function Profile({ email, defaultDisplayName, onBack, onContinue 
 
     setLoading(true);
     try {
-      const captchaToken = await executeRecaptcha("register");
+       const captchaToken = await executeRecaptcha("register");
+    
       await onContinue({
         displayName: displayName.trim(),
         dateOfBirth: { month, day, year },
         gender,
-        captchaToken,
+        captchaToken, 
       });
     } catch {
       setErrors({ form: "Something went wrong. Please try again." });

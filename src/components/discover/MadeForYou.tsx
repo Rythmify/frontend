@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
 import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
-import { getHome } from "@/services/api/discover.service";
-import type { CuratedMixSummary } from "@/services/api/discover.service";
+import type { CuratedMixSummary, HomeData } from "@/services/api/discover.service";
 
 const FALLBACK_ITEMS: MadeForYouItem[] = [
   {
@@ -37,23 +35,17 @@ function toMadeForYouItem(
   };
 }
 
-const MadeForYou = () => {
-  const [items, setItems] = useState<MadeForYouItem[]>([]);
+interface Props {
+  madeForYou: HomeData["made_for_you"];
+}
 
-  useEffect(() => {
-    getHome()
-      .then((data) => {
-        if (!data.made_for_you) {
-          setItems(FALLBACK_ITEMS);
-          return;
-        }
-        setItems([
-          toMadeForYouItem(data.made_for_you.daily_mix, FALLBACK_ITEMS[0]),
-          toMadeForYouItem(data.made_for_you.weekly_mix, FALLBACK_ITEMS[1]),
-        ]);
-      })
-      .catch(() => setItems(FALLBACK_ITEMS));
-  }, []);
+const MadeForYou = ({ madeForYou }: Props) => {
+  const items: MadeForYouItem[] = madeForYou
+    ? [
+        toMadeForYouItem(madeForYou.daily_mix, FALLBACK_ITEMS[0]),
+        toMadeForYouItem(madeForYou.weekly_mix, FALLBACK_ITEMS[1]),
+      ]
+    : FALLBACK_ITEMS;
 
   return (
     <div data-test="section-made-for-you">
