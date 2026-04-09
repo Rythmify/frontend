@@ -69,16 +69,19 @@ function OutlineButton({
   onClick,
   disabled,
   loading,
+  dataTest,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   loading?: boolean;
+  dataTest?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled || loading}
+      data-test={dataTest}
       className="px-4 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] hover:brightness-110 transition-all duration-150 rounded-[var(--radius-sm)]"
     >
       {loading && (
@@ -152,7 +155,11 @@ function Toast({
         </svg>
       )}
       {message}
-      <button onClick={onClose} className="ml-2 opacity-70 hover:opacity-100">
+      <button
+        onClick={onClose}
+        data-test="settings-toast-close-button"
+        className="ml-2 opacity-70 hover:opacity-100"
+      >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path
             d="M2 2l8 8M10 2l-8 8"
@@ -271,6 +278,7 @@ function ChangeTheme() {
               name="theme"
               checked={selected === opt}
               onChange={() => handleChange(opt)}
+              data-test={`settings-theme-${opt.toLowerCase()}-input`}
               className="w-4 h-4 accent-[var(--color-text-hover)]"
             />
             <span className="text-sm text-[var(--color-text-hover)]">
@@ -328,12 +336,14 @@ function EmailAddresses({
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="New email address"
+            data-test="settings-new-email-input"
             className="px-3 py-2 text-sm text-[var(--color-text-hover)] bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] focus:outline-none focus:border-[var(--color-border-light)] w-64"
           />
           <OutlineButton
             onClick={handleAdd}
             loading={loading}
             disabled={!newEmail.trim()}
+            dataTest="settings-add-email-button"
           >
             Add
           </OutlineButton>
@@ -342,13 +352,17 @@ function EmailAddresses({
               setShowInput(false);
               setNewEmail("");
             }}
+            data-test="settings-cancel-add-email-button"
             className="text-sm text-[var(--color-text)] hover:text-[var(--color-text-hover)] transition-colors"
           >
             Cancel
           </button>
         </div>
       ) : (
-        <OutlineButton onClick={() => setShowInput(true)}>
+        <OutlineButton
+          onClick={() => setShowInput(true)}
+          dataTest="settings-show-add-email-button"
+        >
           Add an email address
         </OutlineButton>
       )}
@@ -460,6 +474,7 @@ function SocialNetworks({
               <button
                 onClick={() => handleDisconnect(provider)}
                 disabled={disconnecting === provider}
+                data-test={`settings-disconnect-${provider}-button`}
                 className="text-sm text-[var(--color-text)] hover:text-[var(--color-text-hover)] transition-colors duration-150 disabled:opacity-50"
               >
                 {disconnecting === provider
@@ -475,6 +490,7 @@ function SocialNetworks({
       <div className="flex flex-wrap gap-3">
         <button
           onClick={() => handleConnect("facebook")}
+          data-test="settings-connect-facebook-button"
           className="flex items-center gap-2 px-4 py-2 text-sm bg-[#1877F2] text-white rounded-[var(--radius-sm)] hover:opacity-90 transition-opacity duration-150"
         >
           <svg
@@ -490,6 +506,7 @@ function SocialNetworks({
         </button>
         <button
           onClick={() => handleConnect("google")}
+          data-test="settings-connect-google-button"
           className="flex items-center gap-2 px-4 py-2 text-sm border border-transparent bg-[var(--color-input-bg)] text-[var(--color-text-hover)] hover:brightness-110 transition-all duration-150 rounded-[var(--radius-sm)]"
         >
           <svg
@@ -519,6 +536,7 @@ function SocialNetworks({
         </button>
         <button
           onClick={() => handleConnect("apple")}
+          data-test="settings-connect-apple-button"
           className="flex items-center gap-2 px-4 py-2 text-sm border border-[var(--color-border)] bg-[var(--color-bg-inverted)] text-[var(--color-bg)] rounded-[var(--radius-sm)] hover:opacity-90 transition-opacity duration-150"
         >
           <svg
@@ -563,7 +581,12 @@ function Password({
   return (
     <div>
       <SectionTitle>Password</SectionTitle>
-      <OutlineButton onClick={handleSend} loading={loading} disabled={sent}>
+      <OutlineButton
+        onClick={handleSend}
+        loading={loading}
+        disabled={sent}
+        dataTest="settings-send-password-reset-button"
+      >
         {sent ? "Reset link sent ✓" : "Send password-reset link"}
       </OutlineButton>
       {sent && (
@@ -618,6 +641,7 @@ function VerificationBadge({
         onClick={handleRequest}
         loading={loading}
         disabled={requested}
+        dataTest="settings-request-verification-button"
       >
         {requested ? "Request submitted " : "Request verification"}
       </OutlineButton>
@@ -650,11 +674,13 @@ function SelectField({
   value,
   onChange,
   defaultValue,
+  dataTest,
 }: {
   children: React.ReactNode;
   value?: string;
   onChange?: (v: string) => void;
   defaultValue?: string;
+  dataTest?: string;
 }) {
   const selectClass =
     "pr-9 pl-3 py-2 text-sm text-[var(--color-text-hover)] bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] appearance-none cursor-pointer w-full focus:outline-none focus:border-[var(--color-border-light)]";
@@ -665,6 +691,7 @@ function SelectField({
         value={value}
         defaultValue={defaultValue}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        data-test={dataTest}
       >
         {children}
       </select>
@@ -853,6 +880,7 @@ function BasicInformation({
           <div className="flex gap-2">
             <SelectField
               value={month}
+              dataTest="settings-birth-month-select"
               onChange={(value) => {
                 setMonth(value);
                 setHasUserEdited(true);
@@ -865,6 +893,7 @@ function BasicInformation({
             </SelectField>
             <SelectField
               value={day}
+              dataTest="settings-birth-day-select"
               onChange={(value) => {
                 setDay(value);
                 setHasUserEdited(true);
@@ -877,6 +906,7 @@ function BasicInformation({
             </SelectField>
             <SelectField
               value={year}
+              dataTest="settings-birth-year-select"
               onChange={(value) => {
                 setYear(value);
                 setHasUserEdited(true);
@@ -895,6 +925,7 @@ function BasicInformation({
           </label>
           <SelectField
             value={gender}
+            dataTest="settings-gender-select"
             onChange={(value) => {
               setGender(value as "" | "male" | "female");
               setHasUserEdited(true);
@@ -965,6 +996,7 @@ function ConnectedApplications() {
             </span>
             <button
               onClick={() => revokeApp(app)}
+              data-test={`settings-revoke-${app.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-button`}
               className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer"
             >
               Revoke access
@@ -974,6 +1006,7 @@ function ConnectedApplications() {
         <div className="flex justify-end pt-3">
           <button
             onClick={revokeAll}
+            data-test="settings-revoke-all-apps-button"
             className="text-sm text-[var(--color-text-hover)] font-bold cursor-pointer"
           >
             Revoke all
@@ -1022,6 +1055,7 @@ function DeleteAccountModal({
       <div className="relative w-full max-w-xl rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-5 py-5 text-[var(--color-text-hover)] shadow-[var(--shadow-md)]">
         <button
           onClick={onClose}
+          data-test="settings-delete-account-modal-close-button"
           className="absolute right-4 top-4 text-[var(--color-text)] transition hover:text-[var(--color-text-hover)]"
           aria-label="Close delete account modal"
         >
@@ -1054,6 +1088,7 @@ function DeleteAccountModal({
                     type="checkbox"
                     checked={selectedReasons.includes(reason)}
                     onChange={() => toggleReason(reason)}
+                    data-test={`settings-delete-reason-${reason.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-input`}
                     className="mt-0.5 h-4 w-4 rounded border border-[var(--color-border-light)] bg-transparent accent-[var(--color-accent)]"
                   />
                   <span>{reason}</span>
@@ -1066,6 +1101,7 @@ function DeleteAccountModal({
                     type="checkbox"
                     checked={selectedReasons.includes("other")}
                     onChange={() => toggleReason("other")}
+                    data-test="settings-delete-reason-other-input"
                     className="mt-0.5 h-4 w-4 rounded border border-[var(--color-border-light)] bg-transparent accent-[var(--color-accent)]"
                   />
                   <span>Other, please specify</span>
@@ -1075,6 +1111,7 @@ function DeleteAccountModal({
                   onChange={(e) => setOtherReason(e.target.value)}
                   rows={2}
                   placeholder="Tell us more"
+                  data-test="settings-delete-other-reason-input"
                   className="min-h-[56px] rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-text-hover)] placeholder:text-[var(--color-text)] focus:outline-none focus:border-[var(--color-border-light)]"
                 />
               </div>
@@ -1086,6 +1123,7 @@ function DeleteAccountModal({
               type="checkbox"
               checked={confirmed}
               onChange={() => setConfirmed((value) => !value)}
+              data-test="settings-delete-account-confirm-input"
               className="mt-0.5 h-4 w-4 rounded border border-[var(--color-border-light)] bg-transparent accent-[var(--color-accent)]"
             />
             <span>
@@ -1098,6 +1136,7 @@ function DeleteAccountModal({
             <button
               onClick={onClose}
               disabled={isDeleting}
+              data-test="settings-delete-account-cancel-button"
               className="px-4 py-2 text-sm font-semibold text-[var(--color-text)] transition hover:text-[var(--color-text-hover)] disabled:opacity-50"
             >
               Cancel
@@ -1105,6 +1144,7 @@ function DeleteAccountModal({
             <button
               onClick={handleDelete}
               disabled={!confirmed || isDeleting}
+              data-test="settings-delete-account-confirm-button"
               className="rounded-[var(--radius-sm)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-border-light)] disabled:text-[var(--color-text)]"
             >
               {isDeleting ? "Deleting..." : "Delete my account"}
@@ -1124,6 +1164,7 @@ function DeleteAccount({
   return (
     <button
       onClick={onDeleteRequested}
+      data-test="settings-delete-account-button"
       className="text-sm self-start fint-bold text-[var(--color-error)] "
     >
       Delete account
