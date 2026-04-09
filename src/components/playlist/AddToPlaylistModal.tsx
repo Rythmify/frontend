@@ -171,6 +171,7 @@ const AddToPlaylistModal = ({
         {!loading && hasPlaylists && (
           <div className="flex text-[22px] font-bold items-center">
             <button
+              data-test="button-tab-add-to-playlist"
               onClick={() => setActiveTab("add")}
               className={`px-2 py-2 transition-colors relative ${
                 activeTab === "add"
@@ -184,6 +185,7 @@ const AddToPlaylistModal = ({
               )}
             </button>
             <button
+              data-test="button-tab-create-playlist"
               onClick={() => setActiveTab("create")}
               className={`px-2 py-2 transition-colors relative ${
                 activeTab === "create"

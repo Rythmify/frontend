@@ -47,6 +47,7 @@ const PlaylistList = ({
               </div>
             </div>
             <button
+              data-test={`button-add-to-playlist-${playlist.playlist_id}`}
               onClick={() => onAdd(playlist.playlist_id)}
               disabled={adding === playlist.playlist_id}
               className="bg-input-bg text-text-upload text-sm font-bold px-3 py-1.5 rounded-sm hover:text-[#838383] transition-colors disabled:opacity-50 cursor-pointer"

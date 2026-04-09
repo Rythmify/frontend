@@ -45,6 +45,7 @@ export default function DeleteConfirmModal({
 
         <div className="flex justify-end gap-3 pt-1">
           <button
+            data-test="button-cancel-delete"
             onClick={onClose}
             disabled={deleting}
             className="px-4 py-2 text-sm font-bold text-white hover:text-[#717171] transition-colors cursor-pointer disabled:opacity-40"
@@ -52,6 +53,7 @@ export default function DeleteConfirmModal({
             Cancel
           </button>
           <button
+            data-test="button-confirm-delete"
             onClick={handleDelete}
             disabled={deleting}
             className="px-3 py-1.5 text-bg bg-bg-inverted text-sm font-bold rounded-sm hover:opacity-80 transition-opacity disabled:opacity-40 cursor-pointer"

@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { FaPlay, FaPause, FaHeart, FaEllipsisH, FaListUl, FaPlus, FaBroadcastTower } from "react-icons/fa";
+import {
+  FaPlay,
+  FaPause,
+  FaHeart,
+  FaEllipsisH,
+  FaListUl,
+  FaPlus,
+  FaBroadcastTower,
+} from "react-icons/fa";
 import { BiRepost } from "react-icons/bi";
 import { HiUpload } from "react-icons/hi";
 import { FaRegCopy } from "react-icons/fa";
@@ -9,13 +17,18 @@ import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup
 import type { Track } from "../../../src/types/track";
 
 interface TrackListProps {
-  tracks: any[]; 
+  tracks: any[];
   currentTrackId?: string;
   isPlaying?: boolean;
   onTrackPlay?: (track: any) => void;
 }
 
-export default function TrackList({ tracks, currentTrackId, isPlaying, onTrackPlay }: TrackListProps) {
+export default function TrackList({
+  tracks,
+  currentTrackId,
+  isPlaying,
+  onTrackPlay,
+}: TrackListProps) {
   const safeTracks = Array.isArray(tracks) ? tracks : [];
 
   return (
@@ -27,10 +40,11 @@ export default function TrackList({ tracks, currentTrackId, isPlaying, onTrackPl
             id: item.track_id || item.id,
             title: item.title ?? "Untitled",
             artist: item.artist_name || item.artistName || "Unknown Artist",
-            artistSlug: item.artist_username || item.artistUsername || "unknown",
+            artistSlug:
+              item.artist_username || item.artistUsername || "unknown",
             image: item.cover_image || item.coverUrl || "",
             plays: item.play_count || item.playCount || 0,
-            duration: item.duration || "0:00"
+            duration: item.duration || "0:00",
           };
 
           return (
@@ -66,13 +80,19 @@ function TrackRow({ data, index, isCurrent, isPlaying, onPlay }: any) {
       >
         {/* Artwork */}
         <div className="relative w-10 h-10 shrink-0 mr-4 ml-2">
-          <img src={data.image} alt="" className="w-10 h-10 object-cover rounded" />
+          <img
+            src={data.image}
+            alt=""
+            className="w-10 h-10 object-cover rounded"
+          />
           {(hovered || isCurrent) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
               {isPlaying ? (
                 <FaPause className="text-accent text-xs" />
               ) : (
-                <FaPlay className={`text-xs ${isCurrent ? "text-accent" : "text-white"}`} />
+                <FaPlay
+                  className={`text-xs ${isCurrent ? "text-accent" : "text-white"}`}
+                />
               )}
             </div>
           )}
@@ -80,7 +100,9 @@ function TrackRow({ data, index, isCurrent, isPlaying, onPlay }: any) {
 
         {/* Index and Info */}
         <div className="flex-1 min-w-0 flex items-baseline gap-2">
-          <span className={`text-xs w-4 text-right ${isCurrent ? "text-accent" : "text-gray-500"}`}>
+          <span
+            className={`text-xs w-4 text-right ${isCurrent ? "text-accent" : "text-gray-500"}`}
+          >
             {index}
           </span>
           <Link
@@ -91,7 +113,9 @@ function TrackRow({ data, index, isCurrent, isPlaying, onPlay }: any) {
             {data.artist}
           </Link>
           <span className="text-gray-600 text-xs">—</span>
-          <span className={`text-sm truncate font-medium ${isCurrent ? "text-accent" : "text-gray-200"}`}>
+          <span
+            className={`text-sm truncate font-medium ${isCurrent ? "text-accent" : "text-gray-200"}`}
+          >
             {data.title}
           </span>
         </div>
@@ -100,27 +124,53 @@ function TrackRow({ data, index, isCurrent, isPlaying, onPlay }: any) {
         <div className="flex items-center px-4">
           {hovered ? (
             <div className="flex items-center gap-1">
-              <ActionButton active={liked} onClick={() => setLiked(!liked)}><FaHeart /></ActionButton>
-              <ActionButton onClick={() => setShareOpen(true)}><HiUpload /></ActionButton>
-              <ActionButton><FaEllipsisH /></ActionButton>
+              <ActionButton
+                active={liked}
+                onClick={() => setLiked(!liked)}
+                data-test={`button-like-track`}
+              >
+                <FaHeart />
+              </ActionButton>
+              <ActionButton
+                onClick={() => setShareOpen(true)}
+                data-test={`button-share-track`}
+              >
+                <HiUpload />
+              </ActionButton>
+              <ActionButton data-test={`button-more-track`}>
+                <FaEllipsisH />
+              </ActionButton>
             </div>
           ) : (
-            <span className={`text-[11px] tabular-nums ${isCurrent ? "text-accent" : "text-gray-500"}`}>
+            <span
+              className={`text-[11px] tabular-nums ${isCurrent ? "text-accent" : "text-gray-500"}`}
+            >
               {data.plays.toLocaleString()}
             </span>
           )}
         </div>
       </div>
 
-      {shareOpen && <SharePopup track={data} onClose={() => setShareOpen(false)} />}
+      {shareOpen && (
+        <SharePopup track={data} onClose={() => setShareOpen(false)} />
+      )}
     </>
   );
 }
 
-function ActionButton({ children, onClick, active }: any) {
+function ActionButton({
+  children,
+  onClick,
+  active,
+  "data-test": dataTest,
+}: any) {
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+      data-test={dataTest}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.();
+      }}
       className={`p-2 rounded hover:bg-white/10 transition-colors ${active ? "text-accent" : "text-white"}`}
     >
       {children}
