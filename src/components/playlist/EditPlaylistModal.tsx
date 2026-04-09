@@ -135,6 +135,7 @@ export default function EditPlaylistModal({
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              data-test={`button-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={`px-3 py-4 text-[22px] font-bold relative transition-colors cursor-pointer ${
                 activeTab === tab.id
@@ -170,7 +171,10 @@ export default function EditPlaylistModal({
                     <div className="w-full h-full bg-gradient-to-br from-[#3a3a5c] to-[#2a2a3a]" />
                   )}
                   <div className="absolute inset-0 bg-black/10 flex items-end justify-center pb-4">
-                    <span className="text-white text-[13px] font-bold bg-bg px-3 py-1 rounded-sm cursor-pointer">
+                    <span
+                      data-test="button-upload-cover"
+                      className="text-white text-[13px] font-bold bg-bg px-3 py-1 rounded-sm cursor-pointer"
+                    >
                       Upload image
                     </span>
                   </div>
@@ -263,6 +267,7 @@ export default function EditPlaylistModal({
                       >
                         #{tag}
                         <button
+                          data-test={`button-remove-tag-${tag}`}
                           onClick={() =>
                             setTags((prev) => prev.filter((t) => t !== tag))
                           }
@@ -325,12 +330,14 @@ export default function EditPlaylistModal({
           </p>
           <div className="ml-auto flex gap-3">
             <button
+              data-test="button-cancel-edit"
               onClick={onClose}
               className="px-3 py-1.5 text-sm font-bold text-white bg-[#303030] rounded-sm hover:text-[#717171] transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
+              data-test="button-save-changes"
               onClick={handleSave}
               disabled={saving || !name.trim()}
               className="px-3 py-1.5 bg-bg-inverted text-bg text-sm font-bold rounded-sm hover:text-[#a0a0a0] transition-opacity disabled:opacity-40 cursor-pointer"

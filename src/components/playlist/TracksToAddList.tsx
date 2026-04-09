@@ -64,6 +64,7 @@ const TracksToAddList = ({
           {/* X button */}
 
           <button
+            data-test={`button-remove-track-${track.id}`}
             onClick={() => onRemove(track.id)}
             className="shrink-0 text-[#666] hover:text-white transition-colors cursor-pointer p-1"
             aria-label="Remove track"

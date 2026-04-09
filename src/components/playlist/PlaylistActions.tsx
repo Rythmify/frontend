@@ -36,6 +36,7 @@ export default function PlaylistActions({
         {/* Share */}
         <ActionButton
           tooltip="Share"
+          data-test="button-share"
           onClick={() => setShareOpen(true)}
           active={shareOpen}
         >
@@ -45,6 +46,7 @@ export default function PlaylistActions({
         {/* Copy link */}
         <ActionButton
           tooltip="Copy Link"
+          data-test="button-copy-link"
           onClick={() => {
             navigator.clipboard.writeText(window.location.href);
           }}
@@ -53,13 +55,18 @@ export default function PlaylistActions({
         </ActionButton>
 
         {/* Edit */}
-        <ActionButton tooltip="Edit" onClick={() => setEditOpen(true)}>
+        <ActionButton
+          tooltip="Edit"
+          data-test="button-edit"
+          onClick={() => setEditOpen(true)}
+        >
           <HiOutlinePencil className="text-[18px]" />
         </ActionButton>
 
         {/* Like */}
         <ActionButton
           tooltip={liked ? "Unlike" : "Like"}
+          data-test="button-like"
           active={liked}
           onClick={() =>
             togglePlaylist({
@@ -78,13 +85,14 @@ export default function PlaylistActions({
         </ActionButton>
 
         {/* Add to Next Up */}
-        <ActionButton tooltip="Add to Next Up">
+        <ActionButton tooltip="Add to Next Up" data-test="button-add-next-up">
           <LuListEnd className="text-[18px]" />
         </ActionButton>
 
         {/* Delete */}
         <ActionButton
           tooltip="Delete"
+          data-test="button-delete"
           danger
           onClick={() => setDeleteOpen(true)}
         >
@@ -127,12 +135,14 @@ function ActionButton({
   active = false,
   danger = false,
   tooltip,
+  "data-test": dataTest,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
   danger?: boolean;
   tooltip?: string;
+  "data-test"?: string;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -143,6 +153,7 @@ function ActionButton({
       onMouseLeave={() => setShowTooltip(false)}
     >
       <button
+        data-test={dataTest}
         onClick={onClick}
         className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-[#303030] transition-all duration-150 cursor-pointer group"
       >

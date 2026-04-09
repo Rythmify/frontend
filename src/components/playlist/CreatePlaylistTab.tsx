@@ -68,6 +68,7 @@ const CreatePlaylistTab = ({
           <PrivacyToggle value={privacy} onChange={setPrivacy} />
         </div>
         <button
+          data-test="button-save-playlist"
           onClick={onCreate}
           disabled={
             creating || !playlistTitle.trim() || tracksToAdd.length === 0
@@ -114,6 +115,7 @@ const CreatePlaylistTab = ({
                   </div>
                 </div>
                 <button
+                  data-test={`button-add-liked-track-${t.id}`}
                   onClick={() =>
                     defaultPlaylistId &&
                     onAdd(defaultPlaylistId, [
