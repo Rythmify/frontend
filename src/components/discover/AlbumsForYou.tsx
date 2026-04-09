@@ -1,13 +1,27 @@
+import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
-import TrackCard from "@/components/UI/Card";
-import { mockAlbumsForYou } from "@/services/mocks/discover";
+import AlbumCard from "@/components/playlist/PlaylistCard";
+import type { Playlist } from "@/services/api/playlist/playlist.service";
+import { getAlbumsForYou } from "@/services/api/discover.service";
+import { mapDiscoveryAlbum } from "@/services/api/discover.mapper";
+import { mockAlbumPlaylists } from "@/services/mocks/discover";
 
-// ─── Component ────────────────────────────────────────────
 const AlbumsForYou = () => {
+  const [albums, setAlbums] = useState<Playlist[]>(mockAlbumPlaylists);
+
+  useEffect(() => {
+    getAlbumsForYou()
+      .then((res) => {
+        const cards = res.data.map(mapDiscoveryAlbum);
+        if (cards.length > 0) setAlbums(cards);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <HorizontalCarousel title="Albums for you" data-section="albums-for-you">
-      {mockAlbumsForYou.map((track) => (
-        <TrackCard key={track.id} track={track} />
+      {albums.map((album) => (
+        <AlbumCard key={album.playlist_id} playlist={album} widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]" />
       ))}
     </HorizontalCarousel>
   );

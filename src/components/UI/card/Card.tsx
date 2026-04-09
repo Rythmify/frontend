@@ -3,19 +3,22 @@ import { useRef, useState } from "react";
 import { Tooltip } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
-import AddToPlaylistModal from "@/components/Playlist/AddToPlaylistModal";
+import { useLikesStore } from "@/stores/likes.store";
+import { useHistoryStore } from "@/stores/history.store";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { createPortal } from "react-dom";
 
 // ─── Props ────────────────────────────────────────────────
 interface TrackCardProps {
   track: Track;
+  widthClassName?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
-  card: `
+  card: (widthClassName?: string) => `
     group flex flex-col gap-2
-    w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]
+    ${widthClassName ?? "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"}
     cursor-pointer shrink-0
   `,
   imageWrapper: `
@@ -25,7 +28,6 @@ const styles = {
   image: `
     w-full h-full object-cover
     text-white
-    group-hover:brightness-75
     transition-all duration-200
   `,
   overlay: `
@@ -34,6 +36,9 @@ const styles = {
     justify-between
     opacity-0 group-hover:opacity-100
     transition-opacity duration-200
+  `,
+  overlayBg: `
+    absolute inset-0 bg-black/30 pointer-events-none
   `,
   overlayCenter: `
     flex items-center justify-center
@@ -45,15 +50,15 @@ const styles = {
   `,
   likeButton: `
     fa-sharp fa-regular fa-heart
-    text-[10px] text-black
+    text-[10px] text-white
   `,
   likeButtonActive: `
     fa-sharp fa-solid fa-heart
-    text-[10px] text-red-500
+    text-[10px] text-[#e74c3c]
   `,
   moreButton: `
     fa-solid fa-ellipsis
-    text-[10px] text-black
+    text-[10px] text-white
   `,
   playButton: `
     w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16
@@ -77,7 +82,7 @@ const styles = {
     group/btn
   `,
   actionIcon: `
-    text-[12px] text-black
+    text-[12px] text-white
     group-hover/btn:opacity-50
     transition-opacity duration-150
   `,
@@ -100,34 +105,36 @@ const tooltipStyles = {
 };
 
 // ─── Component ────────────────────────────────────────────
-const TrackCard = ({ track }: TrackCardProps) => {
+const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [liked, setLiked] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
+  const { isTrackLiked, toggleTrack } = useLikesStore();
+  const { addTrack } = useHistoryStore();
+
+  const liked = isTrackLiked(track.id);
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
 
   // Handler for play button click (play/pause toggle)
   const handlePlayClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click from firing
+    e.stopPropagation();
 
     if (currentTrack?.id === track.id) {
-      // Same track is already loaded, just toggle play/pause
       togglePlay();
     } else {
-      // Different track, set it and start playing
       setTrack(track);
+      addTrack(track);
     }
   };
 
   return (
     <div
-      className={styles.card}
+      className={styles.card(widthClassName)}
       onClick={() => navigate(`/${track.artistUsername}/${track.trackSlug}`)}
       data-test="card-track"
     >
@@ -139,6 +146,9 @@ const TrackCard = ({ track }: TrackCardProps) => {
           data-test="trackcard-image"
         />
         <div className={styles.overlay}>
+          {/* Dark overlay */}
+          <div className={styles.overlayBg} />
+
           {/* Top spacer */}
           <div />
 
@@ -168,7 +178,7 @@ const TrackCard = ({ track }: TrackCardProps) => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLiked(!liked);
+                  toggleTrack(track);
                 }}
                 className={styles.actionButton}
                 data-test="button-like"

@@ -1,19 +1,21 @@
 import { useState } from "react"
-import { blockUser, submitReport } from "../../services//api/messaging/conversationApi"
-import CheckBox from "./CheckBox"
+import { blockUser, submitReport } from "../../services/api/messaging/conversationApi"
+import CheckBox from "../MessagingComponents/CheckBox"
+
 interface BlockUserModalProps {
   username?: string
   userId?: string
   onClose?: () => void
   onBlocked?: (data: { blocker_id: string; blocked_id: string; created_at: string }) => void
 }
+
 export function BlockUserModal({
   username, userId, onClose, onBlocked,
 }: BlockUserModalProps) {
   const [removeContent, setRemoveContent] = useState(false)
-  const [reportSpam, setReportSpam] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [reportSpam, setReportSpam]       = useState(false)
+  const [loading, setLoading]             = useState(false)
+  const [error, setError]                 = useState<string | null>(null)
 
   const handleBlock = async () => {
     if (!userId) return
@@ -21,9 +23,6 @@ export function BlockUserModal({
     setError(null)
     try {
       const blockRes = await blockUser(userId)
-      if ("data" in blockRes) {
-        onBlocked?.(blockRes.data)
-      }
       if (reportSpam) {
         await submitReport({
           resource_type: "user",
@@ -31,15 +30,15 @@ export function BlockUserModal({
           reason: "spam",
         })
       }
+      if ("data" in blockRes) {
+        onBlocked?.(blockRes.data)
+      } else {
+        onBlocked?.({ blocker_id: "", blocked_id: userId, created_at: "" })
+      }
       onClose?.()
     } catch (err: unknown) {
-      const axiosError = err as {
-        response?: {
-          status: number
-        }
-      }
-      const status = axiosError.response?.status
-      if (status === 401) {
+      const axiosError = err as { response?: { status: number } }
+      if (axiosError.response?.status === 401) {
         setError("Missing or invalid access token.")
       }
     } finally {
@@ -94,11 +93,7 @@ export function BlockUserModal({
         </button>
         <button
           data-test="block-user-button"
-          onClick={() => {handleBlock();
-              onClose?.();
-          }
-            
-          }
+          onClick={handleBlock}
           disabled={loading}
           className="px-5 py-2 text-sm font-semibold text-black transition-colors bg-white rounded-sm hover:bg-gray-200 disabled:opacity-50"
         >

@@ -10,25 +10,48 @@ import {
   FaCheck,
 } from "react-icons/fa";
 import type { Track } from "../../../../types/track";
+import type { Playlist } from "@/services/api/playlist/playlist.service";
 
 interface SharePopupProps {
-  track: Track;
+  track?: Track;
+  playlist?: Playlist;
   onClose: () => void;
 }
 
 type Tab = "share" | "embed" | "message";
 
-export default function SharePopup({ track, onClose }: SharePopupProps) {
+export default function SharePopup({
+  track,
+  playlist,
+  onClose,
+}: SharePopupProps) {
   const [activeTab, setActiveTab] = useState<Tab>("share");
   const [visible, setVisible] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Slide-in 
+  // Normalize data for display based on whether it's a track or playlist
+  const displayData = track
+    ? {
+        title: track.title,
+        subtitle: track.artistName,
+        image: track.coverUrl,
+        duration: track.duration,
+        waveformData: track.waveformData,
+      }
+    : {
+        title: playlist?.name || "Untitled Playlist",
+        subtitle: playlist?.owner_user_id || "Unknown Owner",
+        image: playlist?.cover_image || "https://via.placeholder.com/150",
+        duration: `${playlist?.track_count || 0} tracks`,
+        waveformData: undefined,
+      };
+
+  // Slide-in
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
-  // Slide-out 
+  // Slide-out
   const handleClose = () => {
     setVisible(false);
     setTimeout(onClose, 300);
@@ -62,7 +85,8 @@ export default function SharePopup({ track, onClose }: SharePopupProps) {
         style={{
           transform: visible ? "translateY(0)" : "translateY(-40px)",
           opacity: visible ? 1 : 0,
-          transition: "transform 0.3s cubic-bezier(0.34,1.2,0.64,1), opacity 0.25s ease",
+          transition:
+            "transform 0.3s cubic-bezier(0.34,1.2,0.64,1), opacity 0.25s ease",
         }}
       >
         {/* Header */}
@@ -89,9 +113,10 @@ export default function SharePopup({ track, onClose }: SharePopupProps) {
               className={`
                 mr-6 pb-3 text-xs font-bold uppercase tracking-widest
                 transition-colors duration-150 cursor-pointer relative
-                ${activeTab === tab
-                  ? "text-white"
-                  : "text-[var(--color-text-muted)] hover:text-white"
+                ${
+                  activeTab === tab
+                    ? "text-white"
+                    : "text-[var(--color-text-muted)] hover:text-white"
                 }
               `}
             >
@@ -105,8 +130,8 @@ export default function SharePopup({ track, onClose }: SharePopupProps) {
 
         {/* Tab Content */}
         <div className="px-5 py-5">
-          {activeTab === "share" && <ShareTab track={track} />}
-          {activeTab === "embed" && <EmbedTab track={track} />}
+          {activeTab === "share" && <ShareTab data={displayData} />}
+          {activeTab === "embed" && <EmbedTab data={displayData} />}
           {activeTab === "message" && <MessageTab />}
         </div>
       </div>
@@ -114,8 +139,8 @@ export default function SharePopup({ track, onClose }: SharePopupProps) {
   );
 }
 
-// Share Tab 
-function ShareTab({ track }: { track: Track }) {
+// Share Tab
+function ShareTab({ data }: { data: any }) {
   const [atTimestamp, setAtTimestamp] = useState(false);
   const [shortenLink, setShortenLink] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -128,56 +153,88 @@ function ShareTab({ track }: { track: Track }) {
   };
 
   const socials = [
-    { icon: <FaTwitter />, label: "Twitter", bg: "#1da1f2", "data-test": "social-twitter" },
-    { icon: <FaFacebook />, label: "Facebook", bg: "#1877f2", "data-test": "social-facebook" },
-    { icon: <FaTumblr />, label: "Tumblr", bg: "#35465c", "data-test": "social-tumblr" },
-    { icon: <FaPinterest />, label: "Pinterest", bg: "#e60023", "data-test": "social-pinterest" },
-    { icon: <FaEnvelope />, label: "Email", bg: "#555", "data-test": "social-email" },
+    {
+      icon: <FaTwitter />,
+      label: "Twitter",
+      bg: "#1da1f2",
+      "data-test": "social-twitter",
+    },
+    {
+      icon: <FaFacebook />,
+      label: "Facebook",
+      bg: "#1877f2",
+      "data-test": "social-facebook",
+    },
+    {
+      icon: <FaTumblr />,
+      label: "Tumblr",
+      bg: "#35465c",
+      "data-test": "social-tumblr",
+    },
+    {
+      icon: <FaPinterest />,
+      label: "Pinterest",
+      bg: "#e60023",
+      "data-test": "social-pinterest",
+    },
+    {
+      icon: <FaEnvelope />,
+      label: "Email",
+      bg: "#555",
+      "data-test": "social-email",
+    },
   ];
 
   return (
     <div data-test="share-tab-content" className="flex flex-col gap-4">
-
-      {/* Track preview card — artwork + info + mini waveform */}
+      {/* Preview card — artwork + info + mini waveform (if track) */}
       <div
         data-test="share-track-preview"
         className="flex items-center gap-3 bg-[var(--color-input-bg)] rounded border border-[var(--color-border)] p-3"
       >
         {/* Artwork */}
         <img
-          src={track.coverUrl}
-          alt={track.title}
+          src={data.image}
+          alt={data.title}
           className="w-14 h-14 rounded object-cover shrink-0"
         />
 
         {/* Info + mini waveform */}
         <div className="flex-1 min-w-0 flex flex-col gap-1.5">
           <div>
-            <p className="text-white text-xs font-bold truncate">{track.title}</p>
-            <p className="text-[var(--color-text-muted)] text-[11px] truncate">{track.artistName}</p>
+            <p className="text-white text-xs font-bold truncate">
+              {data.title}
+            </p>
+            <p className="text-[var(--color-text-muted)] text-[11px] truncate">
+              {data.subtitle}
+            </p>
           </div>
-          {/* Mini waveform bars */}
-          <div className="flex items-end gap-[2px] h-6">
-            {Array.from({ length: 40 }, (_, i) => {
-              const h = track.waveformData
-                ? track.waveformData[i % track.waveformData.length]
-                : Math.random() * 80 + 20;
-              const played = i < 12;
-              return (
-                <div
-                  key={i}
-                  className="w-[3px] rounded-sm shrink-0"
-                  style={{
-                    height: `${(h / 100) * 24}px`,
-                    background: played ? "var(--color-accent)" : "#555",
-                  }}
-                />
-              );
-            })}
-          </div>
+
+          {/* Mini waveform bars (Only rendered if waveformData exists, e.g. for Tracks) */}
+          {data.waveformData && (
+            <div className="flex items-end gap-[2px] h-6">
+              {Array.from({ length: 40 }, (_, i) => {
+                const h = data.waveformData
+                  ? data.waveformData[i % data.waveformData.length]
+                  : Math.random() * 80 + 20;
+                const played = i < 12;
+                return (
+                  <div
+                    key={i}
+                    className="w-[3px] rounded-sm shrink-0"
+                    style={{
+                      height: `${(h / 100) * 24}px`,
+                      background: played ? "var(--color-accent)" : "#555",
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex justify-between text-[10px] text-[var(--color-text-muted)]">
-            <span>0:00</span>
-            <span>{track.duration}</span>
+            <span>{data.waveformData ? "0:00" : ""}</span>
+            <span>{data.duration}</span>
           </div>
         </div>
       </div>
@@ -256,8 +313,8 @@ function ShareTab({ track }: { track: Track }) {
   );
 }
 
-// Embed Tab 
-function EmbedTab({ track }: { track: Track }) {
+// Embed Tab
+function EmbedTab({ data }: { data: any }) {
   const [copied, setCopied] = useState(false);
   const embedCode = `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"\n  src="https://rythmify.com/player/?url=${encodeURIComponent(window.location.href)}">\n</iframe>`;
 
@@ -271,7 +328,8 @@ function EmbedTab({ track }: { track: Track }) {
     <div data-test="embed-tab-content" className="flex flex-col gap-4">
       <p className="text-[var(--color-text-muted)] text-xs">
         Copy the code below to embed{" "}
-        <span className="text-white font-semibold">{track.title}</span> on your website.
+        <span className="text-white font-semibold">{data.title}</span> on your
+        website.
       </p>
       <textarea
         data-test="embed-code-textarea"
@@ -292,7 +350,7 @@ function EmbedTab({ track }: { track: Track }) {
   );
 }
 
-// Message Tab 
+// Message Tab
 function MessageTab() {
   return (
     <div
@@ -303,7 +361,7 @@ function MessageTab() {
         <FaEnvelope />
       </div>
       <p className="text-[var(--color-text-muted)] text-xs max-w-[260px] leading-relaxed">
-        Send this track via direct message. This feature will be available soon.
+        Send this via direct message. This feature will be available soon.
       </p>
     </div>
   );

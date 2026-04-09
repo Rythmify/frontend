@@ -5,6 +5,7 @@ interface HorizontalCarouselProps {
   title: string;
   children: React.ReactNode;
   "data-section"?: string;
+  titleClassName?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -54,6 +55,7 @@ const HorizontalCarousel = ({
   title,
   children,
   "data-section": dataSection,
+  titleClassName,
 }: HorizontalCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
@@ -103,12 +105,32 @@ const HorizontalCarousel = ({
     scrollRef.current?.scrollBy({ left: distance, behavior: "smooth" });
   };
 
+  // Recheck arrow state whenever content changes (e.g. async data loads)
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
-    setAtEnd(
-      container.scrollLeft + container.clientWidth >= container.scrollWidth - 1,
-    );
+
+    const update = () => {
+      setAtStart(container.scrollLeft === 0);
+      setAtEnd(
+        container.scrollLeft + container.clientWidth >= container.scrollWidth - 1,
+      );
+    };
+
+    update();
+
+    // ResizeObserver: fires on window/container resize
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(container);
+
+    // MutationObserver: fires when async children are added/removed
+    const mutationObserver = new MutationObserver(update);
+    mutationObserver.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    };
   }, []);
 
   const handleNudge = (direction: "left" | "right") => {
@@ -123,7 +145,7 @@ const HorizontalCarousel = ({
       data-section={dataSection}
     >
       {/* Title */}
-      <h2 className={styles.title} data-test="carousel-title">
+      <h2 className={titleClassName ?? styles.title} data-test="carousel-title">
         {title}
       </h2>
 

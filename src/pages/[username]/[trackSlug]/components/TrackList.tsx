@@ -18,7 +18,7 @@ import type { Track } from "../../../../types/track";
 
 interface TrackListProps {
   tracks: Track[];
-  currentTrackId?: number;
+  currentTrackId?: string;
   isPlaying?: boolean;
   onTrackPlay?: (track: Track) => void;
   onTrackLike?: (track: Track) => void;
@@ -53,7 +53,7 @@ export default function TrackList({
   );
 }
 
-// Individual Row 
+// Individual Row
 function TrackRow({
   track,
   index,
@@ -114,13 +114,17 @@ function TrackRow({
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">
               <button
                 data-test={`button-play-track-${track.id}`}
-                onClick={(e) => { e.stopPropagation(); onPlay(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlay();
+                }}
                 className="text-white cursor-pointer"
               >
-                {isPlaying
-                  ? <FaPause className="text-[var(--color-accent)] text-sm" />
-                  : <FaPlay className="text-sm ml-[1px]" />
-                }
+                {isPlaying ? (
+                  <FaPause className="text-[var(--color-accent)] text-sm" />
+                ) : (
+                  <FaPlay className="text-sm ml-[1px]" />
+                )}
               </button>
             </div>
           )}
@@ -128,10 +132,14 @@ function TrackRow({
 
         {/* Number · Artist · Title */}
         <div className="flex-1 min-w-0 flex items-baseline gap-1.5 overflow-hidden">
-          <span className={`text-sm shrink-0 w-5 text-right ${isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}>
+          <span
+            className={`text-sm shrink-0 w-5 text-right ${isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
+          >
             {index}
           </span>
-          <span className="text-[var(--color-text-muted)] text-xs shrink-0">·</span>
+          <span className="text-[var(--color-text-muted)] text-xs shrink-0">
+            ·
+          </span>
           <Link
             to={`/${track.artistUsername}`}
             onClick={(e) => e.stopPropagation()}
@@ -143,18 +151,22 @@ function TrackRow({
           >
             {track.artistName}
           </Link>
-          <span className="text-[var(--color-text-muted)] text-xs shrink-0">·</span>
-          <span className={`text-sm font-bold truncate ${isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-hover)]"}`}>
+          <span className="text-[var(--color-text-muted)] text-xs shrink-0">
+            ·
+          </span>
+          <span
+            className={`text-sm font-bold truncate ${isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-hover)]"}`}
+          >
             {track.title}
           </span>
         </div>
 
         {/* ── Right: hover icons OR play count ── */}
         <div className="flex items-center shrink-0 ml-3">
-
           {/* Hover action icons */}
-          <div className={`flex items-center gap-0.5 transition-opacity duration-150 ${hovered ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-
+          <div
+            className={`flex items-center gap-0.5 transition-opacity duration-150 ${hovered ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          >
             {/* Like */}
             <TipBtn
               tooltip="Like"
@@ -193,7 +205,7 @@ function TrackRow({
               onClick={(e) => {
                 e.stopPropagation();
                 navigator.clipboard.writeText(
-                  `${window.location.origin}/${track.artistUsername}/${track.id}`
+                  `${window.location.origin}/${track.artistUsername}/${track.id}`,
                 );
               }}
             >
@@ -218,16 +230,33 @@ function TrackRow({
                   data-test={`dropdown-more-track-${track.id}`}
                   className="absolute right-0 top-full mt-1 bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] shadow-[var(--shadow-md)] z-50 min-w-[180px] py-1"
                 >
-                  <MiniDropItem icon={<FaPlus />} label="Add to Next up" onClick={() => setMoreOpen(false)} data-test={`dropdown-next-up-track-${track.id}`} />
-                  <MiniDropItem icon={<FaListUl />} label="Add to Playlist" onClick={() => setMoreOpen(false)} data-test={`dropdown-playlist-track-${track.id}`} />
-                  <MiniDropItem icon={<FaBroadcastTower />} label="Station" onClick={() => setMoreOpen(false)} data-test={`dropdown-station-track-${track.id}`} />
+                  <MiniDropItem
+                    icon={<FaPlus />}
+                    label="Add to Next up"
+                    onClick={() => setMoreOpen(false)}
+                    data-test={`dropdown-next-up-track-${track.id}`}
+                  />
+                  <MiniDropItem
+                    icon={<FaListUl />}
+                    label="Add to Playlist"
+                    onClick={() => setMoreOpen(false)}
+                    data-test={`dropdown-playlist-track-${track.id}`}
+                  />
+                  <MiniDropItem
+                    icon={<FaBroadcastTower />}
+                    label="Station"
+                    onClick={() => setMoreOpen(false)}
+                    data-test={`dropdown-station-track-${track.id}`}
+                  />
                 </div>
               )}
             </div>
           </div>
 
           {/* Play count */}
-          <span className={`text-xs text-[var(--color-text-muted)] tabular-nums w-14 text-right transition-opacity duration-150 ${hovered ? "opacity-0" : "opacity-100"}`}>
+          <span
+            className={`text-xs text-[var(--color-text-muted)] tabular-nums w-14 text-right transition-opacity duration-150 ${hovered ? "opacity-0" : "opacity-100"}`}
+          >
             ▶ {formatCount(track.playCount)}
           </span>
         </div>
@@ -235,16 +264,13 @@ function TrackRow({
 
       {/* Share popup — rendered outside the row  */}
       {shareOpen && (
-        <SharePopup
-          track={track}
-          onClose={() => setShareOpen(false)}
-        />
+        <SharePopup track={track} onClose={() => setShareOpen(false)} />
       )}
     </>
   );
 }
 
-// Tooltip-wrapped action button 
+// Tooltip-wrapped action button
 // white by default, darker on hover
 function TipBtn({
   children,
@@ -267,9 +293,10 @@ function TipBtn({
           onClick={onClick}
           className={`
             p-2 rounded text-sm transition-colors duration-150 cursor-pointer
-            ${active
-              ? "text-[var(--color-accent)]"
-              : "text-white hover:text-[var(--color-text-muted)]"
+            ${
+              active
+                ? "text-[var(--color-accent)]"
+                : "text-white hover:text-[var(--color-text-muted)]"
             }
           `}
         >
@@ -301,9 +328,12 @@ function TipBtn({
   );
 }
 
-// Dropdown item 
+// Dropdown item
 function MiniDropItem({
-  icon, label, onClick, "data-test": dataTest,
+  icon,
+  label,
+  onClick,
+  "data-test": dataTest,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -313,7 +343,10 @@ function MiniDropItem({
   return (
     <button
       data-test={dataTest}
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-[var(--color-text)] hover:bg-white/5 hover:text-[var(--color-text-hover)] transition-colors cursor-pointer"
     >
       <span className="text-sm opacity-70">{icon}</span>

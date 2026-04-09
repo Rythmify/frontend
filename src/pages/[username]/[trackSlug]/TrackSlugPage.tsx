@@ -48,7 +48,7 @@ export default function TrackSlugPage() {
         setFeaturedArtists(Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : []);
 
         // Fetch related tracks after we have the track id
-        const related = await getRelatedTracks(fetchedTrack.id);
+        const related = await getRelatedTracks(String(fetchedTrack.id));
         if (!cancelled) setRelatedTracks(Array.isArray(related) ? related : []);
       } catch (err) {
         if (!cancelled) setError("Failed to load track. Please try again.");

@@ -2,17 +2,19 @@
 
 import { useNavigate } from "react-router-dom";
 import type { User } from "@/types/user";
+import FollowButton from "@/components/Profile/FollowButton/FollowButton";
 
 // ─── Props ────────────────────────────────────────────────
 interface UserCardProps {
   user: User;
+  widthClassName?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
-  card: `
+  card: (widthClassName?: string) => `
     group flex flex-col items-center gap-2
-    w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]
+    ${widthClassName ?? "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"}
     cursor-pointer shrink-0
   `,
   avatarWrapper: `
@@ -22,7 +24,6 @@ const styles = {
   `,
   avatar: `
     w-full h-full object-cover
-    group-hover:brightness-75
     transition-all duration-200
   `,
   avatarPlaceholder: `
@@ -66,7 +67,7 @@ const getInitial = (name: string): string => {
 };
 
 // ─── Component ────────────────────────────────────────────
-const UserCard = ({ user }: UserCardProps) => {
+const UserCard = ({ user, widthClassName }: UserCardProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -75,7 +76,7 @@ const UserCard = ({ user }: UserCardProps) => {
 
   return (
     <div
-      className={styles.card}
+      className={styles.card(widthClassName)}
       onClick={handleClick}
       data-test={`user-card-${user.username}`}
     >
@@ -95,6 +96,7 @@ const UserCard = ({ user }: UserCardProps) => {
             {getInitial(user.displayName)}
           </div>
         )}
+
       </div>
 
       {/* Display Name + Verified Badge */}
@@ -119,6 +121,11 @@ const UserCard = ({ user }: UserCardProps) => {
         <i className={styles.followerIcon}></i>
         <span>{formatFollowers(user.followers)} followers</span>
       </p>
+
+      {/* Follow Button — visible on hover */}
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <FollowButton username={user.username} />
+      </div>
     </div>
   );
 };
