@@ -6,7 +6,8 @@ interface ProfileData {
   displayName: string;
   dateOfBirth: { month: string; day: string; year: string };
   gender: string;
-  captchaToken: string;
+  //captchaToken: string;
+  platform:string;
 }
 
 interface Props {
@@ -108,12 +109,13 @@ export default function Profile({ email, defaultDisplayName, onBack, onContinue 
 
     setLoading(true);
     try {
-      const captchaToken = await executeRecaptcha("register");
+      // const captchaToken = await executeRecaptcha("register");
+      const platform ="mobile";
       await onContinue({
         displayName: displayName.trim(),
         dateOfBirth: { month, day, year },
         gender,
-        captchaToken,
+        platform,
       });
     } catch {
       setErrors({ form: "Something went wrong. Please try again." });

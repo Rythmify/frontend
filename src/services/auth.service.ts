@@ -65,7 +65,8 @@ export interface RegisterPayload {
   display_name: string;
   gender: GenderType;
   date_of_birth: string;
-  captcha_token: string;
+  //captcha_token: string;
+  platform:string;
 }
 
 export interface ContentSettings {
