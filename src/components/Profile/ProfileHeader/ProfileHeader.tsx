@@ -198,6 +198,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         <div className="absolute inset-0 flex items-center px-6 gap-6">
           <div className="relative flex-shrink-0">
             <div
+              data-testid="avatar-container"
               className="w-[200px] h-[200px] rounded-full overflow-hidden flex items-center justify-center bg-[#68A039] cursor-pointer"
               onMouseEnter={() => setHoveringAvatar(true)}
               onMouseLeave={() => {
@@ -266,7 +267,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
           <div className="flex flex-col gap-0">
             <h1 className="text-white font-bold text-2xl px-2 py-1 bg-black self-start">
-              {displayName || username}
+              {displayName}
             </h1>
             <div className="flex flex-col gap-1">
               <p className="text-gray-400 font-bold text-sm px-2 py-1 bg-black self-start">

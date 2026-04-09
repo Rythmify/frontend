@@ -79,6 +79,9 @@ describe("FollowingPage", () => {
     (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       user: null,
     });
+    (useParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      username: undefined,
+    });
     const { container } = render(<FollowingPage />);
     expect(container.firstChild).toBeNull();
   });

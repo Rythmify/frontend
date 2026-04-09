@@ -107,7 +107,7 @@ describe("ProfileHeader", () => {
     render(<ProfileHeader user={mockUser} isOwner={true} />);
     const avatarContainer = screen
       .getByTestId("avatar-file-input")
-      .closest("div.relative")
+      .closest("div")
       ?.querySelector(".rounded-full") as HTMLElement;
     fireEvent.mouseEnter(avatarContainer!);
     expect(screen.getByTestId("avatar-update-button")).toBeInTheDocument();
@@ -162,6 +162,10 @@ describe("ProfileHeader", () => {
         isOwner={true}
       />,
     );
+    const coverDiv = document.querySelector(
+      "[style*='cover.jpg']",
+    ) as HTMLElement;
+    fireEvent.mouseEnter(coverDiv);
     fireEvent.click(screen.getByTestId("cover-update-button"));
     fireEvent.click(screen.getByTestId("cover-delete-button"));
     expect(mockSetUser).toHaveBeenCalledWith(
