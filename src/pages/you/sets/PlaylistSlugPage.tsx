@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import PlaylistSidebar from "../../../components/Playlist/PlaylistSidebar";
-import PlaylistActions from "../../../components/Playlist/PlaylistActions";
-import PlaylistHero from "../../../components/Playlist/PlaylistHero";
+import PlaylistSidebar from "../../../components/playlist/PlaylistSidebar";
+import PlaylistActions from "../../../components/playlist/PlaylistActions";
+import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   getPlaylist,
   type PlaylistDetails,
@@ -10,7 +10,7 @@ import {
 import { getUsers } from "../../../services/mocks/User.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
-import TrackList from "../../../components/Playlist/TrackList";
+import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 
 function PlaylistSlugPage() {

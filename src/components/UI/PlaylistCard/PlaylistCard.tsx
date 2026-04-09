@@ -6,7 +6,7 @@ import { getPlaylist } from "@/services/api/playlist/playlist.service";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
-import AddToPlaylistModal from "@/components/Playlist/AddToPlaylistModal";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
