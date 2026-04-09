@@ -121,6 +121,9 @@ function PlaylistSlugPage() {
           <div className="flex-1 min-w-0">
             <PlaylistActions
               playlist={playlist}
+              onPlaylistUpdated={(updated) =>
+                setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
+              }
             />
 
             <div className="mt-8">
@@ -137,9 +140,7 @@ function PlaylistSlugPage() {
 
           {/* Right Column: Sidebar */}
           <div className="w-full lg:w-[280px] shrink-0">
-            <PlaylistSidebar
-              playlist={playlist}
-            />
+            <PlaylistSidebar playlist={playlist} />
             <GuestPageFooter />
           </div>
         </div>
