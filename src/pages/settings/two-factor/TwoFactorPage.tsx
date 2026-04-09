@@ -56,7 +56,7 @@ export default function TwoFactorPage() {
             </p>
 
             <p className="text-sm text-[var(--color-text)] max-w-2xl leading-relaxed">
-              Protect your privacy and secure your SoundCloud account with
+              Protect your privacy and secure your Rythmify account with
               Two-Factor Authentication (2FA). When enabled, you'll need a
               6-digit code from an authenticator app each time you log in,
               adding an extra layer of security.
