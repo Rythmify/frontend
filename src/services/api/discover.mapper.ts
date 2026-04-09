@@ -1,12 +1,19 @@
 import type {
+  DiscoveryTrack,
   PersonalMix,
-  FeedTrack,
-  HomeStation,
+  DiscoveryStation,
+  EmergingArtist,
+  CuratedMixSummary,
+  HomeData,
+  TrackSummary,
   SuggestedUser,
+  SuggestedArtist,
+  DiscoveryAlbum,
   RecentlyPlayedEntry,
-  ApiTrack,
+  ListeningHistoryEntry,
 } from "./discover.service";
 import type { PublicUser } from "@/services/mocks/User.service";
+import type { Playlist } from "@/services/api/playlist/playlist.service";
 import type { Mix } from "@/types/mix";
 import type { Track } from "@/types/track";
 import type { Station } from "@/types/station";
@@ -14,77 +21,31 @@ import type { User } from "@/types/user";
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
-/**
- * Converts a duration in seconds to a "m:ss" string.
- */
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-// ─── Mappers ──────────────────────────────────────────────────────────────────
-
-export function mapPersonalMix(api: PersonalMix): Mix {
-  return {
-    id: api.id,
-    label: api.label,
-    flavor: api.flavor,
-    coverUrl: api.cover_image, // OpenAPI uses cover_image
-    trackCount: api.track_count,
-    generatedAt: api.generated_at,
-  };
-}
-
-export function mapFeedTrack(api: FeedTrack): Track {
-  return {
-    id: api.id as unknown as string, // Track.id is legacy number; API returns UUID string
-    title: api.title,
-    artistName: api.artist.display_name,
-    artistUsername: api.artist.username ?? "", // gap — ask backend to add username to FeedTrack artist
-    coverUrl: api.cover_url ?? "",
-    genre: api.genre ?? "",
-    likeCount: api.like_count,
-    repostCount: 0, // not in FeedTrack spec
-    playCount: api.play_count,
-    commentCount: 0, // not in FeedTrack spec
-    duration: formatDuration(api.duration),
-    postedAt: api.created_at,
-    audioUrl: api.stream_url,
-    waveformData: [],
-  };
-}
-
-export function mapHomeStation(api: HomeStation): Station {
-  return {
-    id: api.id,
-    name: api.name,
-    seedArtist: {
-      id: api.seed_artist.user_id, // OpenAPI UserSummary uses user_id, not id
-      displayName: api.seed_artist.display_name,
-      // username and avatarUrl not available in UserSummary per OpenAPI spec
-    },
-    coverUrl: api.cover_image, // OpenAPI uses cover_image
-    trackCount: api.track_count,
-  };
-}
+// ─── Tracks ───────────────────────────────────────────────────────────────────
 
 /**
- * Maps a full track response (GET /tracks/{id}) to the frontend Track type.
- * artistName and artistUsername are empty — ApiTrack only has user_id.
+ * DiscoveryTrack → Track
+ * Used for all home page sections (more_of_what_you_like, mixed_for_you tracks, etc.)
+ * artist_name is denormalised on DiscoveryTrack — no extra fetch needed.
  */
-export function mapApiTrackToTrack(api: ApiTrack): Track {
+export function mapDiscoveryTrack(api: DiscoveryTrack): Track {
   return {
-    id: api.id as unknown as string,
+    id: api.id as unknown as number,
     title: api.title,
-    artistName: "", // ApiTrack has user_id only — gap until backend enriches endpoint
-    artistUsername: "",
-    coverUrl: api.cover_url ?? "",
-    genre: api.genre ?? "",
+    artistName: api.artist_name ?? "",
+    artistUsername: "", // DiscoveryTrack has no username — navigate by user_id if needed
+    coverUrl: api.cover_image ?? "",
+    genre: api.genre_name ?? "",
     likeCount: api.like_count,
-    repostCount: api.repost_count,
+    repostCount: api.repost_count ?? 0,
     playCount: api.play_count,
-    commentCount: api.comment_count,
+    commentCount: 0, // not in DiscoveryTrack
     duration: api.duration ? formatDuration(api.duration) : "0:00",
     postedAt: api.created_at,
     audioUrl: api.stream_url ?? "",
@@ -93,46 +54,208 @@ export function mapApiTrackToTrack(api: ApiTrack): Track {
 }
 
 /**
- * Maps a full user profile (GET /users/{user_id}) to the shape ArtistListSection expects.
- * Uses PublicUser from User.service which has profile_picture, followers_count, username.
+ * TrackSummary → Track
+ * Used for listening history and recently played entries.
+ * TrackSummary has cover_image and stream_url but no artist_name — resolve via getUserById if needed.
  */
-export function mapApiUserToArtist(api: PublicUser) {
+export function mapTrackSummaryToTrack(api: TrackSummary): Track {
   return {
-    username: api.username ?? api.display_name, // username is nullable in spec
+    id: api.id as unknown as number,
+    title: api.title,
+    artistName: "", // user_id only — call getUserById(api.user_id) to get display_name
+    artistUsername: "",
+    coverUrl: api.cover_image ?? "",
+    genre: api.genre ?? "",
+    likeCount: api.like_count,
+    repostCount: 0,
+    playCount: api.play_count,
+    commentCount: 0,
+    duration: api.duration ? formatDuration(api.duration) : "0:00",
+    postedAt: "", // TrackSummary has no created_at
+    audioUrl: api.stream_url ?? "",
+    waveformData: [],
+  };
+}
+
+/**
+ * RecentlyPlayedEntry → Track
+ * Extracts the nested TrackSummary. Use getUserById(api.track.user_id) for artist name.
+ */
+export function mapRecentlyPlayedEntry(api: RecentlyPlayedEntry): Track {
+  return mapTrackSummaryToTrack(api.track);
+}
+
+/**
+ * ListeningHistoryEntry → Track + playedAt
+ */
+export function mapListeningHistoryEntry(
+  api: ListeningHistoryEntry,
+): Track & { playedAt: string } {
+  return {
+    ...mapTrackSummaryToTrack(api.track),
+    playedAt: api.played_at,
+  };
+}
+
+// ─── Mixes ────────────────────────────────────────────────────────────────────
+
+/** DiscoveryMix → Mix */
+export function mapPersonalMix(api: PersonalMix): Mix {
+  return {
+    id: api.id,
+    label: api.label,
+    flavor: api.flavor,
+    coverUrl: api.cover_image,
+    trackCount: api.track_count,
+    generatedAt: api.generated_at,
+  };
+}
+
+// ─── Stations ─────────────────────────────────────────────────────────────────
+
+/**
+ * DiscoveryStation → Station
+ * Old HomeStation had a nested seed_artist object — new spec has flat artist_id / artist_name.
+ */
+export function mapDiscoveryStation(api: DiscoveryStation): Station {
+  return {
+    id: api.id,
+    name: api.name,
+    seedArtist: {
+      id: api.artist_id,
+      displayName: api.artist_name,
+    },
+    coverUrl: api.cover_image,
+    trackCount: api.track_count,
+  };
+}
+
+// ─── Albums ───────────────────────────────────────────────────────────────────
+
+/**
+ * DiscoveryAlbum → Playlist
+ */
+export function mapDiscoveryAlbum(api: DiscoveryAlbum): Playlist {
+  return {
+    playlist_id: api.id,
+    owner_user_id: api.owner_id,
+    name: api.name,
+    description: null,
+    is_public: true,
+    cover_image: api.cover_image,
+    subtype: "album",
+    track_count: api.track_count,
+    like_count: api.like_count,
+    created_at: api.created_at ?? "",
+  };
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+/**
+ * SuggestedArtist → User
+ * For NewCrewForYou carousel. SuggestedArtist now has profile_picture and follower_count directly.
+ * No extra getUserById fetch needed.
+ */
+export function mapSuggestedArtistToUser(api: SuggestedArtist): User {
+  return {
+    id: api.id as unknown as number,
+    username: api.username ?? api.display_name,
+    displayName: api.display_name,
     avatar: api.profile_picture ?? undefined,
-    followers: api.followers_count,
-    tracks: 0, // not returned by GET /users/{id} — ArtistListSection hides stat when 0
+    followers: api.follower_count,
     isVerified: api.is_verified,
   };
 }
 
-export function mapSuggestedToArtist(user: SuggestedUser) {
+/**
+ * SuggestedUser → User
+ * For getSuggestedUsers() results ("new crew" section).
+ */
+export function mapSuggestedUserToUser(api: SuggestedUser): User {
   return {
-    username: user.display_name,
-    avatar: undefined as string | undefined,
-    followers: 0, // not in SuggestedUser — use two-step fetch with getUserById for real data
-    isVerified: user.is_verified,
+    id: api.id as unknown as number,
+    username: api.username ?? api.display_name,
+    displayName: api.display_name,
+    avatar: api.profile_picture ?? undefined,
+    followers: api.follower_count,
+    isVerified: api.is_verified,
   };
 }
 
-export function mapSuggestedToUser(user: SuggestedUser): User {
+/**
+ * SuggestedArtist → ArtistListSection shape
+ * For the sidebar "Artists you should follow" when you have SuggestedArtist data directly
+ * and don't need a full profile fetch.
+ */
+export function mapSuggestedArtistToArtistCard(api: SuggestedArtist) {
   return {
-    id: user.user_id as unknown as string, // User.id is legacy number; API returns UUID string
-    username: user.display_name, // SuggestedUser has no separate username field
-    displayName: user.display_name,
-    avatar: undefined,
-    followers: 0, // not in SuggestedUser
-    isVerified: user.is_verified,
+    username: api.username ?? api.display_name,
+    avatar: api.profile_picture ?? undefined,
+    followers: api.follower_count,
+    isVerified: api.is_verified,
   };
 }
 
-// missing artist_name, cover_url, and audio_url.
-export function mapRecentlyPlayedEntry(api: RecentlyPlayedEntry) {
+/**
+ * PublicUser → ArtistListSection shape
+ * Used after a full getUserById() fetch when you need accurate follower counts and username.
+ */
+export function mapApiUserToArtist(api: PublicUser) {
   return {
-    id: api.track.id,
-    title: api.track.title,
-    artist: "", // TrackSummary doesn't include artist name
-    coverUrl: undefined as string | undefined,
-    lastPlayedAt: api.last_played_at,
+    username: api.username ?? api.display_name,
+    avatar: api.profile_picture ?? undefined,
+    followers: api.followers_count,
+    isVerified: api.is_verified,
+  };
+}
+
+// ─── Home page master mapper ──────────────────────────────────────────────────
+
+/** EmergingArtist → ArtistListSection shape */
+export function mapEmergingArtist(api: EmergingArtist) {
+  return {
+    username: api.display_name,
+    avatar: api.profile_picture ?? undefined,
+    followers: 0, // not on EmergingArtist — use play_velocity as a proxy if needed
+    tracks: api.track_count,
+    isVerified: false,
+  };
+}
+
+export interface MappedHomeData {
+  moreOfWhatYouLike: {
+    tracks: Track[];
+    source: "personalized" | "trending_fallback";
+  };
+  mixedForYou: Mix[];
+  madeForYou: {
+    dailyMix: CuratedMixSummary;
+    weeklyMix: CuratedMixSummary;
+  } | null;
+  discoverWithStations: Station[];
+  artistsToWatch: ReturnType<typeof mapEmergingArtist>[];
+}
+
+/**
+ * HomeData → MappedHomeData
+ * Single call to map every home page section at once.
+ * Pass the result to section components directly — no per-section mapping needed.
+ */
+export function mapHomeData(api: HomeData): MappedHomeData {
+  return {
+    moreOfWhatYouLike: {
+      tracks: api.more_of_what_you_like.tracks.map(mapDiscoveryTrack),
+      source: api.more_of_what_you_like.source,
+    },
+    mixedForYou: api.mixed_for_you.map(mapPersonalMix),
+    madeForYou: api.made_for_you
+      ? {
+          dailyMix: api.made_for_you.daily_mix,
+          weeklyMix: api.made_for_you.weekly_mix,
+        }
+      : null,
+    discoverWithStations: api.discover_with_stations.map(mapDiscoveryStation),
+    artistsToWatch: api.artists_to_watch.map(mapEmergingArtist),
   };
 }

@@ -2,11 +2,8 @@ import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
 import TrackCard from "@/components/UI/card/Card";
 import { mockRecentlyPlayedItems } from "@/services/mocks/discover";
-import {
-  getRecentlyPlayed,
-  getTrackById,
-} from "@/services/api/discover.service";
-import { mapApiTrackToTrack } from "@/services/api/discover.mapper";
+import { getRecentlyPlayed } from "@/services/api/discover.service";
+import { mapRecentlyPlayedEntry } from "@/services/api/discover.mapper";
 import type { Track } from "@/types/track";
 
 // ─── Component ────────────────────────────────────────────
@@ -15,11 +12,8 @@ const RecentlyPlayed = () => {
 
   useEffect(() => {
     getRecentlyPlayed()
-      .then((historyItems) =>
-        Promise.all(historyItems.map((historyItem) => getTrackById(historyItem.track.id))),
-      )
-      .then((fullTracks) => setTracks(fullTracks.map(mapApiTrackToTrack)))
-      .catch(() => {}); // silent — mock is the fallback
+      .then((items) => setTracks(items.map(mapRecentlyPlayedEntry)))
+      .catch(() => {});
   }, []);
 
   // Fallback: show only track items from the mock (not mixes or stations)

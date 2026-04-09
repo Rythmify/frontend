@@ -1,5 +1,10 @@
 import type React from "react";
-import type { BuzzingPlaylist } from "@/services/api/discover.service";
+interface BuzzingPlaylist {
+  id: string;
+  genre: string;
+  cover_image: string | null;
+  track_count: number;
+}
 import { useLikesStore } from "@/stores/likes.store";
 
 // ─── Badge colors per genre index ─────────────────────────
@@ -37,7 +42,7 @@ export default function GenreCard({
   };
 
   return (
-    <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
+    <div className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`} data-test={`genre-card-${item.id}`}>
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
         {item.cover_image && (
@@ -71,10 +76,10 @@ export default function GenreCard({
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={handleLike}>
+            <button className="flex flex-col items-center gap-0.5 group/btn" data-test={`button-like-genre-${item.id}`} onClick={handleLike}>
               <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
             </button>
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+            <button className="flex flex-col items-center gap-0.5 group/btn" data-test={`button-more-genre-${item.id}`} onClick={(e) => e.stopPropagation()}>
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
             </button>
           </div>
