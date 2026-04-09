@@ -48,11 +48,13 @@ const MadeForYou = ({ madeForYou }: Props) => {
     : FALLBACK_ITEMS;
 
   return (
-    <HorizontalCarousel title="Made for you">
-      {items.map((item) => (
-        <MadeForYouCard key={item.id} item={item} />
-      ))}
-    </HorizontalCarousel>
+    <div data-test="section-made-for-you">
+      <HorizontalCarousel title="Made for you">
+        {items.map((item) => (
+          <MadeForYouCard key={item.id} item={item} />
+        ))}
+      </HorizontalCarousel>
+    </div>
   );
 };
 

@@ -12,16 +12,18 @@ const DiscoverWithStations = ({ stations }: Props) => {
   const items = stations.length ? stations.map(mapDiscoveryStation) : mockRecentlyPlayedStations;
 
   return (
-    <HorizontalCarousel title="Discover with Stations">
-      {items.map((station, i) => (
-        <StationCard
-          key={station.id}
-          station={station}
-          colorIndex={i}
-          widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"
-        />
-      ))}
-    </HorizontalCarousel>
+    <div data-test="section-discover-with-stations">
+      <HorizontalCarousel title="Discover with Stations">
+        {items.map((station, i) => (
+          <StationCard
+            key={station.id}
+            station={station}
+            colorIndex={i}
+            widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"
+          />
+        ))}
+      </HorizontalCarousel>
+    </div>
   );
 };
 

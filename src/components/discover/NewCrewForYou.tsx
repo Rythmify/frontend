@@ -18,11 +18,13 @@ const NewCrewForYou = () => {
   const items = users.length ? users : mockSuggestedUsers;
 
   return (
-    <HorizontalCarousel title="New crew, suggested for you">
-      {items.map((user) => (
-        <UserCard key={user.id} user={user} />
-      ))}
-    </HorizontalCarousel>
+    <div data-test="section-new-crew-for-you">
+      <HorizontalCarousel title="New crew, suggested for you">
+        {items.map((user) => (
+          <UserCard key={user.id} user={user} />
+        ))}
+      </HorizontalCarousel>
+    </div>
   );
 };
 
