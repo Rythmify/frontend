@@ -11,7 +11,6 @@ import { getUsers } from "../../../services/mocks/User.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/Playlist/TrackList";
-import UploadFooter from "@/pages/creator/upload/UploadFooter";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 
 function PlaylistSlugPage() {

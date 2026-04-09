@@ -1,174 +1,142 @@
 import { useState, useRef, useEffect } from "react";
-import * as Tooltip from "@radix-ui/react-tooltip";
-import { FaHeart, FaEllipsisH, FaLink, FaGlobe } from "react-icons/fa";
-import { BiRepost } from "react-icons/bi";
-import { LuListEnd, LuShare } from "react-icons/lu";
-import { FaListUl as FaAddToPlaylist } from "react-icons/fa";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { HiUpload, HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
+import { IoCopyOutline } from "react-icons/io5";
+import { LuListEnd } from "react-icons/lu";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
 import { useLikesStore } from "@/stores/likes.store";
 
 interface PlaylistActionsProps {
   playlist: Playlist;
+  onEdit?: () => void;
+  onDuplicate?: () => void;
+  onDelete?: () => void;
   onAddToNextUp?: () => void;
 }
 
 export default function PlaylistActions({
   playlist,
+  onEdit,
+  onDuplicate,
+  onDelete,
   onAddToNextUp,
 }: PlaylistActionsProps) {
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const liked = isPlaylistLiked(playlist.playlist_id);
 
   const [shareOpen, setShareOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
-        setMoreOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   return (
-    <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
-      <div
-        data-test="playlist-action-bar"
-        className="flex flex-row items-center gap-2 py-4"
+    <div
+      data-test="playlist-action-bar"
+      className="flex items-center gap-3 py-3 ]"
+    >
+      {/* Share */}
+      <ActionButton
+        tooltip="Share"
+        onClick={() => setShareOpen(true)}
+        active={shareOpen}
       >
-        {/* Like Button */}
-        <ActionButton
-          onClick={() =>
-            togglePlaylist({
-              id: playlist.playlist_id,
-              title: playlist.name,
-              owner: playlist.owner_user_id,
-              coverUrl: playlist.cover_image || null,
-            })
-          }
-          active={liked}
+        <HiUpload className="text-[18px]" />
+      </ActionButton>
+
+      {/* Copy link */}
+      <ActionButton tooltip="Copy Link" onClick={onDuplicate}>
+        <IoCopyOutline className="text-[18px]" />
+      </ActionButton>
+
+      {/* Edit */}
+      <ActionButton tooltip="Edit" onClick={onEdit}>
+        <HiOutlinePencil className="text-[18px]" />
+      </ActionButton>
+
+      {/* Like */}
+      <ActionButton
+        tooltip={liked ? "Unlike" : "Like"}
+        active={liked}
+        onClick={() =>
+          togglePlaylist({
+            id: playlist.playlist_id,
+            title: playlist.name,
+            owner: playlist.owner_user_id,
+            coverUrl: playlist.cover_image || null,
+          })
+        }
+      >
+        {liked ? (
+          <FaHeart className="text-[16px] text-[var(--color-accent)]" />
+        ) : (
+          <FaRegHeart className="text-[16px]" />
+        )}
+      </ActionButton>
+
+      {/* Add to Next Up */}
+      <ActionButton tooltip="Add to Next Up" onClick={onAddToNextUp}>
+        <LuListEnd className="text-[18px]" />
+      </ActionButton>
+
+      {/* Delete */}
+      <ActionButton tooltip="Delete" danger onClick={onDelete}>
+        <HiOutlineTrash className="text-[18px]" />
+      </ActionButton>
+
+      {shareOpen && (
+        <SharePopup playlist={playlist} onClose={() => setShareOpen(false)} />
+      )}
+    </div>
+  );
+
+  // ── Sub-components ─────────────────────────────────────────────────────────
+
+  function ActionButton({
+    children,
+    onClick,
+    active = false,
+    danger = false,
+    tooltip,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    active?: boolean;
+    danger?: boolean;
+    tooltip?: string;
+  }) {
+    const [showTooltip, setShowTooltip] = useState(false);
+
+    return (
+      <div
+        className="relative"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        <button
+          onClick={onClick}
+          className={`
+          w-10 h-10 flex items-center justify-center
+          rounded-[var(--radius-sm)] 
+         hover:text-[#717171] transition-colors bg-[#303030]
+          transition-all duration-150 cursor-pointer group
+        `}
         >
-          <FaHeart
-            className={`text-[14px] ${liked ? "text-[#f50]" : "text-white"}`}
-          />
-          {liked ? "Liked" : "Like"}
-        </ActionButton>
-
-        {/* Share Button */}
-        <ActionButton onClick={() => setShareOpen(true)}
-          active={shareOpen}
-        >
-          <LuShare className="text-[16px]" />
-          Share
-        </ActionButton>
-
-        {/* Add to Next up Button */}
-        <ActionButton onClick={onAddToNextUp}>
-          <LuListEnd className="text-[18px]" />
-          Add to Next up
-        </ActionButton>
-
-        {/* More Dropdown */}
-        <div ref={moreRef} className="relative">
-          <ActionButton
-            onClick={() => setMoreOpen((p: boolean) => !p)}
-            active={moreOpen}
+          <span
+            className={`transition-colors duration-150 ${
+              active
+                ? "text-[var(--color-accent)]"
+                : "text-white group-hover:text-[#717171]"
+            }`}
           >
-            <FaEllipsisH className="text-[14px]" />
-            More
-          </ActionButton>
+            {children}
+          </span>
+        </button>
 
-          {moreOpen && (
-            <div className="absolute left-0 top-full mt-1 bg-[#1a1a1a] border border-[#333] rounded-sm shadow-xl z-50 min-w-[190px] py-1">
-              <DropdownItem
-                icon={<FaAddToPlaylist />}
-                label="Add to playlist"
-                onClick={() => setMoreOpen(false)}
-              />
-              {!playlist.is_public && (
-                <DropdownItem
-                  icon={<FaGlobe />}
-                  label="Make public"
-                  onClick={() => setMoreOpen(false)}
-                />
-              )}
-              <DropdownItem
-                icon={<FaLink />}
-                label="Copy link"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  setMoreOpen(false);
-                }}
-              />
-              <div className="my-1 border-t border-[#333]" />
-              <DropdownItem
-                icon={<BiRepost />}
-                label="Repost"
-                onClick={() => setMoreOpen(false)}
-              />
-            </div>
-          )}
-        </div>
-
-        {shareOpen && (
-          <SharePopup playlist={playlist} onClose={() => setShareOpen(false)} />
+        {tooltip && showTooltip && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#1a1a1a] border border-[#333] text-white text-[11px] font-medium rounded-md shadow-xl whitespace-nowrap z-[100] pointer-events-none">
+            {tooltip}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#333]" />
+          </div>
         )}
       </div>
-    </Tooltip.Provider>
-  );
-}
-
-function ActionButton({
-  children,
-  onClick,
-  active = false,
-  className = "",
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  active?: boolean;
-  className?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`
-        flex items-center gap-2 px-3 py-1.5 h-[32px]
-        rounded-[4px] transition-colors duration-150 cursor-pointer
-        bg-[#303030] font-bold text-[14px] 
-        ${
-          active
-            ? "text-accent" 
-            : "text-white border-transparent hover:text-[#717171]"
-        }
-        ${className}
-      `}
-    >
-      {children}
-    </button>
-  );
-}
-
-function DropdownItem({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-medium text-[#ccc] hover:bg-white/5 hover:text-white transition-colors cursor-pointer text-left"
-    >
-      <span className="text-[14px] opacity-70">{icon}</span>
-      {label}
-    </button>
-  );
+    );
+  }
 }
