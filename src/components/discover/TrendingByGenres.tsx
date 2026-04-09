@@ -24,7 +24,7 @@ const TrendingByGenres = () => {
   const [genres] = useState<BuzzingPlaylist[]>(mockGenres);
 
   return (
-    <HorizontalCarousel title="Trending by genres">
+    <HorizontalCarousel title="Trending by genres" data-section="trending-by-genres">
       {genres.map((item, i) => (
         <GenreCard key={item.id} item={item} index={i} />
       ))}
