@@ -28,7 +28,10 @@ const RecentlyPlayed = () => {
 
   return (
     <div data-test="section-recently-played">
-      <HorizontalCarousel title="Recently played">
+      <HorizontalCarousel
+        title="Recently played"
+        data-section="recently-played"
+      >
         {items.map((track) => (
           <TrackCard key={track.id} track={track} />
         ))}

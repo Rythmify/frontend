@@ -20,7 +20,7 @@ const AlbumsForYou = () => {
 
   return (
     <div data-test="section-albums-for-you">
-      <HorizontalCarousel title="Albums for you">
+      <HorizontalCarousel title="Albums for you" data-section="albums-for-you">
         {albums.map((album) => (
           <AlbumCard
             key={album.playlist_id}
