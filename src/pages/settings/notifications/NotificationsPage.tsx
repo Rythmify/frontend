@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axiosInstance from "@/services/api/axiosInstance";
 
 // ── Shared Checkbox ───────────────────────────────────────────
 
@@ -67,37 +68,45 @@ function InfoIcon() {
   );
 }
 
-// ── Section ───────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────
 
 type NotifRow = {
   label: string;
   info?: boolean;
-  emailDefault: boolean;
-  deviceDefault: boolean | "dropdown" | null;
+  emailKey: string;
+  deviceKey: string | null;
+  deviceType: boolean | "dropdown";
 };
 
-function NotifSection({ title, rows }: { title: string; rows: NotifRow[] }) {
-  const [emailStates, setEmailStates] = useState(
-    rows.map((r) => r.emailDefault),
-  );
-  const [deviceStates, setDeviceStates] = useState(
-    rows.map((r) =>
-      r.deviceDefault !== "dropdown" && r.deviceDefault !== null
-        ? r.deviceDefault
-        : true,
-    ),
-  );
+type Prefs = Record<string, boolean>;
 
-  const allEmail = emailStates.every(Boolean);
-  const allDevice = deviceStates.every(Boolean);
+// ── Section ───────────────────────────────────────────────────
 
-  const toggleAllEmail = () => setEmailStates(emailStates.map(() => !allEmail));
+function NotifSection({
+  title,
+  rows,
+  prefs,
+  onToggle,
+}: {
+  title: string;
+  rows: NotifRow[];
+  prefs: Prefs;
+  onToggle: (key: string, value: boolean) => void;
+}) {
+  const emailKeys = rows.map((r) => r.emailKey);
+  const deviceKeys = rows
+    .filter((r) => r.deviceKey && r.deviceType !== "dropdown")
+    .map((r) => r.deviceKey as string);
+
+  const allEmail = emailKeys.every((k) => prefs[k]);
+  const allDevice = deviceKeys.length > 0 && deviceKeys.every((k) => prefs[k]);
+
+  const toggleAllEmail = () => emailKeys.forEach((k) => onToggle(k, !allEmail));
   const toggleAllDevice = () =>
-    setDeviceStates(deviceStates.map(() => !allDevice));
+    deviceKeys.forEach((k) => onToggle(k, !allDevice));
 
   return (
     <div>
-      {/* Header row */}
       <div className="flex items-center mb-4">
         <span className="flex-1 text-base font-bold text-[var(--color-text-hover)]">
           {title}
@@ -116,9 +125,8 @@ function NotifSection({ title, rows }: { title: string; rows: NotifRow[] }) {
         </div>
       </div>
 
-      {/* Rows */}
       <div className="flex flex-col gap-5">
-        {rows.map((row, i) => (
+        {rows.map((row) => (
           <div key={row.label} className="flex items-center">
             <div className="flex-1 flex items-center gap-2">
               <span className="text-sm font-semibold text-[var(--color-text-hover)]">
@@ -128,16 +136,12 @@ function NotifSection({ title, rows }: { title: string; rows: NotifRow[] }) {
             </div>
             <div className="w-24 flex items-center">
               <Checkbox
-                checked={emailStates[i]}
-                onChange={() => {
-                  const next = [...emailStates];
-                  next[i] = !next[i];
-                  setEmailStates(next);
-                }}
+                checked={!!prefs[row.emailKey]}
+                onChange={() => onToggle(row.emailKey, !prefs[row.emailKey])}
               />
             </div>
             <div className="w-28 flex items-center">
-              {row.deviceDefault === "dropdown" ? (
+              {row.deviceType === "dropdown" ? (
                 <div className="relative">
                   <select className="text-xs text-[var(--color-text-hover)] bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] pl-2 pr-5 py-1 appearance-none cursor-pointer">
                     <option>Everyone</option>
@@ -162,16 +166,14 @@ function NotifSection({ title, rows }: { title: string; rows: NotifRow[] }) {
                     </svg>
                   </span>
                 </div>
-              ) : row.deviceDefault === null ? null : (
+              ) : row.deviceKey ? (
                 <Checkbox
-                  checked={deviceStates[i]}
-                  onChange={() => {
-                    const next = [...deviceStates];
-                    next[i] = !next[i];
-                    setDeviceStates(next);
-                  }}
+                  checked={!!prefs[row.deviceKey]}
+                  onChange={() =>
+                    onToggle(row.deviceKey!, !prefs[row.deviceKey!])
+                  }
                 />
-              )}
+              ) : null}
             </div>
           </div>
         ))}
@@ -180,27 +182,51 @@ function NotifSection({ title, rows }: { title: string; rows: NotifRow[] }) {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────
+// ── Row definitions ───────────────────────────────────────────
+// Keys map exactly to the API field names in NotificationPreferences schema
 
 const ACTIVITIES: NotifRow[] = [
-  { label: "New follower", emailDefault: true, deviceDefault: true },
-  { label: "Repost of your post", emailDefault: true, deviceDefault: true },
+  {
+    label: "New follower",
+    emailKey: "new_follower_email",
+    deviceKey: "new_follower_push",
+    deviceType: true,
+  },
+  {
+    label: "Repost of your post",
+    emailKey: "repost_of_your_post_email",
+    deviceKey: "repost_of_your_post_push",
+    deviceType: true,
+  },
   {
     label: "New post by followed user",
-    emailDefault: true,
-    deviceDefault: true,
+    emailKey: "new_post_by_followed_email",
+    deviceKey: "new_post_by_followed_push",
+    deviceType: true,
   },
   {
     label: "Likes and plays on your post",
-    emailDefault: true,
-    deviceDefault: true,
+    emailKey: "likes_and_plays_email",
+    deviceKey: "likes_and_plays_push",
+    deviceType: true,
   },
-  { label: "Comment on your post", emailDefault: false, deviceDefault: true },
-  { label: "Recommended Content", emailDefault: true, deviceDefault: true },
+  {
+    label: "Comment on your post",
+    emailKey: "comment_on_post_email",
+    deviceKey: "comment_on_post_push",
+    deviceType: true,
+  },
+  {
+    label: "Recommended Content",
+    emailKey: "recommended_content_email",
+    deviceKey: "recommended_content_push",
+    deviceType: true,
+  },
   {
     label: "New message",
-    emailDefault: true,
-    deviceDefault: "dropdown",
+    emailKey: "new_message_in_app",
+    deviceKey: "new_message_push",
+    deviceType: "dropdown",
     info: true,
   },
 ];
@@ -208,30 +234,164 @@ const ACTIVITIES: NotifRow[] = [
 const UPDATES: NotifRow[] = [
   {
     label: "Rythmify Feature Updates & Education",
-    emailDefault: true,
-    deviceDefault: true,
+    emailKey: "feature_updates_email",
+    deviceKey: "feature_updates_push",
+    deviceType: true,
   },
-  { label: "Surveys and feedback", emailDefault: false, deviceDefault: true },
+  {
+    label: "Surveys and feedback",
+    emailKey: "surveys_and_feedback_email",
+    deviceKey: "surveys_and_feedback_push",
+    deviceType: true,
+  },
   {
     label: "Promotional & Partnership Content",
-    emailDefault: true,
-    deviceDefault: true,
+    emailKey: "promotional_content_email",
+    deviceKey: "promotional_content_push",
+    deviceType: true,
   },
-  { label: "Rythmify newsletter", emailDefault: false, deviceDefault: null },
+  {
+    label: "Rythmify newsletter",
+    emailKey: "newsletter_email",
+    deviceKey: null,
+    deviceType: false,
+  },
 ];
 
+// Mirrors the API defaults from the OpenAPI spec
+const DEFAULT_PREFS: Prefs = {
+  new_follower_email: false,
+  new_follower_push: true,
+  repost_of_your_post_email: false,
+  repost_of_your_post_push: true,
+  new_post_by_followed_email: false,
+  new_post_by_followed_push: false,
+  likes_and_plays_email: false,
+  likes_and_plays_push: false,
+  comment_on_post_email: false,
+  comment_on_post_push: true,
+  recommended_content_email: false,
+  recommended_content_push: false,
+  new_message_in_app: true,
+  new_message_push: true,
+  feature_updates_email: true,
+  feature_updates_push: true,
+  surveys_and_feedback_email: false,
+  surveys_and_feedback_push: false,
+  promotional_content_email: false,
+  promotional_content_push: false,
+  newsletter_email: false,
+};
+
+// ── Page ──────────────────────────────────────────────────────
+
 export default function NotificationsPage() {
+  const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
+    "idle",
+  );
+
+  const loadPrefs = () => {
+    axiosInstance
+      .get<{ data: Prefs }>("/notifications/preferences")
+      .then((res) => setPrefs({ ...DEFAULT_PREFS, ...res.data.data }))
+      .catch(() => {
+        /* fallback to defaults silently */
+      });
+  };
+
+  // Load from GET /notifications/preferences on mount
+  useEffect(() => {
+    loadPrefs();
+  }, []);
+
+  const handleToggle = (key: string, value: boolean) => {
+    setPrefs((prev) => ({ ...prev, [key]: value }));
+    setDirty(true);
+    setSaveStatus("idle");
+  };
+
+  // PATCH /notifications/preferences with full prefs object
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveStatus("idle");
+    try {
+      await axiosInstance.patch("/notifications/preferences", prefs);
+      setDirty(false);
+      setSaveStatus("success");
+    } catch {
+      setSaveStatus("error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Reload from server, discarding local changes
+  const handleCancel = () => {
+    setSaveStatus("idle");
+    setDirty(false);
+    loadPrefs();
+  };
+
   return (
     <div className="max-w-3xl flex flex-col gap-10 pb-10">
-      <NotifSection title="Activities" rows={ACTIVITIES} />
-      <NotifSection title="Updates from Rythmify" rows={UPDATES} />
+      <NotifSection
+        title="Activities"
+        rows={ACTIVITIES}
+        prefs={prefs}
+        onToggle={handleToggle}
+      />
+      <NotifSection
+        title="Updates from Rythmify"
+        rows={UPDATES}
+        prefs={prefs}
+        onToggle={handleToggle}
+      />
 
       {/* Cancel + Save */}
       <div className="flex items-center justify-end gap-4 pt-4">
-        <button className="text-sm text-[var(--color-text-hover)] hover:opacity-70 transition-opacity duration-150">
+        {saveStatus === "success" && (
+          <span className="text-xs text-[var(--color-success)]">Saved!</span>
+        )}
+        {saveStatus === "error" && (
+          <span className="text-xs text-[var(--color-error)]">
+            Failed to save
+          </span>
+        )}
+        <button
+          onClick={handleCancel}
+          className="text-sm text-[var(--color-text-hover)] hover:opacity-70 transition-opacity duration-150"
+        >
           Cancel
         </button>
-        <button className="px-5 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150">
+        <button
+          onClick={handleSave}
+          disabled={!dirty || saving}
+          className="px-5 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          {saving && (
+            <svg
+              className="animate-spin w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              />
+            </svg>
+          )}
           Save changes
         </button>
       </div>
