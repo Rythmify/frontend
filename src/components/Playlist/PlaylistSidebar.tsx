@@ -6,8 +6,6 @@ import type {
   PlaylistDetails,
   Playlist,
 } from "@/services/api/playlist/playlist.service";
-import type { MockUser } from "../../services/mocks/users";
-import { followUser, unfollowUser } from "../../services/mocks/User.service";
 import { getPlaylistsByUser } from "@/services/api/playlist/playlist.service";
 import { useAuthStore } from "@/stores/auth.store";
 

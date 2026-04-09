@@ -121,9 +121,6 @@ function PlaylistSlugPage() {
           <div className="flex-1 min-w-0">
             <PlaylistActions
               playlist={playlist}
-              onAddToNextUp={() => {
-                console.log("Adding all tracks to queue");
-              }}
             />
 
             <div className="mt-8">
@@ -142,7 +139,6 @@ function PlaylistSlugPage() {
           <div className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar
               playlist={playlist}
-              featuredArtists={featuredArtists}
             />
             <GuestPageFooter />
           </div>

@@ -127,6 +127,7 @@ export default function PlaylistHero({
         <div className="relative group">
           <img
             src={
+              previewUrl ||
               playlist.cover_image ||
               "https://picsum.photos/seed/playlist/600/600"
             }

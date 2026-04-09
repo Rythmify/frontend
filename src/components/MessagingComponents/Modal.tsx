@@ -22,7 +22,7 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
   return (
     <div
       data-test="modal-backdrop"
-      className="fixed inset-0 flex z-[9999]  bg-bg-inverted/40 flex-col "
+      className="fixed inset-0 flex z-[9999] overflow-y-auto bg-bg-inverted/40 flex-col "
       onClick={onClose} // clicking backdrop closes it
     >
       <div className="relative mt-10 mr-10">
@@ -46,7 +46,7 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
         </button>
       </div>
       <div
-        className="self-center inline-block max-w-2xl p-6 mt-10 bg-bg rounded-sm"
+        className="self-center inline-block my-19 p-6 mt-10 bg-bg rounded-sm"
         onClick={(e) => e.stopPropagation()} // prevent backdrop click
       >
         {children}
