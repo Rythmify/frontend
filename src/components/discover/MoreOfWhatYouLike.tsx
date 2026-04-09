@@ -1,23 +1,15 @@
-import { useState, useEffect } from "react";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import TrackCard from "@/components/UI/card/Card";
-import { getHome } from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import { mockDiscoverTracks } from "@/services/mocks/discover";
-import type { Track } from "@/types/track";
+import type { DiscoveryTrack } from "@/services/api/discover.service";
 
-const MoreOfWhatYouLike = () => {
-  const [tracks, setTracks] = useState<Track[]>([]);
+interface Props {
+  tracks: DiscoveryTrack[];
+}
 
-  useEffect(() => {
-    getHome()
-      .then((data) =>
-        setTracks(data.more_of_what_you_like.tracks.map(mapDiscoveryTrack)),
-      )
-      .catch(() => setTracks(mockDiscoverTracks));
-  }, []);
-
-  const items = tracks.length ? tracks : mockDiscoverTracks;
+const MoreOfWhatYouLike = ({ tracks }: Props) => {
+  const items = tracks.length ? tracks.map(mapDiscoveryTrack) : mockDiscoverTracks;
 
   return (
     <HorizontalCarousel title="More of what you like">
