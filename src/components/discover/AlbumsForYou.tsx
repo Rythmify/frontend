@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
-import AlbumCard from "@/components/Playlist/PlaylistCard";
+import AlbumCard from "@/components/playlist/PlaylistCard";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
 import { getAlbumsForYou } from "@/services/api/discover.service";
 import { mapDiscoveryAlbum } from "@/services/api/discover.mapper";
