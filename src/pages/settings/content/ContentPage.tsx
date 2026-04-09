@@ -112,11 +112,13 @@ function SelectField({
   value,
   onChange,
   defaultValue,
+  dataTest,
 }: {
   children: React.ReactNode;
   value?: string;
   onChange?: (v: string) => void;
   defaultValue?: string;
+  dataTest?: string;
 }) {
   return (
     <div className="relative">
@@ -125,6 +127,7 @@ function SelectField({
         value={value}
         defaultValue={defaultValue}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        data-test={dataTest}
       >
         {children}
       </select>
@@ -484,6 +487,7 @@ export default function ContentPage() {
               className={inputClass}
               readOnly
               defaultValue="https://feeds.rythmify.com/users/rythmify:users:483320034/sounds.rss"
+              data-test="settings-content-rss-feed-input"
             />
           </div>
           <div className="flex-1">
@@ -491,6 +495,7 @@ export default function ContentPage() {
             <SelectField
               value={settings.rss_show_email ? "display" : "dont"}
               onChange={(v) => patch({ rss_show_email: v === "display" })}
+              dataTest="settings-content-rss-show-email-select"
             >
               <option value="dont">Don't display email address</option>
               <option value="display">Display email address</option>
@@ -506,6 +511,7 @@ export default function ContentPage() {
               className={inputClass}
               value={settings.rss_title ?? ""}
               onChange={(e) => patch({ rss_title: e.target.value })}
+              data-test="settings-content-rss-title-input"
             />
           </div>
           <div className="flex-1">
@@ -513,6 +519,7 @@ export default function ContentPage() {
             <SelectField
               value={settings.rss_category ?? ""}
               onChange={(v) => patch({ rss_category: v })}
+              dataTest="settings-content-rss-category-select"
             >
               <option value=""></option>
               <option>Arts</option>
@@ -538,7 +545,11 @@ export default function ContentPage() {
           </div>
           <div className="flex-1">
             <FieldLabel info>Stats-service URL prefix</FieldLabel>
-            <input className={inputClass} placeholder="http://" />
+            <input
+              className={inputClass}
+              placeholder="http://"
+              data-test="settings-content-stats-service-url-input"
+            />
           </div>
         </div>
 
@@ -546,13 +557,17 @@ export default function ContentPage() {
         <div className="flex gap-6 mb-6">
           <div className="flex-1">
             <FieldLabel>Custom author name</FieldLabel>
-            <input className={inputClass} />
+            <input
+              className={inputClass}
+              data-test="settings-content-author-name-input"
+            />
           </div>
           <div className="flex-1">
             <FieldLabel required>Language</FieldLabel>
             <SelectField
               value={settings.rss_language ?? "English"}
               onChange={(v) => patch({ rss_language: v })}
+              dataTest="settings-content-rss-language-select"
             >
               <option>English</option>
               <option>Arabic</option>
@@ -563,7 +578,11 @@ export default function ContentPage() {
           </div>
           <div className="flex-1">
             <FieldLabel info>Subscriber redirect</FieldLabel>
-            <input className={inputClass} placeholder="http://" />
+            <input
+              className={inputClass}
+              placeholder="http://"
+              data-test="settings-content-subscriber-redirect-input"
+            />
           </div>
         </div>
 
@@ -608,12 +627,14 @@ export default function ContentPage() {
       <div className="left-0 right-0 flex items-center justify-end gap-4 px-8 py-4 bg-[var(--color-bg)] ">
         <button
           onClick={handleCancel}
+          data-test="settings-content-cancel-button"
           className="text-sm text-[var(--color-text-hover)] hover:opacity-70 transition-opacity duration-150"
         >
           Cancel
         </button>
         <button
           onClick={handleSave}
+          data-test="settings-content-save-button"
           className="px-5 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150"
         >
           Save changes

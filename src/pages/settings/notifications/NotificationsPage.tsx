@@ -143,7 +143,10 @@ function NotifSection({
             <div className="w-28 flex items-center">
               {row.deviceType === "dropdown" ? (
                 <div className="relative">
-                  <select className="text-xs text-[var(--color-text-hover)] bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] pl-2 pr-5 py-1 appearance-none cursor-pointer">
+                  <select
+                    data-test={`settings-notifications-${row.emailKey}-device-select`}
+                    className="text-xs text-[var(--color-text-hover)] bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] pl-2 pr-5 py-1 appearance-none cursor-pointer"
+                  >
                     <option>Everyone</option>
                     <option>Followed</option>
                     <option>Off</option>
@@ -362,6 +365,7 @@ export default function NotificationsPage() {
         )}
         <button
           onClick={handleCancel}
+          data-test="settings-notifications-cancel-button"
           className="text-sm text-[var(--color-text-hover)] hover:opacity-70 transition-opacity duration-150"
         >
           Cancel
@@ -369,6 +373,7 @@ export default function NotificationsPage() {
         <button
           onClick={handleSave}
           disabled={!dirty || saving}
+          data-test="settings-notifications-save-button"
           className="px-5 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {saving && (

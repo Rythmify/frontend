@@ -157,7 +157,10 @@ export default function PrivacyPage() {
           <span className="text-sm text-[var(--color-text-hover)]">
             Manage your cookie preferences
           </span>
-          <button className="px-4 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150">
+          <button
+            data-test="settings-privacy-cookie-manager-button"
+            className="px-4 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150"
+          >
             Open Cookie Manager
           </button>
         </div>
