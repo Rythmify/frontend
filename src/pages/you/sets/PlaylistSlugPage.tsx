@@ -121,7 +121,7 @@ function PlaylistSlugPage() {
           <div className="flex-1 min-w-0">
             <PlaylistActions
               playlist={playlist}
-              onPlaylistUpdated={(updated) =>
+              onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                 setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
               }
             />
