@@ -59,9 +59,10 @@ export default function PlaylistCard({
   const ownerDisplay = UUID_RE.test(item.owner)
     ? (user?.displayName ?? user?.username ?? item.owner)
     : item.owner;
+    
 
   // SoundCloud navigation format: /[username]/sets/[slug]
-  const playlistPath = `/${item.owner}/sets/${item.slug || item.id}`;
+  const playlistPath = `/${user?.username?? item.owner}/sets/${item.slug || item.id}`;
 
   const handlePlayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();

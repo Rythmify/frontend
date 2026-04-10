@@ -62,6 +62,7 @@ const mockPlaylists: PlaylistDetails[] = [
     track_count: 1,
     like_count: 5,
     cover_image: "https://picsum.photos/seed/my-favorites/300/300",
+    slug: "my-favourites",
     tracks: [
       {
         track_id: TRACK_IDS.t1,
@@ -85,6 +86,7 @@ const mockPlaylists: PlaylistDetails[] = [
     like_count: 0,
     cover_image: "https://picsum.photos/seed/secret-vibes/300/300",
     tracks: [],
+    slug: "secret-vibes",
   },
   {
     playlist_id: "cccc1111-2222-3333-4444-aaaaaaaaaaaa",
@@ -97,6 +99,7 @@ const mockPlaylists: PlaylistDetails[] = [
     like_count: 12,
     cover_image: "https://picsum.photos/seed/late-night/300/300",
     tracks: [],
+    slug: "late-night-drives",
   },
   {
     playlist_id: "dddd2222-3333-4444-5555-bbbbbbbbbbbb",
@@ -186,6 +189,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-02T21:01:00Z",
         title: "Shababek'",
         artist_name: "Artist F",
+        cover_image: "https://picsum.photos/seed/track-3/300/300",
       },
       {
         track_id: TRACK_IDS.t5,
@@ -193,6 +197,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-02T21:02:00Z",
         title: "Elwa2t Eldaye3",
         artist_name: "Artist F",
+        cover_image: "https://picsum.photos/seed/track-5/300/300",
       },
       {
         track_id: TRACK_IDS.t6,
@@ -200,6 +205,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-02T21:03:00Z",
         title: "Sahar El Leil",
         artist_name: "Artist C",
+        cover_image: "https://picsum.photos/seed/track-6/300/300",
       },
     ],
   },
@@ -788,6 +794,45 @@ export const playlistHandlers = [
         },
       },
       message: "Playlist tracks fetched successfully.",
+    });
+  }),
+
+  // ── GET /playlists/:id/share-link — private share link (owner only) ───────────
+  http.get("*/playlists/:playlist_id/share-link", ({ params }) => {
+    const { playlist_id } = params;
+
+    const playlist = mockPlaylists.find((p) => p.playlist_id === playlist_id);
+    if (!playlist) {
+      return HttpResponse.json(
+        {
+          error: { code: "PLAYLIST_NOT_FOUND", message: "Playlist not found." },
+        },
+        { status: 404 },
+      );
+    }
+
+    if (playlist.is_public) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: "BUSINESS_RULE_VIOLATION",
+            message: "Share links are only available for private playlists.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    const token = playlist.secret_token ?? SECRET_TOKEN;
+    const shareUrl = `http://localhost:5173/${playlist.owner_user_id}/sets/${playlist.slug ?? playlist.playlist_id}?secret_token=${token}`;
+
+    return HttpResponse.json({
+      data: {
+        playlist_id: playlist.playlist_id,
+        secret_token: token,
+        share_url: shareUrl,
+      },
+      message: "Private share link fetched successfully.",
     });
   }),
 
