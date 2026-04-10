@@ -1071,7 +1071,7 @@ export const playlistHandlers = [
 
     let body: { track_id: string; position?: number };
     try {
-      body = (await request.json()) as typeof body;
+      body = (await request.clone().json()) as typeof body;
     } catch {
       return HttpResponse.json(
         {

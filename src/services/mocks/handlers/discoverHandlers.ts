@@ -436,6 +436,18 @@ export const discoverHandlers = [
           daily_mix: mockDailyMix,
           weekly_mix: mockWeeklyMix,
         },
+        trending_by_genre: {
+          genres: [
+            { genre_id: "genre-hip-hop-0001-0000-000000000001", genre_name: "Hip-Hop" },
+            { genre_id: "genre-pop-00000-0000-000000000002", genre_name: "Pop" },
+            { genre_id: "genre-electronic-000-000000000003", genre_name: "Electronic" },
+          ],
+          initial_tab: {
+            genre_id: "genre-hip-hop-0001-0000-000000000001",
+            genre_name: "Hip-Hop",
+            tracks: mockDiscoveryTracks,
+          },
+        },
         discover_with_stations: mockStations,
         artists_to_watch: mockEmergingArtists,
       },
@@ -504,44 +516,53 @@ export const discoverHandlers = [
       } satisfies PublicUser,
     });
   }),
-];
-
-
-// GET /playlists/:id — intercept mix IDs and return mock playlist shape
-http.get("*/home/mixes/:mixId", ({ params }) => {
-  const mix = mockMixes.find((m) => m.id === params.mixId);
-  if (!mix) {
-    return HttpResponse.json(
-      { error: { code: "NOT_FOUND", message: "Mix not found." } },
-      { status: 404 },
-    );
-  }
-
-  return HttpResponse.json({
-    data: {
-      playlist_id: mix.id,
-      owner_user_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
-      name: mix.label,
-      description: `${mix.track_count} tracks · Generated mix`,
-      is_public: true,
-      cover_image: mix.cover_image,
-      subtype: "playlist",
-      track_count: mix.track_count,
-      like_count: 0,
-      created_at: mix.generated_at,
-      tracks: mockDiscoveryTracks.map((t, i) => ({
-        track_id: t.id,
-        position: i + 1,
-        added_at: mix.generated_at,
-        title: t.title,
-        artist_name: t.artist_name,
-        cover_image: t.cover_image,
-        duration: t.duration,
+  // GET /home/mixes/:mixId — full mix detail (playlist shape)
+  http.get("*/home/mixes/:mixId", ({ params }) => {
+    const mix = mockMixes.find((m) => m.id === params.mixId);
+    if (!mix) {
+      return HttpResponse.json(
+        { error: { code: "NOT_FOUND", message: "Mix not found." } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({
+      data: {
+        playlist_id: mix.id,
+        owner_user_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+        name: mix.label,
+        description: `${mix.track_count} tracks · Generated mix`,
         is_public: true,
-        deleted_at: null,
-        artist_id: t.user_id,
-      })),
-    },
-    message: "Mix fetched successfully.",
-  });
-})
+        cover_image: mix.cover_image,
+        subtype: "playlist",
+        track_count: mix.track_count,
+        like_count: 0,
+        created_at: mix.generated_at,
+        tracks: mockDiscoveryTracks.map((t, i) => ({
+          track_id: t.id,
+          position: i + 1,
+          added_at: mix.generated_at,
+          title: t.title,
+          artist_name: t.artist_name,
+          cover_image: t.cover_image,
+          duration: t.duration,
+          is_public: true,
+          deleted_at: null,
+          artist_id: t.user_id,
+        })),
+      },
+      message: "Mix fetched successfully.",
+    });
+  }),
+
+  // GET /home/trending-by-genre/:genreId
+  http.get("*/home/trending-by-genre/:genreId", ({ params }) => {
+    return HttpResponse.json({
+      data: {
+        genre_id: params.genreId as string,
+        genre_name: "Genre",
+        tracks: mockDiscoveryTracks,
+      },
+      message: "Trending tracks fetched.",
+    });
+  }),
+];
