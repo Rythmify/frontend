@@ -505,3 +505,43 @@ export const discoverHandlers = [
     });
   }),
 ];
+
+
+// GET /playlists/:id — intercept mix IDs and return mock playlist shape
+http.get("*/home/mixes/:mixId", ({ params }) => {
+  const mix = mockMixes.find((m) => m.id === params.mixId);
+  if (!mix) {
+    return HttpResponse.json(
+      { error: { code: "NOT_FOUND", message: "Mix not found." } },
+      { status: 404 },
+    );
+  }
+
+  return HttpResponse.json({
+    data: {
+      playlist_id: mix.id,
+      owner_user_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+      name: mix.label,
+      description: `${mix.track_count} tracks · Generated mix`,
+      is_public: true,
+      cover_image: mix.cover_image,
+      subtype: "playlist",
+      track_count: mix.track_count,
+      like_count: 0,
+      created_at: mix.generated_at,
+      tracks: mockDiscoveryTracks.map((t, i) => ({
+        track_id: t.id,
+        position: i + 1,
+        added_at: mix.generated_at,
+        title: t.title,
+        artist_name: t.artist_name,
+        cover_image: t.cover_image,
+        duration: t.duration,
+        is_public: true,
+        deleted_at: null,
+        artist_id: t.user_id,
+      })),
+    },
+    message: "Mix fetched successfully.",
+  });
+})

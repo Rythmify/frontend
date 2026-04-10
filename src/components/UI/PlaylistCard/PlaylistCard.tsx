@@ -219,7 +219,7 @@ export default function PlaylistCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          trackId={item.id}
+          playlistId={item.id}
           trackTitle={item.title}
           onClose={() => setShowPlaylistModal(false)}
         />
