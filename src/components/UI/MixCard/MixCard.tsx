@@ -40,7 +40,7 @@ export default function MixCard({
   };
 
   return (
-    <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
+    <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`} data-test={`mix-card-${mix.id}`}>
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
         {mix.cover_image && (
@@ -48,6 +48,7 @@ export default function MixCard({
             src={mix.cover_image}
             alt={mix.label}
             className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
+            data-test="mix-card-image"
           />
         )}
 
@@ -55,6 +56,7 @@ export default function MixCard({
         <div
           className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm flex items-baseline gap-1"
           style={{ backgroundColor: badge.bg }}
+          data-test="mix-card-badge"
         >
           <span
             className="text-2xl tracking-widest uppercase leading-none"
@@ -72,6 +74,7 @@ export default function MixCard({
             <button
               className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg"
               onClick={(e) => { e.stopPropagation(); addMix(mix); }}
+              data-test="button-play"
             >
               <i className="fa-solid fa-play text-black text-sm ml-0.5" />
             </button>
@@ -80,10 +83,11 @@ export default function MixCard({
             <button
               className="flex flex-col items-center gap-0.5 group/btn"
               onClick={handleLike}
+              data-test="button-like"
             >
               <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
             </button>
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()} data-test="button-more">
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
             </button>
           </div>
@@ -91,7 +95,7 @@ export default function MixCard({
       </div>
 
       {/* Subtitle */}
-      <p className="text-text-secondary text-xs truncate">
+      <p className="text-text-secondary text-xs truncate" data-test="mix-card-subtitle">
         {mix.track_count} tracks
       </p>
     </div>
