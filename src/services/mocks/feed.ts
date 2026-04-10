@@ -29,7 +29,7 @@ export const mockFeedItems: FeedItem[] = [
       followers: 8400,
     },
     playlist: {
-      id: 1,
+      id: "1",
       title: "araby",
       creatorName: "Alyaa Mohamed",
       creatorUsername: "alyaa-moh",
@@ -70,7 +70,7 @@ export const mockFeedItems: FeedItem[] = [
       isVerified: true,
     },
     playlist: {
-      id: 2,
+      id: "2",
       title: "Late Night Vibes",
       creatorName: "Lege-Cy",
       creatorUsername: "lege-cy",
