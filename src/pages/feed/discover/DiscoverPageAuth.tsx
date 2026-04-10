@@ -9,34 +9,38 @@ import TrendingByGenres from "@/components/discover/TrendingByGenres";
 import MadeForYou from "@/components/discover/MadeForYou";
 import MoreOfWhatYouLike from "@/components/discover/MoreOfWhatYouLike";
 import { getHome } from "@/services/api/discover.service";
+import type { HomeData } from "@/services/api/discover.service";
 
 const DiscoverPageAuth = () => {
+  const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [homeError, setHomeError] = useState<string | null>(null);
 
   useEffect(() => {
-    getHome().catch((err: Error) => setHomeError(err.message));
+    getHome()
+      .then(setHomeData)
+      .catch((err: Error) => setHomeError(err.message));
   }, []);
 
   return (
-    <div className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg">
+    <div className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg" data-test="discover-page">
       <div className="flex gap-11 p-0">
         {/* Main Content */}
-        <div className="flex flex-col gap-20 flex-8 min-w-0 pt-10">
+        <div className="flex flex-col gap-20 flex-8 min-w-0 pt-10" data-test="discover-main-content">
           {homeError && (
-            <p className="text-xs text-text-secondary">{homeError}</p>
+            <p className="text-xs text-text-secondary" data-test="discover-error">{homeError}</p>
           )}
-          <MoreOfWhatYouLike />
+          <MoreOfWhatYouLike tracks={homeData?.more_of_what_you_like.tracks ?? []} />
           <RecentlyPlayed />
-          <MixedForYou />
+          <MixedForYou mixes={homeData?.mixed_for_you ?? []} />
           <AlbumsForYou />
-          <MadeForYou />
+          <MadeForYou madeForYou={homeData?.made_for_you ?? null} />
           <TrendingByGenres />
-          <DiscoverWithStations />
+          <DiscoverWithStations stations={homeData?.discover_with_stations ?? []} />
           <NewCrewForYou />
         </div>
 
         {/* Sidebar */}
-        <div className="flex flex-col gap-6 flex-2 ps-2 pt-8">
+        <div className="flex flex-col gap-6 flex-2 ps-2 pt-8" data-test="discover-sidebar-container">
           <DiscoverSideBar />
         </div>
       </div>

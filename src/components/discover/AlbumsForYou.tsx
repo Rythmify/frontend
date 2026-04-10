@@ -7,7 +7,7 @@ import { mapDiscoveryAlbum } from "@/services/api/discover.mapper";
 import { mockAlbumPlaylists } from "@/services/mocks/discover";
 
 const AlbumsForYou = () => {
-  const [albums, setAlbums] = useState<Playlist[]>(mockAlbumPlaylists);
+  const [albums, setAlbums] = useState<Playlist[]>([]);
 
   useEffect(() => {
     getAlbumsForYou()
@@ -15,15 +15,21 @@ const AlbumsForYou = () => {
         const cards = res.data.map(mapDiscoveryAlbum);
         if (cards.length > 0) setAlbums(cards);
       })
-      .catch(() => {});
+      .catch(() => setAlbums(mockAlbumPlaylists));
   }, []);
 
   return (
-    <HorizontalCarousel title="Albums for you" data-section="albums-for-you">
-      {albums.map((album) => (
-        <AlbumCard key={album.playlist_id} playlist={album} widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]" />
-      ))}
-    </HorizontalCarousel>
+    <div data-test="section-albums-for-you">
+      <HorizontalCarousel title="Albums for you" data-section="albums-for-you">
+        {albums.map((album) => (
+          <AlbumCard
+            key={album.playlist_id}
+            playlist={album}
+            widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"
+          />
+        ))}
+      </HorizontalCarousel>
+    </div>
   );
 };
 
