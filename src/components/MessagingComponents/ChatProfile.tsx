@@ -33,13 +33,15 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
     <span className="w-2.5 h-2.5 rounded-full bg-[#f50] block" />
   )}
 </div>
-        <img
-          src={participant.profile_picture}
-          alt={participant.display_name}
-          className="object-cover rounded-full w-11 h-11 "
-        />
-    
-       
+       {participant.profile_picture ? (
+  <img
+    src={participant.profile_picture}
+    alt={participant.display_name}
+    className="object-cover rounded-full w-11 h-11"
+  />
+) : (
+  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b] flex-shrink-0" />
+)}
       </div>
 
       <div className="flex-1 min-w-0">
