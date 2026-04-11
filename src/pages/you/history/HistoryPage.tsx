@@ -14,10 +14,10 @@ const CARD_WIDTH = "w-[180px] sm:w-[200px] md:w-[220px] lg:w-[240px]";
 // ─── Helpers ──────────────────────────────────────────────
 
 function mixToCard(mix: PersonalMix): MadeForYouItem {
-  const words = mix.label.trim().split(/\s+/);
+  const words = (mix.label ?? "").trim().split(/\s+/);
   return {
     id: mix.id,
-    title: mix.label,
+    title: mix.label ?? "",
     subtitle:
       mix.flavor === "listening_history"
         ? "Based on listening history"
@@ -47,7 +47,7 @@ export default function HistoryPage() {
         e.item.artistName.toLowerCase().includes(q)
       );
     if (e.type === "station") return e.item.name.toLowerCase().includes(q);
-    if (e.type === "mix") return e.item.label.toLowerCase().includes(q);
+    if (e.type === "mix") return (e.item.label ?? "").toLowerCase().includes(q);
     return true;
   });
 
