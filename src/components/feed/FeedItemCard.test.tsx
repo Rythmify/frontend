@@ -11,8 +11,12 @@ vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }));
 
-vi.mock("@/components/UI/TrackItem", () => ({
-  default: () => <div data-test="mock-track-item" />,
+vi.mock("@/components/track/TrackCard", () => ({
+  default: () => <div data-test="mock-track-card" />,
+}));
+
+vi.mock("@/components/playlist/PlaylistComponent", () => ({
+  default: () => <div data-test="mock-playlist-component" />,
 }));
 
 // ─── Fixtures ─────────────────────────────────────────────
@@ -60,21 +64,17 @@ const playlistItem: PlaylistFeedItem = {
     followers: 500,
   },
   playlist: {
-    id: "f5e4d3c2-b1a0-4987-8765-43210abcdef8",
+    id: "1",
     title: "Test Playlist",
-    artistName: "Alyaa Mohamed",
-    artistUsername: "alyaa-moh",
+    creatorName: "Alyaa Mohamed",
+    creatorUsername: "alyaa-moh",
     coverUrl: "https://example.com/cover2.jpg",
-    duration: "4:13",
+    postedAt: "4 hours ago",
     likeCount: 12,
     repostCount: 3,
-    playCount: 1980,
-    commentCount: 7,
-    waveformData: [],
-    audioUrl: "",
     trackCount: 5,
+    playlistSlug: "test-playlist",
     tracks: [],
-    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
   },
 };
 
@@ -171,23 +171,39 @@ describe("FeedItemCard", () => {
 
   // ── Card body ────────────────────────────────────────────
 
-  //replace trackitem with real track component
-  it("renders TrackItem for track feed items", () => {
+  it("renders TrackCard for track feed items", () => {
     render(<FeedItemCard item={trackItem} />);
-    expect(screen.getByTestId("mock-track-item")).toBeInTheDocument();
+    expect(screen.getByTestId("mock-track-card")).toBeInTheDocument();
   });
 
-  it("renders playlist placeholder for playlist feed items", () => {
+  it("renders PlaylistComponent for playlist feed items", () => {
     render(<FeedItemCard item={playlistItem} />);
-    expect(screen.getByTestId("feed-item-body-f2")).toHaveTextContent(
-      'Playlist card placeholder — "Test Playlist"',
-    );
+    expect(screen.getByTestId("mock-playlist-component")).toBeInTheDocument();
   });
 
-  it("does not render playlist placeholder for track items", () => {
+  it("does not render PlaylistComponent for track items", () => {
     render(<FeedItemCard item={trackItem} />);
     expect(
-      screen.queryByText(/Playlist card placeholder/),
+      screen.queryByTestId("mock-playlist-component"),
     ).not.toBeInTheDocument();
+  });
+
+  it("does not render TrackCard for playlist items", () => {
+    render(<FeedItemCard item={playlistItem} />);
+    expect(screen.queryByTestId("mock-track-card")).not.toBeInTheDocument();
+  });
+
+  // ── Border ───────────────────────────────────────────────
+
+  it("applies border-b to track items", () => {
+    render(<FeedItemCard item={trackItem} />);
+    const card = screen.getByTestId("feed-item-f1");
+    expect(card.className).toContain("border-b");
+  });
+
+  it("does not apply border-b to playlist items (PlaylistComponent provides its own)", () => {
+    render(<FeedItemCard item={playlistItem} />);
+    const card = screen.getByTestId("feed-item-f2");
+    expect(card.className).not.toContain("border-b");
   });
 });
