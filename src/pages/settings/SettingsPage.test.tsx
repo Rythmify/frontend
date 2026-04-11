@@ -110,6 +110,53 @@ describe("SettingsPage", () => {
     expect(screen.queryByTestId("settings-new-email-input")).not.toBeInTheDocument();
   });
 
+  it("shows an error toast when the new email matches the current email", async () => {
+    renderSettings();
+
+    fireEvent.click(screen.getByTestId("settings-show-add-email-button"));
+    fireEvent.change(screen.getByTestId("settings-new-email-input"), {
+      target: { value: "me@example.com" },
+    });
+    fireEvent.click(screen.getByTestId("settings-add-email-button"));
+
+    expect(
+      await screen.findByText("This email is already your primary email address."),
+    ).toBeInTheDocument();
+    expect(mockChangeEmail).not.toHaveBeenCalled();
+  });
+
+  it("shows an error toast when the new email is invalid", async () => {
+    renderSettings();
+
+    fireEvent.click(screen.getByTestId("settings-show-add-email-button"));
+    fireEvent.change(screen.getByTestId("settings-new-email-input"), {
+      target: { value: "invalid-email" },
+    });
+    fireEvent.click(screen.getByTestId("settings-add-email-button"));
+
+    expect(
+      await screen.findByText("Please enter a valid email address."),
+    ).toBeInTheDocument();
+    expect(mockChangeEmail).not.toHaveBeenCalled();
+  });
+
+  it("shows a success toast when a new email is added", async () => {
+    mockChangeEmail.mockResolvedValue({});
+
+    renderSettings();
+
+    fireEvent.click(screen.getByTestId("settings-show-add-email-button"));
+    fireEvent.change(screen.getByTestId("settings-new-email-input"), {
+      target: { value: "new@example.com" },
+    });
+    fireEvent.click(screen.getByTestId("settings-add-email-button"));
+
+    expect(mockChangeEmail).toHaveBeenCalledWith("new@example.com");
+    expect(
+      await screen.findByText("Verification email sent to new@example.com"),
+    ).toBeInTheDocument();
+  });
+
   it("deletes the account after confirmation", async () => {
     mockDeleteMyAccount.mockResolvedValue({});
 
