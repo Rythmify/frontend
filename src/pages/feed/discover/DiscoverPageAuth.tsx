@@ -34,7 +34,7 @@ const DiscoverPageAuth = () => {
           <MixedForYou mixes={homeData?.mixed_for_you ?? []} />
           <AlbumsForYou />
           <MadeForYou madeForYou={homeData?.made_for_you ?? null} />
-          <TrendingByGenres />
+          <TrendingByGenres genres={homeData?.trending_by_genre?.genres ?? []} />
           <DiscoverWithStations stations={homeData?.discover_with_stations ?? []} />
           <NewCrewForYou />
         </div>
