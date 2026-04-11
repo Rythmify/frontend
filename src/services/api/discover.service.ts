@@ -21,7 +21,7 @@ export interface DiscoveryTrack {
 
 export interface PersonalMix {
   id: string;
-  label: string;
+  label: string | null;
   flavor: "listening_history"; // taste_profile was removed from spec
   genre_name: string | null;
   cover_image: string | null;
@@ -225,6 +225,16 @@ export const getAlbumsForYou = async (params?: {
     pagination: ListMeta;
   }>("/home/albums-for-you", { params });
   return res.data;
+};
+
+// GET /home/mixes/:mixId/tracks — tracks for a personal mix
+export const getMixTracks = async (
+  mixId: string,
+): Promise<{ mix: PersonalMix; tracks: DiscoveryTrack[] }> => {
+  const res = await axiosInstance.get<{
+    data: { mix: PersonalMix; tracks: DiscoveryTrack[] };
+  }>(`/home/mixes/${mixId}/tracks`);
+  return res.data.data;
 };
 
 // to do

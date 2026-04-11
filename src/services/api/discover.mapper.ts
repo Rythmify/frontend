@@ -103,7 +103,7 @@ export function mapListeningHistoryEntry(
 export function mapPersonalMix(api: PersonalMix): Mix {
   return {
     id: api.id,
-    label: api.label,
+    label: api.label ?? "",
     flavor: api.flavor,
     coverUrl: api.cover_image,
     trackCount: api.track_count,
