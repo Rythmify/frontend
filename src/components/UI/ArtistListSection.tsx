@@ -109,15 +109,15 @@ const ArtistListSection = ({
                 onClick={() => navigate(`/${artist.username}`)}
                 className={styles.avatar}
               >
-                {artist.avatar ? (
-                  <img
-                    src={artist.avatar}
-                    alt={artist.username}
-                    className={styles.avatarImg}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-border" />
-                )}
+               {artist.avatar ? (
+  <img
+    src={artist.avatar}
+    alt={artist.username}
+    className={styles.avatarImg}
+  />
+) : (
+  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b]" />
+)}
               </div>
 
               {/* Details */}
