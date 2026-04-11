@@ -4,14 +4,9 @@ on:
   push:
     branches:
       - development
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - development
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
@@ -38,7 +33,6 @@ jobs:
           VITE_USE_MOCK: ${{ secrets.VITE_USE_MOCK }}
 
   close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
