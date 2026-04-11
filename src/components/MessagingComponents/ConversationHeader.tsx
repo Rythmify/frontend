@@ -97,7 +97,7 @@ const ConversationHeader = ({
         <button
           onClick={handleToggleRead}
           disabled={loadingRead || !lastMessageId}
-          className="px-4 py-2 text-sm font-bold text-white bg-input-bg rounded-sm border border-border hover:bg-input-bg disabled:opacity-50 hover:text-text-secondary"
+          className="px-2 py-1.5 text-sm font-bold text-white bg-input-bg rounded-sm border border-border hover:bg-input-bg disabled:opacity-50 hover:text-text-secondary"
         >
           {isUnread ? 'Mark as read' : 'Mark as unread'}
         </button>
