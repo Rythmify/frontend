@@ -20,7 +20,6 @@ function PlaylistSlugPage() {
   }>();
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
-  const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,9 +47,6 @@ function PlaylistSlugPage() {
         if (cancelled) return;
 
         setPlaylist(playlistRes.data);
-        setFeaturedArtists(
-          Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
-        );
       } catch (err) {
         if (!cancelled) setError("Failed to load playlist.");
         console.error(err);

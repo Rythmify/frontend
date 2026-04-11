@@ -21,7 +21,7 @@ export interface DiscoveryTrack {
 
 export interface PersonalMix {
   id: string;
-  label: string;
+  label: string | null;
   flavor: "listening_history"; // taste_profile was removed from spec
   genre_name: string | null;
   cover_image: string | null;
@@ -62,6 +62,14 @@ export interface HomeData {
   more_of_what_you_like: {
     tracks: DiscoveryTrack[];
     source: "personalized" | "trending_fallback";
+  } | null;
+  trending_by_genre: {
+    genres: { genre_id: string; genre_name: string }[];
+    initial_tab: {
+      genre_id: string;
+      genre_name: string;
+      tracks: DiscoveryTrack[];
+    };
   };
 
   mixed_for_you: PersonalMix[];
@@ -219,5 +227,26 @@ export const getAlbumsForYou = async (params?: {
   return res.data;
 };
 
+// GET /home/mixes/:mixId/tracks — tracks for a personal mix
+export const getMixTracks = async (
+  mixId: string,
+): Promise<{ mix: PersonalMix; tracks: DiscoveryTrack[] }> => {
+  const res = await axiosInstance.get<{
+    data: { mix: PersonalMix; tracks: DiscoveryTrack[] };
+  }>(`/home/mixes/${mixId}/tracks`);
+  return res.data.data;
+};
+
 // to do
 // get liked tracks
+// GET /home/trending-by-genre/{genre_id}
+export const getTrendingByGenre = async (
+  genreId: string,
+  params?: { limit?: number; offset?: number }
+): Promise<{ genre_id: string; genre_name: string; tracks: DiscoveryTrack[] }> => {
+  const res = await axiosInstance.get<{
+    data: { genre_id: string; genre_name: string; tracks: DiscoveryTrack[] };
+    message: string;
+  }>(`/home/trending-by-genre/${genreId}`, { params });
+  return res.data.data;
+};

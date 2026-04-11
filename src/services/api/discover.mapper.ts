@@ -103,7 +103,7 @@ export function mapListeningHistoryEntry(
 export function mapPersonalMix(api: PersonalMix): Mix {
   return {
     id: api.id,
-    label: api.label,
+    label: api.label ?? "",
     flavor: api.flavor,
     coverUrl: api.cover_image,
     trackCount: api.track_count,
@@ -245,17 +245,18 @@ export interface MappedHomeData {
 export function mapHomeData(api: HomeData): MappedHomeData {
   return {
     moreOfWhatYouLike: {
-      tracks: api.more_of_what_you_like.tracks.map(mapDiscoveryTrack),
-      source: api.more_of_what_you_like.source,
+      tracks: api.more_of_what_you_like?.tracks?.map(mapDiscoveryTrack) ?? [],
+      source: api.more_of_what_you_like?.source ?? "trending_fallback",
     },
-    mixedForYou: api.mixed_for_you.map(mapPersonalMix),
+    mixedForYou: api.mixed_for_you?.map(mapPersonalMix) ?? [],
     madeForYou: api.made_for_you
       ? {
           dailyMix: api.made_for_you.daily_mix,
           weeklyMix: api.made_for_you.weekly_mix,
         }
       : null,
-    discoverWithStations: api.discover_with_stations.map(mapDiscoveryStation),
-    artistsToWatch: api.artists_to_watch.map(mapEmergingArtist),
+    discoverWithStations:
+      api.discover_with_stations?.map(mapDiscoveryStation) ?? [],
+    artistsToWatch: api.artists_to_watch?.map(mapEmergingArtist) ?? [],
   };
 }

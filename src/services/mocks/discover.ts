@@ -3,6 +3,121 @@ import type { Mix } from "@/types/mix";
 import type { Station } from "@/types/station";
 import type { User } from "@/types/user";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
+import type { PersonalMix, DiscoveryTrack } from "@/services/api/discover.service";
+
+// ─── Mixed For You Mocks ──────────────────────────────────
+export const mockMixes: PersonalMix[] = [
+  {
+    id: "55555555-5555-4555-8555-555555555555",
+    label: "MIX 1",
+    flavor: "listening_history",
+    genre_name: null,
+    cover_image: "https://picsum.photos/200/200?random=301",
+    track_count: 27,
+    generated_at: "2026-04-01T00:00:00Z",
+    preview_track: null,
+  },
+  {
+    id: "66666666-6666-4666-8666-666666666666",
+    label: "MIX 2",
+    flavor: "listening_history",
+    genre_name: "Pop",
+    cover_image: "https://picsum.photos/200/200?random=302",
+    track_count: 19,
+    generated_at: "2026-04-01T00:00:00Z",
+    preview_track: null,
+  },
+  {
+    id: "77777777-7777-4777-8777-777777777777",
+    label: "MIX 3",
+    flavor: "listening_history",
+    genre_name: null,
+    cover_image: "https://picsum.photos/200/200?random=303",
+    track_count: 23,
+    generated_at: "2026-04-01T00:00:00Z",
+    preview_track: null,
+  },
+  {
+    id: "88888888-8888-4888-8888-888888888888",
+    label: "MIX 4",
+    flavor: "listening_history",
+    genre_name: "Hip-Hop",
+    cover_image: "https://picsum.photos/200/200?random=304",
+    track_count: 31,
+    generated_at: "2026-04-01T00:00:00Z",
+    preview_track: null,
+  },
+  {
+    id: "99999999-9999-4999-8999-999999999999",
+    label: "MIX 5",
+    flavor: "listening_history",
+    genre_name: null,
+    cover_image: "https://picsum.photos/200/200?random=305",
+    track_count: 15,
+    generated_at: "2026-04-01T00:00:00Z",
+    preview_track: null,
+  },
+];
+
+// ─── Mock Mix Tracks (fallback when API returns no tracks) ───────────────────
+export const mockMixTracks: DiscoveryTrack[] = [
+  {
+    id: "e5f6a7b8-c9d0-4123-8fab-567890abcdef",
+    title: "Butterfly Effect",
+    artist_name: "Travis Scott",
+    user_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+    genre_name: "Hip-Hop",
+    duration: 225,
+    play_count: 75000,
+    like_count: 3500,
+    repost_count: 400,
+    cover_image: "https://picsum.photos/200/200?random=501",
+    stream_url: null,
+    created_at: "2026-01-15T00:00:00Z",
+  },
+  {
+    id: "22222222-2222-4222-8222-222222222222",
+    title: "Blinding Lights",
+    artist_name: "The Weeknd",
+    user_id: "b2c3d4e5-f6a7-4891-9cde-f01234567891",
+    genre_name: "Synthwave",
+    duration: 200,
+    play_count: 95000,
+    like_count: 5200,
+    repost_count: 700,
+    cover_image: "https://picsum.photos/200/200?random=401",
+    stream_url: null,
+    created_at: "2026-02-01T00:00:00Z",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333333",
+    title: "Levitating",
+    artist_name: "Dua Lipa",
+    user_id: "c3d4e5f6-a7b8-4902-ad12-123456789012",
+    genre_name: "Pop",
+    duration: 203,
+    play_count: 65000,
+    like_count: 3200,
+    repost_count: 300,
+    cover_image: "https://picsum.photos/200/200?random=702",
+    stream_url: null,
+    created_at: "2026-02-15T00:00:00Z",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444444",
+    title: "Bad Guy",
+    artist_name: "Billie Eilish",
+    user_id: "d4e5f6a7-b8c9-4013-bd23-234567890123",
+    genre_name: "Alternative",
+    duration: 194,
+    play_count: 71000,
+    like_count: 3800,
+    repost_count: 420,
+    cover_image: "https://picsum.photos/200/200?random=704",
+    stream_url: null,
+    created_at: "2026-03-01T00:00:00Z",
+  },
+];
 
 // ─── Recently Played Mocks ────────────────────────────────
 export const mockRecentlyPlayedTracks: (Track & { type: "track" })[] = [
