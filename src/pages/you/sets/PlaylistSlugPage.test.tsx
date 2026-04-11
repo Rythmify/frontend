@@ -1,14 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import PlaylistSlugPage from "./PlaylistSlugPage";
-import MixForYouSlugPage from "./MixForYouSlugPage";
 import { getPlaylist } from "@/services/api/playlist/playlist.service";
+import { getUsers } from "@/services/mocks/User.service";
 import { usePlayerStore } from "@/stores/player.store";
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
   getPlaylist: vi.fn(),
+}));
+
+vi.mock("@/services/mocks/User.service", () => ({
+  getUsers: vi.fn(),
 }));
 
 vi.mock("@/stores/player.store", () => ({
@@ -16,14 +20,14 @@ vi.mock("@/stores/player.store", () => ({
 }));
 
 vi.mock("@/components/Upload/GuestPageFooter", () => ({
-  default: () => <div data-testid="guest-footer" />,
+  default: () => <div data-test="guest-footer" />,
 }));
 
 vi.mock("../../../components/playlist/PlaylistHero", () => ({
   default: ({ playlist, onPlayPause }: any) => (
-    <div data-testid="playlist-hero">
+    <div data-test="playlist-hero">
       <span>{playlist.name}</span>
-      <button onClick={onPlayPause} data-testid="hero-play">
+      <button onClick={onPlayPause} data-test="hero-play">
         Play
       </button>
     </div>
@@ -31,14 +35,28 @@ vi.mock("../../../components/playlist/PlaylistHero", () => ({
 }));
 
 vi.mock("../../../components/playlist/PlaylistActions", () => ({
-  default: () => <div data-testid="playlist-actions" />,
+  default: ({ onPlaylistUpdated }: any) => (
+    <div data-test="playlist-actions">
+      <button
+        data-test="playlist-actions-update"
+        onClick={() =>
+          onPlaylistUpdated({
+            name: "Updated Playlist",
+            description: "Updated description",
+          })
+        }
+      >
+        Update
+      </button>
+    </div>
+  ),
 }));
 vi.mock("../../../components/playlist/PlaylistSidebar", () => ({
-  default: () => <div data-testid="playlist-sidebar" />,
+  default: () => <div data-test="playlist-sidebar" />,
 }));
 vi.mock("../../../components/playlist/TrackList", () => ({
   default: ({ tracks }: any) => (
-    <div data-testid="track-list">{tracks?.length} tracks</div>
+    <div data-test="track-list">{tracks?.length} tracks</div>
   ),
 }));
 
@@ -55,7 +73,9 @@ describe("PlaylistSlugPage", () => {
       isPlaying: false,
       currentTrack: null,
       togglePlay: vi.fn(),
+      setTrack: vi.fn(),
     } as any);
+    vi.mocked(getUsers).mockResolvedValue([] as any);
   });
 
   const renderPage = () =>
@@ -115,11 +135,37 @@ describe("PlaylistSlugPage", () => {
       isPlaying: true,
       currentTrack: { id: "t-1", context: { playlist_id: "pl-abc" } },
       togglePlay: toggle,
+      setTrack: vi.fn(),
     } as any);
     vi.mocked(getPlaylist).mockResolvedValue({ data: mockPlaylistData } as any);
     renderPage();
-    await waitFor(() => screen.getByTestId("hero-play").click());
+    await waitFor(() => expect(screen.getByTestId("playlist-hero")).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId("hero-play"));
     expect(toggle).toHaveBeenCalled();
+  });
+
+  it("sets the player track when a different playlist is played", async () => {
+    const setTrack = vi.fn();
+    vi.mocked(usePlayerStore).mockReturnValue({
+      isPlaying: false,
+      currentTrack: { id: "other-track", context: { playlist_id: "other" } },
+      togglePlay: vi.fn(),
+      setTrack,
+    } as any);
+    vi.mocked(getPlaylist).mockResolvedValue({ data: mockPlaylistData } as any);
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId("playlist-hero")).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId("hero-play"));
+    expect(setTrack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "t-1",
+        context: {
+          type: "playlist",
+          playlist_id: "pl-abc",
+          queue: ["t-1"],
+        },
+      }),
+    );
   });
 
   it("renders guest footer on successful load", async () => {
@@ -128,5 +174,43 @@ describe("PlaylistSlugPage", () => {
     await waitFor(() =>
       expect(screen.getByTestId("guest-footer")).toBeInTheDocument(),
     );
+  });
+
+  it("applies playlist updates from the actions panel", async () => {
+    vi.mocked(getPlaylist).mockResolvedValue({ data: mockPlaylistData } as any);
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByText("Test Playlist")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByTestId("playlist-actions-update"));
+
+    expect(screen.getByText("Updated Playlist")).toBeInTheDocument();
+  });
+
+  it("does nothing when the playlist has no tracks", async () => {
+    vi.mocked(getPlaylist).mockResolvedValue({
+      data: { ...mockPlaylistData, tracks: [] },
+    } as any);
+
+    const setTrack = vi.fn();
+    const togglePlay = vi.fn();
+    vi.mocked(usePlayerStore).mockReturnValue({
+      isPlaying: false,
+      currentTrack: null,
+      togglePlay,
+      setTrack,
+    } as any);
+
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText("Test Playlist")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByTestId("hero-play"));
+
+    expect(setTrack).not.toHaveBeenCalled();
+    expect(togglePlay).not.toHaveBeenCalled();
   });
 });
