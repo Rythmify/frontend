@@ -302,12 +302,29 @@ function EmailAddresses({
   const [loading, setLoading] = useState(false);
 
   const handleAdd = async () => {
-    if (!newEmail.trim()) return;
+    const trimmedEmail = newEmail.trim();
+
+    if (!trimmedEmail) return;
+
+    const normalizedCurrentEmail = user?.email?.trim().toLowerCase();
+    const normalizedNewEmail = trimmedEmail.toLowerCase();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (normalizedCurrentEmail && normalizedNewEmail === normalizedCurrentEmail) {
+      onToast("This email is already your primary email address.", "error");
+      return;
+    }
+
+    if (!emailPattern.test(trimmedEmail)) {
+      onToast("Please enter a valid email address.", "error");
+      return;
+    }
+
     setLoading(true);
     try {
-      await changeEmail(newEmail.trim());
+      await changeEmail(trimmedEmail);
 
-      onToast("Verification email sent to " + newEmail, "success");
+      onToast(`Verification email sent to ${trimmedEmail}`, "success");
 
       setShowInput(false);
       setNewEmail("");
