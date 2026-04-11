@@ -29,7 +29,7 @@ const DiscoverPageAuth = () => {
           {homeError && (
             <p className="text-xs text-text-secondary" data-test="discover-error">{homeError}</p>
           )}
-          <MoreOfWhatYouLike tracks={homeData?.more_of_what_you_like.tracks ?? []} />
+          <MoreOfWhatYouLike tracks={homeData?.more_of_what_you_like?.tracks ?? []} />
           <RecentlyPlayed />
           <MixedForYou mixes={homeData?.mixed_for_you ?? []} />
           <AlbumsForYou />
