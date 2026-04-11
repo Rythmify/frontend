@@ -92,6 +92,9 @@ describe("ContentPage", () => {
     expect(screen.getByTestId("settings-content-rss-title-input")).toHaveValue(
       "Updated feed",
     );
+    expect(
+      await screen.findByText("Content settings saved successfully."),
+    ).toBeInTheDocument();
   });
 
   it("restores the last saved values when cancel is clicked", async () => {
@@ -122,5 +125,20 @@ describe("ContentPage", () => {
     fireEvent.click(getCheckboxContainerByText("Creative Commons license"));
 
     expect(await screen.findByText("Some rights reserved")).toBeInTheDocument();
+  });
+
+  it("shows an error toast when save fails", async () => {
+    (updateContentSettings as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("save failed"),
+    );
+
+    render(<ContentPage />);
+    await screen.findByTestId("settings-content-rss-title-input");
+
+    fireEvent.click(screen.getByTestId("settings-content-save-button"));
+
+    expect(
+      await screen.findByText("Failed to save content settings."),
+    ).toBeInTheDocument();
   });
 });
