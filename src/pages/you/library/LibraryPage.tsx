@@ -150,7 +150,7 @@ function mapFollowingToUser(f: FollowingUser, index: number): User {
 }
 
 function mixToCard(mix: PersonalMix): MadeForYouItem {
-  const words = mix.label.trim().split(/\s+/);
+  const words = (mix.label ?? "").trim().split(/\s+/);
   return {
     id: mix.id,
     title: mix.label,
