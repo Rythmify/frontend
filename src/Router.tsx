@@ -38,7 +38,9 @@ const HomePage = lazy(() => import("@/pages/home/HomePage"));
 const SigninPage = lazy(() => import("@/pages/signin/SigninPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/signin/ResetPassword"));
 const VerifyEmailPage = lazy(() => import("@/pages/signin/VerifyEmailPage"));
-const CompleteProfilePage = lazy(() => import("@/pages/signin/CompleteProfilePage"));
+const CompleteProfilePage = lazy(
+  () => import("@/pages/signin/CompleteProfilePage"),
+);
 
 // Download
 const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
@@ -48,6 +50,9 @@ const PeoplePage = lazy(() => import("@/pages/people/PeoplePage"));
 
 // Discover
 const DiscoverPage = lazy(() => import("@/pages/feed/discover/DiscoverPage"));
+const MixForYouSlugPage = lazy(
+  () => import("@/pages/you/sets/MixForYouSlugPage"),
+);
 
 // Feed
 const FeedPage = lazy(() => import("@/pages/feed/FeedPage"));
@@ -94,7 +99,9 @@ const YouLikesPage = lazy(() => import("@/pages/you/likes/YouLikesPage"));
 const YouSetsPage = lazy(() => import("@/pages/you/sets/SetsPage"));
 const YouAlbumsPage = lazy(() => import("@/pages/you/albums/AlbumsPage"));
 const FollowingPage = lazy(() => import("@/pages/you/following/FollowingPage"));
-const YouFollowingPage = lazy(() => import("@/pages/you/following/YouFollowingPage"));
+const YouFollowingPage = lazy(
+  () => import("@/pages/you/following/YouFollowingPage"),
+);
 const FollowerPage = lazy(() => import("@/pages/you/follower/FollowerPage"));
 const HistoryPage = lazy(() => import("@/pages/you/history/HistoryPage"));
 const StationsPage = lazy(() => import("@/pages/you/stations/StationsPage"));
@@ -186,6 +193,10 @@ export const router = createBrowserRouter([
     element: <DualViewLayout />,
     children: [
       { path: "discover", element: <Lazy component={DiscoverPage} /> },
+      {
+        path: "discover/sets/:mixSlug",
+        element: <Lazy component={MixForYouSlugPage} />,
+      },
       { path: "people", element: <Lazy component={PeoplePage} /> },
       { path: "download", element: <Lazy component={DownloadPage} /> },
       { path: "logout", element: <LogoutPage /> },
@@ -219,7 +230,10 @@ export const router = createBrowserRouter([
             element: <Lazy component={PopularTracksPage} />,
           },
           { path: ":trackSlug", element: <Lazy component={TrackSlugPage} /> },
-          { path: "sets/:playlistSlug", element: <Lazy component={PlaylistSlugPage} /> },
+          {
+            path: "sets/:playlistSlug",
+            element: <Lazy component={PlaylistSlugPage} />,
+          },
         ],
       },
     ],
@@ -255,13 +269,28 @@ export const router = createBrowserRouter([
               {
                 element: <Lazy component={LibraryLayout} />,
                 children: [
-                  { path: "library", element: <Lazy component={LibraryPage} /> },
+                  {
+                    path: "library",
+                    element: <Lazy component={LibraryPage} />,
+                  },
                   { path: "likes", element: <Lazy component={YouLikesPage} /> },
                   { path: "sets", element: <Lazy component={YouSetsPage} /> },
-                  { path: "albums", element: <Lazy component={YouAlbumsPage} /> },
-                  { path: "stations", element: <Lazy component={StationsPage} /> },
-                  { path: "following", element: <Lazy component={YouFollowingPage} /> },
-                  { path: "history", element: <Lazy component={HistoryPage} /> },
+                  {
+                    path: "albums",
+                    element: <Lazy component={YouAlbumsPage} />,
+                  },
+                  {
+                    path: "stations",
+                    element: <Lazy component={StationsPage} />,
+                  },
+                  {
+                    path: "following",
+                    element: <Lazy component={YouFollowingPage} />,
+                  },
+                  {
+                    path: "history",
+                    element: <Lazy component={HistoryPage} />,
+                  },
                 ],
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },

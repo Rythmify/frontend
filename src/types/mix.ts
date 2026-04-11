@@ -1,5 +1,5 @@
 export interface Mix {
-  id: number | string;
+  id:  string;
   label: string;
   flavor: "listening_history" | "taste_profile";
   coverUrl: string | null;

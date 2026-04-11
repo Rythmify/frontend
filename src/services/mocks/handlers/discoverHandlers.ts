@@ -14,14 +14,33 @@ import type {
 } from "../../api/discover.service";
 import type { PublicUser } from "../../mocks/User.service";
 
+// ─── Constants for consistent UUIDs ──────────────────────────────────────────
+
+const ARTIST_IDS = {
+  travis: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+  weeknd: "b2c3d4e5-f6a7-4891-9cde-f01234567891",
+  dua: "c3d4e5f6-a7b8-4902-ad12-123456789012",
+  billie: "d4e5f6a7-b8c9-4013-bd23-234567890123",
+  lizzo: "e5f6a7b8-c9d0-4124-cf34-345678901234",
+  drake: "f6a7b8c9-d0e1-4235-df45-456789012345",
+  sza: "07b8c9d0-e1f2-4346-ef56-567890123456",
+};
+
+const TRACK_IDS = {
+  t1: "e5f6a7b8-c9d0-4123-8fab-567890abcdef",
+  t2: "22222222-2222-4222-8222-222222222222",
+  t3: "33333333-3333-4333-8333-333333333333",
+  t4: "44444444-4444-4444-8444-444444444444",
+};
+
 // ─── Mock Discovery Tracks ────────────────────────────────────────────────────
 
 const mockDiscoveryTracks: DiscoveryTrack[] = [
   {
-    id: "track-1",
+    id: TRACK_IDS.t1,
     title: "Butterfly Effect",
     artist_name: "Travis Scott",
-    user_id: "artist-travis",
+    user_id: ARTIST_IDS.travis,
     genre_name: "Hip-Hop",
     duration: 225,
     play_count: 75000,
@@ -32,10 +51,10 @@ const mockDiscoveryTracks: DiscoveryTrack[] = [
     created_at: "2026-01-15T00:00:00Z",
   },
   {
-    id: "track-2",
+    id: TRACK_IDS.t2,
     title: "Blinding Lights",
     artist_name: "The Weeknd",
-    user_id: "artist-weeknd",
+    user_id: ARTIST_IDS.weeknd,
     genre_name: "Synthwave",
     duration: 200,
     play_count: 95000,
@@ -46,10 +65,10 @@ const mockDiscoveryTracks: DiscoveryTrack[] = [
     created_at: "2026-02-01T00:00:00Z",
   },
   {
-    id: "track-3",
+    id: TRACK_IDS.t3,
     title: "Levitating",
     artist_name: "Dua Lipa",
-    user_id: "artist-dua",
+    user_id: ARTIST_IDS.dua,
     genre_name: "Pop",
     duration: 203,
     play_count: 65000,
@@ -60,10 +79,10 @@ const mockDiscoveryTracks: DiscoveryTrack[] = [
     created_at: "2026-02-15T00:00:00Z",
   },
   {
-    id: "track-4",
+    id: TRACK_IDS.t4,
     title: "Bad Guy",
     artist_name: "Billie Eilish",
-    user_id: "artist-billie",
+    user_id: ARTIST_IDS.billie,
     genre_name: "Alternative",
     duration: 194,
     play_count: 71000,
@@ -75,11 +94,11 @@ const mockDiscoveryTracks: DiscoveryTrack[] = [
   },
 ];
 
-// ─── Mock Personal Mixes ──────────────────────────────────────────────────────
+// ─── Mock Personal Mixes (Playlist IDs) ────────────────────────────────────────
 
 const mockMixes: PersonalMix[] = [
   {
-    id: "mix-1",
+    id: "55555555-5555-4555-8555-555555555555",
     label: "MIX 1",
     flavor: "listening_history",
     genre_name: null,
@@ -89,7 +108,7 @@ const mockMixes: PersonalMix[] = [
     preview_track: null,
   },
   {
-    id: "mix-2",
+    id: "66666666-6666-4666-8666-666666666666",
     label: "MIX 2",
     flavor: "listening_history",
     genre_name: "Pop",
@@ -99,7 +118,7 @@ const mockMixes: PersonalMix[] = [
     preview_track: null,
   },
   {
-    id: "mix-3",
+    id: "77777777-7777-4777-8777-777777777777",
     label: "MIX 3",
     flavor: "listening_history",
     genre_name: null,
@@ -109,7 +128,7 @@ const mockMixes: PersonalMix[] = [
     preview_track: null,
   },
   {
-    id: "mix-4",
+    id: "88888888-8888-4888-8888-888888888888",
     label: "MIX 4",
     flavor: "listening_history",
     genre_name: "Hip-Hop",
@@ -119,7 +138,7 @@ const mockMixes: PersonalMix[] = [
     preview_track: null,
   },
   {
-    id: "mix-5",
+    id: "99999999-9999-4999-8999-999999999999",
     label: "MIX 5",
     flavor: "listening_history",
     genre_name: null,
@@ -133,7 +152,7 @@ const mockMixes: PersonalMix[] = [
 // ─── Mock Made For You ────────────────────────────────────────────────────────
 
 const mockDailyMix: CuratedMixSummary = {
-  id: "daily-mix-1",
+  id: "11110000-1111-4111-8111-000011110000",
   label: "Daily Drops",
   description: "New releases based on your taste",
   track_count: 20,
@@ -142,7 +161,7 @@ const mockDailyMix: CuratedMixSummary = {
 };
 
 const mockWeeklyMix: CuratedMixSummary = {
-  id: "weekly-mix-1",
+  id: "22220000-2222-4222-8222-000022220000",
   label: "Weekly Wave",
   description: "The best of Rythmify this week",
   track_count: 30,
@@ -154,18 +173,18 @@ const mockWeeklyMix: CuratedMixSummary = {
 
 const mockStations: DiscoveryStation[] = [
   {
-    id: "station-1",
+    id: "aaaa1111-2222-4333-8444-555566667777",
     name: "Based on Drake",
-    artist_id: "artist-drake",
+    artist_id: ARTIST_IDS.drake,
     artist_name: "Drake",
     cover_image: "https://picsum.photos/200/200?random=501",
     track_count: 50,
     follower_count: 5000000,
   },
   {
-    id: "station-2",
+    id: "bbbb1111-2222-4333-8444-555566667777",
     name: "Based on SZA",
-    artist_id: "artist-sza",
+    artist_id: ARTIST_IDS.sza,
     artist_name: "SZA",
     cover_image: "https://picsum.photos/200/200?random=502",
     track_count: 50,
@@ -177,7 +196,7 @@ const mockStations: DiscoveryStation[] = [
 
 const mockEmergingArtists: EmergingArtist[] = [
   {
-    id: "artist-ea-1",
+    id: "77770000-1111-4111-8111-000000000001",
     display_name: "Nova Pulse",
     profile_picture: "https://picsum.photos/150/150?random=901",
     top_genre: "Electronic",
@@ -185,7 +204,7 @@ const mockEmergingArtists: EmergingArtist[] = [
     track_count: 8,
   },
   {
-    id: "artist-ea-2",
+    id: "77770000-1111-4111-8111-000000000002",
     display_name: "Juno Ray",
     profile_picture: "https://picsum.photos/150/150?random=902",
     top_genre: "R&B",
@@ -193,7 +212,7 @@ const mockEmergingArtists: EmergingArtist[] = [
     track_count: 5,
   },
   {
-    id: "artist-ea-3",
+    id: "77770000-1111-4111-8111-000000000003",
     display_name: "Celestial Beat",
     profile_picture: "https://picsum.photos/150/150?random=903",
     top_genre: "Pop",
@@ -206,20 +225,20 @@ const mockEmergingArtists: EmergingArtist[] = [
 
 const mockAlbums: DiscoveryAlbum[] = [
   {
-    id: "album-1",
+    id: "88880000-1111-4111-8111-000000000001",
     name: "Astroworld",
     cover_image: "https://picsum.photos/200/200?random=801",
-    owner_id: "artist-travis",
+    owner_id: ARTIST_IDS.travis,
     owner_name: "Travis Scott",
     track_count: 17,
     like_count: 42000,
     created_at: "2026-01-01T00:00:00Z",
   },
   {
-    id: "album-2",
+    id: "88880000-1111-4111-8111-000000000002",
     name: "Future Nostalgia",
     cover_image: "https://picsum.photos/200/200?random=802",
-    owner_id: "artist-dua",
+    owner_id: ARTIST_IDS.dua,
     owner_name: "Dua Lipa",
     track_count: 11,
     like_count: 38000,
@@ -231,34 +250,34 @@ const mockAlbums: DiscoveryAlbum[] = [
 
 const mockTrackSummaries: TrackSummary[] = [
   {
-    id: "track-1",
+    id: TRACK_IDS.t1,
     title: "Butterfly Effect",
     genre: "Hip-Hop",
     duration: 225,
     cover_image: "https://picsum.photos/200/200?random=501",
-    user_id: "artist-travis",
+    user_id: ARTIST_IDS.travis,
     play_count: 75000,
     like_count: 3500,
     stream_url: "https://example.com/audio/butterfly-effect.mp3",
   },
   {
-    id: "track-2",
+    id: TRACK_IDS.t2,
     title: "Good As Hell",
     genre: "R&B",
     duration: 252,
     cover_image: "https://picsum.photos/200/200?random=502",
-    user_id: "artist-lizzo",
+    user_id: ARTIST_IDS.lizzo,
     play_count: 60000,
     like_count: 2900,
     stream_url: "https://example.com/audio/good-as-hell.mp3",
   },
   {
-    id: "track-3-summary",
+    id: "cccc3333-4444-4555-8666-dddddddddddd",
     title: "Blinding Lights",
     genre: "Synthwave",
     duration: 200,
     cover_image: "https://picsum.photos/200/200?random=401",
-    user_id: "artist-weeknd",
+    user_id: ARTIST_IDS.weeknd,
     play_count: 95000,
     like_count: 5200,
     stream_url: "https://example.com/audio/blinding-lights.mp3",
@@ -277,17 +296,17 @@ const mockRecentlyPlayed: RecentlyPlayedEntry[] = [
 
 const mockListeningHistory: ListeningHistoryEntry[] = [
   {
-    id: "play-1",
+    id: "99990000-1111-4111-8111-000000000001",
     track: mockTrackSummaries[0],
     played_at: "2026-04-01T10:30:00Z",
   },
   {
-    id: "play-2",
+    id: "99990000-1111-4111-8111-000000000002",
     track: mockTrackSummaries[1],
     played_at: "2026-03-31T18:00:00Z",
   },
   {
-    id: "play-3",
+    id: "99990000-1111-4111-8111-000000000003",
     track: mockTrackSummaries[0],
     played_at: "2026-03-31T15:00:00Z",
   },
@@ -303,7 +322,7 @@ const mockListeningHistoryMeta: ListMeta = {
 
 const mockSuggestedUsers: SuggestedUser[] = [
   {
-    id: "user-su-1",
+    id: "cccc0000-1111-4111-8111-000000000001",
     display_name: "Nova Pulse",
     username: "novapulse",
     profile_picture: "https://picsum.photos/150/150?random=901",
@@ -314,7 +333,7 @@ const mockSuggestedUsers: SuggestedUser[] = [
     is_following: false,
   },
   {
-    id: "user-su-2",
+    id: "cccc0000-1111-4111-8111-000000000002",
     display_name: "Juno Ray",
     username: "junoray",
     profile_picture: "https://picsum.photos/150/150?random=902",
@@ -325,7 +344,7 @@ const mockSuggestedUsers: SuggestedUser[] = [
     is_following: false,
   },
   {
-    id: "user-su-3",
+    id: "cccc0000-1111-4111-8111-000000000003",
     display_name: "Celestial Beat",
     username: "celestialbeat",
     profile_picture: "https://picsum.photos/150/150?random=903",
@@ -347,35 +366,35 @@ const mockSuggestedMeta: ListMeta = {
 
 const mockFollowingUsers = [
   {
-    id: "user-f1",
+    id: ARTIST_IDS.travis,
     display_name: "Travis Scott",
     username: "travisscott",
     profile_picture: "https://picsum.photos/150/150?random=101",
     is_verified: true,
   },
   {
-    id: "user-f2",
+    id: ARTIST_IDS.dua,
     display_name: "Dua Lipa",
     username: "dualipa",
     profile_picture: "https://picsum.photos/150/150?random=102",
     is_verified: true,
   },
   {
-    id: "user-f3",
+    id: ARTIST_IDS.billie,
     display_name: "Billie Eilish",
     username: "billieeilish",
     profile_picture: "https://picsum.photos/150/150?random=103",
     is_verified: true,
   },
   {
-    id: "user-f4",
+    id: ARTIST_IDS.drake,
     display_name: "Drake",
     username: "drake",
     profile_picture: "https://picsum.photos/150/150?random=104",
     is_verified: true,
   },
   {
-    id: "user-f5",
+    id: ARTIST_IDS.sza,
     display_name: "SZA",
     username: "sza",
     profile_picture: "https://picsum.photos/150/150?random=105",
@@ -416,6 +435,18 @@ export const discoverHandlers = [
         made_for_you: {
           daily_mix: mockDailyMix,
           weekly_mix: mockWeeklyMix,
+        },
+        trending_by_genre: {
+          genres: [
+            { genre_id: "genre-hip-hop-0001-0000-000000000001", genre_name: "Hip-Hop" },
+            { genre_id: "genre-pop-00000-0000-000000000002", genre_name: "Pop" },
+            { genre_id: "genre-electronic-000-000000000003", genre_name: "Electronic" },
+          ],
+          initial_tab: {
+            genre_id: "genre-hip-hop-0001-0000-000000000001",
+            genre_name: "Hip-Hop",
+            tracks: mockDiscoveryTracks,
+          },
         },
         discover_with_stations: mockStations,
         artists_to_watch: mockEmergingArtists,
@@ -483,6 +514,55 @@ export const discoverHandlers = [
         id: params.userId as string,
         username: `artist-${params.userId}`,
       } satisfies PublicUser,
+    });
+  }),
+  // GET /home/mixes/:mixId — full mix detail (playlist shape)
+  http.get("*/home/mixes/:mixId", ({ params }) => {
+    const mix = mockMixes.find((m) => m.id === params.mixId);
+    if (!mix) {
+      return HttpResponse.json(
+        { error: { code: "NOT_FOUND", message: "Mix not found." } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({
+      data: {
+        playlist_id: mix.id,
+        owner_user_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+        name: mix.label,
+        description: `${mix.track_count} tracks · Generated mix`,
+        is_public: true,
+        cover_image: mix.cover_image,
+        subtype: "playlist",
+        track_count: mix.track_count,
+        like_count: 0,
+        created_at: mix.generated_at,
+        tracks: mockDiscoveryTracks.map((t, i) => ({
+          track_id: t.id,
+          position: i + 1,
+          added_at: mix.generated_at,
+          title: t.title,
+          artist_name: t.artist_name,
+          cover_image: t.cover_image,
+          duration: t.duration,
+          is_public: true,
+          deleted_at: null,
+          artist_id: t.user_id,
+        })),
+      },
+      message: "Mix fetched successfully.",
+    });
+  }),
+
+  // GET /home/trending-by-genre/:genreId
+  http.get("*/home/trending-by-genre/:genreId", ({ params }) => {
+    return HttpResponse.json({
+      data: {
+        genre_id: params.genreId as string,
+        genre_name: "Genre",
+        tracks: mockDiscoveryTracks,
+      },
+      message: "Trending tracks fetched.",
     });
   }),
 ];

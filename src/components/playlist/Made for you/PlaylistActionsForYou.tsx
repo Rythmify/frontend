@@ -1,25 +1,31 @@
 import { useState, useRef, useEffect } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { FaHeart, FaEllipsisH, FaLink, FaGlobe } from "react-icons/fa";
-import { BiRepost } from "react-icons/bi";
 import { LuListEnd, LuShare } from "react-icons/lu";
 import { FaListUl as FaAddToPlaylist } from "react-icons/fa";
 import SharePopup from "../../../pages/[username]/[trackSlug]/components/SharePopup";
-import type { Playlist } from "@/services/api/playlist/playlist.service";
+import {
+  updatePlaylist,
+  type Playlist,
+} from "@/services/api/playlist/playlist.service";
 import { useLikesStore } from "@/stores/likes.store";
+import AddToPlaylistModal from "../AddToPlaylistModal";
 
 interface PlaylistActionsProps {
   playlist: Playlist;
   onAddToNextUp?: () => void;
+  onPlaylistUpdated?: (updated: Playlist) => void;
 }
 
 export default function PlaylistActions({
   playlist,
   onAddToNextUp,
+  onPlaylistUpdated,
 }: PlaylistActionsProps) {
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const liked = isPlaylistLiked(playlist.playlist_id);
 
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -33,6 +39,24 @@ export default function PlaylistActions({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const handleCopyLink = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    setMoreOpen(false);
+  };
+
+  const handleMakePublic = async () => {
+    try {
+      const res = await updatePlaylist(playlist.playlist_id, {
+        is_public: true,
+      });
+      onPlaylistUpdated?.(res.data);
+      setMoreOpen(false);
+    } catch (err) {
+      console.error("Failed to make playlist public:", err);
+    }
+  };
 
   return (
     <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
@@ -53,15 +77,13 @@ export default function PlaylistActions({
           active={liked}
         >
           <FaHeart
-            className={`text-[14px] ${liked ? "text-[#f50]" : "text-white"}`}
+            className={`text-[14px] ${liked ? "text-accent" : "text-white"}`}
           />
           {liked ? "Liked" : "Like"}
         </ActionButton>
 
         {/* Share Button */}
-        <ActionButton onClick={() => setShareOpen(true)}
-          active={shareOpen}
-        >
+        <ActionButton onClick={() => setShareOpen(true)} active={shareOpen}>
           <LuShare className="text-[16px]" />
           Share
         </ActionButton>
@@ -75,7 +97,7 @@ export default function PlaylistActions({
         {/* More Dropdown */}
         <div ref={moreRef} className="relative">
           <ActionButton
-            onClick={() => setMoreOpen((p: boolean) => !p)}
+            onClick={() => setMoreOpen((p) => !p)}
             active={moreOpen}
           >
             <FaEllipsisH className="text-[14px]" />
@@ -83,33 +105,27 @@ export default function PlaylistActions({
           </ActionButton>
 
           {moreOpen && (
-            <div className="absolute left-0 top-full mt-1 bg-[#1a1a1a] border border-[#333] rounded-sm shadow-xl z-50 min-w-[190px] py-1">
+            <div
+              className="fixed z-[2000] bg-bg w-44 border font-bold border-[#353535] rounded shadow-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
               <DropdownItem
                 icon={<FaAddToPlaylist />}
                 label="Add to playlist"
-                onClick={() => setMoreOpen(false)}
+                onClick={() => {
+                  setMoreOpen(false);
+                  setShowPlaylistModal(true);
+                }}
               />
+
+              {/* Only show "Make public" if the playlist is currently private */}
               {!playlist.is_public && (
                 <DropdownItem
                   icon={<FaGlobe />}
                   label="Make public"
-                  onClick={() => setMoreOpen(false)}
+                  onClick={handleMakePublic}
                 />
               )}
-              <DropdownItem
-                icon={<FaLink />}
-                label="Copy link"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  setMoreOpen(false);
-                }}
-              />
-              <div className="my-1 border-t border-[#333]" />
-              <DropdownItem
-                icon={<BiRepost />}
-                label="Repost"
-                onClick={() => setMoreOpen(false)}
-              />
             </div>
           )}
         </div>
@@ -117,10 +133,20 @@ export default function PlaylistActions({
         {shareOpen && (
           <SharePopup playlist={playlist} onClose={() => setShareOpen(false)} />
         )}
+
+        {showPlaylistModal && (
+          <AddToPlaylistModal
+            playlistId={playlist.playlist_id}
+            trackTitle={playlist.name}
+            onClose={() => setShowPlaylistModal(false)}
+          />
+        )}
       </div>
     </Tooltip.Provider>
   );
 }
+
+// ── Components ───────────────────────────────────────────────────────────────
 
 function ActionButton({
   children,
@@ -142,7 +168,7 @@ function ActionButton({
         bg-[#303030] font-bold text-[14px] 
         ${
           active
-            ? "text-accent" 
+            ? "text-accent"
             : "text-white border-transparent hover:text-[#717171]"
         }
         ${className}
@@ -165,9 +191,9 @@ function DropdownItem({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-medium text-[#ccc] hover:bg-white/5 hover:text-white transition-colors cursor-pointer text-left"
+      className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10 transition-colors cursor-pointer text-left"
     >
-      <span className="text-[14px] opacity-70">{icon}</span>
+      <span className="text-[14px]">{icon}</span>
       {label}
     </button>
   );
