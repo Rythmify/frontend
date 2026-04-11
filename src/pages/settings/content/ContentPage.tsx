@@ -5,6 +5,49 @@ import {
   type ContentSettings,
 } from "@/services/settings.service";
 
+function Toast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const timer = window.setTimeout(onClose, 3000);
+    return () => window.clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div
+      data-test="settings-content-toast"
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white shadow-md ${
+        type === "success"
+          ? "bg-[var(--color-success)]"
+          : "bg-[var(--color-error)]"
+      }`}
+    >
+      <span>{message}</span>
+      <button
+        onClick={onClose}
+        data-test="settings-content-toast-close-button"
+        aria-label="Close toast"
+        className="opacity-80 transition hover:opacity-100"
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path
+            d="M2 2l8 8M10 2l-8 8"
+            stroke="white"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 function SectionTitle({
   children,
   info,
@@ -443,6 +486,10 @@ export default function ContentPage() {
   });
   // Snapshot of last-saved state so Cancel can revert
   const [saved, setSaved] = useState<ContentSettings>({ ...settings });
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   useEffect(() => {
     getContentSettings()
@@ -464,7 +511,15 @@ export default function ContentPage() {
       const updated = await updateContentSettings(settings);
       setSettings(updated);
       setSaved(updated);
+      setToast({
+        message: "Content settings saved successfully.",
+        type: "success",
+      });
     } catch {
+      setToast({
+        message: "Failed to save content settings.",
+        type: "error",
+      });
       // keep pending changes — user can retry
     }
   };
@@ -474,7 +529,8 @@ export default function ContentPage() {
   };
 
   return (
-    <div className="max-w-3xl flex flex-col gap-10 pb-24">
+    <>
+      <div className="max-w-3xl flex flex-col gap-10 pb-24">
       {/* ── RSS Feed ── */}
       <div>
         <SectionTitle info>RSS feed</SectionTitle>
@@ -640,6 +696,14 @@ export default function ContentPage() {
           Save changes
         </button>
       </div>
-    </div>
+      </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </>
   );
 }
