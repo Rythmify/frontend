@@ -47,7 +47,7 @@ export function BlockUserModal({
   }
 
   return (
-    <div data-test="block-user-modal" className="font-sans text-white select-none w-130">
+    <div data-test="block-user-modal" className="font-sans text-white select-none w-full">
       <h2 className="mb-5 text-xl font-bold tracking-tight">
         Block {username}
       </h2>

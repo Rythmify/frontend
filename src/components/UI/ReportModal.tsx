@@ -17,7 +17,7 @@ export function ReportModal({
     onSpamSelected?.()
   }
   return (
-    <div data-test="report-account-modal" className="font-sans text-white select-none w-135">
+    <div data-test="report-account-modal" className="font-sans text-white select-none w-full">
       <h2 className="mb-5 text-xl font-bold tracking-tight">
         Report account for
       </h2>

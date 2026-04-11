@@ -37,7 +37,7 @@ export function SpamModal({
     }
   }
   return (
-    <div data-test="spam-report-modal" className="font-sans text-white select-none w-130">
+    <div data-test="spam-report-modal" className="font-sans text-white select-none w-full">
       <h2 className="mb-5 tracking-tight font-etrabold text-[22px]" data-test="spam-report-title">
         Report Spam
       </h2>

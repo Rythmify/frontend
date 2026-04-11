@@ -5,6 +5,7 @@ import FollowButton from '@/components/UI/FollowButton'
 import { Modal } from '@/components/UI/Modal'
 import { BlockUserModal } from '@/components/UI/BlockModal'
 import { ReportModal } from '@/components/UI/ReportModal'
+import { SpamModal } from '@/components/UI/SpamModal'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ const buildActionText = (n: Notification): string => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = {
-  row:            `flex items-center gap-4 cursor-pointer p-3`,
+  row:            `flex items-start sm:items-center gap-4 cursor-pointer p-3`,
   unreadDot:      `w-2 h-2 rounded-full bg-red-500 flex-shrink-0`,
   unreadDotHidden:`w-2 h-2 flex-shrink-0`,
   avatarWrapper:  `relative w-11 h-11 flex-shrink-0 overflow-visible`,
@@ -47,7 +48,7 @@ const styles = {
   actionText:     `font-normal text-text-secondary`,
   timeRow:        `flex items-center gap-1 text-xs text-text-secondary mt-1`,
   timeIcon:       `fa-solid fa-user text-[10px]`,
-  actions:        `flex items-center gap-2 flex-shrink-0`,
+  actions:        `flex items-center gap-2 flex-shrink-0 self-start sm:self-auto`,
   dotsBtn:        `w-9 h-9 flex items-center justify-center bg-[#1a1a1a] border border-border rounded-sm hover:bg-[#2a2a2a] transition-colors`,
   dotsIcon:       `fa-solid fa-ellipsis text-white text-sm`,
 
@@ -73,6 +74,7 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
   const [menuOpen, setMenuOpen]         = useState(false)
   const [isBlockOpen, setIsBlockOpen]   = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
+  const [isSpamOpen, setIsSpamOpen]     = useState(false)
 
   const handleCellClick = () => {
     if (n.type === 'follow') {
@@ -181,7 +183,16 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
           userId={n.actor.id}
           username={n.actor.display_name}
           onClose={() => setIsReportOpen(false)}
-          onSpamSelected={() => setIsReportOpen(false)}
+          onSpamSelected={() => { setIsReportOpen(false); setIsSpamOpen(true) }}
+        />
+      </Modal>
+
+      {/* Spam Modal */}
+      <Modal isOpen={isSpamOpen} onClose={() => setIsSpamOpen(false)}>
+        <SpamModal
+          userId={n.actor.id}
+          username={n.actor.display_name}
+          onClose={() => setIsSpamOpen(false)}
         />
       </Modal>
     </>
