@@ -1,7 +1,11 @@
-name: Azure Static Web Apps CI/CD
+name: Azure Static Web Apps CI/CD — Dir 1 (Frontend)
 
 on:
   push:
+    branches:
+      - development
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
     branches:
       - development
 
@@ -9,6 +13,7 @@ jobs:
   build_and_deploy_job:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     steps:
       - uses: actions/checkout@v3
         with:
@@ -25,6 +30,7 @@ jobs:
           app_location: "/"
           api_location: ""
           output_location: "dist"
+          production_branch: "development"
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
           VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
@@ -35,6 +41,7 @@ jobs:
   close_pull_request_job:
     runs-on: ubuntu-latest
     name: Close Pull Request Job
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
     steps:
       - name: Close Pull Request
         id: closepullrequest
