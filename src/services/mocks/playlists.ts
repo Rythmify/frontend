@@ -4,7 +4,7 @@ import { mockTracks } from "./tracks";
 /** mock playlists*/
 export const mockPlaylists: Playlist[] = [
   {
-    id: "1",
+    id: 1,
     title: "Lege-Cy & Ghaliaa - Msh Awl Mara مش أول مرة",
     creatorUsername: "showw2000",
     creatorName: "Showw2000",
@@ -18,7 +18,7 @@ export const mockPlaylists: Playlist[] = [
     tracks: mockTracks.slice(0, 5),
   },
   {
-    id: "2",
+    id: 2,
     title: "Egyptian R&B Vibes – Summer Mix",
     creatorUsername: "dj-flux",
     creatorName: "DJ FLUX",
@@ -32,7 +32,7 @@ export const mockPlaylists: Playlist[] = [
     tracks: mockTracks.slice(1, 5),
   },
   {
-    id: "3",
+    id: 3,
     title: "Private Chill Session",
     creatorUsername: "shahd",
     creatorName: "Shahd",
