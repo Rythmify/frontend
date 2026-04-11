@@ -6,10 +6,14 @@ import { Bell, Mail, ChevronDown, MoreHorizontal, Menu, X, Search } from "lucide
 import { disconnectSocket } from '@/services/api/messaging/socketService';
 import NotificationCard from '@/components/notificationsComponents/notificationCard';
 import { fetchNotifications, type Notification } from '@/services/api/notifications/notificationsAPI';
+import { fetchConversations, type Conversation } from '@/services/api/messaging/conversationApi';
+import { ChatProfile } from '@/components/MessagingComponents/ChatProfile';
+import { useMessagingStore } from '@/stores/messaging.store';
 
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
+  const { unreadCount: unreadMessages, fetchUnreadCount: fetchUnreadMessages, setupSocketListeners, teardownSocketListeners } = useMessagingStore();
   const navigate = useNavigate();
 
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
@@ -20,6 +24,8 @@ const MainNavbar = () => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversationsLoading, setConversationsLoading] = useState(false);
 
   const avatarRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -58,9 +64,33 @@ const MainNavbar = () => {
     }
   };
 
+  const handleMessagesToggle = async () => {
+    const willOpen = !showMessages;
+    closeAll();
+    setShowMessages(willOpen);
+
+    if (!willOpen) return;
+
+    setConversationsLoading(true);
+    try {
+      const res = await fetchConversations(1, 6);
+      setConversations((res.data.items ?? []).slice(0, 6));
+    } catch {
+      setConversations([]);
+    } finally {
+      setConversationsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchUnreadCount();
-  }, [fetchUnreadCount]);
+    fetchUnreadMessages();
+  }, [fetchUnreadCount, fetchUnreadMessages]);
+
+  useEffect(() => {
+    setupSocketListeners();
+    return () => teardownSocketListeners();
+  }, [setupSocketListeners, teardownSocketListeners]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -237,10 +267,15 @@ const MainNavbar = () => {
           <div ref={msgRef} className="relative">
             <button
               data-test="btn-messages"
-              onClick={() => toggle(setShowMessages)}
+              onClick={handleMessagesToggle}
               className="text-text-secondary hover:text-text transition-colors"
             >
               <Mail size={22} className="mt-2 hover:text-text-hover" />
+              {unreadMessages > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
+                </span>
+              )}
             </button>
 
             {showMessages && (
@@ -249,7 +284,21 @@ const MainNavbar = () => {
                   <h3 className="text-md font-medium text-text">Messages</h3>
                 </div>
                 <div className="py-2 max-h-[300px] overflow-y-auto">
-                  <div className="px-4 py-3 text-md text-text-muted text-center">No new messages</div>
+                  {conversationsLoading ? (
+                    <div className="px-4 py-3 text-md text-text-muted text-center">Loading messages...</div>
+                  ) : conversations.length === 0 ? (
+                    <div className="px-4 py-3 text-md text-text-muted text-center">No new messages</div>
+                  ) : (
+                    <div className="flex flex-col">
+                      {conversations.map((conversation) => (
+                        <ChatProfile
+                          key={conversation.id}
+                          conversation={conversation}
+                          onClick={() => { navigate(`/messages/${conversation.id}`); closeAll(); }}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="border-t border-border px-4 py-2">
                   <Link to="/messages" className="text-xs font-medium text-text hover:text-text-secondary block text-center" onClick={closeAll}>
