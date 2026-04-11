@@ -2,20 +2,21 @@ import { useState, useRef } from "react";
 import { Modal } from "../MessagingComponents/Modal";
 import {
   updatePlaylist,
-  type Playlist,
+  type PlaylistDetails,
   type PlaylistSubtype,
 } from "@/services/api/playlist/playlist.service";
 import { getGenres } from "@/services/api/upload/track.service";
 import { useEffect } from "react";
 import PrivacyToggle from "../Upload/PrivacyToggle";
+import TrackReorderList from "./TrackReorderList";
 
 interface EditPlaylistModalProps {
-  playlist: Playlist;
+  playlist: PlaylistDetails;
   onClose: () => void;
-  onSaved: (updated: Playlist) => void;
+  onSaved: (updated: PlaylistDetails) => void;
 }
 
-type Tab = "basic" | "tracks" | "metadata";
+type Tab = "basic" | "tracks" ;
 
 const PLAYLIST_TYPES: { label: string; value: PlaylistSubtype }[] = [
   { label: "Playlist", value: "playlist" },
@@ -51,6 +52,7 @@ export default function EditPlaylistModal({
   );
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [genres, setGenres] = useState<string[]>([]);
+  const [currentTracks, setCurrentTracks] = useState(playlist.tracks || []);
   // ── UI state ───────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +114,14 @@ export default function EditPlaylistModal({
         genre_id: genreId || null,
         cover_image: coverFile ?? undefined,
       });
-      onSaved(res.data);
+
+      // Construct the final object
+      onSaved({
+        ...res.data,
+        tracks: currentTracks,
+        track_count: currentTracks.length,
+      } as PlaylistDetails);
+
       onClose();
     } catch {
       setError("Failed to save changes. Please try again.");
@@ -124,7 +133,6 @@ export default function EditPlaylistModal({
   const tabs: { id: Tab; label: string }[] = [
     { id: "basic", label: "Basic info" },
     { id: "tracks", label: "Tracks" },
-    { id: "metadata", label: "Metadata" },
   ];
 
   return (
@@ -152,7 +160,7 @@ export default function EditPlaylistModal({
         </div>
 
         {/* ── Tab content ── */}
-        <div className="p-3 min-w-fit overflow-y-auto ">
+        <div className="p-3 min-w-[800px] overflow-y-auto ">
           {activeTab === "basic" && (
             <div className="flex gap-6">
               {/* Cover image */}
@@ -317,7 +325,13 @@ export default function EditPlaylistModal({
 
           {activeTab === "tracks" && (
             <div className="text-[#6e6e6e] text-sm py-8 text-center">
-              Track management coming soon.
+              <TrackReorderList
+                playlistId={playlist.playlist_id}
+                initialTracks={currentTracks}
+                onTracksChanged={(updated) => {
+                  setCurrentTracks(updated);
+                }}
+              />
             </div>
           )}
         </div>

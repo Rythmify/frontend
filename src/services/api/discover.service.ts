@@ -62,6 +62,14 @@ export interface HomeData {
   more_of_what_you_like: {
     tracks: DiscoveryTrack[];
     source: "personalized" | "trending_fallback";
+  } | null;
+  trending_by_genre: {
+    genres: { genre_id: string; genre_name: string }[];
+    initial_tab: {
+      genre_id: string;
+      genre_name: string;
+      tracks: DiscoveryTrack[];
+    };
   };
 
   mixed_for_you: PersonalMix[];
@@ -221,3 +229,14 @@ export const getAlbumsForYou = async (params?: {
 
 // to do
 // get liked tracks
+// GET /home/trending-by-genre/{genre_id}
+export const getTrendingByGenre = async (
+  genreId: string,
+  params?: { limit?: number; offset?: number }
+): Promise<{ genre_id: string; genre_name: string; tracks: DiscoveryTrack[] }> => {
+  const res = await axiosInstance.get<{
+    data: { genre_id: string; genre_name: string; tracks: DiscoveryTrack[] };
+    message: string;
+  }>(`/home/trending-by-genre/${genreId}`, { params });
+  return res.data.data;
+};

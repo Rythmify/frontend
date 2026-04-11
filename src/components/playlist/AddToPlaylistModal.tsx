@@ -20,7 +20,7 @@ interface DisplayTrack {
 }
 
 interface AddToPlaylistModalProps {
-  trackId: string;
+  trackId?: string;
   trackTitle: string;
   trackCoverUrl?: string;
   playlistId?: string; // if adding whole playlist
@@ -132,8 +132,16 @@ const AddToPlaylistModal = ({
     if (!playlistTitle.trim()) return;
     setCreating(true);
     try {
+      const slug = playlistTitle
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "") 
+        .replace(/\s+/g, "-") 
+        .replace(/-+/g, "-"); 
+
       const res = await createPlaylist({
         name: playlistTitle.trim(),
+        slug, 
         is_public: privacy === "public",
       });
 
