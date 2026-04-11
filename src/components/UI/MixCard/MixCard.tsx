@@ -33,7 +33,7 @@ export default function MixCard({
   const navigate = useNavigate();
   const liked = isMixLiked(mix.id);
 
-  const mixSlug = mix.label
+  const mixSlug = (mix.label ?? "")
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
@@ -46,7 +46,7 @@ export default function MixCard({
     toggleMix(mix);
     togglePlaylist({
       id: mix.id,
-      title: mix.label,
+      title: mix.label ?? "",
       owner: `${mix.track_count} tracks`,
       coverUrl: mix.cover_image ?? null,
     });
@@ -63,7 +63,7 @@ export default function MixCard({
         {mix.cover_image && (
           <img
             src={mix.cover_image}
-            alt={mix.label}
+            alt={mix.label ?? ""}
             className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
             data-test="mix-card-image"
           />
@@ -83,7 +83,7 @@ export default function MixCard({
               fontWeight: 900,
             }}
           >
-            {mix.label}
+            {mix.label ?? ""}
           </span>
         </div>
 
