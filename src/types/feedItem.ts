@@ -1,6 +1,6 @@
 import type { Track } from "@/types/track";
 import type { User } from "@/types/user";
-import type { FeedPlaylist } from "@/types/feedPlaylist";
+import type { Playlist } from "@/types/playlist";
 
 interface FeedItemBase {
   id: string;
@@ -16,7 +16,7 @@ export interface TrackFeedItem extends FeedItemBase {
 
 export interface PlaylistFeedItem extends FeedItemBase {
   content_type: "playlist";
-  playlist: FeedPlaylist;
+  playlist: Playlist;
 }
 
 export type FeedItem = TrackFeedItem | PlaylistFeedItem;
