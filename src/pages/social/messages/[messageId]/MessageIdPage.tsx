@@ -195,7 +195,7 @@ useEffect(() => {
 className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overflow-hidden "
 >
       {/* ── Left: conversation list ── */}
-      <div className="flex flex-col w-95 flex-shrink-0 overflow-y-auto ">
+      <div className="flex flex-col w-95 flex-shrink-0 sticky top-0 h-full">
         <MessagingHeader />
         <Chats
           conversations={conversations}
@@ -207,7 +207,7 @@ className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overfl
       </div>
 
       {/* ── Right: active conversation ── */}
-      <div className="flex flex-col flex-1  ml-6 min-w-0 ">
+      <div className="flex flex-col flex-1  ml-6 min-w-0 overflow-y-auto">
         {activeConv ? (
           <>
             <ConversationHeader

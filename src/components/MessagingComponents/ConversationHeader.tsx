@@ -65,7 +65,7 @@ const ConversationHeader = ({
       <div className="flex items-center gap-2 text-text">
         <button
           data-test="conversation-profile-button"
-          className="p-2 text-sm font-bold text-text hover:text-text-hover"
+          className="p-2 text-sm font-bold text-white hover:text-text-secondary"
           onClick={() => navigate(`/${recipientName}`)}
         >
           {recipientName}
@@ -73,7 +73,7 @@ const ConversationHeader = ({
 
         <button
           data-test="conversation-block-button"
-          className="p-2 text-sm font-bold text-text-secondary hover:text-text-hover"
+          className="p-2 text-sm font-bold text-white hover:text-text-secondary"
           onClick={isBlocked ? handleUnblock : () => setIsBlockOpen(true)}
         >
           {isBlocked ? 'Unblock' : 'Block'}
@@ -81,7 +81,7 @@ const ConversationHeader = ({
 
         <button
           data-test="conversation-report-button"
-          className="p-2 text-sm font-bold text-text-secondary hover:text-text-hover"
+          className="p-2 text-sm font-bold text-white hover:text-text-secondary"
           onClick={() => setIsReportOpen(true)}
         >
           Report
@@ -92,7 +92,7 @@ const ConversationHeader = ({
         <button
           onClick={handleToggleRead}
           disabled={loadingRead || !lastMessageId}
-          className="px-4 py-2 text-sm font-bold text-text bg-bg-inverted rounded-sm border border-border hover:bg-input-bg disabled:opacity-50"
+          className="px-4 py-2 text-sm font-bold text-white bg-input-bg rounded-sm border border-border hover:bg-input-bg disabled:opacity-50"
         >
           {isUnread ? 'Mark as read' : 'Mark as unread'}
         </button>
