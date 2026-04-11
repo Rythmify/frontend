@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import type { User } from "@/stores/auth.store";
 import { useAuthStore } from "@/stores/auth.store";
 import {
@@ -6,7 +6,7 @@ import {
   deleteAvatar,
   uploadCover,
   deleteCover,
-} from "@/services/mocks/User.service";
+} from "@/services/user.service";
 
 interface ProfileHeaderProps {
   user: User;
@@ -29,6 +29,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLocalAvatar(avatar);
+  }, [avatar]);
+
+  useEffect(() => {
+    setLocalCover(coverUrl);
+  }, [coverUrl]);
 
   const handleReplaceClick = () => {
     avatarInputRef.current?.click();

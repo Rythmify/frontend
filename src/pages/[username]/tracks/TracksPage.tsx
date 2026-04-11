@@ -5,6 +5,7 @@ import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
 import { mockLikedTracks } from "@/components/Profile/MockData/mock";
+import { getMyTracks } from "@/services/api/upload/track.service";
 import {
   getFollowers,
   getFollowing,
@@ -14,7 +15,7 @@ import {
   type OwnUser,
   type PublicUser,
   type UserSummary,
-} from "@/services/mocks/User.service";
+} from "@/services/user.service";
 
 export default function TracksPage() {
   const { username } = useParams();
@@ -34,6 +35,7 @@ export default function TracksPage() {
 
   const activeUser = currentUser;
   const isOwner = !username || username === currentUser.username;
+  const followingCount = currentUser.following_ids?.length ?? 0;
 
   useEffect(() => {
     if (isOwner) {
@@ -45,20 +47,35 @@ export default function TracksPage() {
             following: profile.following_count,
             tracks: 0,
           });
+          const latestUser = useAuthStore.getState().user ?? activeUser;
           setUser({
-            ...activeUser,
+            ...latestUser,
             bio: profile.bio || "",
+            avatar: profile.profile_picture ?? latestUser.avatar,
+            coverUrl: profile.cover_photo ?? latestUser.coverUrl,
             location:
               [(profile as OwnUser).city, (profile as OwnUser).country]
                 .filter(Boolean)
-                .join(", ") || activeUser.location,
+                .join(", ") || latestUser.location,
           });
+        })
+        .catch(console.error);
+
+      getMyTracks({ page: 1, limit: 1 })
+        .then((res) => {
+          setStats((s) => ({
+            ...s,
+            tracks: res.pagination?.total ?? s.tracks,
+          }));
         })
         .catch(console.error);
 
       if (activeUser.id) {
         getFollowers(activeUser.id, { limit: 100 })
-          .then((res) => setFollowers(res.items))
+          .then((res) => {
+            setFollowers(res.items);
+            setStats((s) => ({ ...s, followers: res.meta.total }));
+          })
           .catch(console.error);
         getFollowing(activeUser.id, { limit: 100 })
           .then((res) => {
@@ -141,6 +158,9 @@ export default function TracksPage() {
         coverUrl: profileData?.cover_photo || "",
         location: (profileData as PublicUser | null)?.location || "",
       };
+  const displayedStats = isOwner
+    ? { ...stats, following: followingCount }
+    : stats;
 
   const followersMapped = followers.map((u) => ({
     username: u.user_id,
@@ -172,7 +192,7 @@ export default function TracksPage() {
         likedTracks={likedTracks}
         followers={followersMapped}
         following={followingMapped}
-        stats={stats}
+        stats={displayedStats}
         onUnlike={handleUnlike}
       >
         <div className="flex flex-col items-center justify-center gap-4 py-16">
@@ -205,8 +225,9 @@ export default function TracksPage() {
               country: data.country,
             }).catch(console.error);
 
+            const latestUser = useAuthStore.getState().user ?? activeUser;
             setUser({
-              ...activeUser,
+              ...latestUser,
               displayName: data.displayName,
               firstName: data.firstName,
               lastName: data.lastName,
@@ -216,7 +237,7 @@ export default function TracksPage() {
               location: data.location,
               avatar: data.avatarFile
                 ? URL.createObjectURL(data.avatarFile)
-                : activeUser.avatar,
+                : latestUser.avatar,
             });
             setShowEdit(false);
           }}

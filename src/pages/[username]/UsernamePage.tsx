@@ -10,6 +10,7 @@ import { mockLikedTracks } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
 import { mockTracks } from "../../services/mocks/tracks";
+import { getMyTracks } from "@/services/api/upload/track.service";
 import type { Track } from "../../types/track";
 import {
   getMyProfile,
@@ -21,7 +22,7 @@ import {
   type OwnUser,
   type PublicUser,
   type UserSummary,
-} from "@/services/mocks/User.service";
+} from "@/services/user.service";
 
 export default function UsernamePage() {
   const { username } = useParams();
@@ -61,14 +62,26 @@ export default function UsernamePage() {
             following: profile.following_count,
             tracks: 0,
           });
+          const latestUser = useAuthStore.getState().user ?? currentUser;
           setUser({
-            ...currentUser,
+            ...latestUser,
             bio: profile.bio || "",
+            avatar: profile.profile_picture ?? latestUser.avatar,
+            coverUrl: profile.cover_photo ?? latestUser.coverUrl,
             location:
               [(profile as OwnUser).city, (profile as OwnUser).country]
                 .filter(Boolean)
-                .join(", ") || currentUser.location,
+                .join(", ") || latestUser.location,
           });
+        })
+        .catch(console.error);
+
+      getMyTracks({ page: 1, limit: 1 })
+        .then((res) => {
+          setStats((s) => ({
+            ...s,
+            tracks: res.pagination?.total ?? s.tracks,
+          }));
         })
         .catch(console.error);
 

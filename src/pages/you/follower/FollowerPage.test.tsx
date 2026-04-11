@@ -3,6 +3,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import FollowerPage from "@/pages/you/follower/FollowerPage";
 
 const mockNavigate = vi.fn();
+const mockGetFollowers = vi.fn();
+const mockGetUserById = vi.fn();
+const mockResolveUsername = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -11,6 +14,12 @@ vi.mock("react-router-dom", () => ({
 
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
+}));
+
+vi.mock("@/services/user.service", () => ({
+  getFollowers: (...args: unknown[]) => mockGetFollowers(...args),
+  getUserById: (...args: unknown[]) => mockGetUserById(...args),
+  resolveUsername: (...args: unknown[]) => mockResolveUsername(...args),
 }));
 
 vi.mock("@/components/Profile/MockData/mock", () => ({
@@ -70,6 +79,38 @@ const mockCurrentUser = {
 describe("FollowerPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockResolveUsername.mockResolvedValue("resolved-user-id");
+    mockGetFollowers.mockResolvedValue({
+      items: [
+        {
+          user_id: "follower1-id",
+          display_name: "Follower One",
+          is_verified: false,
+        },
+        {
+          user_id: "follower2-id",
+          display_name: "Follower Two",
+          is_verified: true,
+        },
+      ],
+    });
+    mockGetUserById.mockImplementation(async (id: string) => {
+      if (id === "follower1-id") {
+        return {
+          username: "follower1",
+          display_name: "Follower One",
+          profile_picture: "",
+          followers_count: 10,
+        };
+      }
+
+      return {
+        username: "follower2",
+        display_name: "Follower Two",
+        profile_picture: "",
+        followers_count: 5000,
+      };
+    });
     (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       user: mockCurrentUser,
     });
@@ -150,9 +191,11 @@ describe("FollowerPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/travis-scott/following");
   });
 
-  it("renders owner follower list", () => {
+  it("renders owner follower list", async () => {
     render(<FollowerPage />);
-    expect(screen.getByTestId("follower-avatar-follower1")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("follower-avatar-follower1"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("follower-avatar-follower2")).toBeInTheDocument();
   });
 
@@ -165,15 +208,15 @@ describe("FollowerPage", () => {
     expect(screen.getByTestId("follower-avatar-fan2")).toBeInTheDocument();
   });
 
-  it("navigates to follower profile on avatar click", () => {
+  it("navigates to follower profile on avatar click", async () => {
     render(<FollowerPage />);
-    fireEvent.click(screen.getByTestId("follower-avatar-follower1"));
+    fireEvent.click(await screen.findByTestId("follower-avatar-follower1"));
     expect(mockNavigate).toHaveBeenCalledWith("/follower1");
   });
 
-  it("navigates to follower's followers page on count click", () => {
+  it("navigates to follower's followers page on count click", async () => {
     render(<FollowerPage />);
-    fireEvent.click(screen.getByTestId("follower-count-follower1"));
+    fireEvent.click(await screen.findByTestId("follower-count-follower1"));
     expect(mockNavigate).toHaveBeenCalledWith("/follower1/follower");
   });
 
@@ -202,14 +245,14 @@ describe("FollowerPage", () => {
     );
   });
 
-  it("renders verified badge for verified follower", () => {
+  it("renders verified badge for verified follower", async () => {
     render(<FollowerPage />);
-    expect(screen.getByText(/follower2/)).toBeInTheDocument();
+    expect(await screen.findByText(/follower2/)).toBeInTheDocument();
   });
 
-  it("shows formatted follower count for large numbers", () => {
+  it("shows formatted follower count for large numbers", async () => {
     render(<FollowerPage />);
-    expect(screen.getByTestId("follower-count-follower2")).toHaveTextContent(
+    expect(await screen.findByTestId("follower-count-follower2")).toHaveTextContent(
       "5000 followers",
     );
   });
