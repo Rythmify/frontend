@@ -136,14 +136,22 @@ export interface FollowingSearchResponse {
 export interface Track {
   id: string;
   title: string;
+  description: string | null;
+  genre: string | null;
+  duration: number | null;
+  bitrate: number | null;
+  status: string;
+  is_public: boolean;
+  is_hidden: boolean;
+  user_id: string;
+  play_count: number;
+  like_count: number;
   stream_url: string | null;
   preview_url: string | null;
   waveform_url: string | null;
-  duration: number | null;
-  bitrate: number | null;
-  is_public: boolean;
-  is_hidden: boolean;
+  artists: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface TrackResponse {
@@ -154,11 +162,13 @@ export interface TrackResponse {
 // ─── Playlist Types ───────────────────────────────────────────────────────────
 
 export interface Playlist {
-  id: string;
-  title: string;
+  playlist_id: string;
+  owner_user_id: string;
+  name: string;               
   description: string | null;
   is_public: boolean;
   track_count: number;
+  like_count: number;
   created_at: string;
 }
 

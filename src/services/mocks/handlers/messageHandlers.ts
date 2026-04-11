@@ -221,22 +221,56 @@ const mockMessageUnread = {
 const mockTrack = {
   id: 'e5f6a7b8-c9d0-1234-efab-567890abcdef',
   title: 'Mock Track Title',
+  description: 'A chill electronic track',
+  genre: 'Electronic',
+  tags: [],
+  duration: 240,
+  file_size: 8388608,
+  bitrate: 128,
+  status: 'ready',
+  is_public: true,
+  is_hidden: false,
+  user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  play_count: 0,
+  like_count: 0,
+  comment_count: 0,
+  repost_count: 0,
+  audio_url: null,
   stream_url: 'https://example.com/stream',
   preview_url: null,
   waveform_url: null,
-  duration: 240,
-  bitrate: 128,
-  is_public: true,
-  is_hidden: false,
+  artists: 'Mock Artist',
+  buy_link: null,
+  record_label: null,
+  publisher: null,
+  release_date: null,
+  isrc: null,
+  p_line: null,
+  explicit_content: false,
+  include_in_rss_feed: false,
+  display_embed_code: false,
+  enable_app_playback: true,
+  enable_downloads: false,
+  enable_offline_listening: false,
+  license_type: null,
+  allow_comments: true,
+  show_comments_public: true,
+  show_insights_public: true,
+  geo_restriction_type: 'worldwide',
+  geo_regions: [],
   created_at: '2025-01-01T00:00:00Z',
+  updated_at: '2025-01-01T00:00:00Z',
 };
 
 const mockPlaylist = {
-  id: 'playlist-mock-id-0001',
-  title: 'Mock Playlist Title',
+  playlist_id: 'playlist-mock-id-0001', 
+  owner_user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  name: 'Mock Playlist Title',          
   description: 'A mock playlist for testing.',
   is_public: true,
   track_count: 5,
+  like_count: 0,
+  tracks: [],
   created_at: '2025-01-01T00:00:00Z',
 };
 
@@ -592,26 +626,29 @@ export const messageHandlers = [
       } satisfies MarkMessageReadResponse);
     },
   ),
+// GET /resolve
+http.get('*/resolve', ({ request }) => {
+  const url = new URL(request.url);
+  const permalink = url.searchParams.get('url') ?? '';
 
-  // GET /resolve
-  http.get('*/resolve', ({ request }) => {
-    const url = new URL(request.url);
-    const permalink = url.searchParams.get('url') ?? '';
+  // Test permalinks:
+  // Track:    https://rythmify.com/tracks/e5f6a7b8-c9d0-1234-efab-567890abcdef
+  // Playlist: https://rythmify.com/playlists/playlist-mock-id-0001
 
-    let type: 'track' | 'playlist' | 'user' = 'track';
-    if (permalink.includes('/playlists/')) type = 'playlist';
-    else if (permalink.includes('/users/')) type = 'user';
+  let type: 'track' | 'playlist' | 'user' = 'track';
+  if (permalink.includes('/playlists/')) type = 'playlist';
+  else if (permalink.includes('/users/')) type = 'user';
 
-    const id = type === 'track'
-      ? mockTrack.id
-      : type === 'playlist'
-      ? mockPlaylist.id
-      : permalink.split('/users/')[1] ?? 'unknown-user';
+  const id = type === 'track'
+    ? mockTrack.id
+    : type === 'playlist'
+    ? mockPlaylist.playlist_id     
+    : permalink.split('/users/')[1] ?? 'unknown-user';
 
-    return HttpResponse.json({
-      data: { type, id, permalink },
-    } satisfies ResolvedResource);
-  }),
+  return HttpResponse.json({
+    data: { type, id, permalink },
+  } satisfies ResolvedResource);
+}),
 
   // GET /users/me/following/search
   http.get('*/users/me/following/search', ({ request }) => {
@@ -702,7 +739,7 @@ export const messageHandlers = [
   // GET /playlists/:playlistId
   http.get('*/playlists/:playlistId', ({ params }) => {
     const playlistId = params.playlistId as string;
-    if (playlistId !== mockPlaylist.id) {
+    if (playlistId !== mockPlaylist.playlist_id) {
       return HttpResponse.json(
         { error: { code: 'PLAYLIST_NOT_FOUND', message: 'Playlist not found.' } },
         { status: 404 }
