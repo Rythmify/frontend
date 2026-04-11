@@ -153,7 +153,7 @@ function mixToCard(mix: PersonalMix): MadeForYouItem {
   const words = (mix.label ?? "").trim().split(/\s+/);
   return {
     id: mix.id,
-    title: mix.label,
+    title: mix.label ?? "",
     subtitle:
       mix.flavor === "listening_history"
         ? "Based on listening history"
