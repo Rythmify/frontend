@@ -5,14 +5,17 @@ import { HiUpload, HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
 import { IoCopyOutline } from "react-icons/io5";
 import { LuListEnd } from "react-icons/lu";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
-import type { Playlist } from "@/services/api/playlist/playlist.service";
+import type {
+  Playlist,
+  PlaylistDetails,
+} from "@/services/api/playlist/playlist.service";
 import { useLikesStore } from "@/stores/likes.store";
 import EditPlaylistModal from "./EditPlaylistModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
 interface PlaylistActionsProps {
-  playlist: Playlist;
-  onPlaylistUpdated?: (updated: Playlist) => void;
+  playlist: PlaylistDetails; 
+  onPlaylistUpdated?: (updated: PlaylistDetails) => void; 
 }
 
 export default function PlaylistActions({

@@ -324,3 +324,12 @@ export async function getPlaylistsByUser(
     },
   };
 }
+
+/** GET /playlists/:id/share-link — get the private secret share URL (owner only) */
+export async function getPlaylistShareLink(playlistId: string) {
+  const res = await axiosInstance.get<{
+    data: { playlist_id: string; secret_token: string; share_url: string };
+    message: string;
+  }>(`/playlists/${playlistId}/share-link`);
+  return res.data;
+}

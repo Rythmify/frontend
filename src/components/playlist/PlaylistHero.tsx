@@ -111,7 +111,7 @@ export default function PlaylistHero({
             <span className="text-[28px] font-bold leading-none text-text-upload">
               {playlist.track_count}
             </span>
-            <span className="text-[14px] uppercase tracking-widest font-bold text-text-upload mt-1">
+            <span className="text-[14px] uppercase font-bold text-text-upload mt-1">
               Tracks
             </span>
             {/* Total duration placeholder - usually calculated from tracks list */}
