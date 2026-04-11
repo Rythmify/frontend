@@ -40,7 +40,7 @@ jobs:
           ssh -i vm_key.pem \
               -o StrictHostKeyChecking=no \
               ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
-              "sudo rm -rf /var/www/rythmify/* && sudo mkdir -p /var/www/rythmify"
+              "sudo rm -rf /var/www/rythmify/* && sudo mkdir -p /var/www/rythmify && sudo chown -R rythmify:rythmify /var/www/rythmify && sudo chmod -R 755 /var/www/rythmify"
 
       - name: SCP dist to VM1
         run: |
