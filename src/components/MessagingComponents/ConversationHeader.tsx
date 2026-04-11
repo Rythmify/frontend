@@ -7,7 +7,7 @@ import { ReportModal } from '../UI/ReportModal'
 import { SpamModal } from '../UI/SpamModal'
 import { markMessageReadState } from '@/services/api/messaging/conversationApi'
 import { unblockUser } from '@/services/api/messaging/conversationApi'
-
+import Tooltip from '@/components/UI/Tooltip'
 interface ConversationHeaderProps {
   reciepiantId: string
   conversationId: string
@@ -60,48 +60,56 @@ const ConversationHeader = ({
   }
 
   return (
-    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3 sticky top-0 bg-your-background-color z-10">
+    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3  top-0 bg-your-background-color z-10 ">
 
-      <div className="flex items-center gap-2 text-text">
+      <div className="flex items-center gap-2 text-text  ">
         <button
           data-test="conversation-profile-button"
-          className="p-2 text-sm font-bold text-white hover:text-text-secondary"
+          className="p-2 text-sm font-bold text-white hover:text-text-secondary transition-colors cursor-pointer"
           onClick={() => navigate(`/${recipientName}`)}
         >
           {recipientName}
         </button>
-
+<Tooltip text="Block">
         <button
           data-test="conversation-block-button"
-          className="p-2 text-sm font-bold text-white hover:text-text-secondary"
+          className="p-2 text-sm font-bold text-white hover:text-text-secondary transition-colors cursor-pointer"
           onClick={isBlocked ? handleUnblock : () => setIsBlockOpen(true)}
         >
           {isBlocked ? 'Unblock' : 'Block'}
         </button>
+</Tooltip>
+<Tooltip text="Report">
 
         <button
           data-test="conversation-report-button"
-          className="p-2 text-sm font-bold text-white hover:text-text-secondary"
+          className="p-2 text-sm font-bold text-white hover:text-text-secondary transition-colors cursor-pointer"
           onClick={() => setIsReportOpen(true)}
         >
           Report
         </button>
+        </Tooltip>
       </div>
 
       <div className="flex gap-2 items-center">
+        <Tooltip text="Mark as read/unread">
+
         <button
           onClick={handleToggleRead}
           disabled={loadingRead || !lastMessageId}
-          className="px-4 py-2 text-sm font-bold text-white bg-input-bg rounded-sm border border-border hover:bg-input-bg disabled:opacity-50"
+          className="px-4 py-2 text-sm font-bold text-white bg-input-bg rounded-sm border border-border hover:bg-input-bg disabled:opacity-50 hover:text-text-secondary"
         >
           {isUnread ? 'Mark as read' : 'Mark as unread'}
         </button>
+</Tooltip>
+        <Tooltip text="Archive this conversation  ">
 
         <DeleteConversationButton
           conversationId={conversationId}
           participantId={reciepiantId}
           onDeleted={onDeleted}
         />
+        </Tooltip>
       </div>
 
       <Modal isOpen={isBlockOpen} onClose={() => setIsBlockOpen(false)}>

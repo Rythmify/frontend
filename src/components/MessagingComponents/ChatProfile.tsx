@@ -23,7 +23,7 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
       data-test={`chat-profile-${conversation.id}`}
       onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded-sm width-full ${
-        isActive ? 'bg-black' : 'hover:bg-[#303030]'
+        isActive ? 'bg-[#303030]' : 'hover:bg-[#303030]'
       }`}
     >
        
