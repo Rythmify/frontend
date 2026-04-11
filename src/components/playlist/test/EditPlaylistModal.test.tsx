@@ -6,7 +6,7 @@ import * as trackService from "@/services/api/upload/track.service";
 
 vi.mock("@/services/api/playlist/playlist.service");
 vi.mock("@/services/api/upload/track.service");
-vi.mock("./TrackReorderList", () => ({
+vi.mock("../TrackReorderList", () => ({
   default: () => <div data-test="reorder-list">Reorder List</div>,
 }));
 const mockPlaylist = {
@@ -14,9 +14,22 @@ const mockPlaylist = {
   name: "Original Name",
   description: "Original Desc",
   is_public: true,
+  owner_user_id: "owner-1",
   tracks: [],
 };
+
+function getTitleInput() {
+  return screen.getByDisplayValue("Original Name");
+}
 describe("EditPlaylistModal", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (trackService.getGenres as Mock).mockResolvedValue(["Pop", "Rock"]);
+    (playlistService.updatePlaylist as Mock).mockResolvedValue({
+      data: { ...mockPlaylist, name: "New Name" },
+    });
+  });
+
   it("updates state when inputs change and calls onSaved", async () => {
     const onSaved = vi.fn();
     render(
@@ -27,18 +40,13 @@ describe("EditPlaylistModal", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText(/Playlist title/i), {
+    fireEvent.change(getTitleInput(), {
       target: { value: "New Name" },
     });
 
     fireEvent.click(screen.getByTestId("button-save-changes-edit-modal"));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
-  });
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    (trackService.getGenres as Mock).mockResolvedValue(["Pop", "Rock"]);
   });
 
   it("updates slug automatically when name changes", async () => {
@@ -50,7 +58,7 @@ describe("EditPlaylistModal", () => {
       />,
     );
 
-    const nameInput = screen.getByLabelText(/Title/i);
+    const nameInput = getTitleInput();
     fireEvent.change(nameInput, { target: { value: "Summer Vibes 2024!" } });
 
     const slugInput = screen.getByDisplayValue(/summer-vibes-2024/);
@@ -91,14 +99,14 @@ describe("EditPlaylistModal", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText(/Title/i), {
+    fireEvent.change(getTitleInput(), {
       target: { value: "New Name" },
     });
-    fireEvent.click(screen.getByTestId("button-save-changes"));
+    fireEvent.click(screen.getByTestId("button-save-changes-edit-modal"));
 
     await waitFor(() => {
       expect(playlistService.updatePlaylist).toHaveBeenCalledWith(
-        "p1",
+        "pl-1",
         expect.objectContaining({
           name: "New Name",
         }),

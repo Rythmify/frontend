@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import TrackList from "../TrackList";
 
-vi.mock("../../pages/[username]/[trackSlug]/components/SharePopup", () => ({
+vi.mock("@/pages/[username]/[trackSlug]/components/SharePopup", () => ({
   default: ({ onClose }: any) => (
     <div data-test="share-popup">
       <button onClick={onClose}>Close</button>
@@ -84,12 +84,15 @@ describe("TrackList", () => {
   });
 
   it("opens share popup on share button click", () => {
-    render(
+    const { container } = render(
       <MemoryRouter>
         <TrackList tracks={mockTracks} />
       </MemoryRouter>,
     );
-    // Hover logic usually required for CSS-based buttons, but simulate click if possible
+
+    const firstRow = container.querySelector(".group") as HTMLElement;
+    fireEvent.mouseEnter(firstRow);
+
     const shareBtn = screen.getAllByTestId("button-share-track")[0];
     fireEvent.click(shareBtn);
     expect(screen.getByTestId("share-popup")).toBeInTheDocument();

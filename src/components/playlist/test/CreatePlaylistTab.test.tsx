@@ -14,7 +14,7 @@ vi.mock("@/components/Upload/PrivacyToggle", () => ({
   ),
 }));
 
-vi.mock("./TracksToAddList", () => ({
+vi.mock("../TracksToAddList", () => ({
   default: ({ tracks, onRemove }: any) => (
     <div data-test="tracks-to-add-list">
       {tracks.map((t: any) => (

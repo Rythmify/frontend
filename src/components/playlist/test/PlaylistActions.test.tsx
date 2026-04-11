@@ -9,7 +9,7 @@ vi.mock("@/stores/likes.store", () => ({
   useLikesStore: vi.fn(),
 }));
 
-vi.mock("../../pages/[username]/[trackSlug]/components/SharePopup", () => ({
+vi.mock("@/pages/[username]/[trackSlug]/components/SharePopup", () => ({
   default: ({ onClose }: any) => (
     <div data-test="share-popup">
       <button onClick={onClose}>Close</button>
@@ -17,7 +17,7 @@ vi.mock("../../pages/[username]/[trackSlug]/components/SharePopup", () => ({
   ),
 }));
 
-vi.mock("./EditPlaylistModal", () => ({
+vi.mock("../EditPlaylistModal", () => ({
   default: ({ onClose, onSaved }: any) => (
     <div data-test="edit-modal">
       <button onClick={onClose}>Close</button>
@@ -26,7 +26,7 @@ vi.mock("./EditPlaylistModal", () => ({
   ),
 }));
 
-vi.mock("./DeleteConfirmModal", () => ({
+vi.mock("../DeleteConfirmModal", () => ({
   default: ({ onClose, onDeleted }: any) => (
     <div data-test="delete-modal">
       <button onClick={onClose}>Close</button>

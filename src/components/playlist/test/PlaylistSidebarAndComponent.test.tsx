@@ -22,7 +22,7 @@ vi.mock("@/stores/player.store", () => ({
   usePlayerStore: vi.fn(),
 }));
 
-vi.mock("../../pages/[username]/[trackSlug]/components/SharePopup", () => ({
+vi.mock("@/pages/[username]/[trackSlug]/components/SharePopup", () => ({
   default: ({ onClose }: any) => (
     <div data-test="share-popup">
       <button onClick={onClose}>x</button>
@@ -30,7 +30,7 @@ vi.mock("../../pages/[username]/[trackSlug]/components/SharePopup", () => ({
   ),
 }));
 
-vi.mock("../../services/audioService", () => ({
+vi.mock("@/services/audioService", () => ({
   audio: { src: "" },
   seekAudio: vi.fn(),
   setGlobalWaveSurfer: vi.fn(),

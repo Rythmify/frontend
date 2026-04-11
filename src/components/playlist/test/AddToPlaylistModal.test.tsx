@@ -21,12 +21,12 @@ vi.mock("@/stores/likes.store", () => ({
   useLikesStore: vi.fn(),
 }));
 
-vi.mock("../MessagingComponents/Modal", () => ({
+vi.mock("@/components/MessagingComponents/Modal", () => ({
   Modal: ({ children, isOpen }: any) =>
     isOpen ? <div data-test="modal">{children}</div> : null,
 }));
 
-vi.mock("./PlaylistList", () => ({
+vi.mock("../PlaylistList", () => ({
   default: ({ playlists, onAdd }: any) => (
     <div data-test="playlist-list">
       {playlists.map((p: any) => (
@@ -42,7 +42,7 @@ vi.mock("./PlaylistList", () => ({
   ),
 }));
 
-vi.mock("./CreatePlaylistTab", () => ({
+vi.mock("../CreatePlaylistTab", () => ({
   default: ({ onCreate, playlistTitle, setPlaylistTitle }: any) => (
     <div data-test="create-tab">
       <input

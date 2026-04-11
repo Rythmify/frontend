@@ -131,7 +131,7 @@ describe("SetsPage", () => {
 
   it("renders 'Albums' via AlbumsPage correctly", async () => {
     vi.mocked(getMyPlaylists).mockResolvedValue(
-      mockRes([{ name: "My Album", playlist_id: "a1" }]) as any,
+      mockRes([{ name: "My Album", playlist_id: "a1", is_album_view: true }]) as any,
     );
     vi.mocked(getLikedPlaylists).mockResolvedValue(mockRes([]) as any);
     render(

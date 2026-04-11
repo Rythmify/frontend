@@ -8,7 +8,7 @@ vi.mock("@/services/api/playlist/playlist.service", () => ({
   deletePlaylist: vi.fn(),
 }));
 
-vi.mock("../MessagingComponents/Modal", () => ({
+vi.mock("@/components/MessagingComponents/Modal", () => ({
   Modal: ({ children, isOpen }: any) =>
     isOpen ? <div data-test="modal">{children}</div> : null,
 }));
