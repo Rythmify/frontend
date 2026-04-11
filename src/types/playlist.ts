@@ -1,7 +1,7 @@
 import type { Track } from "./track";
 
 export interface Playlist {
-  id: number;
+  id: string;
   title: string;
   /** Username (slug) of the playlist creator */
   creatorUsername: string;
