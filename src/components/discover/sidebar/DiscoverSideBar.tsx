@@ -4,9 +4,14 @@ import TrackItem from "@/components/UI/TrackItem";
 import TrackListSection from "@/components/UI/TrackListSection/TrackListSection";
 import ArtistListSection from "@/components/UI/ArtistListSection";
 import GoMobileSection from "@/components/UI/GoMobile";
-import { getSuggestedArtists, getListeningHistory, getTrackById } from "@/services/api/discover.service";
-import { mapApiUserToArtist, mapApiTrackToTrack } from "@/services/api/discover.mapper";
-import { getUserById } from "@/services/mocks/User.service";
+import {
+  getSuggestedArtists,
+  getListeningHistory,
+} from "@/services/api/discover.service";
+import {
+  mapSuggestedArtistToArtistCard,
+  mapTrackSummaryToTrack,
+} from "@/services/api/discover.mapper";
 import type { Track } from "@/types/track";
 
 // ─── Mock Data ────────────────────────────────────────────
@@ -87,22 +92,16 @@ const styles = {
 // ─── Component ────────────────────────────────────────────
 const DiscoverSidebar = () => {
   const [suggestedArtists, setSuggestedArtists] = useState<
-    ReturnType<typeof mapApiUserToArtist>[]
+    ReturnType<typeof mapSuggestedArtistToArtistCard>[]
   >([]);
   const [artistsLoading, setArtistsLoading] = useState(true);
   const [artistsError, setArtistsError] = useState<string | null>(null);
   const [historyTracks, setHistoryTracks] = useState<Track[] | null>(null);
 
-  // Two-step fetch: get suggested user IDs → fetch full profile per user.
   useEffect(() => {
     getSuggestedArtists({ limit: 10 })
-      .then((res) =>
-        Promise.all(
-          res.items.map((suggestedUser) => getUserById(suggestedUser.user_id)),
-        ),
-      )
-      .then((fullProfiles) => {
-        setSuggestedArtists(fullProfiles.map(mapApiUserToArtist));
+      .then((res) => {
+        setSuggestedArtists(res.data.map(mapSuggestedArtistToArtistCard));
       })
       .catch((err: Error) => {
         setArtistsError(err.message);
@@ -112,16 +111,14 @@ const DiscoverSidebar = () => {
       });
   }, []);
 
-  // Two-step fetch: get listening history → fetch full track data per entry.
   useEffect(() => {
     getListeningHistory({ limit: 3 })
       .then(({ data: historyEntries }) =>
-        Promise.all(
-          historyEntries.map((historyEntry) => getTrackById(historyEntry.track.id)),
+        setHistoryTracks(
+          historyEntries.map((e) => mapTrackSummaryToTrack(e.track)),
         ),
       )
-      .then((fullTracks) => setHistoryTracks(fullTracks.map(mapApiTrackToTrack)))
-      .catch(() => {}); // silent — mock is the fallback
+      .catch(() => {});
   }, []);
 
   // Shuffle the already-loaded list — no extra network call needed.

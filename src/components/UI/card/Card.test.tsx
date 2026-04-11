@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import TrackCard from "./Card";
+import type { Track } from "@/types/track";
 
 // ─── Mock Setup ───────────────────────────────────────────
 const mockNavigate = vi.fn();
@@ -21,8 +22,8 @@ vi.mock("@/stores/player.store", () => ({
 
 import { usePlayerStore } from "@/stores/player.store";
 
-const mockTrack = {
-  id: 1,
+const mockTrack: Track = {
+  id: "f5e4d3c2-b1a0-4987-8765-43210abcdeh0",
   title: "Butterfly Effect",
   artistName: "Travis Scott",
   artistUsername: "travisscott",
@@ -46,7 +47,6 @@ const defaultStore = {
   setTrack: mockSetTrack,
   togglePlay: mockTogglePlay,
 };
-
 // ─── Test Suite ───────────────────────────────────────────
 describe("TrackCard", () => {
   beforeEach(() => {

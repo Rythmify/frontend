@@ -11,9 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+coverage
 
 .claude
 .settings.local.json
+CLAUDE.md
 
 .env
 .env.local

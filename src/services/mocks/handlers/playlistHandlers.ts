@@ -28,6 +28,15 @@ const TRACK_IDS = {
   t10: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
 };
 
+// ─── Discover track IDs (must match discoverHandlers TRACK_IDS) ───────────────
+
+const DISCOVER_TRACK_IDS = {
+  t1: "e5f6a7b8-c9d0-4123-8fab-567890abcdef",
+  t2: "22222222-2222-4222-8222-222222222222",
+  t3: "33333333-3333-4333-8333-333333333333",
+  t4: "44444444-4444-4444-8444-444444444444",
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function toSummary(p: PlaylistDetails): Playlist {
@@ -42,7 +51,6 @@ function nextPosition(playlist: PlaylistDetails): number {
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
-// Single source of truth — all owned playlists live here
 const mockPlaylists: PlaylistDetails[] = [
   {
     playlist_id: "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
@@ -54,6 +62,7 @@ const mockPlaylists: PlaylistDetails[] = [
     track_count: 1,
     like_count: 5,
     cover_image: "https://picsum.photos/seed/my-favorites/300/300",
+    slug: "my-favourites",
     tracks: [
       {
         track_id: TRACK_IDS.t1,
@@ -61,6 +70,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-10T10:01:00Z",
         title: "Track One",
         artist_name: "Artist A",
+        cover_image: "https://picsum.photos/seed/track-one/300/300",
       },
     ],
   },
@@ -76,6 +86,7 @@ const mockPlaylists: PlaylistDetails[] = [
     like_count: 0,
     cover_image: "https://picsum.photos/seed/secret-vibes/300/300",
     tracks: [],
+    slug: "secret-vibes",
   },
   {
     playlist_id: "cccc1111-2222-3333-4444-aaaaaaaaaaaa",
@@ -88,6 +99,7 @@ const mockPlaylists: PlaylistDetails[] = [
     like_count: 12,
     cover_image: "https://picsum.photos/seed/late-night/300/300",
     tracks: [],
+    slug: "late-night-drives",
   },
   {
     playlist_id: "dddd2222-3333-4444-5555-bbbbbbbbbbbb",
@@ -106,6 +118,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-10T10:01:00Z",
         title: "Track Two",
         artist_name: "Artist B",
+        cover_image: "https://picsum.photos/seed/track-2/300/300",
       },
     ],
   },
@@ -127,6 +140,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-01T12:01:00Z",
         title: "Sahar El Leil",
         artist_name: "Artist C",
+        cover_image: "https://picsum.photos/seed/track-6/300/300",
       },
       {
         track_id: TRACK_IDS.t7,
@@ -175,6 +189,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-02T21:01:00Z",
         title: "Shababek'",
         artist_name: "Artist F",
+        cover_image: "https://picsum.photos/seed/track-3/300/300",
       },
       {
         track_id: TRACK_IDS.t5,
@@ -182,6 +197,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-02T21:02:00Z",
         title: "Elwa2t Eldaye3",
         artist_name: "Artist F",
+        cover_image: "https://picsum.photos/seed/track-5/300/300",
       },
       {
         track_id: TRACK_IDS.t6,
@@ -189,6 +205,315 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-02T21:03:00Z",
         title: "Sahar El Leil",
         artist_name: "Artist C",
+        cover_image: "https://picsum.photos/seed/track-6/300/300",
+      },
+    ],
+  },
+
+  // ─── Generated Mixes (IDs must match mockMixes in discoverHandlers) ──────────
+
+  {
+    playlist_id: "55555555-5555-4555-8555-555555555555",
+    owner_user_id: MOCK_OWNER_ID,
+    name: "MIX 1",
+    description: "27 tracks · Generated mix",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=301",
+    created_at: "2026-04-01T00:00:00Z",
+    track_count: 4,
+    like_count: 0,
+    tracks: [
+      {
+        track_id: DISCOVER_TRACK_IDS.t1,
+        position: 1,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Butterfly Effect",
+        artist_name: "Travis Scott",
+        cover_image: "https://picsum.photos/200/200?random=501",
+        duration: 225,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t2,
+        position: 2,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Blinding Lights",
+        artist_name: "The Weeknd",
+        cover_image: "https://picsum.photos/200/200?random=401",
+        duration: 200,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "b2c3d4e5-f6a7-4891-9cde-f01234567891",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t3,
+        position: 3,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Levitating",
+        artist_name: "Dua Lipa",
+        cover_image: "https://picsum.photos/200/200?random=702",
+        duration: 203,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "c3d4e5f6-a7b8-4902-ad12-123456789012",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t4,
+        position: 4,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Bad Guy",
+        artist_name: "Billie Eilish",
+        cover_image: "https://picsum.photos/200/200?random=704",
+        duration: 194,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "d4e5f6a7-b8c9-4013-bd23-234567890123",
+      },
+    ],
+  },
+  {
+    playlist_id: "66666666-6666-4666-8666-666666666666",
+    owner_user_id: MOCK_OWNER_ID,
+    name: "MIX 2",
+    description: "19 tracks · Generated mix",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=302",
+    created_at: "2026-04-01T00:00:00Z",
+    track_count: 4,
+    like_count: 0,
+    tracks: [
+      {
+        track_id: DISCOVER_TRACK_IDS.t2,
+        position: 1,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Blinding Lights",
+        artist_name: "The Weeknd",
+        cover_image: "https://picsum.photos/200/200?random=401",
+        duration: 200,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "b2c3d4e5-f6a7-4891-9cde-f01234567891",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t3,
+        position: 2,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Levitating",
+        artist_name: "Dua Lipa",
+        cover_image: "https://picsum.photos/200/200?random=702",
+        duration: 203,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "c3d4e5f6-a7b8-4902-ad12-123456789012",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t4,
+        position: 3,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Bad Guy",
+        artist_name: "Billie Eilish",
+        cover_image: "https://picsum.photos/200/200?random=704",
+        duration: 194,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "d4e5f6a7-b8c9-4013-bd23-234567890123",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t1,
+        position: 4,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Butterfly Effect",
+        artist_name: "Travis Scott",
+        cover_image: "https://picsum.photos/200/200?random=501",
+        duration: 225,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+      },
+    ],
+  },
+  {
+    playlist_id: "77777777-7777-4777-8777-777777777777",
+    owner_user_id: MOCK_OWNER_ID,
+    name: "MIX 3",
+    description: "23 tracks · Generated mix",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=303",
+    created_at: "2026-04-01T00:00:00Z",
+    track_count: 4,
+    like_count: 0,
+    tracks: [
+      {
+        track_id: DISCOVER_TRACK_IDS.t3,
+        position: 1,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Levitating",
+        artist_name: "Dua Lipa",
+        cover_image: "https://picsum.photos/200/200?random=702",
+        duration: 203,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "c3d4e5f6-a7b8-4902-ad12-123456789012",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t4,
+        position: 2,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Bad Guy",
+        artist_name: "Billie Eilish",
+        cover_image: "https://picsum.photos/200/200?random=704",
+        duration: 194,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "d4e5f6a7-b8c9-4013-bd23-234567890123",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t1,
+        position: 3,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Butterfly Effect",
+        artist_name: "Travis Scott",
+        cover_image: "https://picsum.photos/200/200?random=501",
+        duration: 225,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t2,
+        position: 4,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Blinding Lights",
+        artist_name: "The Weeknd",
+        cover_image: "https://picsum.photos/200/200?random=401",
+        duration: 200,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "b2c3d4e5-f6a7-4891-9cde-f01234567891",
+      },
+    ],
+  },
+  {
+    playlist_id: "88888888-8888-4888-8888-888888888888",
+    owner_user_id: MOCK_OWNER_ID,
+    name: "MIX 4",
+    description: "31 tracks · Generated mix",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=304",
+    created_at: "2026-04-01T00:00:00Z",
+    track_count: 4,
+    like_count: 0,
+    tracks: [
+      {
+        track_id: DISCOVER_TRACK_IDS.t4,
+        position: 1,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Bad Guy",
+        artist_name: "Billie Eilish",
+        cover_image: "https://picsum.photos/200/200?random=704",
+        duration: 194,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "d4e5f6a7-b8c9-4013-bd23-234567890123",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t1,
+        position: 2,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Butterfly Effect",
+        artist_name: "Travis Scott",
+        cover_image: "https://picsum.photos/200/200?random=501",
+        duration: 225,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t2,
+        position: 3,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Blinding Lights",
+        artist_name: "The Weeknd",
+        cover_image: "https://picsum.photos/200/200?random=401",
+        duration: 200,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "b2c3d4e5-f6a7-4891-9cde-f01234567891",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t3,
+        position: 4,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Levitating",
+        artist_name: "Dua Lipa",
+        cover_image: "https://picsum.photos/200/200?random=702",
+        duration: 203,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "c3d4e5f6-a7b8-4902-ad12-123456789012",
+      },
+    ],
+  },
+  {
+    playlist_id: "99999999-9999-4999-8999-999999999999",
+    owner_user_id: MOCK_OWNER_ID,
+    name: "MIX 5",
+    description: "15 tracks · Generated mix",
+    is_public: true,
+    cover_image: "https://picsum.photos/200/200?random=305",
+    created_at: "2026-04-01T00:00:00Z",
+    track_count: 4,
+    like_count: 0,
+    tracks: [
+      {
+        track_id: DISCOVER_TRACK_IDS.t1,
+        position: 1,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Butterfly Effect",
+        artist_name: "Travis Scott",
+        cover_image: "https://picsum.photos/200/200?random=501",
+        duration: 225,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t3,
+        position: 2,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Levitating",
+        artist_name: "Dua Lipa",
+        cover_image: "https://picsum.photos/200/200?random=702",
+        duration: 203,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "c3d4e5f6-a7b8-4902-ad12-123456789012",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t4,
+        position: 3,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Bad Guy",
+        artist_name: "Billie Eilish",
+        cover_image: "https://picsum.photos/200/200?random=704",
+        duration: 194,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "d4e5f6a7-b8c9-4013-bd23-234567890123",
+      },
+      {
+        track_id: DISCOVER_TRACK_IDS.t2,
+        position: 4,
+        added_at: "2026-04-01T00:00:00Z",
+        title: "Blinding Lights",
+        artist_name: "The Weeknd",
+        cover_image: "https://picsum.photos/200/200?random=401",
+        duration: 200,
+        is_public: true,
+        deleted_at: null,
+        artist_id: "b2c3d4e5-f6a7-4891-9cde-f01234567891",
       },
     ],
   },
@@ -336,7 +661,6 @@ const mockLikedPlaylists: PlaylistDetails[] = [
 export const playlistHandlers = [
   // ── POST /playlists — create a playlist ──────────────────────────────────────
   http.post("*/playlists", async ({ request }) => {
-    // Service sends JSON for create
     let body: { name?: string; description?: string; is_public?: boolean };
     try {
       body = (await request.json()) as typeof body;
@@ -368,9 +692,7 @@ export const playlistHandlers = [
       created_at: new Date().toISOString(),
       track_count: 0,
       like_count: 0,
-      cover_image: `https://picsum.photos/seed/${encodeURIComponent(
-        body.name,
-      )}/300/300`,
+      cover_image: `https://picsum.photos/seed/${encodeURIComponent(body.name)}/300/300`,
       tracks: [],
     };
 
@@ -472,6 +794,45 @@ export const playlistHandlers = [
         },
       },
       message: "Playlist tracks fetched successfully.",
+    });
+  }),
+
+  // ── GET /playlists/:id/share-link — private share link (owner only) ───────────
+  http.get("*/playlists/:playlist_id/share-link", ({ params }) => {
+    const { playlist_id } = params;
+
+    const playlist = mockPlaylists.find((p) => p.playlist_id === playlist_id);
+    if (!playlist) {
+      return HttpResponse.json(
+        {
+          error: { code: "PLAYLIST_NOT_FOUND", message: "Playlist not found." },
+        },
+        { status: 404 },
+      );
+    }
+
+    if (playlist.is_public) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: "BUSINESS_RULE_VIOLATION",
+            message: "Share links are only available for private playlists.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    const token = playlist.secret_token ?? SECRET_TOKEN;
+    const shareUrl = `http://localhost:5173/${playlist.owner_user_id}/sets/${playlist.slug ?? playlist.playlist_id}?secret_token=${token}`;
+
+    return HttpResponse.json({
+      data: {
+        playlist_id: playlist.playlist_id,
+        secret_token: token,
+        share_url: shareUrl,
+      },
+      message: "Private share link fetched successfully.",
     });
   }),
 
@@ -594,7 +955,6 @@ export const playlistHandlers = [
       );
     }
 
-    // Service sends multipart/form-data for updates
     let formData: FormData;
     try {
       formData = await request.formData();
@@ -633,7 +993,6 @@ export const playlistHandlers = [
     if (tags.length > 0) playlist.tags = tags.map((id) => ({ id, name: id }));
     if (removeCoverImage === "true") playlist.cover_image = null;
     else if (coverImage instanceof File) {
-      // In a real mock you'd create an object URL; here we just keep the existing one
       playlist.cover_image = URL.createObjectURL(coverImage);
     }
 
@@ -712,7 +1071,7 @@ export const playlistHandlers = [
 
     let body: { track_id: string; position?: number };
     try {
-      body = (await request.json()) as typeof body;
+      body = (await request.clone().json()) as typeof body;
     } catch {
       return HttpResponse.json(
         {

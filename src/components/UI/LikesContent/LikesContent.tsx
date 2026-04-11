@@ -4,21 +4,19 @@ import WaveformTrackCard from "@/components/track/TrackCard";
 import type { Track } from "@/types/track";
 import { useLikesViewStore } from "@/stores/likesView.store";
 
-// ─── Constants ────────────────────────────────────────────
-
-const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
-
 // ─── Props ────────────────────────────────────────────────
 
 interface LikesContentProps {
   tracks: Track[];
   showControls?: boolean;
   maxItems?: number;
+  widthClassName?: string;
 }
 
 // ─── Component ────────────────────────────────────────────
 
-export default function LikesContent({ tracks, showControls = true, maxItems }: LikesContentProps) {
+export default function LikesContent({ tracks, showControls = true, maxItems, widthClassName = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]" }: LikesContentProps) {
+  const CARD_WIDTH = widthClassName;
   const { view, setView } = useLikesViewStore();
   const [filter, setFilter] = useState("");
 

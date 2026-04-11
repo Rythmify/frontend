@@ -1,9 +1,9 @@
-import axiosInstance from './api/axiosInstance';
+import axiosInstance from "./api/axiosInstance";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type UserRole = 'artist' | 'listener' | 'admin';
-export type GenderType = 'male' | 'female';
+export type UserRole = "artist" | "listener" | "admin";
+export type GenderType = "male" | "female";
 
 export interface UserSummary {
   user_id: string;
@@ -17,21 +17,32 @@ export interface UserSummary {
 export interface UserProfile {
   id: string;
   username: string;
+  displayName?: string;
   display_name: string;
+  firstName?: string;
   first_name: string;
+  lastName?: string;
   last_name: string;
   bio: string;
   email: string;
   role: UserRole;
+  avatar?: string;
   profile_picture?: string;
+  coverUrl?: string;
   cover_photo?: string;
+  isPro?: boolean;
   city?: string;
   country?: string;
+  location?: string;
+  following_ids?: string[];
+  followers_ids?: string[];
+  date_of_birth?: string | null;
+  gender?: GenderType | null;
 }
 
 export interface AuthLoginResponseData {
   access_token: string;
-  token_type: 'Bearer';
+  token_type: "Bearer";
   expires_in: number;
   user: UserSummary;
   is_new_user: boolean;
@@ -57,24 +68,34 @@ export interface RegisterPayload {
   captcha_token: string;
 }
 
-// Token helpers 
+export interface ContentSettings {
+  rss_title?: string | null;
+  rss_language?: string | null;
+  rss_category?: string | null;
+  rss_explicit?: boolean;
+  rss_show_email?: boolean;
+  default_include_in_rss?: boolean;
+  default_license_type?: "all_rights_reserved" | "creative_commons" | null;
+}
+
+// Token helpers
 
 function saveToken(token: string) {
-  localStorage.setItem('auth_token', token);
+  localStorage.setItem("auth_token", token);
 }
 
 function clearToken() {
-  localStorage.removeItem('auth_token');
+  localStorage.removeItem("auth_token");
 }
 
-// Auth API functions 
+// Auth API functions
 
 /** POST /auth/register */
 export async function register(payload: RegisterPayload) {
   const res = await axiosInstance.post<{
     data: AuthRegisterResponseData;
     message: string;
-  }>('/auth/register', payload);
+  }>("/auth/register", payload);
   return res.data;
 }
 
@@ -83,7 +104,7 @@ export async function verifyEmail(token: string) {
   const res = await axiosInstance.post<{
     data: { access_token: string; token_type: string; expires_in: number };
     message: string;
-  }>('/auth/verify-email', { token });
+  }>("/auth/verify-email", { token });
   saveToken(res.data.data.access_token);
   return res.data;
 }
@@ -93,7 +114,7 @@ export async function resendVerification(email: string, captcha_token: string) {
   const res = await axiosInstance.post<{
     data: { success: boolean };
     message: string;
-  }>('/auth/resend-verification', { email, captcha_token });
+  }>("/auth/resend-verification", { email, captcha_token });
   return res.data;
 }
 
@@ -102,7 +123,7 @@ export async function login(identifier: string, password: string) {
   const res = await axiosInstance.post<{
     data: AuthLoginResponseData;
     message: string;
-  }>('/auth/login', { identifier, password });
+  }>("/auth/login", { identifier, password });
   saveToken(res.data.data.access_token);
   return res.data;
 }
@@ -113,7 +134,7 @@ export async function logout() {
     const res = await axiosInstance.post<{
       data: { success: boolean };
       message: string;
-    }>('/auth/logout');
+    }>("/auth/logout");
     return res.data;
   } finally {
     clearToken();
@@ -125,7 +146,7 @@ export async function refreshToken() {
   const res = await axiosInstance.post<{
     data: { access_token: string; token_type: string; expires_in: number };
     message: string;
-  }>('/auth/refresh');
+  }>("/auth/refresh");
   saveToken(res.data.data.access_token);
   return res.data;
 }
@@ -133,18 +154,28 @@ export async function refreshToken() {
 /** POST /auth/forgot-password */
 export async function forgotPassword(email: string) {
   const res = await axiosInstance.post<{ message: string }>(
-    '/auth/forgot-password',
-    { email }
+    "/auth/forgot-password",
+    { email },
   );
   return res.data;
 }
 
 /** POST /auth/reset-password */
-export async function resetPassword(token: string, new_password: string, confirm_password: string, logout_all = true) {
+export async function resetPassword(
+  token: string,
+  new_password: string,
+  confirm_password: string,
+  logout_all = true,
+) {
   const res = await axiosInstance.post<{
     data: { success: boolean };
     message: string;
-  }>('/auth/reset-password', { token, new_password, confirm_password, logout_all });
+  }>("/auth/reset-password", {
+    token,
+    new_password,
+    confirm_password,
+    logout_all,
+  });
   return res.data;
 }
 
@@ -153,7 +184,7 @@ export async function verifyEmailChange(token: string) {
   const res = await axiosInstance.post<{
     data: { email: string };
     message: string;
-  }>('/auth/verify-email-change', { token });
+  }>("/auth/verify-email-change", { token });
   return res.data;
 }
 
@@ -162,18 +193,16 @@ export async function changeEmail(new_email: string) {
   const res = await axiosInstance.post<{
     data: { success: boolean };
     message: string;
-  }>('/auth/change-email', { new_email });
+  }>("/auth/change-email", { new_email });
   return res.data;
 }
 
 /** PATCH /users/me */
-export async function updateMe(data: {
-  display_name?: string;
-}) {
+export async function updateMe(data: { display_name?: string }) {
   const res = await axiosInstance.patch<{
     data: UserProfile;
     message: string;
-  }>('/users/me', data);
+  }>("/users/me", data);
   return res.data;
 }
 
@@ -185,7 +214,7 @@ export async function updateMeAccount(data: {
   const res = await axiosInstance.patch<{
     data: UserProfile;
     message: string;
-  }>('/users/me/account', data);
+  }>("/users/me/account", data);
   return res.data;
 }
 
@@ -194,7 +223,34 @@ export async function getMe() {
   const res = await axiosInstance.get<{
     data: UserProfile;
     message: string;
-  }>('/users/me');
+  }>("/users/me");
+  return res.data;
+}
+
+/** GET /users/me/content-settings */
+export async function getMyContentSettings() {
+  const res = await axiosInstance.get<{
+    data: ContentSettings;
+    message?: string;
+  }>("/users/me/content-settings");
+  return res.data;
+}
+
+/** PATCH /users/me/content-settings */
+export async function updateMyContentSettings(data: ContentSettings) {
+  const res = await axiosInstance.patch<{
+    data: ContentSettings;
+    message?: string;
+  }>("/users/me/content-settings", data);
+  return res.data;
+}
+
+/** DELETE /users/me */
+export async function deleteMyAccount() {
+  const res = await axiosInstance.delete<{
+    data?: { success?: boolean };
+    message?: string;
+  }>("/users/me");
   return res.data;
 }
 
@@ -203,14 +259,14 @@ export async function googleLogin(id_token: string) {
   const res = await axiosInstance.post<{
     data: AuthLoginResponseData;
     message: string;
-  }>('/auth/google', { id_token });
+  }>("/auth/google", { id_token });
   saveToken(res.data.data.access_token);
   return res.data;
 }
 
 /** DELETE /auth/connections/:provider */
 export async function disconnectProvider(
-  provider: 'google' | 'facebook' | 'apple'
+  provider: "google" | "facebook" | "apple",
 ) {
   const res = await axiosInstance.delete<{
     data: { success: boolean };
@@ -226,8 +282,8 @@ export async function disconnectProvider(
 export async function checkEmail(email: string): Promise<{ exists: boolean }> {
   try {
     const res = await axiosInstance.post<{ data: { exists: boolean } }>(
-      '/auth/check-email',
-      { email }
+      "/auth/check-email",
+      { email },
     );
     return res.data.data;
   } catch {

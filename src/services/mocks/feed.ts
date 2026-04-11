@@ -8,7 +8,7 @@ export const mockFeedItems: FeedItem[] = [
     content_type: "track",
     created_at: new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString(), // 13 hours ago
     user: {
-      id: 1,
+      id: "1",
       username: "nourabosaif04",
       displayName: "NourAbosaif04",
       avatar: "https://picsum.photos/seed/nour/100/100",
@@ -22,28 +22,24 @@ export const mockFeedItems: FeedItem[] = [
     content_type: "playlist",
     created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
     user: {
-      id: 3,
+      id: "3",
       username: "alyaa-moh",
       displayName: "Alyaa Mohamed",
       avatar: "https://picsum.photos/seed/alyaa/100/100",
       followers: 8400,
     },
     playlist: {
-      id: 1,
+      id: "1",
       title: "araby",
-      artistName: "Alyaa Mohamed",
-      artistUsername: "alyaa-moh",
+      creatorName: "Alyaa Mohamed",
+      creatorUsername: "alyaa-moh",
       coverUrl: "https://picsum.photos/seed/playlist1/300/300",
-      duration: "4:13",
+      postedAt: "4 hours ago",
       likeCount: 12,
       repostCount: 3,
-      playCount: 1980,
-      commentCount: 7,
-      waveformData: mockTracks[2].waveformData,
-      audioUrl: mockTracks[2].audioUrl,
       trackCount: 198,
+      playlistSlug: "araby",
       tracks: mockTracks.slice(0, 5),
-      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
     },
   },
   {
@@ -52,7 +48,7 @@ export const mockFeedItems: FeedItem[] = [
     content_type: "track",
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
     user: {
-      id: 2,
+      id: "2",
       username: "moh-elghaleez",
       displayName: "Moh.ElGhaleez",
       avatar: "https://picsum.photos/seed/moh/100/100",
@@ -66,7 +62,7 @@ export const mockFeedItems: FeedItem[] = [
     content_type: "playlist",
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
     user: {
-      id: 4,
+      id: "4",
       username: "ghaliaa",
       displayName: "Ghaliaa",
       avatar: "https://picsum.photos/seed/user2/100/100",
@@ -74,21 +70,17 @@ export const mockFeedItems: FeedItem[] = [
       isVerified: true,
     },
     playlist: {
-      id: 2,
+      id: "2",
       title: "Late Night Vibes",
-      artistName: "Lege-Cy",
-      artistUsername: "lege-cy",
+      creatorName: "Lege-Cy",
+      creatorUsername: "lege-cy",
       coverUrl: "https://picsum.photos/seed/playlist2/300/300",
-      duration: "18:32",
+      postedAt: "5 days ago",
       likeCount: 340,
       repostCount: 22,
-      playCount: 47200,
-      commentCount: 91,
-      waveformData: mockTracks[0].waveformData,
-      audioUrl: mockTracks[0].audioUrl,
       trackCount: 12,
+      playlistSlug: "late-night-vibes",
       tracks: mockTracks.slice(0, 5),
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     },
   },
   {
@@ -97,7 +89,7 @@ export const mockFeedItems: FeedItem[] = [
     content_type: "track",
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
     user: {
-      id: 5,
+      id: "5",
       username: "lege-cy",
       displayName: "Lege-Cy",
       avatar: "https://picsum.photos/seed/user1/100/100",
@@ -112,7 +104,7 @@ export const mockFeedItems: FeedItem[] = [
     content_type: "track",
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
     user: {
-      id: 6,
+      id: "6",
       username: "hadeer-yehya",
       displayName: "Hadeer",
       avatar: "https://picsum.photos/seed/user3/100/100",

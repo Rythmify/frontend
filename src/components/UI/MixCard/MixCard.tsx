@@ -1,9 +1,8 @@
 import type React from "react";
+import { useNavigate } from "react-router-dom";
 import type { PersonalMix } from "@/services/api/discover.service";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
-
-// ─── Badge colors per mix index ───────────────────────────
 
 const BADGE_COLORS: { bg: string; text: string }[] = [
   { bg: "#333333", text: "#000000" }, // MIX 1 — dark gray
@@ -31,36 +30,60 @@ export default function MixCard({
   const badge = BADGE_COLORS[index % BADGE_COLORS.length];
   const { isMixLiked, toggleMix, togglePlaylist } = useLikesStore();
   const { addMix } = useHistoryStore();
+  const navigate = useNavigate();
   const liked = isMixLiked(mix.id);
+
+  const mixSlug = (mix.label ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
+  const mixPath = `/discover/sets/${mixSlug}:${mix.id}`;
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleMix(mix);
-    togglePlaylist({ id: mix.id, title: mix.label, owner: `${mix.track_count} tracks`, coverUrl: mix.cover_image });
+    togglePlaylist({
+      id: mix.id,
+      title: mix.label ?? "",
+      owner: `${mix.track_count} tracks`,
+      coverUrl: mix.cover_image ?? null,
+    });
   };
 
   return (
-    <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
+    <div
+      className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}
+      data-test={`mix-card-${mix.id}`}
+      onClick={() => navigate(mixPath)}
+    >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
         {mix.cover_image && (
           <img
             src={mix.cover_image}
-            alt={mix.label}
+            alt={mix.label ?? ""}
             className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
+            data-test="mix-card-image"
           />
         )}
 
-        {/* MIX badge — bottom-left */}
+        {/* MIX badge */}
         <div
           className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm flex items-baseline gap-1"
           style={{ backgroundColor: badge.bg }}
+          data-test="mix-card-badge"
         >
           <span
             className="text-2xl tracking-widest uppercase leading-none"
-            style={{ color: badge.text, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
+            style={{
+              color: badge.text,
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 900,
+            }}
           >
-            {mix.label}
+            {mix.label ?? ""}
           </span>
         </div>
 
@@ -71,7 +94,11 @@ export default function MixCard({
           <div className="flex items-center justify-center flex-1">
             <button
               className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg"
-              onClick={(e) => { e.stopPropagation(); addMix(mix); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                addMix(mix);
+              }}
+              data-test="button-play"
             >
               <i className="fa-solid fa-play text-black text-sm ml-0.5" />
             </button>
@@ -80,10 +107,17 @@ export default function MixCard({
             <button
               className="flex flex-col items-center gap-0.5 group/btn"
               onClick={handleLike}
+              data-test="button-like"
             >
-              <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
+              <i
+                className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`}
+              />
             </button>
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="flex flex-col items-center gap-0.5 group/btn"
+              onClick={(e) => e.stopPropagation()}
+              data-test="button-more"
+            >
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
             </button>
           </div>
@@ -91,7 +125,10 @@ export default function MixCard({
       </div>
 
       {/* Subtitle */}
-      <p className="text-text-secondary text-xs truncate">
+      <p
+        className="text-text-secondary text-xs truncate"
+        data-test="mix-card-subtitle"
+      >
         {mix.track_count} tracks
       </p>
     </div>

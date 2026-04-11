@@ -36,13 +36,14 @@ export default function MadeForYouCard({
   };
 
   return (
-    <div className={`group flex flex-col gap-2 ${widthClassName} cursor-pointer`}>
+    <div className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`} data-test={`made-for-you-card-${item.id}`}>
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
         <img
           src={item.coverUrl}
           alt={item.title}
           className="w-full h-full object-cover transition-all duration-200"
+          data-test="made-for-you-card-image"
         />
 
         {/* SoundCloud logo — top-right */}
@@ -54,6 +55,7 @@ export default function MadeForYouCard({
         <div
           className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm flex items-baseline gap-1.5"
           style={{ backgroundColor: bg }}
+          data-test="made-for-you-card-badge"
         >
           <span
             className="text-2xl uppercase leading-none text-white"
@@ -74,15 +76,15 @@ export default function MadeForYouCard({
           <div className="absolute inset-0 bg-black/30 pointer-events-none" />
           <div />
           <div className="flex items-center justify-center flex-1">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg" data-test="button-play">
               <i className="fa-solid fa-play text-black text-sm ml-0.5" />
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={handleLike}>
+            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={handleLike} data-test="button-like">
               <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
             </button>
-            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+            <button className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()} data-test="button-more">
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
             </button>
           </div>
@@ -90,8 +92,8 @@ export default function MadeForYouCard({
       </div>
 
       {/* Text */}
-      <p className="text-white text-sm font-semibold truncate">{item.title}</p>
-      <p className="text-text-secondary text-xs truncate">{item.subtitle}</p>
+      <p className="text-white text-sm font-semibold truncate" data-test="made-for-you-card-title">{item.title}</p>
+      <p className="text-text-secondary text-xs truncate" data-test="made-for-you-card-subtitle">{item.subtitle}</p>
     </div>
   );
 }

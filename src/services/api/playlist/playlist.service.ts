@@ -276,3 +276,60 @@ export async function getLikedPlaylists(params?: {
   }>("/playlists", { params: { ...params, mine: true, filter: "liked" } });
   return res.data;
 }
+
+/** GET playlists for a given user.
+ *  - Own profile → GET /playlists?mine=true (includes private)
+ *  - Other user  → GET /playlists filtered by owner_user_id client-side (public only)
+ */
+export async function getPlaylistsByUser(
+  ownerId: string,
+  currentUserId: string | undefined,
+  params?: { limit?: number; offset?: number; q?: string },
+) {
+  if (ownerId === currentUserId) {
+    // Authenticated user viewing their own — includes private playlists
+    const res = await axiosInstance.get<{
+      data: {
+        items: Playlist[];
+        meta: { limit: number; offset: number; total: number };
+      };
+      message: string;
+    }>("/playlists", {
+      params: { ...params, mine: true },
+    });
+    return res.data;
+  }
+
+  // Viewing someone else's profile — public only, filter client-side
+  const fetchLimit = (params?.limit ?? 3) * 4;
+  const res = await axiosInstance.get<{
+    data: {
+      items: Playlist[];
+      meta: { limit: number; offset: number; total: number };
+    };
+    message: string;
+  }>("/playlists", {
+    params: { ...params, limit: fetchLimit },
+  });
+
+  const filtered = res.data.data.items.filter(
+    (p) => p.owner_user_id === ownerId,
+  );
+
+  return {
+    ...res.data,
+    data: {
+      ...res.data.data,
+      items: filtered.slice(0, params?.limit ?? 3),
+    },
+  };
+}
+
+/** GET /playlists/:id/share-link — get the private secret share URL (owner only) */
+export async function getPlaylistShareLink(playlistId: string) {
+  const res = await axiosInstance.get<{
+    data: { playlist_id: string; secret_token: string; share_url: string };
+    message: string;
+  }>(`/playlists/${playlistId}/share-link`);
+  return res.data;
+}

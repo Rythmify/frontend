@@ -1,4 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  getContentSettings,
+  updateContentSettings,
+  type ContentSettings,
+} from "@/services/settings.service";
+
+function Toast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const timer = window.setTimeout(onClose, 3000);
+    return () => window.clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div
+      data-test="settings-content-toast"
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white shadow-md ${
+        type === "success"
+          ? "bg-[var(--color-success)]"
+          : "bg-[var(--color-error)]"
+      }`}
+    >
+      <span>{message}</span>
+      <button
+        onClick={onClose}
+        data-test="settings-content-toast-close-button"
+        aria-label="Close toast"
+        className="opacity-80 transition hover:opacity-100"
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path
+            d="M2 2l8 8M10 2l-8 8"
+            stroke="white"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
 
 function SectionTitle({
   children,
@@ -104,16 +152,25 @@ function ChevronDown() {
 
 function SelectField({
   children,
+  value,
+  onChange,
   defaultValue,
+  dataTest,
 }: {
   children: React.ReactNode;
+  value?: string;
+  onChange?: (v: string) => void;
   defaultValue?: string;
+  dataTest?: string;
 }) {
   return (
     <div className="relative">
       <select
         className={`${inputClass} appearance-none pr-9 cursor-pointer`}
+        value={value}
         defaultValue={defaultValue}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        data-test={dataTest}
       >
         {children}
       </select>
@@ -124,6 +181,7 @@ function SelectField({
   );
 }
 
+// Static checkbox — not mapped to an API field (original behaviour preserved)
 function Checkbox({ label }: { label: string }) {
   const [checked, setChecked] = useState(false);
   return (
@@ -317,19 +375,66 @@ function CreativeCommonsExpanded() {
   );
 }
 
-function UploadDefaults() {
-  const [includeRSS, setIncludeRSS] = useState(false);
-  const [creativeCommons, setCreativeCommons] = useState(false);
+// ── UploadDefaults — wired to default_include_in_rss + default_license_type ──
+
+function UploadDefaults({
+  settings,
+  onPatch,
+}: {
+  settings: ContentSettings;
+  onPatch: (delta: Partial<ContentSettings>) => void;
+}) {
+  const includeRSS = settings.default_include_in_rss ?? false;
+  const creativeCommons = settings.default_license_type === "creative_commons";
 
   return (
     <div>
       <SectionTitle info>Upload Defaults</SectionTitle>
       <div className="flex flex-col gap-4">
-        <Checkbox label="Include in RSS feed" />
+        {/* Include in RSS feed — wired to default_include_in_rss */}
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div
+            onClick={() => onPatch({ default_include_in_rss: !includeRSS })}
+            className={`w-5 h-5 border rounded-[var(--radius-xs)] flex items-center justify-center transition-colors duration-150 ${
+              includeRSS
+                ? "bg-[var(--color-text-hover)] border-[var(--color-text-hover)]"
+                : "bg-transparent border-[var(--color-border)]"
+            }`}
+          >
+            {includeRSS && (
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M2 6l3 3 5-5"
+                  stroke="var(--color-bg)"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </div>
+          <span className="text-sm text-[var(--color-text-hover)]">
+            Include in RSS feed
+          </span>
+        </label>
+
+        {/* Creative Commons — wired to default_license_type */}
         <div>
           <label
             className="flex items-center gap-3 cursor-pointer"
-            onClick={() => setCreativeCommons(!creativeCommons)}
+            onClick={() =>
+              onPatch({
+                default_license_type: creativeCommons
+                  ? "all_rights_reserved"
+                  : "creative_commons",
+              })
+            }
           >
             <div
               className={`w-5 h-5 border rounded-[var(--radius-xs)] flex items-center justify-center transition-colors duration-150 ${
@@ -367,9 +472,65 @@ function UploadDefaults() {
   );
 }
 
+// ── Page ──────────────────────────────────────────────────────
+
 export default function ContentPage() {
+  const [settings, setSettings] = useState<ContentSettings>({
+    rss_title: "",
+    rss_language: "English",
+    rss_category: "",
+    rss_explicit: false,
+    rss_show_email: false,
+    default_include_in_rss: true,
+    default_license_type: "all_rights_reserved",
+  });
+  // Snapshot of last-saved state so Cancel can revert
+  const [saved, setSaved] = useState<ContentSettings>({ ...settings });
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  useEffect(() => {
+    getContentSettings()
+      .then((data) => {
+        setSettings(data);
+        setSaved(data);
+      })
+      .catch(() => {
+        // keep defaults silently
+      });
+  }, []);
+
+  const patch = (delta: Partial<ContentSettings>) => {
+    setSettings((prev) => ({ ...prev, ...delta }));
+  };
+
+  const handleSave = async () => {
+    try {
+      const updated = await updateContentSettings(settings);
+      setSettings(updated);
+      setSaved(updated);
+      setToast({
+        message: "Content settings saved successfully.",
+        type: "success",
+      });
+    } catch {
+      setToast({
+        message: "Failed to save content settings.",
+        type: "error",
+      });
+      // keep pending changes — user can retry
+    }
+  };
+
+  const handleCancel = () => {
+    setSettings(saved);
+  };
+
   return (
-    <div className="max-w-3xl flex flex-col gap-10 pb-24">
+    <>
+      <div className="max-w-3xl flex flex-col gap-10 pb-24">
       {/* ── RSS Feed ── */}
       <div>
         <SectionTitle info>RSS feed</SectionTitle>
@@ -382,11 +543,16 @@ export default function ContentPage() {
               className={inputClass}
               readOnly
               defaultValue="https://feeds.rythmify.com/users/rythmify:users:483320034/sounds.rss"
+              data-test="settings-content-rss-feed-input"
             />
           </div>
           <div className="flex-1">
             <FieldLabel>Email address displayed</FieldLabel>
-            <SelectField defaultValue="dont">
+            <SelectField
+              value={settings.rss_show_email ? "display" : "dont"}
+              onChange={(v) => patch({ rss_show_email: v === "display" })}
+              dataTest="settings-content-rss-show-email-select"
+            >
               <option value="dont">Don't display email address</option>
               <option value="display">Display email address</option>
             </SelectField>
@@ -397,11 +563,20 @@ export default function ContentPage() {
         <div className="flex gap-6 mb-6">
           <div className="flex-1">
             <FieldLabel>Custom feed title</FieldLabel>
-            <input className={inputClass} />
+            <input
+              className={inputClass}
+              value={settings.rss_title ?? ""}
+              onChange={(e) => patch({ rss_title: e.target.value })}
+              data-test="settings-content-rss-title-input"
+            />
           </div>
           <div className="flex-1">
             <FieldLabel required>Category</FieldLabel>
-            <SelectField>
+            <SelectField
+              value={settings.rss_category ?? ""}
+              onChange={(v) => patch({ rss_category: v })}
+              dataTest="settings-content-rss-category-select"
+            >
               <option value=""></option>
               <option>Arts</option>
               <option>Business</option>
@@ -426,7 +601,11 @@ export default function ContentPage() {
           </div>
           <div className="flex-1">
             <FieldLabel info>Stats-service URL prefix</FieldLabel>
-            <input className={inputClass} placeholder="http://" />
+            <input
+              className={inputClass}
+              placeholder="http://"
+              data-test="settings-content-stats-service-url-input"
+            />
           </div>
         </div>
 
@@ -434,11 +613,18 @@ export default function ContentPage() {
         <div className="flex gap-6 mb-6">
           <div className="flex-1">
             <FieldLabel>Custom author name</FieldLabel>
-            <input className={inputClass} />
+            <input
+              className={inputClass}
+              data-test="settings-content-author-name-input"
+            />
           </div>
           <div className="flex-1">
             <FieldLabel required>Language</FieldLabel>
-            <SelectField defaultValue="English">
+            <SelectField
+              value={settings.rss_language ?? "English"}
+              onChange={(v) => patch({ rss_language: v })}
+              dataTest="settings-content-rss-language-select"
+            >
               <option>English</option>
               <option>Arabic</option>
               <option>French</option>
@@ -448,26 +634,76 @@ export default function ContentPage() {
           </div>
           <div className="flex-1">
             <FieldLabel info>Subscriber redirect</FieldLabel>
-            <input className={inputClass} placeholder="http://" />
+            <input
+              className={inputClass}
+              placeholder="http://"
+              data-test="settings-content-subscriber-redirect-input"
+            />
           </div>
         </div>
 
-        {/* Contains explicit content */}
-        <Checkbox label="Contains explicit content" />
+        {/* Contains explicit content — wired to rss_explicit */}
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div
+            onClick={() => patch({ rss_explicit: !settings.rss_explicit })}
+            className={`w-5 h-5 border rounded-[var(--radius-xs)] flex items-center justify-center transition-colors duration-150 ${
+              settings.rss_explicit
+                ? "bg-[var(--color-text-hover)] border-[var(--color-text-hover)]"
+                : "bg-transparent border-[var(--color-border)]"
+            }`}
+          >
+            {settings.rss_explicit && (
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M2 6l3 3 5-5"
+                  stroke="var(--color-bg)"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </div>
+          <span className="text-sm text-[var(--color-text-hover)]">
+            Contains explicit content
+          </span>
+        </label>
       </div>
 
       {/* ── Upload Defaults ── */}
-      <UploadDefaults />
+      <UploadDefaults settings={settings} onPatch={patch} />
 
       {/* Cancel + Save ── */}
       <div className="left-0 right-0 flex items-center justify-end gap-4 px-8 py-4 bg-[var(--color-bg)] ">
-        <button className="text-sm text-[var(--color-text-hover)] hover:opacity-70 transition-opacity duration-150">
+        <button
+          onClick={handleCancel}
+          data-test="settings-content-cancel-button"
+          className="text-sm text-[var(--color-text-hover)] hover:opacity-70 transition-opacity duration-150"
+        >
           Cancel
         </button>
-        <button className="px-5 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150">
+        <button
+          onClick={handleSave}
+          data-test="settings-content-save-button"
+          className="px-5 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150"
+        >
           Save changes
         </button>
       </div>
-    </div>
+      </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </>
   );
 }

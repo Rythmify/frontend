@@ -1,3 +1,4 @@
+import type { GenderType } from "@/services/auth.service";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -18,6 +19,8 @@ export interface User {
   location?: string;
   following_ids: string[];
   followers_ids?: string[];
+  date_of_birth?: string | null;
+  gender?: GenderType | null;
 }
 
 interface AuthStore {

@@ -11,9 +11,9 @@ import { useLikesStore } from "@/stores/likes.store";
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
-  card: `
+  card: (widthClassName: string) => `
     group flex flex-col gap-2
-    w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]
+    ${widthClassName}
     cursor-pointer shrink-0
   `,
   imageWrapper: `
@@ -74,7 +74,13 @@ const tooltipStyles = {
   tooltip: "bg-gray-700",
 };
 
-const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
+const PlaylistCard = ({
+  playlist,
+  widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
+}: {
+  playlist: Playlist;
+  widthClassName?: string;
+}) => {
   const navigate = useNavigate();
   const { isAlbumLiked, toggleAlbum } = useLikesStore();
   const liked = isAlbumLiked(playlist.playlist_id);
@@ -90,11 +96,20 @@ const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
     (currentTrack as any)?.context?.type === "playlist" &&
     (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
 
+  const playlistSlug =
+    //playlist.slug ??
+    playlist.name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+
+  const playlistPath = `/you/sets/${playlistSlug}:${playlist.playlist_id}`;
+
   // ── Play: fetch tracks, set first track with playlist context ──────────────
   const handlePlayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // If this playlist is already loaded, just toggle play/pause
     if ((currentTrack as any)?.context?.playlist_id === playlist.playlist_id) {
       togglePlay();
       return;
@@ -109,14 +124,11 @@ const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
 
       if (!tracks || tracks.length === 0) return;
 
-      // Sort by position and grab the first track
       const sorted = [...tracks].sort((a, b) => a.position - b.position);
       const firstTrackId = sorted[0].track_id;
 
-      // Build the queue (all track IDs in order) and attach playlist context
       setTrack({
         id: firstTrackId,
-        // carry whatever shape your player store expects — adjust fields as needed
         context: {
           type: "playlist",
           playlist_id: playlist.playlist_id,
@@ -132,8 +144,8 @@ const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
 
   return (
     <div
-      className={styles.card}
-      onClick={() => navigate(`/you/sets/${playlist.playlist_id}`)}
+      className={styles.card(widthClassName)}
+      onClick={() => navigate(playlistPath)}
       data-test="playlist-card"
     >
       {/* Cover */}
@@ -241,7 +253,7 @@ const PlaylistCard = ({ playlist }: { playlist: Playlist }) => {
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowMoreMenu(false);
-                        navigate(`/you/sets/${playlist.playlist_id}`);
+                        navigate(playlistPath);
                       }}
                     >
                       <i className="fa-solid fa-list text-sm" />

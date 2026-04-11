@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
-import SetsHeader from "@/components/Playlist/SetsHeader";
+import SetsHeader from "@/components/playlist/SetsHeader";
 import {
   getMyPlaylists,
   getLikedPlaylists,
   type Playlist,
 } from "@/services/api/playlist/playlist.service";
-import PlaylistCard from "@/components/Playlist/PlaylistCard";
+import PlaylistCard from "@/components/playlist/PlaylistCard";
 import { useLikesStore } from "@/stores/likes.store";
 
 const SkeletonCard = () => (
@@ -91,7 +91,7 @@ export default function AlbumsPage() {
     <div className="min-h-screen flex flex-col">
       {(visibleAlbums.length > 0 || loading) && (
         <SetsHeader
-          title="Your Albums"
+          title="Hear your own albums and the albums you've liked:"
           filterText={filterText}
           setFilterText={setFilterText}
           activeFilter={activeFilter}

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { FeedItem } from "@/types/feedItem";
-import TrackItem from "@/components/UI/TrackItem";
+import TrackCard from "@/components/track/TrackCard";
+import PlaylistComponent from "@/components/playlist/PlaylistComponent";
 
 const timeAgo = (isoString: string): string => {
   const seconds = Math.floor(
@@ -26,31 +27,15 @@ const FeedItemCard = ({ item }: FeedItemCardProps) => {
 
   const cardBody =
     item.content_type === "track" ? (
-      // TODO: swap for RectangularTrackCard (Shahd's module) when ready
-      <TrackItem
-        id={String(item.track.id)}
-        title={item.track.title}
-        artist={item.track.artistName}
-        coverUrl={item.track.coverUrl}
-        plays={item.track.playCount}
-        likes={item.track.likeCount}
-        reposts={item.track.repostCount}
-        comments={item.track.commentCount}
-        artistUsername={item.track.artistUsername}
-        trackSlug={item.track.trackSlug}
-        audioUrl={item.track.audioUrl}
-      />
+      <TrackCard track={item.track} disableComments />
     ) : (
-      // TODO: swap for RectangularPlaylistCard (another module) when ready
-      <div className="text-text-secondary text-sm p-3 border border-border rounded">
-        [Playlist card placeholder — "{item.playlist.title}"]
-      </div>
+      <PlaylistComponent playlist={item.playlist} />
     );
 
   return (
     <div
       data-test={`feed-item-${item.id}`}
-      className="flex flex-col py-4 border-b border-border"
+      className={`flex flex-col py-4 ${item.content_type === "track" ? "border-b border-border" : ""}`}
     >
       {/* User header */}
       <div

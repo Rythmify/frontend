@@ -7,7 +7,7 @@ import type { Track } from "../../types/track";
 // which are hoisted to the top of the file by vitest at compile time.
 const { mockTrack, mockNavigate } = vi.hoisted(() => {
   const mt: Track = {
-    id: 1,
+    id: "550e8400-e29b-41d4-a716-446655440000",
     title: "Msh Awl Mara",
     artistName: "Lege-Cy",
     artistUsername: "samo-lotfy",

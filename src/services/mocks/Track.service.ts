@@ -16,7 +16,7 @@ export async function getTracks(): Promise<Track[]> {
 }
 
 /** GET /api/tracks/:id */
-export async function getTrackById(id: number): Promise<Track> {
+export async function getTrackById(id: string): Promise<Track> {
   const { data } = await api.get<Track>(`/tracks/${id}`);
   return data;
 }
@@ -31,14 +31,14 @@ export async function getTrackBySlug(
 }
 
 /** GET /api/tracks/:id/related */
-export async function getRelatedTracks(trackId: number): Promise<Track[]> {
+export async function getRelatedTracks(trackId: string): Promise<Track[]> {
   const { data } = await api.get<Track[]>(`/tracks/${trackId}/related`);
   return Array.isArray(data) ? data : [];
 }
 
 /** POST /api/tracks/:id/like */
 export async function likeTrack(
-  id: number
+  id: string
 ): Promise<{ liked: boolean; likeCount: number }> {
   const { data } = await api.post(`/tracks/${id}/like`);
   return data;
@@ -46,7 +46,7 @@ export async function likeTrack(
 
 /** DELETE /api/tracks/:id/like */
 export async function unlikeTrack(
-  id: number
+  id: string
 ): Promise<{ liked: boolean; likeCount: number }> {
   const { data } = await api.delete(`/tracks/${id}/like`);
   return data;
@@ -54,21 +54,21 @@ export async function unlikeTrack(
 
 /** POST /api/tracks/:id/repost */
 export async function repostTrack(
-  id: number
+  id: string
 ): Promise<{ reposted: boolean; repostCount: number }> {
   const { data } = await api.post(`/tracks/${id}/repost`);
   return data;
 }
 
 /** GET /api/tracks/:id/comments */
-export async function getTrackComments(trackId: number) {
+export async function getTrackComments(trackId: string) {
   const { data } = await api.get(`/tracks/${trackId}/comments`);
   return data;
 }
 
 /** POST /api/tracks/:id/comments */
 export async function postComment(
-  trackId: number,
+  trackId: string,
   text: string,
   timestamp: number
 ) {

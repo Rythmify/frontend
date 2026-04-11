@@ -1,8 +1,9 @@
 import HorizontalCarousel from "./HorizontalCarousel";
 import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
+import type { CuratedMixSummary, HomeData } from "@/services/api/discover.service";
 
-const MADE_FOR_YOU_ITEMS: MadeForYouItem[] = [
+const FALLBACK_ITEMS: MadeForYouItem[] = [
   {
     id: "daily-drops",
     title: "Daily Drops",
@@ -21,12 +22,40 @@ const MADE_FOR_YOU_ITEMS: MadeForYouItem[] = [
   },
 ];
 
-const MadeForYou = () => (
-  <HorizontalCarousel title="Made for you">
-    {MADE_FOR_YOU_ITEMS.map((item) => (
-      <MadeForYouCard key={item.id} item={item} />
-    ))}
-  </HorizontalCarousel>
-);
+function toMadeForYouItem(
+  mix: CuratedMixSummary,
+  fallback: MadeForYouItem,
+): MadeForYouItem {
+  return {
+    ...fallback,
+    id: mix.id,
+    title: mix.label,
+    subtitle: mix.description,
+    coverUrl: mix.preview_track?.cover_image ?? fallback.coverUrl,
+  };
+}
+
+interface Props {
+  madeForYou: HomeData["made_for_you"];
+}
+
+const MadeForYou = ({ madeForYou }: Props) => {
+  const items: MadeForYouItem[] = madeForYou
+    ? [
+        toMadeForYouItem(madeForYou.daily_mix, FALLBACK_ITEMS[0]),
+        toMadeForYouItem(madeForYou.weekly_mix, FALLBACK_ITEMS[1]),
+      ]
+    : FALLBACK_ITEMS;
+
+  return (
+    <div data-test="section-made-for-you">
+      <HorizontalCarousel title="Made for you">
+        {items.map((item) => (
+          <MadeForYouCard key={item.id} item={item} />
+        ))}
+      </HorizontalCarousel>
+    </div>
+  );
+};
 
 export default MadeForYou;

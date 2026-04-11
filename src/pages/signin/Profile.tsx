@@ -32,14 +32,14 @@ function FloatingSelect({
   onChange,
   options,
   error,
-  dataTest,
+  "data-test": dataTest,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: string[];
   error?: boolean;
-  dataTest?: string;
+  "data-test"?: string;
 }) {
   const [focused, setFocused] = useState(false);
   const floated = focused || value !== "";
@@ -108,12 +108,13 @@ export default function Profile({ email, defaultDisplayName, onBack, onContinue 
 
     setLoading(true);
     try {
-      const captchaToken = await executeRecaptcha("register");
+       const captchaToken = await executeRecaptcha("register");
+    
       await onContinue({
         displayName: displayName.trim(),
         dateOfBirth: { month, day, year },
         gender,
-        captchaToken,
+        captchaToken, 
       });
     } catch {
       setErrors({ form: "Something went wrong. Please try again." });
@@ -166,13 +167,13 @@ export default function Profile({ email, defaultDisplayName, onBack, onContinue 
           <p className="text-text-hover text-md font-bold">Date of birth (required)</p>
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <FloatingSelect label="Month" dataTest="select-dob-month" value={month} onChange={(v) => { setMonth(v); setErrors((p) => ({ ...p, month: "" })); }} options={MONTHS} error={!!errors.month} />
+              <FloatingSelect label="Month" data-test="select-dob-month" value={month} onChange={(v) => { setMonth(v); setErrors((p) => ({ ...p, month: "" })); }} options={MONTHS} error={!!errors.month} />
             </div>
             <div>
-              <FloatingSelect label="Day" dataTest="select-dob-day" value={day} onChange={(v) => { setDay(v); setErrors((p) => ({ ...p, day: "" })); }} options={DAYS} error={!!errors.day} />
+              <FloatingSelect label="Day" data-test="select-dob-day" value={day} onChange={(v) => { setDay(v); setErrors((p) => ({ ...p, day: "" })); }} options={DAYS} error={!!errors.day} />
             </div>
             <div>
-              <FloatingSelect label="Year" dataTest="select-dob-year" value={year} onChange={(v) => { setYear(v); setErrors((p) => ({ ...p, year: "" })); }} options={YEARS} error={!!errors.year} />
+              <FloatingSelect label="Year" data-test="select-dob-year" value={year} onChange={(v) => { setYear(v); setErrors((p) => ({ ...p, year: "" })); }} options={YEARS} error={!!errors.year} />
             </div>
           </div>
           {(errors.month || errors.day || errors.year) && <p className="text-red-500 text-sm">Please complete your date of birth.</p>}
@@ -183,7 +184,7 @@ export default function Profile({ email, defaultDisplayName, onBack, onContinue 
         <div className="grid gap-1.5">
           <FloatingSelect
             label="Gender (required)"
-            dataTest="select-gender"
+            data-test="select-gender"
             value={gender}
             onChange={(v) => { setGender(v); setErrors((p) => ({ ...p, gender: "" })); }}
             options={["Male", "Female", "Custom", "Prefer not to say"]}

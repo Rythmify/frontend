@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
-import AddToPlaylistModal from "@/components/Playlist/AddToPlaylistModal";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { createPortal } from "react-dom";
 
 // ─── Props ────────────────────────────────────────────────

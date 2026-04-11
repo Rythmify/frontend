@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
+import type { Track } from "@/types/track";
 
 interface TrackItemProps {
   id: string;
@@ -16,6 +17,10 @@ interface TrackItemProps {
   artistUsername?: string;
   trackSlug?: string;
   audioUrl?: string;
+  genre?: string;
+  duration?: string;
+  postedAt?: string;
+  isPrivate?: boolean;
 }
 
 const formatCount = (n: number) => {
@@ -38,6 +43,10 @@ const TrackItem: React.FC<TrackItemProps> = ({
   artistUsername,
   trackSlug,
   audioUrl,
+  genre = "",
+  duration = "0:00",
+  postedAt = "",
+  isPrivate = false,
 }) => {
   const [hovered, setHovered] = useState(false);
   const [coverHovered, setCoverHovered] = useState(false);
@@ -55,37 +64,34 @@ const TrackItem: React.FC<TrackItemProps> = ({
     }
   };
 
-  // Generate slugs
   const finalTrackSlug = trackSlug || title.toLowerCase().replace(/\s+/g, "-");
   const finalArtistSlug =
     artistUsername || artist.toLowerCase().replace(/\s+/g, "-");
 
   const handlePlayClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation
+    e.stopPropagation();
 
-    // Create a full track object for the player
-    const trackForPlayer = {
-      id: parseInt(id),
+    const trackForPlayer: Track = {
+      id: id,
       title,
       artistName: artist,
       artistUsername: finalArtistSlug,
       trackSlug: finalTrackSlug,
       coverUrl: coverUrl || "",
       audioUrl: audioUrl || "",
-      genre: "",
+      genre: genre,
       likeCount: likes || 0,
       repostCount: reposts || 0,
       playCount: plays || 0,
       commentCount: comments || 0,
-      duration: "0:00",
-      postedAt: "",
+      duration: duration,
+      postedAt: postedAt,
       waveformData: [],
-      username: finalArtistSlug,
+      isPrivate: isPrivate,
     };
 
     setTrack(trackForPlayer);
   };
-
   return (
     <div
       data-test={`track-item-${id}`}
