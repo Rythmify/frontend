@@ -1,5 +1,6 @@
 // Modal.tsx
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   isOpen: boolean;
@@ -19,7 +20,7 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       data-test="modal-backdrop"
       className="fixed inset-0 flex z-[9999] overflow-y-auto bg-bg-inverted/40 flex-col "
@@ -46,11 +47,12 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
         </button>
       </div>
       <div
-        className="self-center inline-block my-19 p-6 mt-10 bg-bg rounded-sm"
+        className="self-center inline-block my-19 p-6 mt-10 bg-bg rounded-sm w-[calc(100%-2rem)] sm:w-auto"
         onClick={(e) => e.stopPropagation()} // prevent backdrop click
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
