@@ -190,54 +190,58 @@ useEffect(() => {
   };
 
   return (
-    <div
-      data-test="message-id-page"
-className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overflow-hidden "
+<div
+  data-test="message-id-page"
+  className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)]"
 >
-      {/* ── Left: conversation list ── */}
-      <div className="flex flex-col w-95 flex-shrink-0 sticky top-0 h-full">
-        <MessagingHeader />
-        <Chats
-          conversations={conversations}
-          loading={loadingConvs}
-          error={error}
-          activeConversationId={activeConvId}
-          onSelect={handleSelectConversation}
-        />
-      </div>
+  {/* ── Left: conversation list — fixed, doesn't scroll with page ── */}
+  <div className="flex flex-col w-85 flex-shrink-0 sticky top-0 h-[calc(100vh-64px)] overflow-hidden">
+    <MessagingHeader />
+    <Chats
+      conversations={conversations}
+      loading={loadingConvs}
+      error={error}
+      activeConversationId={activeConvId}
+      onSelect={handleSelectConversation}
+    />
+  </div>
 
-      {/* ── Right: active conversation ── */}
-      <div className="flex flex-col flex-1  ml-6 min-w-0 overflow-y-auto">
-        {activeConv ? (
-          <>
-            <ConversationHeader
-              conversationId={activeConv.id}
-              reciepiantId={activeConv.participant.id}
-              recipientName={activeConv.participant.username}
-              lastMessageId={lastReceivedMessage?.id ?? null}
-              onReadStateChange={handleReadStateChange}
-              onDeleted={handleConversationDeleted}
-            />
-            <SendMessageForm
-              conversationId={activeConv.id}
-              existingMessages={activeMessages}
-              loadingMessages={loadingMsgs}
-              onMessageSent={handleMessageSent}
-              isTyping={isTyping}
-              ParticipantInfo={{
-                display_name: activeConv.participant.display_name,
-                profile_picture: activeConv.participant.profile_picture,
-              }}
-            />
-          </>
-        ) : (
-          !loadingConvs && (
-            <div className="flex items-center justify-center flex-1 text-sm text-[#666]">
-              Select a conversation to start messaging.
-            </div>
-          )
-        )}
-      </div>
-    </div>
+  {/* ── Right: active conversation — scrolls naturally ── */}
+  <div className="flex flex-col flex-1 ml-6 min-w-0">
+    {activeConv ? (
+      <>
+        {/* Header stays sticky at top */}
+        <div className="sticky top-0 bg-bg z-10">
+          <ConversationHeader
+            conversationId={activeConv.id}
+            reciepiantId={activeConv.participant.id}
+            recipientName={activeConv.participant.username}
+            lastMessageId={lastReceivedMessage?.id ?? null}
+            onReadStateChange={handleReadStateChange}
+            onDeleted={handleConversationDeleted}
+          />
+        </div>
+
+        <SendMessageForm
+          conversationId={activeConv.id}
+          existingMessages={activeMessages}
+          loadingMessages={loadingMsgs}
+          onMessageSent={handleMessageSent}
+          isTyping={isTyping}
+          ParticipantInfo={{
+            display_name: activeConv.participant.display_name,
+            profile_picture: activeConv.participant.profile_picture,
+          }}
+        />
+      </>
+    ) : (
+      !loadingConvs && (
+        <div className="flex items-center justify-center flex-1 text-sm text-[#666]">
+          Select a conversation to start messaging.
+        </div>
+      )
+    )}
+  </div>
+</div>
   );
 }
