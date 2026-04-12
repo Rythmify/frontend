@@ -13,6 +13,7 @@ vi.mock("@/stores/auth.store", () => ({
 
 vi.mock("@/services/api/upload/track.service", () => ({
   uploadTrack: vi.fn(),
+  getGenres: vi.fn().mockResolvedValue(["Electronic", "Hip-Hop"]),
 }));
 
 import { uploadTrack } from "@/services/api/upload/track.service";
@@ -293,5 +294,57 @@ describe("UploadDetailsForm", () => {
     await ref.current!.triggerSubmit();
     await waitFor(() => expect(mockUploadTrack).toHaveBeenCalled());
     expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it("submits optional metadata fields and cover image", async () => {
+    const user = userEvent.setup();
+    const onProgress = vi.fn();
+    const { ref } = renderForm({ onProgress });
+
+    const descriptionInput = screen.getByTestId("upload-description-input");
+    const artistsInput = screen.getByTestId("upload-artists-input");
+    const tagsInput = screen.getByTestId("upload-tags-input");
+    const coverInput = screen.getByTestId("cover-image-input") as HTMLInputElement;
+    const genreInput = screen.getByTestId("dropdown-input");
+    const coverFile = new File(["cover"], "cover.png", { type: "image/png" });
+
+    await user.clear(descriptionInput);
+    await user.type(descriptionInput, "  A detailed description  ");
+    await user.clear(artistsInput);
+    await user.type(artistsInput, "Artist One, Artist Two");
+    await user.clear(tagsInput);
+    await user.type(tagsInput, "tag-1, tag-2");
+    await user.click(screen.getByTestId("upload-privacy-private-radio"));
+    await user.upload(coverInput, coverFile);
+    await user.click(genreInput);
+    await user.click(await screen.findByText("Electronic"));
+
+    await ref.current!.triggerSubmit();
+    await waitFor(() => expect(mockUploadTrack).toHaveBeenCalledTimes(1));
+
+    const [payload, progressCallback] = mockUploadTrack.mock.calls[0];
+    expect(payload.description).toBe("A detailed description");
+    expect(payload.genre).toBe("Electronic");
+    expect(payload.artists).toBe("Artist One, Artist Two");
+    expect(payload.is_public).toBe(false);
+    expect(payload.cover_image).toBe(coverFile);
+    expect(payload.tags).toEqual(["tag-1", "tag-2"]);
+    expect(typeof progressCallback).toBe("function");
+    expect(onProgress).not.toHaveBeenCalled();
+  });
+
+  it("forwards upload progress updates from the service", async () => {
+    const progress = vi.fn();
+    mockUploadTrack.mockImplementationOnce(async (_payload, onProgress) => {
+      onProgress?.(25);
+      onProgress?.(100);
+      return mockSuccessResponse;
+    });
+
+    const { ref } = renderForm({ onProgress: progress });
+    await ref.current!.triggerSubmit();
+
+    await waitFor(() => expect(progress).toHaveBeenCalledWith(25));
+    expect(progress).toHaveBeenCalledWith(100);
   });
 });
