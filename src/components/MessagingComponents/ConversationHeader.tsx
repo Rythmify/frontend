@@ -141,7 +141,7 @@ const ConversationHeader = ({
               <button
                 data-test="conversation-block-button-mobile"
                 className="w-full text-left px-4 py-3 text-sm font-bold text-white hover:bg-[#2a2a2a] transition-colors"
-                onClick={() => { isBlocked ? handleUnblock() : setIsBlockOpen(true); setMobileMenuOpen(false) }}
+                onClick={() => { if (isBlocked) { handleUnblock(); } else { setIsBlockOpen(true); } setMobileMenuOpen(false); }}
               >
                 {isBlocked ? 'Unblock' : 'Block'} {recipientName}
               </button>
