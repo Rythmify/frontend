@@ -48,7 +48,7 @@ export default function MixCard({
       id: mix.id,
       title: mix.label ?? "",
       owner: `${mix.track_count} tracks`,
-      coverUrl: mix.cover_image ?? null,
+      coverUrl: mix.cover_image ?? mix.preview_track?.cover_image ?? null,
     });
   };
 
@@ -60,9 +60,9 @@ export default function MixCard({
     >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {mix.cover_image && (
+        {(mix.cover_image ?? mix.preview_track?.cover_image) && (
           <img
-            src={mix.cover_image}
+            src={(mix.cover_image ?? mix.preview_track?.cover_image) as string}
             alt={mix.label ?? ""}
             className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
             data-test="mix-card-image"
