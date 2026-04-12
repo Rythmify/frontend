@@ -18,7 +18,7 @@ vi.mock("react-router-dom", () => ({
   ),
 }));
 
-const makeTrack = (id = 1): Track => ({
+const makeTrack = (id = "550e8400-e29b-41d4-a716-446655440000"): Track => ({
   id,
   title: "Test Song",
   artistName: "Test Artist",

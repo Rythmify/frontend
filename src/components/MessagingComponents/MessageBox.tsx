@@ -1,6 +1,7 @@
 import { useState, useRef } from "react"
 import { resolvePermalink, fetchTrack, fetchPlaylist } from "../../services/api/messaging/conversationApi"
 import type { Track, Playlist } from "../../services/api/messaging/conversationApi"
+import MiniPlayer from "./MiniPlayer"
 
 export type ResolvedEmbed =
   | { type: "track";    id: string; resource: Track }
@@ -17,8 +18,13 @@ const URL_REGEX = /https?:\/\/rythmify\.com\/(tracks|users|playlists)\/[^\s]+/g
 
 export function MessageBox({ onValueChange, onIsEmptyChange, onEmbedResolved, hasError }: MessageInputProps) {
   const [value, setValue]   = useState("")
-  const [title, setTitle]   = useState<string | null>(null)
+  const [embed, setEmbed]   = useState<ResolvedEmbed | null>(null)
   const debounceRef         = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearEmbed = () => {
+    setEmbed(null)
+    onEmbedResolved?.(null)
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value
@@ -30,8 +36,7 @@ export function MessageBox({ onValueChange, onIsEmptyChange, onEmbedResolved, ha
 
     const urls = text.match(URL_REGEX)
     if (!urls) {
-      onEmbedResolved?.(null)
-      setTitle(null)
+      clearEmbed()
       return
     }
 
@@ -43,28 +48,40 @@ export function MessageBox({ onValueChange, onIsEmptyChange, onEmbedResolved, ha
 
         if (type === "track") {
           const trackRes = await fetchTrack(id)
-          setTitle(trackRes.data.title)
-          onEmbedResolved?.({ type: "track", id, resource: trackRes.data })
+          const next: ResolvedEmbed = { type: "track", id, resource: trackRes.data }
+          setEmbed(next)
+          onEmbedResolved?.(next)
         } else if (type === "playlist") {
           const playlistRes = await fetchPlaylist(id)
-          setTitle(playlistRes.data.title)
-          onEmbedResolved?.({ type: "playlist", id, resource: playlistRes.data })
+          const next: ResolvedEmbed = { type: "playlist", id, resource: playlistRes.data }
+          setEmbed(next)
+          onEmbedResolved?.(next)
         } else {
-          setTitle(null)
-          onEmbedResolved?.(null)
+          clearEmbed()
         }
       } catch {
-        setTitle(null)
-        onEmbedResolved?.(null)
+        clearEmbed()
       }
     }, 600)
   }
 
+  // Derive MiniPlayer props from the resolved embed
+ const miniPlayerProps = embed
+  ? embed.type === "track"
+    ? {
+        profilePicture: null,
+        trackName:      embed.resource.title,
+        artistName:     embed.resource.artists ?? "Unknown Artist",
+      }
+    : {
+        profilePicture: null,
+        trackName:      embed.resource.name,          
+        artistName:     `${embed.resource.track_count} track${embed.resource.track_count !== 1 ? "s" : ""}`,
+      }
+  : null
+
   return (
     <div data-test="message-box" className="flex flex-col gap-1">
-      {title && (
-        <p data-test="message-box-title" className="text-xs font-semibold text-[#f50] truncate">{title}</p>
-      )}
       <textarea
         data-test="message-input"
         value={value}
@@ -72,6 +89,12 @@ export function MessageBox({ onValueChange, onIsEmptyChange, onEmbedResolved, ha
         rows={4}
         className={`w-full resize-y bg-[#2a2a2a] border text-white text-sm px-3 py-2 rounded focus:outline-none caret-[#f50] ${hasError ? "border-red-500" : "border-[#444] focus:border-[#666]"}`}
       />
+      {miniPlayerProps && (
+        <MiniPlayer
+          {...miniPlayerProps}
+          onClose={clearEmbed}
+        />
+      )}
     </div>
   )
 }

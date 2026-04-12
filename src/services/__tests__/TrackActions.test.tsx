@@ -11,7 +11,7 @@ vi.mock("../../services/mocks/Track.service", () => ({
 }));
 
 const baseTrack: Track = {
-  id: 1,
+  id: "550e8400-e29b-41d4-a716-446655440000",
   title: "Test Song",
   artistName: "Test Artist",
   artistUsername: "test-artist",

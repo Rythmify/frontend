@@ -19,7 +19,7 @@ export default function DeleteConversationButton({
       <button
         onClick={() => setIsModalOpen(true)}
         aria-label="Delete conversation"
-        className="inline-flex h-10 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#2a2a2a] text-red-400 transition-all hover:bg-[#3a1e1e] hover:text-red-400 active:scale-95"
+        className="inline-flex h-10 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#2a2a2a] text-white hover:text-[#838383] transition-all active:scale-95"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

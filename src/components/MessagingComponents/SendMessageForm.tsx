@@ -5,11 +5,13 @@ import { MessageBox } from './MessageBox';
 import type { ResolvedEmbed } from './MessageBox';
 import MessageCell from './messagecell';
 import { useAuthStore } from '@/stores/auth.store' 
+import { emitMessageSent, emitStopTyping } from '@/services/api/messaging/socketService';
 interface SendMessageFormProps {
   conversationId: string;
   existingMessages: Message[];
   loadingMessages: boolean;
   onMessageSent: (msg: Message) => void;
+  isTyping?: boolean;
   ParticipantInfo: {
     display_name: string;
     profile_picture?: string | null;
@@ -22,6 +24,7 @@ export default function SendMessageForm({
   existingMessages,
   loadingMessages,
   onMessageSent,
+  isTyping,
   ParticipantInfo,
 }: SendMessageFormProps) {
   const [value, setValue]         = useState('');
@@ -43,6 +46,8 @@ export default function SendMessageForm({
         ...(embed ? { resource: { type: embed.type, id: embed.id } } : {}),
       });
       onMessageSent({ ...res.data, body: value.trim() });
+      emitMessageSent(conversationId, { ...res.data, body: value.trim() });
+      emitStopTyping(conversationId);   
       setValue('');
       setEmbed(null);
       setBoxKey(k => k + 1);
@@ -84,8 +89,11 @@ const getSenderInfo = (senderId: string) => {
           />
         ))
       )}
-
+{isTyping && (
+  <p className="text-xs text-[#999] italic px-3 pb-1">typing...</p>
+)}
       <div className="flex flex-col gap-2">
+
         <label className="text-sm font-bold text-white">
           Write your message and add tracks or playlists{' '}
           <span className="text-red-500">*</span>

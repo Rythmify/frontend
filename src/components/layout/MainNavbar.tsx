@@ -1,10 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
+import { useNotificationStore } from '@/stores/notification.store';
 import { Bell, Mail, ChevronDown, MoreHorizontal, Menu, X, Search } from "lucide-react";
+import { disconnectSocket } from '@/services/api/messaging/socketService';
+import NotificationCard from '@/components/notificationsComponents/notificationCard';
+import { fetchNotifications, type Notification } from '@/services/api/notifications/notificationsAPI';
+import { fetchConversations, type Conversation } from '@/services/api/messaging/conversationApi';
+import { ChatProfile } from '@/components/MessagingComponents/ChatProfile';
+import { useMessagingStore } from '@/stores/messaging.store';
 
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
+  const { unreadCount, fetchUnreadCount } = useNotificationStore();
+  const { unreadCount: unreadMessages, fetchUnreadCount: fetchUnreadMessages, setupSocketListeners, teardownSocketListeners } = useMessagingStore();
   const navigate = useNavigate();
 
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
@@ -14,10 +23,16 @@ const MainNavbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversationsLoading, setConversationsLoading] = useState(false);
+
   const avatarRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement>(null);
-  const msgRef = useRef<HTMLDivElement>(null);
-  const moreRef = useRef<HTMLDivElement>(null);
+  const notifRef  = useRef<HTMLDivElement>(null);
+  const msgRef    = useRef<HTMLDivElement>(null);
+  const moreRef   = useRef<HTMLDivElement>(null);
+  const notifListRef = useRef<HTMLDivElement>(null);
 
   const closeAll = () => {
     setShowAvatarMenu(false);
@@ -31,14 +46,63 @@ const MainNavbar = () => {
     setter((prev) => !prev);
   };
 
+  // ── Fetch last 9 notifications ──────────────────────────────────────────────
+  const handleNotificationsToggle = async () => {
+    const willOpen = !showNotifications;
+    closeAll();
+    setShowNotifications(willOpen);
+
+    if (!willOpen) return;
+
+    setNotifications([]);
+    setNotificationsLoading(true);
+
+    try {
+      const res = await fetchNotifications(1, 9, false);
+      setNotifications(res.data.items ?? []);
+    } catch {
+      setNotifications([]);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const handleMessagesToggle = async () => {
+    const willOpen = !showMessages;
+    closeAll();
+    setShowMessages(willOpen);
+
+    if (!willOpen) return;
+
+    setConversationsLoading(true);
+    try {
+      const res = await fetchConversations(1, 6);
+      setConversations((res.data.items ?? []).slice(0, 6));
+    } catch {
+      setConversations([]);
+    } finally {
+      setConversationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+    fetchUnreadMessages();
+  }, [fetchUnreadCount, fetchUnreadMessages]);
+
+  useEffect(() => {
+    setupSocketListeners();
+    return () => teardownSocketListeners();
+  }, [setupSocketListeners, teardownSocketListeners]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
       if (
         avatarRef.current && !avatarRef.current.contains(target) &&
-        notifRef.current && !notifRef.current.contains(target) &&
-        msgRef.current && !msgRef.current.contains(target) &&
-        moreRef.current && !moreRef.current.contains(target)
+        notifRef.current  && !notifRef.current.contains(target)  &&
+        msgRef.current    && !msgRef.current.contains(target)    &&
+        moreRef.current   && !moreRef.current.contains(target)
       ) {
         closeAll();
       }
@@ -48,6 +112,7 @@ const MainNavbar = () => {
   }, []);
 
   const handleSignOut = () => {
+    disconnectSocket();
     logout();
     navigate("/logout");
   };
@@ -94,8 +159,7 @@ const MainNavbar = () => {
               className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
             />
             <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <i className="fa-solid fa-magnifying-glass text-lg  font-medium" />
-
+              <i className="fa-solid fa-magnifying-glass text-lg font-medium" />
             </button>
           </div>
         </div>
@@ -129,24 +193,21 @@ const MainNavbar = () => {
               ) : (
                 <div className="w-[30px] h-[30px] rounded-full bg-text-muted" />
               )}
-              <ChevronDown
-                size={25}
-                className={`mx-2 text-text-secondary hover:text-text-hover`}
-              />
+              <ChevronDown size={25} className="mx-2 text-text-secondary hover:text-text-hover" />
             </button>
 
             {showAvatarMenu && (
               <div className="absolute right-0 top-full mt-2 w-[200px] bg-bg border border-border rounded-sm shadow-md py-1 z-50">
-                <DropdownLink icon="fa-solid fa-user" label="Profile" to={`/${user?.username}`} onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-heart" label="Likes" to="/you/likes" onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-list" label="Playlists" to="/you/sets" onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-tower-broadcast" label="Stations" to="/you/stations" onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-user-plus" label="Following" to="/you/following" onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-users" label="Who to follow" to="/people" onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-circle-plus" label="Try Artist Pro" to="/creator/checkout" onClick={closeAll} iconClassName="text-accent" />
-                <DropdownLink icon="fa-solid fa-chart-simple" label="Tracks" to={`/${user?.username}/tracks`} onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-chart-line" label="Insights" to="/you/insights" onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-arrow-up-from-bracket" label="Distribute" to="/artists/distribution" onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-user"                label="Profile"         to={`/${user?.username}`}     onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-heart"               label="Likes"            to="/you/likes"               onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-list"                label="Playlists"        to="/you/sets"                onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-tower-broadcast"     label="Stations"         to="/you/stations"            onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-user-plus"           label="Following"        to="/you/following"           onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-users"               label="Who to follow"    to="/people"                  onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-circle-plus"         label="Try Artist Pro"   to="/creator/checkout"        onClick={closeAll} iconClassName="text-accent" />
+                <DropdownLink icon="fa-solid fa-chart-simple"        label="Tracks"           to={`/${user?.username}/tracks`} onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-chart-line"          label="Insights"         to="/you/insights"            onClick={closeAll} />
+                <DropdownLink icon="fa-solid fa-arrow-up-from-bracket" label="Distribute"     to="/artists/distribution"    onClick={closeAll} />
               </div>
             )}
           </div>
@@ -155,28 +216,72 @@ const MainNavbar = () => {
           <div ref={notifRef} className="relative">
             <button
               data-test="btn-notifications"
-              onClick={() => toggle(setShowNotifications)}
-              className="text-text-secondary hover:text-text transition-colors"
+              onClick={handleNotificationsToggle}
+              className="relative text-text-secondary hover:text-text transition-colors"
             >
               <Bell size={22} className="hover:text-text-hover mt-2" />
+              {unreadCount > 0 && (
+                <span
+                  data-test="notification-unread-badge"
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50">
+              <div data-test="notifications-dropdown" className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50">
+
+                {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <h3 className="text-md font-medium text-text">Notifications</h3>
-                  <Link to="/settings/notifications" className="text-xs text-text-secondary hover:text-text" onClick={closeAll}>
+                  <h3 data-test="notifications-dropdown-title" className="text-md font-medium text-text">Notifications</h3>
+                  <Link data-test="notifications-settings-link" to="/settings/notifications" className="text-xs text-text-secondary hover:text-text" onClick={closeAll}>
                     Settings
                   </Link>
                 </div>
-                <div className="py-2 max-h-[300px] overflow-y-auto">
-                  <div className="px-4 py-3 text-md text-text-muted text-center">No new notifications</div>
+
+                {/* Scrollable list */}
+                <div
+                  data-test="notifications-dropdown-content"
+                  ref={notifListRef}
+                  className="py-2 max-h-[400px] overflow-y-auto"
+                >
+                  {notificationsLoading ? (
+                    <div data-test="notifications-dropdown-loading" className="px-4 py-3 text-md text-text-muted text-center">
+                      Loading notifications...
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div data-test="notifications-dropdown-empty" className="px-4 py-3 text-md text-text-muted text-center">
+                      No new notifications
+                    </div>
+                  ) : (
+                    <div data-test="notifications-dropdown-list" className="flex flex-col">
+                      {notifications.map((notification) => (
+                        <NotificationCard
+                          key={notification.id}
+                          notification={notification}
+                          showActions={false}
+                          data-test={`navbar-notification-card-${notification.id}`}
+                        />
+                      ))}
+
+                    </div>
+                  )}
                 </div>
+
+                {/* Footer */}
                 <div className="border-t border-border px-4 py-2">
-                  <Link to="/notifications" className="text-xs font-medium text-text hover:text-text-secondary block text-center" onClick={closeAll}>
+                  <Link
+                    data-test="notifications-view-all-link"
+                    to="/notifications"
+                    className="text-xs font-medium text-text hover:text-text-secondary block text-center"
+                    onClick={closeAll}
+                  >
                     View all notifications
                   </Link>
                 </div>
+
               </div>
             )}
           </div>
@@ -185,10 +290,15 @@ const MainNavbar = () => {
           <div ref={msgRef} className="relative">
             <button
               data-test="btn-messages"
-              onClick={() => toggle(setShowMessages)}
+              onClick={handleMessagesToggle}
               className="text-text-secondary hover:text-text transition-colors"
             >
               <Mail size={22} className="mt-2 hover:text-text-hover" />
+              {unreadMessages > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
+                </span>
+              )}
             </button>
 
             {showMessages && (
@@ -197,7 +307,21 @@ const MainNavbar = () => {
                   <h3 className="text-md font-medium text-text">Messages</h3>
                 </div>
                 <div className="py-2 max-h-[300px] overflow-y-auto">
-                  <div className="px-4 py-3 text-md text-text-muted text-center">No new messages</div>
+                  {conversationsLoading ? (
+                    <div className="px-4 py-3 text-md text-text-muted text-center">Loading messages...</div>
+                  ) : conversations.length === 0 ? (
+                    <div className="px-4 py-3 text-md text-text-muted text-center">No new messages</div>
+                  ) : (
+                    <div className="flex flex-col">
+                      {conversations.map((conversation) => (
+                        <ChatProfile
+                          key={conversation.id}
+                          conversation={conversation}
+                          onClick={() => { navigate(`/messages/${conversation.id}`); closeAll(); }}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="border-t border-border px-4 py-2">
                   <Link to="/messages" className="text-xs font-medium text-text hover:text-text-secondary block text-center" onClick={closeAll}>
@@ -223,15 +347,15 @@ const MainNavbar = () => {
                   <DropdownLink label="Upload" to="/upload" onClick={closeAll} />
                   <div className="border-t border-border my-1" />
                 </div>
-                <DropdownLink label="About us" to="/pages/contact" onClick={closeAll} />
-                <DropdownLink label="Legal" to="/terms-of-use" onClick={closeAll} />
-                <DropdownLink label="Copyright" to="/pages/copyright" onClick={closeAll} />
-                <DropdownLink label="Mobile apps" to="/download" onClick={closeAll} />
-                <DropdownLink label="Artist Membership" to="/creator/checkout" onClick={closeAll} />
+                <DropdownLink label="About us"          to="/pages/contact"          onClick={closeAll} />
+                <DropdownLink label="Legal"             to="/terms-of-use"           onClick={closeAll} />
+                <DropdownLink label="Copyright"         to="/pages/copyright"        onClick={closeAll} />
+                <DropdownLink label="Mobile apps"       to="/download"               onClick={closeAll} />
+                <DropdownLink label="Artist Membership" to="/creator/checkout"       onClick={closeAll} />
                 <div className="border-t border-border my-1" />
-                <DropdownLink label="Keyboard shortcuts" to="#" onClick={closeAll} />
-                <DropdownLink label="Subscription" to="/settings" onClick={closeAll} />
-                <DropdownLink label="Settings" to="/settings" onClick={closeAll} />
+                <DropdownLink label="Keyboard shortcuts" to="#"                      onClick={closeAll} />
+                <DropdownLink label="Subscription"      to="/settings"               onClick={closeAll} />
+                <DropdownLink label="Settings"          to="/settings"               onClick={closeAll} />
                 <div className="border-t border-border my-1" />
                 <button
                   data-test="btn-signout"
@@ -289,7 +413,7 @@ const MainNavbar = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-bg border-t border-border">
           <NavLink to="/discover" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Home</NavLink>
-          <NavLink to="/feed" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Feed</NavLink>
+          <NavLink to="/feed"     className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Feed</NavLink>
           <NavLink to="/you/library" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Library</NavLink>
           <div className="border-t border-border my-1" />
           <Link to="/creator/checkout" className="block px-4 py-3 text-md font-medium text-accent hover:text-accent-hover transition-colors" onClick={() => setIsMobileMenuOpen(false)}>

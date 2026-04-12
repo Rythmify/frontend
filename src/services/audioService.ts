@@ -5,7 +5,7 @@ import { usePlayerStore } from "../stores/player.store";
 export const audio = new Audio();
 (window as any).__globalAudio = audio;
 
-let currentLoadedId: number | null = null;
+let currentLoadedId: string | null = null;
 export let globalWaveSurfer: any = null;
 
 // When a direct seek is in progress (audio.currentTime set externally by WaveSurfer
@@ -29,7 +29,7 @@ export function setGlobalWaveSurfer(ws: any) {
   globalWaveSurfer = ws;
 }
 
-export function setTrackLoadedLocally(id: number) {
+export function setTrackLoadedLocally(id: string) {
   currentLoadedId = id;
 }
 

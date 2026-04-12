@@ -22,8 +22,8 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
     <div
       data-test={`chat-profile-${conversation.id}`}
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors rounded-sm  ${
-        isActive ? 'bg-black' : 'hover:bg-[#303030]'
+      className={`flex items-center gap-3 px-4 py-2 cursor-pointer transition-colors rounded-sm width-full ${
+        isActive ? 'bg-[#303030]' : 'hover:bg-[#303030]'
       }`}
     >
        
@@ -33,19 +33,21 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
     <span className="w-2.5 h-2.5 rounded-full bg-[#f50] block" />
   )}
 </div>
-        <img
-          src={participant.profile_picture}
-          alt={participant.display_name}
-          className="object-cover rounded-full w-11 h-11 "
-        />
-    
-       
+       {participant.profile_picture ? (
+  <img
+    src={participant.profile_picture}
+    alt={participant.display_name}
+    className="object-cover rounded-full w-11 h-11"
+  />
+) : (
+  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b] flex-shrink-0" />
+)}
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-0.5">
           <span
-            className={`text-sm truncate ${
+            className={`text-xs truncate ${
               unread_count > 0 ? 'font-bold text-white' : 'font-semibold text-white'
             }`}
           >
@@ -54,7 +56,7 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
           <span className="text-[#999] text-xs shrink-0">{timeAgo(updated_at)}</span>
         </div>
         <p
-          className={`text-sm truncate ${
+          className={`text-xs truncate ${
             unread_count > 0 ? 'text-[#ccc] font-medium' : 'text-[#999]'
           }`}
         >

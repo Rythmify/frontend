@@ -1,0 +1,133 @@
+// src/modules/feed/components/UserCard.tsx
+
+import { useNavigate } from "react-router-dom";
+import type { User } from "@/types/user";
+import FollowButton from "@/components/Profile/FollowButton/FollowButton";
+
+// ─── Props ────────────────────────────────────────────────
+interface UserCardProps {
+  user: User;
+  widthClassName?: string;
+}
+
+// ─── Styles ───────────────────────────────────────────────
+const styles = {
+  card: (widthClassName?: string) => `
+    group flex flex-col items-center gap-2
+    ${widthClassName ?? "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"}
+    cursor-pointer shrink-0
+  `,
+  avatarWrapper: `
+    relative w-full aspect-square
+    rounded-full overflow-hidden
+    bg-zinc-800
+  `,
+  avatar: `
+    w-full h-full object-cover
+    transition-all duration-200
+  `,
+  avatarPlaceholder: `
+    w-full h-full
+    bg-zinc-800
+    flex items-center justify-center
+    text-white text-4xl font-bold
+  `,
+  displayName: `
+    text-white text-sm font-semibold text-center
+    truncate w-full
+    flex items-center justify-center gap-1
+  `,
+  verifiedIcon: `
+    fa-solid fa-circle-check text-[#2196F3] text-xs
+    flex-shrink-0
+  `,
+  followers: `
+    text-gray-400 text-xs text-center
+    w-full
+    flex items-center justify-center gap-1
+  `,
+  followerIcon: `
+    fa-solid fa-user text-[10px]
+  `,
+};
+
+// ─── Utility Functions ────────────────────────────────────
+const formatFollowers = (count: number): string => {
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1)}M`;
+  }
+  if (count >= 1_000) {
+    return `${(count / 1_000).toFixed(1)}K`;
+  }
+  return count.toString();
+};
+
+const getInitial = (name: string): string => {
+  return name.charAt(0).toUpperCase();
+};
+
+// ─── Component ────────────────────────────────────────────
+const UserCard = ({ user, widthClassName }: UserCardProps) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/${user.username}`);
+  };
+
+  return (
+    <div
+      className={styles.card(widthClassName)}
+      onClick={handleClick}
+      data-test={`user-card-${user.username}`}
+    >
+      {/* Avatar */}
+      <div
+        className={styles.avatarWrapper}
+        data-test={`user-card-avatar-${user.username}`}
+      >
+        {user.avatar ? (
+          <img
+            src={user.avatar}
+            alt={user.displayName}
+            className={styles.avatar}
+          />
+        ) : (
+          <div className={styles.avatarPlaceholder}>
+            {getInitial(user.displayName)}
+          </div>
+        )}
+
+      </div>
+
+      {/* Display Name + Verified Badge */}
+      <div
+        className={styles.displayName}
+        data-test={`user-card-name-${user.username}`}
+      >
+        <span className="truncate">{user.displayName}</span>
+        {user.isVerified && (
+          <i
+            className={styles.verifiedIcon}
+            data-test={`user-card-verified-${user.username}`}
+          />
+        )}
+      </div>
+
+      {/* Follower Count with Icon */}
+      <p
+        className={styles.followers}
+        data-test={`user-card-followers-${user.username}`}
+      >
+        <i className={styles.followerIcon}></i>
+        <span>{formatFollowers(user.followers)} followers</span>
+      </p>
+
+      {/* Follow Button — visible on hover */}
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <FollowButton username={user.username} />
+      </div>
+    </div>
+  );
+};
+
+export default UserCard;
