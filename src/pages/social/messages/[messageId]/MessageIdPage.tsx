@@ -22,6 +22,7 @@ export default function MessageIdPage() {
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [showMobileChat, setShowMobileChat] = useState(false);
   const activeConv = conversations.find((c) => c.id === activeConvId) ?? null;
 
   // last message received from the participant (not sent by current user)
@@ -178,6 +179,7 @@ useEffect(() => {
   const handleSelectConversation = (conv: Conversation) => {
     navigate(`/messages/${conv.participant.id}`);
     loadConversation(conv);
+    setShowMobileChat(true);
   };
 
   // 5. On read state toggled — update unread_count in list to show/hide dot
@@ -190,54 +192,64 @@ useEffect(() => {
   };
 
   return (
-    <div
-      data-test="message-id-page"
-className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overflow-hidden "
+<div
+  data-test="message-id-page"
+  className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overflow-hidden"
 >
-      {/* ── Left: conversation list ── */}
-      <div className="flex flex-col w-95 flex-shrink-0 overflow-y-auto ">
-        <MessagingHeader />
-        <Chats
-          conversations={conversations}
-          loading={loadingConvs}
-          error={error}
-          activeConversationId={activeConvId}
-          onSelect={handleSelectConversation}
-        />
-      </div>
-
-      {/* ── Right: active conversation ── */}
-      <div className="flex flex-col flex-1  ml-6 min-w-0 ">
-        {activeConv ? (
-          <>
-            <ConversationHeader
-              conversationId={activeConv.id}
-              reciepiantId={activeConv.participant.id}
-              recipientName={activeConv.participant.username}
-              lastMessageId={lastReceivedMessage?.id ?? null}
-              onReadStateChange={handleReadStateChange}
-              onDeleted={handleConversationDeleted}
-            />
-            <SendMessageForm
-              conversationId={activeConv.id}
-              existingMessages={activeMessages}
-              loadingMessages={loadingMsgs}
-              onMessageSent={handleMessageSent}
-              isTyping={isTyping}
-              ParticipantInfo={{
-                display_name: activeConv.participant.display_name,
-                profile_picture: activeConv.participant.profile_picture,
-              }}
-            />
-          </>
-        ) : (
-          !loadingConvs && (
-            <div className="flex items-center justify-center flex-1 text-sm text-[#666]">
-              Select a conversation to start messaging.
-            </div>
-          )
-        )}
-      </div>
+  {/* ── Left: conversation list — hidden on mobile when chat is open ── */}
+  <div className={`${showMobileChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-85 shrink-0 sticky top-0 h-[calc(100vh-64px)]`}>
+    <MessagingHeader />
+    <div className="flex-1 min-h-0 overflow-y-auto">
+      <Chats
+        conversations={conversations}
+        loading={loadingConvs}
+        error={error}
+        activeConversationId={activeConvId}
+        onSelect={handleSelectConversation}
+      />
     </div>
+  </div>
+
+  {/* ── Right: active conversation — hidden on mobile when list is showing ── */}
+  <div className={`${showMobileChat ? 'flex' : 'hidden md:flex'} flex-col flex-1 md:ml-6 min-w-0`}>
+    {activeConv ? (
+      <>
+        {/* Header pinned — not sticky, just first child of flex column */}
+        <div className="shrink-0 bg-bg z-10">
+          <ConversationHeader
+            conversationId={activeConv.id}
+            reciepiantId={activeConv.participant.id}
+            recipientName={activeConv.participant.username}
+            lastMessageId={lastReceivedMessage?.id ?? null}
+            onReadStateChange={handleReadStateChange}
+            onDeleted={handleConversationDeleted}
+            onBack={() => setShowMobileChat(false)}
+          />
+        </div>
+
+        {/* Scrollable messages + input area */}
+        <div className="flex-1 overflow-y-auto">
+          <SendMessageForm
+            conversationId={activeConv.id}
+            existingMessages={activeMessages}
+            loadingMessages={loadingMsgs}
+            onMessageSent={handleMessageSent}
+            isTyping={isTyping}
+            ParticipantInfo={{
+              display_name: activeConv.participant.display_name,
+              profile_picture: activeConv.participant.profile_picture,
+            }}
+          />
+        </div>
+      </>
+    ) : (
+      !loadingConvs && (
+        <div className="flex items-center justify-center flex-1 text-sm text-[#666]">
+          Select a conversation to start messaging.
+        </div>
+      )
+    )}
+  </div>
+</div>
   );
 }
