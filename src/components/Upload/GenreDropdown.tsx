@@ -37,12 +37,18 @@ const GenreDropdown = ({
   value: string;
   onChange: (g: string) => void;
 }) => {
-  const [genres, setGenres] = useState<string[]>(DEFAULT_GENRES);
-
+  const [genres, setGenres] = useState<string[]>([]);
   useEffect(() => {
-    getGenres().then((fetched) => {
-      if (fetched.length > 0) setGenres(fetched);
-    });
+    getGenres()
+      .then((fetched) => {
+        if (Array.isArray(fetched) && fetched.length > 0) {
+          const genreNames = fetched.map((g: any) => g.name);
+          setGenres(genreNames);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch genres:", err);
+      });
   }, []);
 
   return (

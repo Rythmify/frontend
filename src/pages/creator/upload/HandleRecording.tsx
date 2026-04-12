@@ -1,6 +1,134 @@
 import React, { useEffect } from "react";
 import toWav from "../../../services/api/upload/audioTranscoder";
 
+const writeUint32LE = (view: DataView, offset: number, value: number) => {
+  view.setUint32(offset, value, true);
+};
+
+const writeUint16LE = (view: DataView, offset: number, value: number) => {
+  view.setUint16(offset, value, true);
+};
+
+const encodeWav = (audioBuffer: AudioBuffer) => {
+  const numChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const numFrames = audioBuffer.length;
+  const bitsPerSample = 16;
+  const bytesPerSample = bitsPerSample / 8;
+  const blockAlign = numChannels * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = numFrames * blockAlign;
+  const headerSize = 44;
+
+  const buffer = new ArrayBuffer(headerSize + dataSize);
+  const view = new DataView(buffer);
+
+  view.setUint8(0, 0x52);
+  view.setUint8(1, 0x49);
+  view.setUint8(2, 0x46);
+  view.setUint8(3, 0x46);
+  writeUint32LE(view, 4, 36 + dataSize);
+  view.setUint8(8, 0x57);
+  view.setUint8(9, 0x41);
+  view.setUint8(10, 0x56);
+  view.setUint8(11, 0x45);
+
+  view.setUint8(12, 0x66);
+  view.setUint8(13, 0x6d);
+  view.setUint8(14, 0x74);
+  view.setUint8(15, 0x20);
+  writeUint32LE(view, 16, 16);
+  writeUint16LE(view, 20, 1);
+  writeUint16LE(view, 22, numChannels);
+  writeUint32LE(view, 24, sampleRate);
+  writeUint32LE(view, 28, byteRate);
+  writeUint16LE(view, 32, blockAlign);
+  writeUint16LE(view, 34, bitsPerSample);
+
+  view.setUint8(36, 0x64);
+  view.setUint8(37, 0x61);
+  view.setUint8(38, 0x74);
+  view.setUint8(39, 0x61);
+  writeUint32LE(view, 40, dataSize);
+
+  const channels: Float32Array[] = [];
+  for (let channel = 0; channel < numChannels; channel += 1) {
+    channels.push(audioBuffer.getChannelData(channel));
+  }
+
+  for (let frame = 0; frame < numFrames; frame += 1) {
+    for (let channel = 0; channel < numChannels; channel += 1) {
+      const sample = Math.max(-1, Math.min(1, channels[channel][frame]));
+      const int16 = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+      view.setInt16(
+        44 + (frame * numChannels + channel) * 2,
+        int16,
+        true,
+      );
+    }
+  }
+
+  return buffer;
+};
+
+const mergeRecordedSegments = async (segments: Blob[]) => {
+  if (segments.length <= 1) {
+    return segments[0] ?? new Blob([], { type: "audio/ogg" });
+  }
+
+  if (typeof AudioContext === "undefined") {
+    return new Blob(segments, { type: segments[0]?.type ?? "audio/ogg" });
+  }
+
+  const audioContext = new AudioContext();
+
+  try {
+    const decodedSegments: AudioBuffer[] = [];
+
+    for (const segment of segments) {
+      const arrayBuffer = await segment.arrayBuffer();
+      decodedSegments.push(await audioContext.decodeAudioData(arrayBuffer));
+    }
+
+    const sampleRate = decodedSegments[0]?.sampleRate ?? audioContext.sampleRate;
+    const numberOfChannels = Math.max(
+      ...decodedSegments.map((buffer) => buffer.numberOfChannels),
+    );
+    const totalLength = decodedSegments.reduce(
+      (sum, buffer) => sum + buffer.length,
+      0,
+    );
+
+    const mergedBuffer = audioContext.createBuffer(
+      numberOfChannels,
+      totalLength,
+      sampleRate,
+    );
+
+    let offset = 0;
+    decodedSegments.forEach((buffer) => {
+      for (let channel = 0; channel < numberOfChannels; channel += 1) {
+        const target = mergedBuffer.getChannelData(channel);
+        const source =
+          channel < buffer.numberOfChannels ? buffer.getChannelData(channel) : null;
+
+        if (source) {
+          target.set(source, offset);
+        }
+      }
+
+      offset += buffer.length;
+    });
+
+    return new Blob([encodeWav(mergedBuffer)], { type: "audio/wav" });
+  } catch (error) {
+    console.error("Failed to merge recorded segments, using fallback blob:", error);
+    return new Blob(segments, { type: segments[0]?.type ?? "audio/ogg" });
+  } finally {
+    await audioContext.close();
+  }
+};
+
 interface HandleRecordingProps {
   isRecording: boolean;
   setIsRecording: (val: boolean) => void;
@@ -165,10 +293,7 @@ const HandleRecording = ({
 
     const segmentDuration = seconds - currentSegmentStart;
     const finalize = async (segments: Blob[]) => {
-      // Merge all recorded segments into one blob
-      const rawBlob = new Blob(segments, {
-        type: segments[0]?.type ?? "audio/ogg",
-      });
+      const rawBlob = await mergeRecordedSegments(segments);
 
       // Transcode to WAV so the backend can process it
       try {
