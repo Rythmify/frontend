@@ -5,7 +5,10 @@ import PlaylistActions from "../../../components/playlist/Made for you/PlaylistA
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import type { PlaylistDetails } from "@/services/api/playlist/playlist.service";
 import { getMixTracks } from "@/services/api/discover.service";
-import type { DiscoveryTrack, PersonalMix } from "@/services/api/discover.service";
+import type {
+  DiscoveryTrack,
+  PersonalMix,
+} from "@/services/api/discover.service";
 import { mockMixes, mockMixTracks } from "@/services/mocks/discover";
 import { getUsers } from "../../../services/mocks/User.service";
 import { usePlayerStore } from "../../../stores/player.store";
@@ -57,8 +60,12 @@ function MixForYouSlugPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { setTrack: setPlayerTrack, togglePlay, isPlaying, currentTrack } =
-    usePlayerStore();
+  const {
+    setTrack: setPlayerTrack,
+    togglePlay,
+    isPlaying,
+    currentTrack,
+  } = usePlayerStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -85,8 +92,7 @@ function MixForYouSlugPage() {
         if (cancelled) return;
 
         // Fallback to mock data so clicking mock mix cards always works
-        const mockMix =
-          mockMixes.find((m) => m.id === mixId) ?? mockMixes[0];
+        const mockMix = mockMixes.find((m) => m.id === mixId) ?? mockMixes[0];
         setPlaylist(mixToPlaylistDetails(mockMix, mockMixTracks));
 
         try {
@@ -157,6 +163,7 @@ function MixForYouSlugPage() {
           (currentTrack as any)?.context?.playlist_id === playlist.playlist_id
         }
         onPlayPause={handleHeroPlayPause}
+        showUploadButton={false}
       />
 
       <div className="container mx-auto">

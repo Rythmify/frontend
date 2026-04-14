@@ -66,6 +66,17 @@ describe("PlaylistHero", () => {
     ).toBeInTheDocument();
   });
 
+  it("hides the replace image button when showUploadButton is false", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero playlist={mockPlaylist} showUploadButton={false} />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.queryByTestId("button-upload-cover-hero-playlist"),
+    ).not.toBeInTheDocument();
+  });
+
   it("triggers file upload when replace image is clicked", () => {
     render(
       <MemoryRouter>
