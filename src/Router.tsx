@@ -236,7 +236,7 @@ export const router = createBrowserRouter([
             element: <Lazy component={PlaylistSlugPage} />,
           },
           {
-            path: "sets/:albumSlug",
+            path: "album/:albumSlug",
             element: <Lazy component={AlbumSlugPage} />,
           },
         ],
@@ -307,7 +307,7 @@ export const router = createBrowserRouter([
                 element: <Lazy component={PlaylistSlugPage} />,
               },
               {
-                path: "sets/:albumSlug",
+                path: "album/:albumSlug",
                 element: <Lazy component={AlbumSlugPage} />,
               },
             ],

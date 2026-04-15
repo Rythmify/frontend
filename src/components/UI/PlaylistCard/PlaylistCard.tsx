@@ -64,7 +64,9 @@ export default function PlaylistCard({
     
 
   // SoundCloud navigation format: /[username]/sets/[slug]
-  const playlistPath = `/${item.ownerUsername || item.owner}/sets/${item.slug || item.id}`;
+  const playlistPath = item.isAlbumView
+    ? `/${item.ownerUsername || item.owner}/album/${item.slug || item.id}`
+    : `/${item.ownerUsername || item.owner}/sets/${item.slug || item.id}`;
 
   const handlePlayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();

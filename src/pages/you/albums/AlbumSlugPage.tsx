@@ -14,9 +14,9 @@ import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 
 function AlbumSlugPage() {
-  const { username, playlistSlug } = useParams<{
+  const { username, albumSlug } = useParams<{
     username: string;
-    playlistSlug: string;
+    albumSlug: string;
   }>();
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
@@ -34,14 +34,14 @@ function AlbumSlugPage() {
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
-      if (!playlistSlug) return;
+      if (!albumSlug) return;
 
       setLoading(true);
       setError(null);
 
       try {
         const [playlistRes, fetchedUsers] = await Promise.all([
-          getPlaylist(playlistSlug, { include_tracks: true }),
+          getPlaylist(albumSlug, { include_tracks: true }),
           getUsers(),
         ]);
 
@@ -77,7 +77,7 @@ function AlbumSlugPage() {
     return () => {
       cancelled = true;
     };
-  }, [playlistSlug]);
+  }, [albumSlug]);
   const handleHeroPlayPause = () => {
     if (!playlist || !playlist.tracks.length) return;
 
