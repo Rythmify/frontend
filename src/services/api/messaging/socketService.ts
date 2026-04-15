@@ -5,9 +5,9 @@ let socket: Socket | null = null;
 export function connectSocket(token: string): void {
   if (socket?.connected) return; // already connected, do nothing
    console.log('[Socket] connectSocket called with token:', token);
-  socket = io('http://localhost:8080', {   
-  auth: { token: `Bearer ${token}` },
-  transports: ['websocket'],              // skip the HTTP polling fallback
+  socket = io('https://rythmify-backend-dev.livelypebble-6b7965ef.uaenorth.azurecontainerapps.io', {
+    auth: { token: `Bearer ${token}` },
+    transports: ['websocket'],              // skip the HTTP polling fallback
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 2000,

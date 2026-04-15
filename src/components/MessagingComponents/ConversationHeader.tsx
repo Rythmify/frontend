@@ -7,7 +7,7 @@ import { ReportModal } from '../UI/ReportModal'
 import { SpamModal } from '../UI/SpamModal'
 import { markMessageReadState } from '@/services/api/messaging/conversationApi'
 import { unblockUser } from '@/services/api/messaging/conversationApi'
-
+import Tooltip from '@/components/UI/Tooltip'
 interface ConversationHeaderProps {
   reciepiantId: string
   conversationId: string
@@ -15,6 +15,7 @@ interface ConversationHeaderProps {
   lastMessageId: string | null
   onReadStateChange: (isUnread: boolean) => void
   onDeleted?: (conversationId: string) => void
+  onBack?: () => void
 }
 
 const ConversationHeader = ({
@@ -24,15 +25,17 @@ const ConversationHeader = ({
   lastMessageId,
   onReadStateChange,
   onDeleted,
+  onBack,
 }: ConversationHeaderProps) => {
   const navigate = useNavigate()
 
-  const [isReportOpen, setIsReportOpen] = useState(false)
-  const [isSpamOpen, setIsSpamOpen]     = useState(false)
-  const [isBlockOpen, setIsBlockOpen]   = useState(false)
-  const [loadingRead, setLoadingRead]   = useState(false)
-  const [isUnread, setIsUnread]         = useState(false)
-  const [isBlocked, setIsBlocked]       = useState(false)
+  const [isReportOpen, setIsReportOpen]     = useState(false)
+  const [isSpamOpen, setIsSpamOpen]         = useState(false)
+  const [isBlockOpen, setIsBlockOpen]       = useState(false)
+  const [loadingRead, setLoadingRead]       = useState(false)
+  const [isUnread, setIsUnread]             = useState(false)
+  const [isBlocked, setIsBlocked]           = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     setIsUnread(false)
@@ -60,48 +63,105 @@ const ConversationHeader = ({
   }
 
   return (
-    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3 sticky top-0 bg-your-background-color z-10">
+    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3  top-0 bg-your-background-color z-[10] ">
 
+      {/* Left: back + name + [desktop: block + report] */}
       <div className="flex items-center gap-2 text-text">
+        {onBack && (
+          <button
+            data-test="conversation-back-button"
+            className="md:hidden p-2 text-white hover:text-text-secondary transition-colors"
+            onClick={onBack}
+          >
+            <i className="fa-solid fa-arrow-left" />
+          </button>
+        )}
         <button
           data-test="conversation-profile-button"
-          className="p-2 text-sm font-bold text-text hover:text-text-hover"
+          className="p-2 text-sm font-bold text-white hover:text-text-secondary transition-colors cursor-pointer"
           onClick={() => navigate(`/${recipientName}`)}
         >
           {recipientName}
         </button>
-
-        <button
-          data-test="conversation-block-button"
-          className="p-2 text-sm font-bold text-text-secondary hover:text-text-hover"
-          onClick={isBlocked ? handleUnblock : () => setIsBlockOpen(true)}
-        >
-          {isBlocked ? 'Unblock' : 'Block'}
-        </button>
-
-        <button
-          data-test="conversation-report-button"
-          className="p-2 text-sm font-bold text-text-secondary hover:text-text-hover"
-          onClick={() => setIsReportOpen(true)}
-        >
-          Report
-        </button>
+        {/* Desktop only */}
+        <div className="hidden md:flex items-center gap-2">
+          <Tooltip text="Block">
+            <button
+              data-test="conversation-block-button"
+              className="p-2 text-sm font-bold text-white hover:text-text-secondary transition-colors cursor-pointer"
+              onClick={isBlocked ? handleUnblock : () => setIsBlockOpen(true)}
+            >
+              {isBlocked ? 'Unblock' : 'Block'}
+            </button>
+          </Tooltip>
+          <Tooltip text="Report">
+            <button
+              data-test="conversation-report-button"
+              className="p-2 text-sm font-bold text-white hover:text-text-secondary transition-colors cursor-pointer"
+              onClick={() => setIsReportOpen(true)}
+            >
+              Report
+            </button>
+          </Tooltip>
+        </div>
       </div>
 
+      {/* Right: [desktop: mark as read] + delete + [mobile: ... menu] */}
       <div className="flex gap-2 items-center">
-        <button
-          onClick={handleToggleRead}
-          disabled={loadingRead || !lastMessageId}
-          className="px-4 py-2 text-sm font-bold text-text bg-bg-inverted rounded-sm border border-border hover:bg-input-bg disabled:opacity-50"
-        >
-          {isUnread ? 'Mark as read' : 'Mark as unread'}
-        </button>
-
-        <DeleteConversationButton
-          conversationId={conversationId}
-          participantId={reciepiantId}
-          onDeleted={onDeleted}
-        />
+        {/* Desktop only */}
+        <div className="hidden md:flex gap-2 items-center">
+          <Tooltip text="Mark as read/unread">
+            <button
+              onClick={handleToggleRead}
+              disabled={loadingRead || !lastMessageId}
+              className="px-2 py-1.5 text-sm font-bold text-white bg-input-bg rounded-sm border border-border hover:bg-input-bg disabled:opacity-50 hover:text-text-secondary"
+            >
+              {isUnread ? 'Mark as read' : 'Mark as unread'}
+            </button>
+          </Tooltip>
+        </div>
+        <Tooltip text="Archive this conversation">
+          <DeleteConversationButton
+            conversationId={conversationId}
+            participantId={reciepiantId}
+            onDeleted={onDeleted}
+          />
+        </Tooltip>
+        {/* Mobile only: ... menu */}
+        <div className="md:hidden relative">
+          <button
+            data-test="conversation-mobile-menu-btn"
+            onClick={() => setMobileMenuOpen(p => !p)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#2a2a2a] text-white hover:text-text-secondary transition-colors"
+          >
+            <i className="fa-solid fa-ellipsis" />
+          </button>
+          {mobileMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 bg-bg border border-border rounded-sm z-20 min-w-[180px] py-1 shadow-xl">
+              <button
+                data-test="conversation-block-button-mobile"
+                className="w-full text-left px-4 py-3 text-sm font-bold text-white hover:bg-[#2a2a2a] transition-colors"
+                onClick={() => { if (isBlocked) { handleUnblock(); } else { setIsBlockOpen(true); } setMobileMenuOpen(false); }}
+              >
+                {isBlocked ? 'Unblock' : 'Block'} {recipientName}
+              </button>
+              <button
+                data-test="conversation-report-button-mobile"
+                className="w-full text-left px-4 py-3 text-sm font-bold text-white hover:bg-[#2a2a2a] transition-colors"
+                onClick={() => { setIsReportOpen(true); setMobileMenuOpen(false) }}
+              >
+                Report {recipientName}
+              </button>
+              <button
+                disabled={loadingRead || !lastMessageId}
+                className="w-full text-left px-4 py-3 text-sm font-bold text-white hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
+                onClick={() => { handleToggleRead(); setMobileMenuOpen(false) }}
+              >
+                {isUnread ? 'Mark as read' : 'Mark as unread'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <Modal isOpen={isBlockOpen} onClose={() => setIsBlockOpen(false)}>

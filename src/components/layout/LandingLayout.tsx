@@ -1,12 +1,14 @@
 import { Outlet } from "react-router-dom";
 import Footer from "./Footer";
+import NoAuthNavbar from "./NoAuthNavbar";
 
 const LandingLayout = () => (
-  <div className="min-h-screen flex flex-col">
-    <main className="flex-1">
+  <div className=" mx-auto min-h-screen flex flex-col">
+    
+    <main className=" container px-20">
       <Outlet />
     </main>
-    <Footer />
+   
   </div>
 );
 

@@ -75,21 +75,20 @@ const NotificationsPage = () => {
 
   return (
     <div data-test="notifications-page" className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg">
-      <div className="flex gap-11 p-0">
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-11 p-0">
 
         {/* Main Content */}
-        <div className="flex flex-col gap-10 flex-[8] min-w-0 pt-10">
+        <div className="flex flex-col gap-8 lg:gap-10 flex-1 lg:flex-8 min-w-0 pt-6 lg:pt-10">
 
-            <NotificationHeader
-              selectedType={selectedType}
-              onTypeChange={handleTypeChange}
-            />
-        
+          <NotificationHeader
+            selectedType={selectedType}
+            onTypeChange={handleTypeChange}
+          />
 
           {status === 'loading' && <Spinner data-test="notifications-loading" />}
 
           {status === 'success' && (
-            <div data-test="notifications-list" className="flex flex-col">
+            <div data-test="notifications-list" className="flex flex-col gap-2">
               {notifications.map(n => (
                 <NotificationCard key={n.id} notification={n} showActions={true} data-test={`notification-card-${n.id}`} />
               ))}
@@ -100,8 +99,8 @@ const NotificationsPage = () => {
           {status === 'error'  && <p data-test="notifications-error">Something went wrong.</p>}
         </div>
 
-        {/* Sidebar */}
-        <div className="flex flex-col gap-6 flex-[2] ps-2 pt-8">
+        {/* Sidebar — hidden on mobile, visible on lg+ */}
+        <div className="hidden lg:flex flex-col gap-6 flex-2 ps-2 pt-8">
           <ArtistListSection
             title="RECENT FOLLOWERS"
             artists={recentFollowers}
