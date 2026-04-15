@@ -30,6 +30,8 @@ import {
   setTrackLoadedLocally,
 } from "../../services/audioService";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
+import * as engagementService from "../../services/engagement.service";
+
 
 // helpers
 
@@ -713,10 +715,6 @@ export default function TrackCard({
   const handleWaveformClick = useCallback(
     (ratio: number) => {
       if (!disableComments) setCommentRatio(ratio);
-      // Only load the track if it isn't active yet (inactive card clicked).
-      // When the track IS already active, CardWaveform already seeked
-      // audio.currentTime directly — touching the store here would call
-      // audio.play() via the subscriber and restart playback from scratch.
       if (!isActive) {
         setTrack(track);
       }
@@ -724,9 +722,39 @@ export default function TrackCard({
     [isActive, track, setTrack],
   );
 
-  const handleLike = () => {
-    setLiked((p) => !p);
-    setLikeCount((p) => (liked ? p - 1 : p + 1));
+  const handleLike = async () => {
+    const wasLiked = liked;
+    const newLiked = !wasLiked;
+    
+    // Optimistic update
+    setLiked(newLiked);
+    setLikeCount((p) => (wasLiked ? p - 1 : p + 1));
+
+    try {
+      if (newLiked) {
+        await engagementService.likeTrack(track.id);
+      } else {
+        await engagementService.unlikeTrack(track.id);
+      }
+    } catch (err) {
+      // Revert on failure
+      setLiked(wasLiked);
+      setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
+      console.error("Failed to update like status:", err);
+    }
+  };
+
+  const handleRepost = async () => {
+    // Optimistic update
+    setRepostCount((p) => p + 1);
+
+    try {
+      await engagementService.repostTrack(track.id);
+    } catch (err) {
+      // Revert on failure
+      setRepostCount((p) => p - 1);
+      console.error("Failed to repost track:", err);
+    }
   };
 
   return (
@@ -1124,7 +1152,7 @@ export default function TrackCard({
                     icon={<BiRepost size={18} />}
                     label={fmtN(repostCount)}
                     tooltip="Repost"
-                    onClick={() => {}}
+                    onClick={handleRepost}
                     data-test="track-card-btn-repost"
                   />
                   <ScBtn

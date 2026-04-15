@@ -20,6 +20,8 @@ import type { Track } from "../../types/track";
 import { usePlayerStore } from "../../stores/player.store";
 import { useAuthStore } from "../../stores/auth.store";
 import { audio, seekAudio, setGlobalWaveSurfer, setTrackLoadedLocally } from "../../services/audioService";
+import * as engagementService from "../../services/engagement.service";
+
 
 //  Helpers
 function fmtN(n?: number) {
@@ -298,6 +300,7 @@ export default function PlaylistComponent({
   const componentIsPlaying = isComponentActive && isPlaying;
 
   const [liked, setLiked] = useState(false);
+  const [reposted, setReposted] = useState(false);
   const [likeCount, setLikeCount] = useState(playlist.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(playlist.repostCount ?? 0);
   const [showSharePopup, setShowSharePopup] = useState(false);
@@ -323,7 +326,49 @@ export default function PlaylistComponent({
     setRepostCount(playlist.repostCount ?? 0);
   }, [playlist.likeCount, playlist.repostCount]);
 
-  const handleLike = () => { setLiked((p) => !p); setLikeCount((p) => liked ? p - 1 : p + 1); };
+  const handleLike = async () => {
+    const wasLiked = liked;
+    const newLiked = !wasLiked;
+
+    // Optimistic update
+    setLiked(newLiked);
+    setLikeCount((p) => (wasLiked ? p - 1 : p + 1));
+
+    try {
+      if (newLiked) {
+        await engagementService.likePlaylist(playlist.id);
+      } else {
+        await engagementService.unlikePlaylist(playlist.id);
+      }
+    } catch (err) {
+      // Revert on failure
+      setLiked(wasLiked);
+      setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
+      console.error("Failed to update playlist like status:", err);
+    }
+  };
+
+  const handleRepost = async () => {
+    const wasReposted = reposted;
+    const newReposted = !wasReposted;
+
+    // Optimistic update
+    setReposted(newReposted);
+    setRepostCount((p) => (wasReposted ? p - 1 : p + 1));
+
+    try {
+      if (newReposted) {
+        await engagementService.repostPlaylist(playlist.id);
+      } else {
+        await engagementService.removePlaylistRepost(playlist.id);
+      }
+    } catch (err) {
+      // Revert on failure
+      setReposted(wasReposted);
+      setRepostCount((p) => (wasReposted ? p + 1 : p - 1));
+      console.error("Failed to repost playlist:", err);
+    }
+  };
 
   /** Play/pause the whole playlist or resume/start the first track */
   const handlePlayPause = () => {
@@ -509,7 +554,7 @@ export default function PlaylistComponent({
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <ScBtn icon={<FaHeart size={13} />} label={fmtN(likeCount)} active={liked} tooltip="Like" onClick={handleLike} dataTest="playlist-component-btn-like" />
-            <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} tooltip="Repost" onClick={() => {}} dataTest="playlist-component-btn-repost" />
+            <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} active={reposted} tooltip="Repost" onClick={handleRepost} dataTest="playlist-component-btn-repost" />
             <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowSharePopup(true)} dataTest="playlist-component-btn-share" />
             <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} dataTest="playlist-component-btn-copy" />
             <ScBtn icon={<MdQueueMusic size={17} />} tooltip="Add to Next up" onClick={() => firstTrack && setTrack(firstTrack, playlist.tracks)} dataTest="playlist-component-btn-add-to-next" />

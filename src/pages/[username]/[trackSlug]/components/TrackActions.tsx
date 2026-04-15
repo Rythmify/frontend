@@ -13,14 +13,16 @@ import { HiUpload } from "react-icons/hi";
 import { IoSend } from "react-icons/io5";
 import SharePopup from "./SharePopup";
 import type { Track } from "../../../../types/track";
-import { likeTrack, unlikeTrack, repostTrack, postComment } from "../../../../services/mocks/Track.service";
+import * as engagementService from "../../../../services/engagement.service";
+import { postComment } from "../../../../services/track.service";
+import { usePlayerStore } from "../../../../stores/player.store";
 
 interface TrackActionsProps {
   track: Track;
   isLiked?: boolean;
   currentUserAvatar?: string;
   onAddToNextUp?: () => void;
-  onComment?: (text: string) => void;
+  onComment?: (text: string, timestampSec: number) => void;
 }
 
 export default function TrackActions({
@@ -56,43 +58,43 @@ export default function TrackActions({
 
   // Like - calls MSW ( /api/tracks/:id/like )
   const handleLike = async () => {
-    try {
-      if (liked) {
-        const res = await unlikeTrack(track.id);
-        setLiked(false);
-        setLikeCount(res.likeCount);
-      } else {
-        const res = await likeTrack(track.id);
-        setLiked(true);
-        setLikeCount(res.likeCount);
-      }
-    } catch {
-      // optimistic fallback
-      setLiked((p) => !p);
+  try {
+    if (liked) {
+      await engagementService.unlikeTrack(track.id);
+      setLiked(false);
+      setLikeCount((p) => p - 1);
+    } else {
+      await engagementService.likeTrack(track.id);
+      setLiked(true);
+      setLikeCount((p) => p + 1);
     }
-  };
+  } catch {
+    setLiked((p) => !p);
+  }
+};
 
   // Repost - calls MSW (/api/tracks/:id/repost) 
   const handleRepost = async () => {
+  try {
+    await engagementService.repostTrack(track.id);
+    setRepostCount((p) => p + 1);
+  } catch {
+    console.error("Repost failed");
+  }
+};
+
+  // Comment - calls MSW (/api/tracks/:id/comments)
+  const handleCommentSubmit = async () => {
+    if (!comment.trim()) return;
+    const currentTime = usePlayerStore.getState().currentTime;
     try {
-      const res = await repostTrack(track.id);
-      setRepostCount(res.repostCount);
+      // Internal service call if needed, but we pass it up to the parent
+      onComment?.(comment.trim(), Math.floor(currentTime));
+      setComment("");
     } catch {
-      console.error("Repost failed");
+      console.error("Comment failed");
     }
   };
-
-  // Comment - calls MSW (/api/tracks/:id/comments) => not sure i should implement it now or later 
-//   const handleCommentSubmit = async () => {
-//     if (!comment.trim()) return;
-//     try {
-//       await postComment(track.id, comment.trim(), 0);
-//       onComment?.(comment.trim());
-//       setComment("");
-//     } catch {
-//       console.error("Comment failed");
-//     }
-//   };
 
   const formatCount = (n: number | undefined) =>
     n == null ? "0" : n >= 1000 ? `${(n / 1000).toFixed(0)}K` : String(n);
@@ -105,7 +107,7 @@ export default function TrackActions({
         <div data-test="track-actions-wrapper" className="flex flex-col">
 
           {/* ── Comment Input ── */}
-          {/* <div data-test="comment-input-row" className="flex items-center gap-3 py-3">
+          <div data-test="comment-input-row" className="flex items-center gap-3 py-3">
             <img
               src={currentUserAvatar}
               alt="Your avatar"
@@ -143,7 +145,7 @@ export default function TrackActions({
                 <IoSend className="text-base text-[var(--color-text-muted)] group-hover:text-white transition-colors duration-150" />
               </button>
             </div>
-          </div> */}
+          </div>
 
           {/* Action Icons + Stats*/}
           <div

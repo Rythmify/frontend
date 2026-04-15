@@ -5,21 +5,19 @@ import TrackActions from "./components/TrackActions";
 import TrackList from "./components/TrackList";
 import TrackSidebar from "./components/TrackSidebar";
 import type { Track } from "../../../types/track";
-import type { MockUser } from "../../../services/mocks/users";
-import { getTrackBySlug, getRelatedTracks } from "../../../services/mocks/Track.service";
-import { getUsers } from "../../../services/mocks/User.service";
+import { getTrackById, getRelatedTracks, getTrackComments, postComment } from "../../../services/track.service";
 import { usePlayerStore } from "../../../stores/player.store";
 
 export default function TrackSlugPage() {
-  const { username = "samo-lotfy", trackSlug = "msh-awl-mara" } = useParams<{
+  const { username, trackId } = useParams<{
     username: string;
-    trackSlug: string;
+    trackId: string;
   }>();
   const navigate = useNavigate();
 
   const [track, setTrack] = useState<Track | null>(null);
   const [relatedTracks, setRelatedTracks] = useState<Track[]>([]);
-  const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
+  const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,22 +32,27 @@ export default function TrackSlugPage() {
     let cancelled = false;
 
     async function fetchData() {
+      if (!trackId) {
+        setError("Track not found.");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
-        const [fetchedTrack, fetchedUsers] = await Promise.all([
-          getTrackBySlug(username, trackSlug),
-          getUsers(),
-        ]);
+        const fetchedTrack = await getTrackById(trackId);
 
         if (cancelled) return;
 
         setTrack(fetchedTrack);
-        setFeaturedArtists(Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : []);
 
         // Fetch related tracks after we have the track id
         const related = await getRelatedTracks(String(fetchedTrack.id));
         if (!cancelled) setRelatedTracks(Array.isArray(related) ? related : []);
+
+        const fetchedComments = await getTrackComments(String(fetchedTrack.id));
+        if (!cancelled) setComments(Array.isArray(fetchedComments) ? fetchedComments : []);
       } catch (err) {
         if (!cancelled) setError("Failed to load track. Please try again.");
         console.error(err);
@@ -60,7 +63,7 @@ export default function TrackSlugPage() {
 
     fetchData();
     return () => { cancelled = true; };
-  }, [username, trackSlug]);
+  }, [username, trackId]);
 
   // Playback handlers 
   const handleHeroPlayPause = () => {
@@ -77,7 +80,16 @@ export default function TrackSlugPage() {
       usePlayerStore.getState().togglePlay();
     } else {
       setPlayerTrack(t, [track!, ...relatedTracks].filter(Boolean) as Track[]);
-      navigate(`/${t.artistUsername}/${t.trackSlug}`);
+      navigate(`/${t.artistUsername}/${t.id}`);
+    }
+  };
+
+  const handleComment = async (text: string, timestampSec: number) => {
+    if (!track) return;
+    try {
+      await postComment(String(track.id), text, timestampSec);
+    } catch (err) {
+      console.error("Failed to post comment:", err);
     }
   };
 
@@ -136,7 +148,7 @@ export default function TrackSlugPage() {
       {heroTrack && (
         <TrackHero
           track={heroTrack}
-          comments={[]}
+          comments={comments}
           isPlaying={currentTrack?.id === heroTrack.id && isPlaying}
           onPlayPause={handleHeroPlayPause}
         />
@@ -150,7 +162,7 @@ export default function TrackSlugPage() {
           <TrackActions
             track={heroTrack ?? track}
             onAddToNextUp={() => usePlayerStore.getState().addToQueue(track)}
-            onComment={(text) => console.log("New comment:", text)}
+            onComment={handleComment}
           />
           <div className="mt-6">
             <h2 className="text-[var(--color-text-muted)] text-xs uppercase tracking-widest font-semibold mb-2">
@@ -172,7 +184,7 @@ export default function TrackSlugPage() {
         >
           <TrackSidebar
             track={heroTrack ?? track}
-            featuredArtists={featuredArtists}
+            featuredArtists={[]}
           />
         </div>
 
