@@ -1,7 +1,7 @@
 import axiosInstance from "../axiosInstance";
 
 function isUUID(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
     id,
   );
 }
@@ -332,4 +332,14 @@ export async function getPlaylistShareLink(playlistId: string) {
     message: string;
   }>(`/playlists/${playlistId}/share-link`);
   return res.data;
+}
+
+/** POST /playlists/{playlist_id}/repost */
+export async function repostPlaylist(playlistId: string) {
+  return axiosInstance.post(`/playlists/${playlistId}/repost`);
+}
+
+/** DELETE /playlists/{playlist_id}/repost */
+export async function removePlaylistRepost(playlistId: string) {
+  return axiosInstance.delete(`/playlists/${playlistId}/repost`);
 }

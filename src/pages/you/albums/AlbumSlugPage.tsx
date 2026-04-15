@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "@/components/playlist/Made for you/PlaylistSidebarForYou";
-import PlaylistActions from "@/components/playlist/Made for you/PlaylistActionsForYou";
+import PlaylistActions from "@/components/playlist/Album/PlaylistActionsAlbum";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   getPlaylist,

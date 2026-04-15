@@ -1081,7 +1081,7 @@ export const playlistHandlers = [
 
     let body: { track_id: string; position?: number };
     try {
-      body = (await request.clone().json()) as typeof body;
+      body = (await request.json()) as typeof body;
     } catch {
       return HttpResponse.json(
         {
@@ -1178,5 +1178,23 @@ export const playlistHandlers = [
       data: { embed_url: embedUrl, iframe_html: iframeHtml },
       message: "Playlist embed code generated successfully.",
     });
+  }),
+  
+// Mock POST Repost
+  http.post("*/playlists/:playlistId/repost", ({ params }) => {
+    return HttpResponse.json({
+      data: {
+        repost_id: "mock-repost-id",
+        user_id: "current-user-id",
+        playlist_id: params.playlistId,
+        created_at: new Date().toISOString()
+      },
+      message: "Playlist reposted successfully."
+    }, { status: 201 });
+  }),
+
+  // Mock DELETE Repost
+  http.delete("*/playlists/:playlistId/repost", () => {
+    return new HttpResponse(null, { status: 204 });
   }),
 ];

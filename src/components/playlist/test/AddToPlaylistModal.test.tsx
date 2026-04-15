@@ -59,7 +59,7 @@ vi.mock("../CreatePlaylistTab", () => ({
 
 const mockPlaylists = [
   {
-    playlist_id: "pl-1",
+    playlist_id: "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
     name: "Playlist One",
     track_count: 5,
     is_public: true,
@@ -70,7 +70,7 @@ const mockPlaylists = [
 ];
 
 const baseProps = {
-  trackId: "t-1",
+  trackId: "e5f6a7b8-c9d0-4123-8fab-567890abcdef",
   trackTitle: "Song Title",
   trackCoverUrl: "https://example.com/t1.jpg",
   artistName: "Artist Name",
@@ -121,10 +121,17 @@ describe("AddToPlaylistModal", () => {
 
   it("calls addTrackToPlaylist when adding to existing playlist", async () => {
     render(<AddToPlaylistModal {...baseProps} />);
-    await waitFor(() => screen.getByTestId("add-pl-1"));
-    fireEvent.click(screen.getByTestId("add-pl-1"));
     await waitFor(() =>
-      expect(addTrackToPlaylist).toHaveBeenCalledWith("pl-1", "t-1"),
+      screen.getByTestId("add-8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa"),
+    );
+    fireEvent.click(
+      screen.getByTestId("add-8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa"),
+    );
+    await waitFor(() =>
+      expect(addTrackToPlaylist).toHaveBeenCalledWith(
+        "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
+        "e5f6a7b8-c9d0-4123-8fab-567890abcdef",
+      ),
     );
   });
 
@@ -141,15 +148,22 @@ describe("AddToPlaylistModal", () => {
 
   it("fetches playlist tracks when playlistId is provided (whole playlist mode)", async () => {
     vi.mocked(getPlaylist).mockResolvedValueOnce({
-      data: { tracks: [], playlist_id: "src-pl" },
+      data: {
+        tracks: [],
+        playlist_id: "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
+      },
     } as any);
     render(
       <AddToPlaylistModal
         {...baseProps}
         trackId={undefined}
-        playlistId="src-pl"
+        playlistId="8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa"
       />,
     );
-    await waitFor(() => expect(getPlaylist).toHaveBeenCalledWith("src-pl"));
+    await waitFor(() =>
+      expect(getPlaylist).toHaveBeenCalledWith(
+        "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
+      ),
+    );
   });
 });
