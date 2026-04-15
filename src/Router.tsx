@@ -109,6 +109,7 @@ const InsightsPage = lazy(() => import("@/pages/you/insights/InsightsPage"));
 const PlaylistSlugPage = lazy(
   () => import("@/pages/you/sets/PlaylistSlugPage"),
 );
+const AlbumSlugPage = lazy(() => import("@/pages/you/albums/AlbumSlugPage"));
 
 // Settings
 const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage"));
@@ -234,6 +235,10 @@ export const router = createBrowserRouter([
             path: "sets/:playlistSlug",
             element: <Lazy component={PlaylistSlugPage} />,
           },
+          {
+            path: "sets/:albumSlug",
+            element: <Lazy component={AlbumSlugPage} />,
+          },
         ],
       },
     ],
@@ -296,10 +301,14 @@ export const router = createBrowserRouter([
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
 
-              // Track Slug / Playlist Slug view
+              // Track Slug / Playlist Slug/ Album view
               {
                 path: "sets/:playlistSlug",
                 element: <Lazy component={PlaylistSlugPage} />,
+              },
+              {
+                path: "sets/:albumSlug",
+                element: <Lazy component={AlbumSlugPage} />,
               },
             ],
           },

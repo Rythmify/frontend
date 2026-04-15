@@ -9,6 +9,7 @@ import {
   type Playlist,
 } from "@/services/api/playlist/playlist.service";
 import SetsHeader from "@/components/playlist/SetsHeader";
+import { useAuthStore } from "@/stores/auth.store";
 
 // Responsive width to match your skeleton and UI requirements
 const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
@@ -32,6 +33,7 @@ export default function SetsPage() {
   const [likedPlaylists, setLikedPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuthStore();
 
   const filterOptions = ["All", "Created", "Liked"];
 
@@ -45,8 +47,8 @@ export default function SetsPage() {
           getMyPlaylists({ limit: 50 }),
           getLikedPlaylists({ limit: 50 }),
         ]);
-        setCreatedPlaylists(created.data.items);
-        setLikedPlaylists(liked.data.items);
+        setCreatedPlaylists(created.data.items.filter((p) => !p.is_album_view));
+        setLikedPlaylists(liked.data.items.filter((p) => !p.is_album_view));
       } catch (err) {
         setError("Failed to load your library. Please try again.");
         console.error(err);
@@ -85,6 +87,8 @@ export default function SetsPage() {
     id: p.playlist_id,
     title: p.name,
     owner: p.owner_user_id,
+    ownerUsername:
+      user && p.owner_user_id === user.id ? user.username : undefined,
     coverUrl: p.cover_image || null,
     isPrivate: !p.is_public,
     isLiked: likedPlaylists.some((lp) => lp.playlist_id === p.playlist_id),
