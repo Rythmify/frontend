@@ -3,7 +3,10 @@ import { useParams } from "react-router-dom";
 import PlaylistSidebar from "../../../components/playlist/Made for you/PlaylistSidebarForYou";
 import PlaylistActions from "../../../components/playlist/Made for you/PlaylistActionsForYou";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
-import type { PlaylistDetails } from "@/services/api/playlist/playlist.service";
+import {
+  type PlaylistDetails,
+  type PlaylistTrackItem,
+} from "@/services/api/playlist/playlist.service";
 import { getMixTracks } from "@/services/api/discover.service";
 import type {
   DiscoveryTrack,
@@ -15,37 +18,44 @@ import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+import { useAuthStore } from "@/stores/auth.store";
 
 // ─── Mapper ───────────────────────────────────────────────
-
+const [user] = useAuthStore((state) => [state.user]);
 function mixToPlaylistDetails(
   mix: PersonalMix,
   tracks: DiscoveryTrack[],
 ): PlaylistDetails {
   return {
     playlist_id: mix.id,
-    owner_user_id: "",
+    owner_user_id: user?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
     name: mix.label ?? "Mix",
     description: null,
-    is_public: false,
+    is_public: true,
     cover_image: mix.cover_image ?? null,
     created_at: mix.generated_at,
     updated_at: null,
     track_count: mix.track_count,
     like_count: 0,
     repost_count: 0,
-    tracks: tracks.map((t, i) => ({
-      track_id: t.id,
-      position: i,
-      added_at: t.created_at,
-      title: t.title,
-      duration: t.duration ?? null,
-      cover_image: t.cover_image ?? null,
-      artist_name: t.artist_name ?? null,
-      artist_id: t.user_id,
-      is_public: true,
-      deleted_at: null,
-    })),
+    // We map discovery fields to playlist fields
+    tracks: tracks.map(
+      (t, i) =>
+        ({
+          track_id: t.id,
+          position: i + 1,
+          added_at: t.created_at,
+          title: t.title,
+          duration: t.duration ?? null,
+          cover_image: t.cover_image ?? null,
+          artist_name: t.artist_name ?? null,
+          artist_id: t.user_id,
+          is_public: true,
+          deleted_at: null,
+          audio_url: t.stream_url,
+          play_count: t.play_count,
+        }) as PlaylistTrackItem & { audio_url?: string; play_count?: number },
+    ),
   };
 }
 
@@ -53,7 +63,7 @@ function mixToPlaylistDetails(
 
 function MixForYouSlugPage() {
   const { mixSlug } = useParams<{ mixSlug: string }>();
-  const mixId = mixSlug?.split(":").slice(1).join(":") ?? "";
+  const mixId = mixSlug?.includes(":") ? mixSlug.split(":").pop() : mixSlug;
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
@@ -86,25 +96,15 @@ function MixForYouSlugPage() {
 
         setPlaylist(mixToPlaylistDetails(mix, tracks));
         setFeaturedArtists(
-          Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
+          Array.isArray(fetchedUsers)
+            ? (fetchedUsers as MockUser[]).slice(0, 3)
+            : [],
         );
-      } catch {
+      } catch (err) {
         if (cancelled) return;
 
-        // Fallback to mock data so clicking mock mix cards always works
         const mockMix = mockMixes.find((m) => m.id === mixId) ?? mockMixes[0];
         setPlaylist(mixToPlaylistDetails(mockMix, mockMixTracks));
-
-        try {
-          const fetchedUsers = await getUsers();
-          if (!cancelled) {
-            setFeaturedArtists(
-              Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
-            );
-          }
-        } catch {
-          // leave featuredArtists empty
-        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -116,37 +116,14 @@ function MixForYouSlugPage() {
     };
   }, [mixId]);
 
-  const handleHeroPlayPause = () => {
-    if (!playlist || !playlist.tracks.length) return;
-
-    const firstTrack = playlist.tracks[0];
-    const playerTrack = toPlayerTrack(firstTrack);
-    const queue = playlist.tracks.map(toPlayerTrack);
-    const isThisPlaying =
-      (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
-
-    if (isThisPlaying) {
-      togglePlay();
-    } else {
-      setPlayerTrack(
-        {
-          ...playerTrack,
-          context: {
-            type: "playlist",
-            playlist_id: playlist.playlist_id,
-            queue: playlist.tracks.map((t) => t.track_id),
-          },
-        } as any,
-        queue,
-      );
-    }
-  };
-
-  const toPlayerTrack = (track: (typeof playlist)["tracks"][number]) => ({
+  // Convert playlist tracks to Player format
+  const toPlayerTrack = (
+    track: PlaylistTrackItem & { audio_url?: string; play_count?: number },
+  ) => ({
     id: track.track_id,
     title: track.title ?? "Untitled track",
     artistName: track.artist_name ?? "Unknown Artist",
-    artistUsername: track.artist_username ?? "",
+    artistUsername: "",
     coverUrl: track.cover_image ?? "",
     genre: "",
     likeCount: 0,
@@ -163,13 +140,39 @@ function MixForYouSlugPage() {
     isPrivate: !track.is_public,
   });
 
-  const handleTrackPlay = (track: (typeof playlist)["tracks"][number]) => {
+  const handleHeroPlayPause = () => {
+    if (!playlist || !playlist.tracks.length) return;
+
+    const tracks = playlist.tracks as any[];
+    const firstTrack = tracks[0];
+    const playerTrack = toPlayerTrack(firstTrack);
+    const queue = tracks.map(toPlayerTrack);
+
+    const isThisPlaying =
+      (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
+
+    if (isThisPlaying) {
+      togglePlay();
+    } else {
+      setPlayerTrack(
+        {
+          ...playerTrack,
+          context: {
+            type: "playlist",
+            playlist_id: playlist.playlist_id,
+            queue: tracks.map((t) => t.track_id),
+          },
+        } as any,
+        queue,
+      );
+    }
+  };
+
+  const handleTrackPlay = (track: any) => {
+    if (!playlist) return;
+
     const playerTrack = toPlayerTrack(track);
-    const playlistContext = {
-      type: "playlist",
-      playlist_id: playlist?.playlist_id,
-      queue: playlist?.tracks.map((t) => t.track_id) ?? [],
-    };
+    const tracks = playlist.tracks as any[];
 
     if (currentTrack?.id === playerTrack.id) {
       togglePlay();
@@ -179,9 +182,13 @@ function MixForYouSlugPage() {
     setPlayerTrack(
       {
         ...playerTrack,
-        context: playlistContext,
+        context: {
+          type: "playlist",
+          playlist_id: playlist.playlist_id,
+          queue: tracks.map((t) => t.track_id),
+        },
       } as any,
-      playlist?.tracks.map(toPlayerTrack) ?? [],
+      tracks.map(toPlayerTrack),
     );
   };
 

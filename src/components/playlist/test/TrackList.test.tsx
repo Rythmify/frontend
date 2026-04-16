@@ -33,6 +33,8 @@ const mockTracks = [
     artist_username: "ua",
     play_count: 100,
     duration: 120,
+    position: 1,
+    added_at: "2026-04-17T00:00:00Z", 
   },
   {
     track_id: "t2",
@@ -41,6 +43,8 @@ const mockTracks = [
     artist_username: "ub",
     play_count: 200,
     duration: 180,
+    position: 2, 
+    added_at: "2026-04-17T00:00:00Z", 
   },
 ];
 
