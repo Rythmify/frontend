@@ -71,6 +71,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Track One",
         artist_name: "Artist A",
         cover_image: "https://picsum.photos/seed/track-one/300/300",
+        duration: 225,
       },
     ],
   },
@@ -119,6 +120,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Track Two",
         artist_name: "Artist B",
         cover_image: "https://picsum.photos/seed/track-2/300/300",
+        duration: 200,
       },
     ],
     slug: "gym-hits",
@@ -142,6 +144,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Sahar El Leil",
         artist_name: "Artist C",
         cover_image: "https://picsum.photos/seed/track-6/300/300",
+        duration: 203,
       },
       {
         track_id: TRACK_IDS.t7,
@@ -149,6 +152,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-01T12:02:00Z",
         title: "Hayatak Maaky",
         artist_name: "Artist C",
+        duration: 186,
       },
       {
         track_id: TRACK_IDS.t8,
@@ -156,6 +160,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-01T12:03:00Z",
         title: "Nedaa El Qalb",
         artist_name: "Artist D",
+        duration: 194,
       },
       {
         track_id: TRACK_IDS.t9,
@@ -163,6 +168,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-01T12:04:00Z",
         title: "Mawgood",
         artist_name: "Artist D",
+        duration: 210,
       },
       {
         track_id: TRACK_IDS.t10,
@@ -170,6 +176,7 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-01T12:05:00Z",
         title: "Dawam",
         artist_name: "Artist E",
+        duration: 220,
       },
     ],
     slug: "summer-2026",
@@ -192,6 +199,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Shababek'",
         artist_name: "Artist F",
         cover_image: "https://picsum.photos/seed/track-3/300/300",
+        duration: 205,
       },
       {
         track_id: TRACK_IDS.t5,
@@ -200,6 +208,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Elwa2t Eldaye3",
         artist_name: "Artist F",
         cover_image: "https://picsum.photos/seed/track-5/300/300",
+        duration: 198,
       },
       {
         track_id: TRACK_IDS.t6,
@@ -208,6 +217,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Sahar El Leil",
         artist_name: "Artist C",
         cover_image: "https://picsum.photos/seed/track-6/300/300",
+        duration: 203,
       },
     ],
     slug: "late-night-chills",
@@ -546,6 +556,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-10T10:01:00Z",
         title: "Track One",
         artist_name: "Artist A",
+        duration: 225,
       },
     ],
     slug: "chill-house-mix",
@@ -606,6 +617,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-05T20:01:00Z",
         title: "Seneen",
         artist_name: "Artist G",
+        duration: 200,
       },
       {
         track_id: TRACK_IDS.t6,
@@ -613,6 +625,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-05T20:02:00Z",
         title: "Sahar El Leil",
         artist_name: "Artist C",
+        duration: 203,
       },
       {
         track_id: TRACK_IDS.t8,
@@ -620,6 +633,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-05T20:03:00Z",
         title: "Nedaa El Qalb",
         artist_name: "Artist D",
+        duration: 194,
       },
       {
         track_id: TRACK_IDS.t9,
@@ -627,6 +641,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-05T20:04:00Z",
         title: "Mawgood",
         artist_name: "Artist D",
+        duration: 210,
       },
     ],
   },
@@ -647,6 +662,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-02-20T11:01:00Z",
         title: "Shababek'",
         artist_name: "Artist F",
+        duration: 205,
       },
       {
         track_id: TRACK_IDS.t5,
@@ -654,6 +670,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-02-20T11:02:00Z",
         title: "Elwa2t Eldaye3",
         artist_name: "Artist F",
+        duration: 198,
       },
       {
         track_id: TRACK_IDS.t8,
@@ -661,6 +678,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-02-20T11:03:00Z",
         title: "Nedaa El Qalb",
         artist_name: "Artist D",
+        duration: 194,
       },
     ],
   },

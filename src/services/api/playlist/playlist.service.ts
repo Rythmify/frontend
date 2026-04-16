@@ -97,6 +97,27 @@ export interface PlaylistTracksPage {
   };
 }
 
+export function formatDuration(totalSeconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function getPlaylistTotalDuration(tracks: PlaylistTrackItem[]) {
+  const totalSeconds = tracks.reduce((sum, track) => {
+    return sum + (track.duration ?? 0);
+  }, 0);
+
+  return formatDuration(totalSeconds);
+}
+
 // ─── Playlist API functions ───────────────────────────────────────────────────
 
 /** POST /playlists — create a new playlist */

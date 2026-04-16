@@ -9,12 +9,17 @@ vi.mock("@/stores/auth.store", () => ({
 }));
 
 const mockPlaylist = {
-  playlist_id: "pl-1",
+  playlist_id: "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
   name: "Electronic Mix",
   is_public: true,
   track_count: 12,
   owner_user_id: "Mariam",
   cover_image: "cover.jpg",
+  tracks: [
+    { track_id: "11111111-1111-1111-1111-111111111111", duration: 225 },
+    { track_id: "22222222-2222-2222-2222-222222222222", duration: 200 },
+    { track_id: "33333333-3333-3333-3333-333333333333", duration: 194 },
+  ],
 } as any;
 
 describe("PlaylistHero", () => {
@@ -26,6 +31,7 @@ describe("PlaylistHero", () => {
     );
     expect(screen.getByText("Electronic Mix")).toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();
+    expect(screen.getByText("10:19")).toBeInTheDocument();
   });
 
   it("calls onPlayPause when the hero play button is clicked", () => {

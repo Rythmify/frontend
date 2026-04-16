@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { FaPlay, FaPause, FaLock } from "react-icons/fa";
-import type { Playlist } from "@/services/api/playlist/playlist.service";
+import {
+  getPlaylistTotalDuration,
+  type PlaylistDetails,
+} from "@/services/api/playlist/playlist.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRef, useState, useEffect } from "react";
 interface Comment {
@@ -10,7 +13,7 @@ interface Comment {
 }
 
 interface PlaylistHeroProps {
-  playlist: Playlist;
+  playlist: PlaylistDetails;
   isPlaying?: boolean;
   onPlayPause?: () => void;
   onImageUpload?: (file: File) => void;
@@ -116,9 +119,8 @@ export default function PlaylistHero({
             <span className="text-[14px] uppercase font-bold text-text-upload mt-1">
               Tracks
             </span>
-            {/* Total duration placeholder - usually calculated from tracks list */}
             <span className="text-[14px] text-text-secondary mt-1">
-              1:06:29
+              {getPlaylistTotalDuration(playlist.tracks)}
             </span>
           </div>
         </div>
