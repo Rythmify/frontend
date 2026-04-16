@@ -3,6 +3,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import TrackList from "../TrackList";
+import { repostTrack } from "@/services/mocks/Track.service";
 
 vi.mock("@/pages/[username]/[trackSlug]/components/SharePopup", () => ({
   default: ({ onClose }: any) => (
@@ -10,6 +11,18 @@ vi.mock("@/pages/[username]/[trackSlug]/components/SharePopup", () => ({
       <button onClick={onClose}>Close</button>
     </div>
   ),
+}));
+
+vi.mock("../AddToPlaylistModal", () => ({
+  default: ({ onClose }: any) => (
+    <div data-test="add-to-playlist-modal">
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}));
+
+vi.mock("@/services/mocks/Track.service", () => ({
+  repostTrack: vi.fn().mockResolvedValue({ reposted: true, repostCount: 1 }),
 }));
 
 const mockTracks = [
@@ -69,7 +82,7 @@ describe("TrackList", () => {
         <TrackList tracks={mockTracks} currentTrackId="t1" />
       </MemoryRouter>,
     );
-    const activeRow = container.querySelector(".bg-white\\/\\[0\\.08\\]");
+    const activeRow = container.querySelector(".bg-\\[\\#303030\\]");
     expect(activeRow).toBeInTheDocument();
   });
 
@@ -96,6 +109,35 @@ describe("TrackList", () => {
     const shareBtn = screen.getAllByTestId("button-share-track")[0];
     fireEvent.click(shareBtn);
     expect(screen.getByTestId("share-popup")).toBeInTheDocument();
+  });
+
+  it("opens add to playlist modal from the more menu", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <TrackList tracks={mockTracks} />
+      </MemoryRouter>,
+    );
+
+    const firstRow = container.querySelector(".group") as HTMLElement;
+    fireEvent.mouseEnter(firstRow);
+    fireEvent.click(screen.getAllByTestId("button-more-track-t1")[0]);
+    fireEvent.click(screen.getByTestId("dropdown-playlist-track-t1"));
+
+    expect(screen.getByTestId("add-to-playlist-modal")).toBeInTheDocument();
+  });
+
+  it("calls repostTrack when repost is clicked", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <TrackList tracks={mockTracks} />
+      </MemoryRouter>,
+    );
+
+    const firstRow = container.querySelector(".group") as HTMLElement;
+    fireEvent.mouseEnter(firstRow);
+    fireEvent.click(screen.getAllByTestId("button-repost-track-t1")[0]);
+
+    expect(repostTrack).toHaveBeenCalledWith("t1");
   });
 
   it("renders empty state safely", () => {
