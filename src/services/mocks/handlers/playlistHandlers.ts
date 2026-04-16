@@ -121,6 +121,7 @@ const mockPlaylists: PlaylistDetails[] = [
         cover_image: "https://picsum.photos/seed/track-2/300/300",
       },
     ],
+    slug: "gym-hits",
   },
   {
     playlist_id: "eeee3333-4444-5555-6666-cccccccccccc",
@@ -171,6 +172,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_name: "Artist E",
       },
     ],
+    slug: "summer-2026",
   },
   {
     playlist_id: "ffff4444-5555-6666-7777-dddddddddddd",
@@ -208,6 +210,7 @@ const mockPlaylists: PlaylistDetails[] = [
         cover_image: "https://picsum.photos/seed/track-6/300/300",
       },
     ],
+    slug: "late-night-chills",
   },
 
   // ─── Generated Mixes (IDs must match mockMixes in discoverHandlers) ──────────
@@ -272,6 +275,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_id: "d4e5f6a7-b8c9-4013-bd23-234567890123",
       },
     ],
+    slug: "mix-1",
   },
   {
     playlist_id: "66666666-6666-4666-8666-666666666666",
@@ -333,6 +337,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
       },
     ],
+    slug: "mix-2",
   },
   {
     playlist_id: "77777777-7777-4777-8777-777777777777",
@@ -394,6 +399,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_id: "b2c3d4e5-f6a7-4891-9cde-f01234567891",
       },
     ],
+    slug: "mix-3",
   },
   {
     playlist_id: "88888888-8888-4888-8888-888888888888",
@@ -455,6 +461,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_id: "c3d4e5f6-a7b8-4902-ad12-123456789012",
       },
     ],
+    slug: "mix-4",
   },
   {
     playlist_id: "99999999-9999-4999-8999-999999999999",
@@ -541,6 +548,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         artist_name: "Artist A",
       },
     ],
+    slug: "chill-house-mix",
   },
   {
     playlist_id: "like2222-bbbb-cccc-dddd-222222222222",
@@ -553,6 +561,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
     like_count: 210,
     cover_image: "https://picsum.photos/seed/arabic-classics/300/300",
     tracks: [],
+    slug: "arabic-classics",
   },
   {
     playlist_id: "like3333-cccc-dddd-eeee-333333333333",
@@ -565,6 +574,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
     like_count: 445,
     cover_image: "https://picsum.photos/seed/lofi-study/300/300",
     tracks: [],
+    slug: "lofi-study",
   },
   {
     playlist_id: "like4444-dddd-eeee-ffff-444444444444",
@@ -1071,7 +1081,8 @@ export const playlistHandlers = [
 
     let body: { track_id: string; position?: number };
     try {
-      body = (await request.clone().json()) as typeof body;
+      const rawBody = await request.text();
+      body = JSON.parse(rawBody) as typeof body;
     } catch {
       return HttpResponse.json(
         {
@@ -1168,5 +1179,23 @@ export const playlistHandlers = [
       data: { embed_url: embedUrl, iframe_html: iframeHtml },
       message: "Playlist embed code generated successfully.",
     });
+  }),
+  
+// Mock POST Repost
+  http.post("*/playlists/:playlistId/repost", ({ params }) => {
+    return HttpResponse.json({
+      data: {
+        repost_id: "mock-repost-id",
+        user_id: "current-user-id",
+        playlist_id: params.playlistId,
+        created_at: new Date().toISOString()
+      },
+      message: "Playlist reposted successfully."
+    }, { status: 201 });
+  }),
+
+  // Mock DELETE Repost
+  http.delete("*/playlists/:playlistId/repost", () => {
+    return new HttpResponse(null, { status: 204 });
   }),
 ];

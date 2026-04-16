@@ -14,6 +14,7 @@ interface PlaylistHeroProps {
   isPlaying?: boolean;
   onPlayPause?: () => void;
   onImageUpload?: (file: File) => void;
+  showUploadButton?: boolean;
 }
 
 export default function PlaylistHero({
@@ -21,6 +22,7 @@ export default function PlaylistHero({
   isPlaying = false,
   onPlayPause,
   onImageUpload,
+  showUploadButton = true,
 }: PlaylistHeroProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
@@ -134,24 +136,25 @@ export default function PlaylistHero({
             alt={playlist.name}
             className="w-64 h-64 lg:w-80 lg:h-80 object-cover shadow-2xl rounded-md border border-white/5"
           />
-
-          {/* Upload Button */}
-          <div className="absolute inset-0 transition-all flex flex-col justify-end items-center pb-4">
-            <button
-              data-test="button-upload-cover-hero-playlist"
-              onClick={handleUploadClick}
-              className="flex items-center gap-2 bg-bg hover:text-[#717171] text-white text-sm font-bold py-2.5 px-3 rounded-sm transition-colors cursor-pointer"
-            >
-              Replace image
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              accept="image/*"
-              onChange={handleFileChange}
-            />
-          </div>
+          {/*Show Upload Button*/}
+          {showUploadButton ? (
+            <div className="absolute inset-0 transition-all flex flex-col justify-end items-center pb-4">
+              <button
+                data-test="button-upload-cover-hero-playlist"
+                onClick={handleUploadClick}
+                className="flex items-center gap-2 bg-bg hover:text-[#717171] text-white text-sm font-bold py-2.5 px-3 rounded-sm transition-colors cursor-pointer"
+              >
+                Replace image
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileChange}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

@@ -15,10 +15,12 @@ export type PlaylistCardData = {
   id: string;
   title: string;
   owner: string;
+  ownerUsername?: string;
   slug?: string | null;
   coverUrl: string | null;
   isPrivate?: boolean;
   isLiked?: boolean;
+  isAlbumView?: boolean;
 };
 
 interface PlaylistCardProps {
@@ -58,11 +60,13 @@ export default function PlaylistCard({
 
   const ownerDisplay = UUID_RE.test(item.owner)
     ? (user?.displayName ?? user?.username ?? item.owner)
-    : item.owner;
+    : item.ownerUsername?? item.owner;
     
 
   // SoundCloud navigation format: /[username]/sets/[slug]
-  const playlistPath = `/${user?.username?? item.owner}/sets/${item.slug || item.id}`;
+  const playlistPath = item.isAlbumView
+    ? `/${item.ownerUsername || item.owner}/album/${item.slug || item.id}`
+    : `/${item.ownerUsername || item.owner}/sets/${item.slug || item.id}`;
 
   const handlePlayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
