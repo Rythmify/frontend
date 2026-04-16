@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "@/components/playlist/Made for you/PlaylistSidebarForYou";
 import PlaylistActions from "@/components/playlist/Album/PlaylistActionsAlbum";
+import AlbumOwnerInfo from "@/components/playlist/Album/AlbumOwnerInfo";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   getPlaylist,
@@ -25,6 +26,7 @@ function AlbumSlugPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
+  const [albumOwner, setAlbumOwner] = useState<MockUser | null>(null);
 
   const {
     setTrack: setPlayerTrack,
@@ -54,6 +56,13 @@ function AlbumSlugPage() {
         setFeaturedArtists(
           Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
         );
+
+        const owner =
+          fetchedUsers.find((user) => user.username === username) ??
+          fetchedUsers.find((user) => user.displayName === username) ??
+          null;
+
+        setAlbumOwner(owner);
       } catch (err) {
         console.error(err);
 
@@ -65,8 +74,16 @@ function AlbumSlugPage() {
             setFeaturedArtists(
               Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
             );
+
+            const owner =
+              fetchedUsers.find((user) => user.username === username) ??
+              fetchedUsers.find((user) => user.displayName === username) ??
+              null;
+
+            setAlbumOwner(owner);
           } catch {
             setFeaturedArtists([]);
+            setAlbumOwner(null);
           }
         }
       } finally {
@@ -158,7 +175,7 @@ function AlbumSlugPage() {
   if (loading)
     return (
       <div className="animate-pulse p-20 text-center text-white">
-        Loading playlist...
+        Loading album...
       </div>
     );
   if (error || !playlist)
@@ -193,7 +210,14 @@ function AlbumSlugPage() {
               }
             />
 
-            <div className="mt-8">
+            <div className="flex flex-1 gap-6 mt-8">
+              <AlbumOwnerInfo
+                trackNum={playlist.tracks.length}
+                followers={albumOwner?.followerCount ?? 0}
+                username={username ?? playlist.owner_user_id}
+                displayName={albumOwner?.displayName}
+                avatarUrl={albumOwner?.avatarUrl}
+              />
               <TrackList
                 tracks={playlist.tracks}
                 currentTrackId={currentTrack?.id}
@@ -208,6 +232,8 @@ function AlbumSlugPage() {
             <PlaylistSidebar
               featuredArtists={featuredArtists}
               playlist={playlist}
+              showLikes={true}
+              showReposts={true}
             />
             <GuestPageFooter />
           </div>

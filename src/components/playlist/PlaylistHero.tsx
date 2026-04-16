@@ -97,8 +97,8 @@ export default function PlaylistHero({
             <div className="bg-bg px-4 py-1.5">
               <p className="text-[17px] text-text-upload hover:text-[#484848] font-bold cursor-pointer transition-colors">
                 {user?.displayName === playlist.owner_user_id
-                  ? "You"
-                  : user?.displayName}
+                  ? user?.displayName
+                  : playlist.owner_user_id}
               </p>
             </div>
           </div>
