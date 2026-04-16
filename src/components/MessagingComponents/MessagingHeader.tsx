@@ -6,12 +6,12 @@ function MessagingHeader() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div className="container">
-    <div className="flex items-center justify-between pt-5 mb-10 w-0.5 gap-49">
+    <div className="container sticky">
+    <div className="flex items-center justify-between pt-5 mb-3  ">
       <h1 className="text-2xl font-bold text-white weight-500">Messages</h1>
 
       <button
-        className="p-2 text-sm font-bold text-black border bg-text-hover rounded-[5px] w-14 hover:text-grey-300"
+        className="p-2 text-sm font-bold text-black border bg-text-hover rounded-[5px] w-14 hover:text-text-secondary transition-colors cursor-pointer "
         onClick={() => setIsOpen(true)}
       >
         New

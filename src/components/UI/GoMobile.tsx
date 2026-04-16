@@ -2,7 +2,7 @@
 const styles = {
   wrapper: `flex flex-col gap-6`,
   // Go Mobile Section
-  goMobileContainer: `flex flex-col gap-3 w-[320px]`,
+  goMobileContainer: `flex flex-col gap-3 w-full`,
   title: `text-xs font-semibold text-left text-white`,
   buttonRow: `flex gap-3`,
   storeButton: `
@@ -15,7 +15,7 @@ const styles = {
   subtitle: `text-[8px] text-white`,
   storeName: `text-xs font-bold text-white`,
   // Footer Section
-  footerContainer: `flex flex-col gap-2 w-[320px]`,
+  footerContainer: `flex flex-col gap-2 w-full`,
   footerLinks: `flex flex-wrap gap-x-1 gap-y-1 text-xs text-text-secondary`,
   linkWrapper: `flex items-center gap-1`,
   link: `cursor-pointer hover:underline hover:text-text`,
