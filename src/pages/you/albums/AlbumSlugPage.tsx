@@ -9,7 +9,11 @@ import {
   type PlaylistDetails,
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
-import { getUsers } from "../../../services/mocks/User.service";
+import {
+  getUserById,
+  getUsers,
+  type PublicUser,
+} from "../../../services/mocks/User.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../services/mocks/users";
@@ -26,7 +30,7 @@ function AlbumSlugPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
-  const [albumOwner, setAlbumOwner] = useState<MockUser | null>(null);
+  const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
 
   const {
     setTrack: setPlayerTrack,
@@ -57,12 +61,12 @@ function AlbumSlugPage() {
           Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
         );
 
-        const owner =
-          fetchedUsers.find((user) => user.username === username) ??
-          fetchedUsers.find((user) => user.displayName === username) ??
-          null;
-
-        setAlbumOwner(owner);
+        try {
+          const owner = await getUserById(playlistRes.data.owner_user_id);
+          if (!cancelled) setAlbumOwner(owner);
+        } catch {
+          if (!cancelled) setAlbumOwner(null);
+        }
       } catch (err) {
         console.error(err);
 
@@ -74,13 +78,6 @@ function AlbumSlugPage() {
             setFeaturedArtists(
               Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
             );
-
-            const owner =
-              fetchedUsers.find((user) => user.username === username) ??
-              fetchedUsers.find((user) => user.displayName === username) ??
-              null;
-
-            setAlbumOwner(owner);
           } catch {
             setFeaturedArtists([]);
             setAlbumOwner(null);
@@ -192,11 +189,13 @@ function AlbumSlugPage() {
     >
       {/* Hero Section using the fetched playlist data */}
       <PlaylistHero
+        key={playlist.playlist_id}
         playlist={playlist}
         isPlaying={isAlbumActive}
         activeTrackId={currentTrack?.id}
         onPlayPause={handleHeroPlayPause}
         showUploadButton={false}
+        ownerUsername={albumOwner?.username}
       />
 
       <div className="container mx-auto">
@@ -213,10 +212,12 @@ function AlbumSlugPage() {
             <div className="flex flex-1 gap-6 mt-8">
               <AlbumOwnerInfo
                 trackNum={playlist.tracks.length}
-                followers={albumOwner?.followerCount ?? 0}
-                username={username ?? playlist.owner_user_id}
-                displayName={albumOwner?.displayName}
-                avatarUrl={albumOwner?.avatarUrl}
+                followers={albumOwner?.followers_count ?? 0}
+                username={
+                  albumOwner?.username ?? username ?? playlist.owner_user_id
+                }
+                displayName={albumOwner?.display_name ?? undefined}
+                avatarUrl={albumOwner?.profile_picture}
               />
               <TrackList
                 tracks={playlist.tracks}

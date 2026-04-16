@@ -12,7 +12,7 @@ interface PlaylistDetails extends Playlist {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MOCK_OWNER_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+const MOCK_OWNER_ID = "1";
 const SECRET_TOKEN = "mock-secret-token-xyz";
 
 const TRACK_IDS = {

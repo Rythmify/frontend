@@ -11,6 +11,7 @@ interface PlaylistHeroProps {
   onPlayPause?: () => void;
   onImageUpload?: (file: File) => void;
   showUploadButton?: boolean;
+  ownerUsername?: string | null;
 }
 
 export default function PlaylistHero({
@@ -20,6 +21,7 @@ export default function PlaylistHero({
   onPlayPause,
   onImageUpload,
   showUploadButton = true,
+  ownerUsername,
 }: PlaylistHeroProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
@@ -32,7 +34,7 @@ export default function PlaylistHero({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   useEffect(() => {
     setPreviewUrl(null);
-  }, [playlist.cover_image]);
+  },  [playlist.playlist_id]);;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -96,9 +98,9 @@ export default function PlaylistHero({
             {/* "Playlist owner" */}
             <div className="bg-bg px-4 py-1.5">
               <p className="text-[17px] text-text-upload hover:text-[#484848] font-bold cursor-pointer transition-colors">
-                {user?.displayName === playlist.owner_user_id
+                {user?.username === ownerUsername || user?.id === playlist.owner_user_id
                   ? user?.displayName
-                  : playlist.owner_user_id}
+                  : ownerUsername || playlist.owner_user_id}
               </p>
             </div>
           </div>
