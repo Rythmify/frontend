@@ -115,7 +115,7 @@ function AlbumSlugPage() {
 
   return (
     <div
-      data-test="playlist-slug-page"
+      data-test="album-slug-page"
       className="flex-1 w-full bg-bg min-h-screen"
     >
       {/* Hero Section using the fetched playlist data */}

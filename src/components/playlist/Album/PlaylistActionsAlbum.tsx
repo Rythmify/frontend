@@ -52,7 +52,10 @@ export default function PlaylistActions({
 
   return (
     <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
-      <div className="flex flex-row items-center gap-2 py-4">
+      <div
+        className="flex flex-row items-center gap-2 py-4"
+        data-test="album-playlist-actions"
+      >
         {/* Like Button */}
         <ActionButton
           onClick={() =>
@@ -65,6 +68,7 @@ export default function PlaylistActions({
           }
           active={liked}
           label="Like"
+          dataTest="album-action-like"
         >
           <FaHeart
             className={`text-[14px] ${liked ? "text-accent" : "text-white"}`}
@@ -78,6 +82,7 @@ export default function PlaylistActions({
           active={reposted}
           className={isOwner ? "opacity-50 cursor-not-allowed" : ""}
           label="Repost"
+          dataTest="album-action-repost"
         >
           <BiRepost
             className={`text-[20px] ${reposted ? "text-accent" : "text-white"}`}
@@ -85,7 +90,12 @@ export default function PlaylistActions({
         </ActionButton>
 
         {/* Share Button */}
-        <ActionButton onClick={() => setShareOpen(true)} active={shareOpen} label="Share">
+        <ActionButton
+          onClick={() => setShareOpen(true)}
+          active={shareOpen}
+          label="Share"
+          dataTest="album-action-share"
+        >
           <LuShare className="text-[16px]" />
         </ActionButton>
         
@@ -93,12 +103,17 @@ export default function PlaylistActions({
         <ActionButton
           onClick={() => navigator.clipboard.writeText(window.location.href)}
           label="Copy link"
+          dataTest="album-action-copy-link"
         >
           <LuCopy className="text-[16px]" />
         </ActionButton>
 
         {/* Add to Next up */}
-        <ActionButton onClick={onAddToNextUp} label="Add to Next up">
+        <ActionButton
+          onClick={onAddToNextUp}
+          label="Add to Next up"
+          dataTest="album-action-add-to-next-up"
+        >
           <LuListEnd className="text-[18px]" />
         </ActionButton>
 
@@ -118,17 +133,20 @@ function ActionButton({
   active = false,
   className = "",
   label, 
+  dataTest,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
   className?: string;
   label?: string; 
+  dataTest?: string;
 }) {
   return (
     <Tooltip.Root>
       <Tooltip.Trigger asChild>
         <button
+          data-test={dataTest}
           onClick={onClick}
           className={`
             flex items-center gap-2 px-3 py-1.5 h-[32px]
