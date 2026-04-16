@@ -1,20 +1,13 @@
-import { Link } from "react-router-dom";
 import { FaPlay, FaPause, FaLock } from "react-icons/fa";
-import {
-  getPlaylistTotalDuration,
-  type PlaylistDetails,
-} from "@/services/api/playlist/playlist.service";
+import { type PlaylistDetails } from "@/services/api/playlist/playlist.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRef, useState, useEffect } from "react";
-interface Comment {
-  id: number;
-  avatarUrl: string;
-  timestamp: number;
-}
+import PlaylistStatsWaveform from "./PlaylistStatsWaveform";
 
 interface PlaylistHeroProps {
   playlist: PlaylistDetails;
   isPlaying?: boolean;
+  activeTrackId?: string;
   onPlayPause?: () => void;
   onImageUpload?: (file: File) => void;
   showUploadButton?: boolean;
@@ -23,6 +16,7 @@ interface PlaylistHeroProps {
 export default function PlaylistHero({
   playlist,
   isPlaying = false,
+  activeTrackId,
   onPlayPause,
   onImageUpload,
   showUploadButton = true,
@@ -110,19 +104,13 @@ export default function PlaylistHero({
           </div>
         </div>
 
-        {/* Bottom Section: Circular Stats Badge */}
-        <div className="flex items-end">
-          <div className="w-24 h-24 rounded-full bg-bg flex flex-col items-center justify-center">
-            <span className="text-[28px] font-bold leading-none text-text-upload">
-              {playlist.track_count}
-            </span>
-            <span className="text-[14px] uppercase font-bold text-text-upload mt-1">
-              Tracks
-            </span>
-            <span className="text-[14px] text-text-secondary mt-1">
-              {getPlaylistTotalDuration(playlist.tracks)}
-            </span>
-          </div>
+        {/* Bottom Section: Circular Stats Badge + Comments */}
+        <div className="flex items-end w-full">
+          <PlaylistStatsWaveform
+            playlist={playlist}
+            isPlaying={isPlaying}
+            activeTrackId={activeTrackId}
+          />
         </div>
       </div>
 

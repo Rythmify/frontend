@@ -73,6 +73,7 @@ const mockPlaylists: PlaylistDetails[] = [
         cover_image: "https://picsum.photos/seed/track-one/300/300",
         duration: 225,
         audio_url: "/audio/Track 1.mp3",
+        play_count: 12840,
       },
     ],
   },
@@ -148,6 +149,7 @@ const mockPlaylists: PlaylistDetails[] = [
         cover_image: "https://picsum.photos/seed/track-6/300/300",
         duration: 203,
         audio_url: "/audio/Track 3.mp3",
+        play_count: 12840,
       },
       {
         track_id: TRACK_IDS.t7,
@@ -157,6 +159,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_name: "Artist C",
         duration: 186,
         audio_url: "/audio/Track 4.mp3",
+        play_count: 840,
       },
       {
         track_id: TRACK_IDS.t8,
@@ -166,6 +169,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_name: "Artist D",
         duration: 194,
         audio_url: "/audio/Track 5.mp3",
+        play_count: 9340,
       },
       {
         track_id: TRACK_IDS.t9,
@@ -218,6 +222,7 @@ const mockPlaylists: PlaylistDetails[] = [
         cover_image: "https://picsum.photos/seed/track-5/300/300",
         duration: 198,
         audio_url: "/audio/Track 4.mp3",
+        play_count: 9340,
       },
       {
         track_id: TRACK_IDS.t6,
@@ -228,6 +233,7 @@ const mockPlaylists: PlaylistDetails[] = [
         cover_image: "https://picsum.photos/seed/track-6/300/300",
         duration: 203,
         audio_url: "/audio/Track 5.mp3",
+        play_count: 120,
       },
     ],
     slug: "late-night-chills",

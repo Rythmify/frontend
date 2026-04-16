@@ -1,12 +1,26 @@
 import { describe, it, expect, vi } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PlaylistHero from "../PlaylistHero";
+
+vi.mock("@/services/mocks/Track.service", () => ({
+  getTrackComments: vi.fn().mockResolvedValue([
+    { id: 1, avatarUrl: "https://picsum.photos/seed/comment-a/40/40", timestamp: 18 },
+    { id: 2, avatarUrl: "https://picsum.photos/seed/comment-b/40/40", timestamp: 64 },
+  ]),
+}));
 
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: () => ({ user: { displayName: "Mariam", username: "mariam" } }),
 }));
+
+vi.mock(
+  "@/pages/[username]/[trackSlug]/components/TrackWaveform",
+  () => ({
+    default: () => <div data-test="mock-playlist-waveform" />,
+  }),
+);
 
 const mockPlaylist = {
   playlist_id: "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
@@ -32,6 +46,9 @@ describe("PlaylistHero", () => {
     expect(screen.getByText("Electronic Mix")).toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();
     expect(screen.getByText("10:19")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("mock-playlist-waveform"),
+    ).not.toBeInTheDocument();
   });
 
   it("calls onPlayPause when the hero play button is clicked", () => {
@@ -110,6 +127,38 @@ describe("PlaylistHero", () => {
     const file = new File(["foo"], "photo.png", { type: "image/png" });
     fireEvent.change(input, { target: { files: [file] } });
     expect(onUpload).toHaveBeenCalledWith(file);
+  });
+
+  it("shows comment avatars when the playlist is playing an active track", async () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={mockPlaylist}
+          isPlaying
+          activeTrackId="11111111-1111-1111-1111-111111111111"
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("playlist-comment-avatars")).toBeInTheDocument(),
+    );
+    expect(screen.getAllByAltText("commenter")).toHaveLength(2);
+  });
+
+  it("shows the waveform and hides the circular stats when playing", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={mockPlaylist}
+          isPlaying
+          activeTrackId="11111111-1111-1111-1111-111111111111"
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId("mock-playlist-waveform")).toBeInTheDocument();
+    expect(screen.queryByText("Tracks")).not.toBeInTheDocument();
   });
 
 });

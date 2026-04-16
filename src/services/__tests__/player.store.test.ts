@@ -56,7 +56,7 @@ describe("player.store", () => {
     it("sets currentTrack and starts playing", () => {
       usePlayerStore.getState().setTrack(track1);
       const { currentTrack, isPlaying } = usePlayerStore.getState();
-      expect(currentTrack?.id).toBe(1);
+      expect(currentTrack?.id).toBe(track1.id);
       expect(isPlaying).toBe(true);
     });
 

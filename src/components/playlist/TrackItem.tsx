@@ -176,9 +176,7 @@ function TrackItem({
           <span className="text-[var(--color-text-muted)] text-sm shrink-0">
             ·
           </span>
-          <span
-            className={`text-sm font-bold truncate ${playbackTitleClass}`}
-          >
+          <span className={`text-sm font-bold truncate ${playbackTitleClass}`}>
             {track.title ?? "Untitled track"}
           </span>
         </div>
@@ -272,8 +270,21 @@ function TrackItem({
           </div>
 
           <span
-            className={`text-xs text-text-muted tabular-nums w-14 text-right transition-opacity duration-150 ${hovered ? "opacity-0" : "opacity-100"}`}
+            className={`inline-flex items-center justify-end gap-1 px-2 text-[11px] text-text-muted tabular-nums w-14 text-right transition-opacity duration-150 ${
+              hovered ? "opacity-0" : "opacity-100"
+            }`}
           >
+            <svg
+              viewBox="0 0 16 16"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              className="w-3 h-3 shrink-0" 
+            >
+              <path
+                d="M12.322 7.576a.5.5 0 0 1 0 .848l-6.557 4.098A.5.5 0 0 1 5 12.098V3.902a.5.5 0 0 1 .765-.424l6.557 4.098Z"
+                fill="currentColor"
+              ></path>
+            </svg>
             {formatCount(playCount)}
           </span>
         </div>

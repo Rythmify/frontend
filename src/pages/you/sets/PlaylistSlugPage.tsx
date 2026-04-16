@@ -67,21 +67,25 @@ function PlaylistSlugPage() {
     if (!playlist || !playlist.tracks.length) return;
 
     const firstTrack = playlist.tracks[0];
+    const playerTrack = toPlayerTrack(firstTrack);
+    const queue = playlist.tracks.map(toPlayerTrack);
     const isThisPlaylistPlaying =
       (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
 
     if (isThisPlaylistPlaying) {
       togglePlay();
     } else {
-      // Set the first track and provide the playlist context for the queue
-      setPlayerTrack({
-        id: firstTrack.track_id,
-        context: {
-          type: "playlist",
-          playlist_id: playlist.playlist_id,
-          queue: playlist.tracks.map((t) => t.track_id),
-        },
-      } as any);
+      setPlayerTrack(
+        {
+          ...playerTrack,
+          context: {
+            type: "playlist",
+            playlist_id: playlist.playlist_id,
+            queue: playlist.tracks.map((t) => t.track_id),
+          },
+        } as any,
+        queue,
+      );
     }
   };
 
@@ -109,14 +113,30 @@ function PlaylistSlugPage() {
   const handleTrackPlay = (track: PlaylistTrackItem) => {
     const playerTrack = toPlayerTrack(track);
     const queue = playlist?.tracks.map(toPlayerTrack) ?? [];
+    const playlistContext = {
+      type: "playlist",
+      playlist_id: playlist?.playlist_id,
+      queue: playlist?.tracks.map((t) => t.track_id) ?? [],
+    };
 
     if (currentTrack?.id === playerTrack.id) {
       togglePlay();
       return;
     }
 
-    setPlayerTrack(playerTrack, queue);
+    setPlayerTrack(
+      {
+        ...playerTrack,
+        context: playlistContext,
+      } as any,
+      queue,
+    );
   };
+
+  const isPlaylistActive =
+    isPlaying &&
+    !!playlist &&
+    playlist.tracks.some((track) => track.track_id === currentTrack?.id);
 
   if (loading)
     return (
@@ -139,10 +159,8 @@ function PlaylistSlugPage() {
       {/* Hero Section using the fetched playlist data */}
       <PlaylistHero
         playlist={playlist}
-        isPlaying={
-          isPlaying &&
-          (currentTrack as any)?.context?.playlist_id === playlist.playlist_id
-        }
+        isPlaying={isPlaylistActive}
+        activeTrackId={currentTrack?.id}
         onPlayPause={handleHeroPlayPause}
       />
 

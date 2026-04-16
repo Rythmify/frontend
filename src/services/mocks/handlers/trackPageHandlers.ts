@@ -122,6 +122,48 @@ const mockTracksJson: Track[] = [
   },
 ];
 
+const mockTrackComments: Record<
+  string,
+  { id: number; avatarUrl: string; timestamp: number }[]
+> = {
+  "198d5f30-8c20-4e0f-9a95-367f08e8b0b1": [
+    {
+      id: 1,
+      avatarUrl: "https://picsum.photos/seed/comment-a/40/40",
+      timestamp: 18,
+    },
+    {
+      id: 2,
+      avatarUrl: "https://picsum.photos/seed/comment-b/40/40",
+      timestamp: 64,
+    },
+    {
+      id: 3,
+      avatarUrl: "https://picsum.photos/seed/comment-c/40/40",
+      timestamp: 132,
+    },
+  ],
+  "3f92b0c1-4d32-4861-a034-78e920d5f1a2": [
+    {
+      id: 4,
+      avatarUrl: "https://picsum.photos/seed/comment-d/40/40",
+      timestamp: 30,
+    },
+    {
+      id: 5,
+      avatarUrl: "https://picsum.photos/seed/comment-e/40/40",
+      timestamp: 118,
+    },
+  ],
+  "7c9e1d20-b3a1-4f0e-8d2a-567c8b9d0e1f": [
+    {
+      id: 6,
+      avatarUrl: "https://picsum.photos/seed/comment-f/40/40",
+      timestamp: 52,
+    },
+  ],
+};
+
 export const trackPageHandlers = [
   http.get(`${BASE}/tracks`, () => {
     return HttpResponse.json(mockTracksJson);
@@ -171,8 +213,8 @@ export const trackPageHandlers = [
     });
   }),
 
-  http.get(`${BASE}/tracks/:id/comments`, () => {
-    return HttpResponse.json([]);
+  http.get(`${BASE}/tracks/:id/comments`, ({ params }) => {
+    return HttpResponse.json(mockTrackComments[params.id as string] ?? []);
   }),
 
   http.post(`${BASE}/tracks/:id/comments`, async ({ request, params }) => {

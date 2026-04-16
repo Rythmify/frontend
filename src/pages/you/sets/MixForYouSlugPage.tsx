@@ -120,22 +120,75 @@ function MixForYouSlugPage() {
     if (!playlist || !playlist.tracks.length) return;
 
     const firstTrack = playlist.tracks[0];
+    const playerTrack = toPlayerTrack(firstTrack);
+    const queue = playlist.tracks.map(toPlayerTrack);
     const isThisPlaying =
       (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
 
     if (isThisPlaying) {
       togglePlay();
     } else {
-      setPlayerTrack({
-        id: firstTrack.track_id,
-        context: {
-          type: "playlist",
-          playlist_id: playlist.playlist_id,
-          queue: playlist.tracks.map((t) => t.track_id),
-        },
-      } as any);
+      setPlayerTrack(
+        {
+          ...playerTrack,
+          context: {
+            type: "playlist",
+            playlist_id: playlist.playlist_id,
+            queue: playlist.tracks.map((t) => t.track_id),
+          },
+        } as any,
+        queue,
+      );
     }
   };
+
+  const toPlayerTrack = (track: (typeof playlist)["tracks"][number]) => ({
+    id: track.track_id,
+    title: track.title ?? "Untitled track",
+    artistName: track.artist_name ?? "Unknown Artist",
+    artistUsername: track.artist_username ?? "",
+    coverUrl: track.cover_image ?? "",
+    genre: "",
+    likeCount: 0,
+    repostCount: 0,
+    playCount: track.play_count ?? 0,
+    commentCount: 0,
+    duration:
+      typeof track.duration === "number"
+        ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}`
+        : "0:00",
+    postedAt: track.added_at ?? "",
+    waveformData: [],
+    audioUrl: track.audio_url ?? "",
+    isPrivate: !track.is_public,
+  });
+
+  const handleTrackPlay = (track: (typeof playlist)["tracks"][number]) => {
+    const playerTrack = toPlayerTrack(track);
+    const playlistContext = {
+      type: "playlist",
+      playlist_id: playlist?.playlist_id,
+      queue: playlist?.tracks.map((t) => t.track_id) ?? [],
+    };
+
+    if (currentTrack?.id === playerTrack.id) {
+      togglePlay();
+      return;
+    }
+
+    setPlayerTrack(
+      {
+        ...playerTrack,
+        context: playlistContext,
+      } as any,
+      playlist?.tracks.map(toPlayerTrack) ?? [],
+    );
+  };
+
+  const isMixActive =
+    isPlaying &&
+    !!playlist &&
+    playlist.tracks.some((track) => track.track_id === currentTrack?.id);
 
   if (loading)
     return (
@@ -158,10 +211,8 @@ function MixForYouSlugPage() {
     >
       <PlaylistHero
         playlist={playlist}
-        isPlaying={
-          isPlaying &&
-          (currentTrack as any)?.context?.playlist_id === playlist.playlist_id
-        }
+        isPlaying={isMixActive}
+        activeTrackId={currentTrack?.id}
         onPlayPause={handleHeroPlayPause}
         showUploadButton={false}
       />
@@ -176,6 +227,7 @@ function MixForYouSlugPage() {
                 tracks={playlist.tracks}
                 currentTrackId={currentTrack?.id}
                 isPlaying={isPlaying}
+                onTrackPlay={handleTrackPlay}
               />
             </div>
           </div>
