@@ -3,6 +3,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import FollowingPage from "@/pages/you/following/FollowingPage";
 
 const mockNavigate = vi.fn();
+const mockGetFollowing = vi.fn();
+const mockGetUserById = vi.fn();
+const mockResolveUsername = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -11,6 +14,12 @@ vi.mock("react-router-dom", () => ({
 
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
+}));
+
+vi.mock("@/services/user.service", () => ({
+  getFollowing: (...args: unknown[]) => mockGetFollowing(...args),
+  getUserById: (...args: unknown[]) => mockGetUserById(...args),
+  resolveUsername: (...args: unknown[]) => mockResolveUsername(...args),
 }));
 
 vi.mock("@/components/Profile/MockData/mock", () => ({
@@ -67,6 +76,47 @@ const mockCurrentUser = {
 describe("FollowingPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockResolveUsername.mockResolvedValue("resolved-user-id");
+    mockGetFollowing.mockResolvedValue({
+      items: [
+        {
+          user_id: "artist1",
+          display_name: "Artist One",
+          is_verified: true,
+        },
+        {
+          user_id: "artist2",
+          display_name: "Artist Two",
+          is_verified: false,
+        },
+      ],
+    });
+    mockGetUserById.mockImplementation(async (id: string) => {
+      if (id === "artist1") {
+        return {
+          username: "artist1",
+          display_name: "Artist One",
+          profile_picture: "",
+          followers_count: 500000,
+        };
+      }
+
+      if (id === "artist2") {
+        return {
+          username: "artist2",
+          display_name: "Artist Two",
+          profile_picture: "",
+          followers_count: 1200,
+        };
+      }
+
+      return {
+        username: "producer1",
+        display_name: "Producer One",
+        profile_picture: "",
+        followers_count: 3000,
+      };
+    });
     (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       user: mockCurrentUser,
     });
@@ -78,6 +128,9 @@ describe("FollowingPage", () => {
   it("returns null when user is not authenticated", () => {
     (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       user: null,
+    });
+    (useParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      username: undefined,
     });
     const { container } = render(<FollowingPage />);
     expect(container.firstChild).toBeNull();
@@ -144,9 +197,11 @@ describe("FollowingPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/travis-scott/follower");
   });
 
-  it("renders owner following list", () => {
+  it("renders owner following list", async () => {
     render(<FollowingPage />);
-    expect(screen.getByTestId("following-avatar-artist1")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("following-avatar-artist1"),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("following-avatar-artist2")).toBeInTheDocument();
   });
 
@@ -160,15 +215,15 @@ describe("FollowingPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("navigates to following user profile on avatar click", () => {
+  it("navigates to following user profile on avatar click", async () => {
     render(<FollowingPage />);
-    fireEvent.click(screen.getByTestId("following-avatar-artist1"));
+    fireEvent.click(await screen.findByTestId("following-avatar-artist1"));
     expect(mockNavigate).toHaveBeenCalledWith("/artist1");
   });
 
-  it("navigates to following user's followers page on count click", () => {
+  it("navigates to following user's followers page on count click", async () => {
     render(<FollowingPage />);
-    fireEvent.click(screen.getByTestId("following-count-artist1"));
+    fireEvent.click(await screen.findByTestId("following-count-artist1"));
     expect(mockNavigate).toHaveBeenCalledWith("/artist1/follower");
   });
 
@@ -197,9 +252,9 @@ describe("FollowingPage", () => {
     );
   });
 
-  it("shows formatted follower count", () => {
+  it("shows formatted follower count", async () => {
     render(<FollowingPage />);
-    expect(screen.getByTestId("following-count-artist1")).toHaveTextContent(
+    expect(await screen.findByTestId("following-count-artist1")).toHaveTextContent(
       "500000 followers",
     );
   });
