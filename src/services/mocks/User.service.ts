@@ -78,8 +78,8 @@ export async function getMyProfile(): Promise<OwnUser> {
 
 /** GET /api/users */
 export async function getUsers(): Promise<MockUser[]> {
-  const { data } = await api.get<MockUser[]>("/users");
-  return Array.isArray(data) ? data : [];
+  const res = await axiosInstance.get("/users"); 
+  return Array.isArray(res.data) ? res.data : [];
 }
 
 /** GET /users/{user_id} — user_id is a UUID */

@@ -16,7 +16,7 @@ interface EditPlaylistModalProps {
   onSaved: (updated: PlaylistDetails) => void;
 }
 
-type Tab = "basic" | "tracks" ;
+type Tab = "basic" | "tracks";
 
 const PLAYLIST_TYPES: { label: string; value: PlaylistSubtype }[] = [
   { label: "Playlist", value: "playlist" },
@@ -351,7 +351,7 @@ export default function EditPlaylistModal({
               Cancel
             </button>
             <button
-              data-test="button-save-changes"
+              data-test="button-save-changes-edit-modal"
               onClick={handleSave}
               disabled={saving || !name.trim()}
               className="px-3 py-1.5 bg-bg-inverted text-bg text-sm font-bold rounded-sm hover:text-[#a0a0a0] transition-opacity disabled:opacity-40 cursor-pointer"
