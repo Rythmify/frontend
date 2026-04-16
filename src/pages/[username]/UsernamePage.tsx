@@ -10,6 +10,7 @@ import { mockLikedTracks } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
 import { mockTracks } from "../../services/mocks/tracks";
+import { getMyTracks } from "@/services/api/upload/track.service";
 import type { Track } from "../../types/track";
 import {
   getMyProfile,
@@ -21,7 +22,7 @@ import {
   type OwnUser,
   type PublicUser,
   type UserSummary,
-} from "@/services/mocks/User.service";
+} from "@/services/user.service";
 
 export default function UsernamePage() {
   const { username } = useParams();
@@ -37,14 +38,11 @@ export default function UsernamePage() {
   const [followers, setFollowers] = useState<UserSummary[]>([]);
   const [following, setFollowing] = useState<UserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
-  const [isFollowing, setIsFollowing] = useState(false);
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
+  const [isFollowing, setIsFollowing] = useState(false);
   const followingCount = currentUser?.following_ids?.length ?? 0;
   const initiallyFollowing = useRef<boolean | null>(null);
-
-  if (!currentUser) return null;
-
-  const isOwner = !username || username === currentUser.username;
+  const isOwner = !!currentUser && (!username || username === currentUser.username);
 
   useEffect(() => {
     // Load tracks for this profile (owner → all mock tracks, others → first 3)
@@ -53,23 +51,39 @@ export default function UsernamePage() {
   }, [isOwner]);
 
   useEffect(() => {
+    if (!currentUser) return;
+
     if (isOwner) {
-      // GET /users/me
-      getMyProfile().then((profile) => {
-        setProfileData(profile);
-        setStats({
-          followers: profile.followers_count,
-          following: profile.following_count,
-          tracks: mockTracks.length, // TODO: real count from API
-        });
-        setUser({
-          ...currentUser,
-          bio: profile.bio || "",
-          location: [(profile as OwnUser).city, (profile as OwnUser).country]
-            .filter(Boolean)
-            .join(", ") || currentUser.location,
-        });
-      }).catch(console.error);
+      getMyProfile()
+        .then((profile) => {
+          setProfileData(profile);
+          setStats({
+            followers: profile.followers_count,
+            following: profile.following_count,
+            tracks: 0,
+          });
+          const latestUser = useAuthStore.getState().user ?? currentUser;
+          setUser({
+            ...latestUser,
+            bio: profile.bio || "",
+            avatar: profile.profile_picture ?? latestUser.avatar,
+            coverUrl: profile.cover_photo ?? latestUser.coverUrl,
+            location:
+              [(profile as OwnUser).city, (profile as OwnUser).country]
+                .filter(Boolean)
+                .join(", ") || latestUser.location,
+          });
+        })
+        .catch(console.error);
+
+      getMyTracks({ page: 1, limit: 1 })
+        .then((res) => {
+          setStats((s) => ({
+            ...s,
+            tracks: res.pagination?.total ?? s.tracks,
+          }));
+        })
+        .catch(console.error);
 
       if (currentUser.id) {
         getFollowers(currentUser.id, { limit: 100 })
@@ -142,7 +156,7 @@ export default function UsernamePage() {
   };
 
   const selectedTab = getActiveTab();
-  const storageKey = `likedTracks_${isOwner ? currentUser.username : username}`;
+  const storageKey = `likedTracks_${isOwner ? currentUser?.username ?? "" : username ?? ""}`;
 
   const followerDelta =
     initiallyFollowing.current === null
@@ -155,7 +169,7 @@ export default function UsernamePage() {
 
   const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
     const stored = localStorage.getItem(storageKey);
-    return stored ? JSON.parse(stored) : isOwner ? mockLikedTracks : [];
+    return stored ? JSON.parse(stored) : currentUser && isOwner ? mockLikedTracks : [];
   });
 
   const handleUnlike = (id: string) => {
@@ -169,7 +183,7 @@ export default function UsernamePage() {
   };
 
   const handleTabChange = (tab: string) => {
-    const targetUsername = isOwner ? currentUser.username : username || "";
+    const targetUsername = isOwner ? currentUser?.username ?? "" : username || "";
     const tabRoutes: Record<string, string> = {
       All: `/${targetUsername}`,
       "Popular tracks": `/${targetUsername}/popular-tracks`,
@@ -181,6 +195,8 @@ export default function UsernamePage() {
     const route = tabRoutes[tab];
     if (route) navigate(route);
   };
+
+  if (!currentUser) return null;
 
   const displayedStats = isOwner
     ? { ...stats, following: followingCount }
@@ -252,19 +268,25 @@ export default function UsernamePage() {
                   track={t}
                   onCopyLink={() => {
                     navigator.clipboard.writeText(
-                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`
+                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`,
                     );
                   }}
-                  onEdit={() => navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)}
-                  onReplaceFile={() => console.log("[TrackCard] replace file:", t.id)}
+                  onEdit={() =>
+                    navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)
+                  }
+                  onReplaceFile={() =>
+                    console.log("[TrackCard] replace file:", t.id)
+                  }
                   onDelete={() => console.log("[TrackCard] delete:", t.id)}
-                  onDistribute={() => console.log("[TrackCard] distribute:", t.id)}
+                  onDistribute={() =>
+                    console.log("[TrackCard] distribute:", t.id)
+                  }
                   onAddToPlaylist={() => {}}
                 />
               ))}
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 py-16">
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
               <p
                 data-test="empty-state-message"
                 className="text-white font-bold text-17px"
