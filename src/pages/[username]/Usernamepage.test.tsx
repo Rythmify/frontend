@@ -3,6 +3,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import UsernamePage from "@/pages/[username]/UsernamePage";
 
 const mockNavigate = vi.fn();
+const mockGetMyProfile = vi.fn();
+const mockGetUserById = vi.fn();
+const mockGetFollowers = vi.fn();
+const mockGetFollowing = vi.fn();
+const mockGetFollowStatus = vi.fn();
+const mockUpdateMyProfile = vi.fn();
+const mockGetMyTracks = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -12,6 +19,19 @@ vi.mock("react-router-dom", () => ({
 
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
+}));
+
+vi.mock("@/services/user.service", () => ({
+  getMyProfile: (...args: unknown[]) => mockGetMyProfile(...args),
+  getUserById: (...args: unknown[]) => mockGetUserById(...args),
+  getFollowers: (...args: unknown[]) => mockGetFollowers(...args),
+  getFollowing: (...args: unknown[]) => mockGetFollowing(...args),
+  getFollowStatus: (...args: unknown[]) => mockGetFollowStatus(...args),
+  updateMyProfile: (...args: unknown[]) => mockUpdateMyProfile(...args),
+}));
+
+vi.mock("@/services/api/upload/track.service", () => ({
+  getMyTracks: (...args: unknown[]) => mockGetMyTracks(...args),
 }));
 
 vi.mock("@/components/Profile/MockData/mock", () => ({
@@ -126,6 +146,37 @@ const mockCurrentUser = {
 describe("UsernamePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetMyProfile.mockResolvedValue({
+      id: "1",
+      username: "me",
+      display_name: "Me",
+      bio: "My bio",
+      city: null,
+      country: null,
+      profile_picture: null,
+      cover_photo: null,
+      followers_count: 1,
+      following_count: 1,
+    });
+    mockGetUserById.mockResolvedValue({
+      id: "travis-scott-id",
+      username: "travis-scott",
+      display_name: "Travis Scott",
+      bio: "Multi-platinum artist",
+      location: "Houston, TX",
+      profile_picture: null,
+      cover_photo: null,
+      followers_count: 6000000,
+      following_count: 200,
+    });
+    mockGetFollowers.mockResolvedValue({ items: [], meta: { total: 0 } });
+    mockGetFollowing.mockResolvedValue({ items: [], meta: { total: 0 } });
+    mockGetFollowStatus.mockResolvedValue({ is_following: true });
+    mockUpdateMyProfile.mockResolvedValue({});
+    mockGetMyTracks.mockResolvedValue({
+      data: [],
+      pagination: { page: 1, limit: 1, total: 0 },
+    });
     (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       user: mockCurrentUser,
       setUser: vi.fn(),
