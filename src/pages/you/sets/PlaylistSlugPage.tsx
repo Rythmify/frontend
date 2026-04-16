@@ -123,9 +123,6 @@ function PlaylistSlugPage() {
             />
 
             <div className="mt-8">
-              <h2 className="text-[var(--color-text-muted)] text-xs uppercase tracking-widest font-semibold mb-4 border-b border-[#333] pb-2">
-                Tracks
-              </h2>
               <TrackList
                 tracks={playlist.tracks}
                 currentTrackId={currentTrack?.id}

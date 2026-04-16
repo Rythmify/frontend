@@ -536,6 +536,70 @@ const mockPlaylists: PlaylistDetails[] = [
   },
 ];
 
+//Mock PlaylistTracks
+export const mockPlaylistTracks: PlaylistTrackItem[] = [
+  {
+    track_id: "11111111-1111-4111-8111-111111111111",
+    position: 1,
+    added_at: "2026-04-10T10:00:00Z",
+    title: "Track One",
+    artist_name: "Artist A",
+    artist_username: "artist-a",
+    cover_image: "https://picsum.photos/seed/playlist-track-1/300/300",
+    duration: 225,
+    play_count: 12840,
+    audio_url: "/audio/Track 1.mp3",
+  },
+  {
+    track_id: "22222222-2222-4222-8222-222222222222",
+    position: 2,
+    added_at: "2026-04-10T10:01:00Z",
+    title: "Track Two",
+    artist_name: "Artist B",
+    artist_username: "artist-b",
+    cover_image: "https://picsum.photos/seed/playlist-track-2/300/300",
+    duration: 200,
+    play_count: 9340,
+    audio_url: "/audio/Track 2.mp3",
+  },
+  {
+    track_id: "33333333-3333-4333-8333-333333333333",
+    position: 3,
+    added_at: "2026-04-10T10:02:00Z",
+    title: "Track Three",
+    artist_name: "Artist C",
+    artist_username: "artist-c",
+    cover_image: "https://picsum.photos/seed/playlist-track-3/300/300",
+    duration: 194,
+    play_count: 7450,
+    audio_url: "/audio/Track 3.mp3",
+  },
+  {
+    track_id: "44444444-4444-4444-8444-444444444444",
+    position: 4,
+    added_at: "2026-04-10T10:03:00Z",
+    title: "Track Four",
+    artist_name: "Artist D",
+    artist_username: "artist-d",
+    cover_image: "https://picsum.photos/seed/playlist-track-4/300/300",
+    duration: 180,
+    play_count: 6210,
+    audio_url: "/audio/Track 4.mp3",
+  },
+  {
+    track_id: "55555555-5555-4555-8555-555555555555",
+    position: 5,
+    added_at: "2026-04-10T10:04:00Z",
+    title: "Track Five",
+    artist_name: "Artist E",
+    artist_username: "artist-e",
+    cover_image: "https://picsum.photos/seed/playlist-track-5/300/300",
+    duration: 210,
+    play_count: 5150,
+    audio_url: "/audio/Track 5.mp3",
+  },
+];
+
 // ─── Liked playlists (owned by OTHER users, liked by current user) ─────────────
 
 const mockLikedPlaylists: PlaylistDetails[] = [
@@ -1198,18 +1262,21 @@ export const playlistHandlers = [
       message: "Playlist embed code generated successfully.",
     });
   }),
-  
-// Mock POST Repost
+
+  // Mock POST Repost
   http.post("*/playlists/:playlistId/repost", ({ params }) => {
-    return HttpResponse.json({
-      data: {
-        repost_id: "mock-repost-id",
-        user_id: "current-user-id",
-        playlist_id: params.playlistId,
-        created_at: new Date().toISOString()
+    return HttpResponse.json(
+      {
+        data: {
+          repost_id: "mock-repost-id",
+          user_id: "current-user-id",
+          playlist_id: params.playlistId,
+          created_at: new Date().toISOString(),
+        },
+        message: "Playlist reposted successfully.",
       },
-      message: "Playlist reposted successfully."
-    }, { status: 201 });
+      { status: 201 },
+    );
   }),
 
   // Mock DELETE Repost

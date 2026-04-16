@@ -51,6 +51,9 @@ export interface PlaylistTrackItem {
   deleted_at?: string | null;
   artist_name?: string | null;
   artist_id?: string;
+  artist_username?: string | null; 
+  play_count?: number;              
+  audio_url?: string | null;        
 }
 
 export interface PlaylistDetails extends Playlist {

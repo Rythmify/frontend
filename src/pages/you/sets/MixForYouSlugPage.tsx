@@ -172,9 +172,6 @@ function MixForYouSlugPage() {
             <PlaylistActions playlist={playlist} />
 
             <div className="mt-8">
-              <h2 className="text-text-muted text-xs uppercase tracking-widest font-semibold mb-4 border-b border-[#333] pb-2">
-                Tracks
-              </h2>
               <TrackList
                 tracks={playlist.tracks}
                 currentTrackId={currentTrack?.id}
