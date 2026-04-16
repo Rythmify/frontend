@@ -38,7 +38,7 @@ export default function TrackList({
             index={index + 1}
             isCurrent={track.track_id === currentTrackId}
             isPlaying={isPlaying && track.track_id === currentTrackId}
-            onPlay={() => onTrackPlay?.(track)}
+            onPlay={onTrackPlay ? () => onTrackPlay(track) : undefined}
             onLike={() => onTrackLike?.(track)}
           />
         ))}

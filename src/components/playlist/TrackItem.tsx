@@ -16,6 +16,8 @@ import { FaRegCopy } from "react-icons/fa";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import { repostTrack } from "@/services/mocks/Track.service";
+import { usePlayerStore } from "@/stores/player.store";
+import type { Track } from "@/types/track";
 import type { PlaylistTrackItem } from "@/services/api/playlist/playlist.service";
 
 function TrackItem({
@@ -30,7 +32,7 @@ function TrackItem({
   index: number;
   isCurrent: boolean;
   isPlaying: boolean;
-  onPlay: () => void;
+  onPlay?: () => void;
   onLike: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -38,6 +40,7 @@ function TrackItem({
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
+  const setTrack = usePlayerStore((state) => state.setTrack);
 
   const artistName = track.artist_name ?? track.artist_name ?? "Unknown Artist";
   const artistSlug =
@@ -61,11 +64,54 @@ function TrackItem({
     }
   };
 
+  const formatDuration = (seconds?: number | null) => {
+    if (typeof seconds !== "number" || Number.isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.max(0, Math.floor(seconds % 60));
+    return `${mins}:${String(secs).padStart(2, "0")}`;
+  };
+
+  const handlePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (onPlay) {
+      onPlay();
+      return;
+    }
+
+    const trackForPlayer: Track = {
+      id: track.track_id,
+      title: track.title ?? "Untitled track",
+      artistName,
+      artistUsername: artistSlug,
+      coverUrl: coverImage,
+      genre: "",
+      likeCount: 0,
+      repostCount: 0,
+      playCount: playCount,
+      commentCount: 0,
+      duration: formatDuration(track.duration),
+      postedAt: track.added_at ?? "",
+      waveformData: [],
+      audioUrl: track.audio_url ?? "",
+      isPrivate: !track.is_public,
+    };
+
+    setTrack(trackForPlayer);
+  };
+
   const formatCount = (n: number) => {
     if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
     if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
     return String(n);
   };
+
+  const playbackTextClass = isPlaying
+    ? "text-[var(--color-accent)]"
+    : "text-[var(--color-text-muted)]";
+  const playbackTitleClass = isPlaying
+    ? "text-[var(--color-accent)]"
+    : "text-[var(--color-text-hover)]";
 
   return (
     <>
@@ -82,7 +128,7 @@ function TrackItem({
           setHovered(false);
           setMoreOpen(false);
         }}
-        onClick={onPlay}
+        onClick={handlePlay}
       >
         <div className="relative w-10 h-10 shrink-0 mr-3">
           <img
@@ -95,8 +141,7 @@ function TrackItem({
               <button
                 data-test={`button-play-track-${track.track_id}`}
                 onClick={(e) => {
-                  e.stopPropagation();
-                  onPlay();
+                  handlePlay(e);
                 }}
                 className="text-white cursor-pointer"
               >
@@ -114,29 +159,25 @@ function TrackItem({
 
         <div className="flex-1 min-w-0 flex items-baseline gap-1.5 overflow-hidden">
           <span
-            className={`text-sm shrink-0 w-5 text-right ${isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
+            className={`text-sm shrink-0 w-5 font-bold text-right ${playbackTextClass}`}
           >
             {index}
           </span>
-          <span className="text-[var(--color-text-muted)] text-xs shrink-0">
+          <span className="text-[var(--color-text-muted)] text-sm shrink-0">
             ·
           </span>
           <Link
             to={`/${artistSlug}`}
             onClick={(e) => e.stopPropagation()}
-            className={`text-sm shrink-0 font-medium transition-colors hover:underline ${
-              isCurrent
-                ? "text-[var(--color-accent)]"
-                : "text-[var(--color-text-muted)] hover:text-[var(--color-text-hover)]"
-            }`}
+            className={`text-sm shrink-0 font-bold transition-colors ${playbackTextClass}`}
           >
             {artistName}
           </Link>
-          <span className="text-[var(--color-text-muted)] text-xs shrink-0">
+          <span className="text-[var(--color-text-muted)] text-sm shrink-0">
             ·
           </span>
           <span
-            className={`text-sm font-bold truncate ${isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-hover)]"}`}
+            className={`text-sm font-bold truncate ${playbackTitleClass}`}
           >
             {track.title ?? "Untitled track"}
           </span>
@@ -231,7 +272,7 @@ function TrackItem({
           </div>
 
           <span
-            className={`text-xs text-[var(--color-text-muted)] tabular-nums w-14 text-right transition-opacity duration-150 ${hovered ? "opacity-0" : "opacity-100"}`}
+            className={`text-xs text-text-muted tabular-nums w-14 text-right transition-opacity duration-150 ${hovered ? "opacity-0" : "opacity-100"}`}
           >
             {formatCount(playCount)}
           </span>

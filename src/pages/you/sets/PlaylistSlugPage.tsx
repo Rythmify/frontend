@@ -6,9 +6,11 @@ import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   getPlaylist,
   type PlaylistDetails,
+  type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { getUsers } from "../../../services/mocks/User.service";
 import { usePlayerStore } from "../../../stores/player.store";
+import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
@@ -83,6 +85,39 @@ function PlaylistSlugPage() {
     }
   };
 
+  const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
+    id: track.track_id,
+    title: track.title ?? "Untitled track",
+    artistName: track.artist_name ?? "Unknown Artist",
+    artistUsername: track.artist_username ?? username ?? "",
+    coverUrl: track.cover_image ?? "",
+    genre: "",
+    likeCount: 0,
+    repostCount: 0,
+    playCount: track.play_count ?? 0,
+    commentCount: 0,
+    duration:
+      typeof track.duration === "number"
+        ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}`
+        : "0:00",
+    postedAt: track.added_at ?? "",
+    waveformData: [],
+    audioUrl: track.audio_url ?? "",
+    isPrivate: !track.is_public,
+  });
+
+  const handleTrackPlay = (track: PlaylistTrackItem) => {
+    const playerTrack = toPlayerTrack(track);
+    const queue = playlist?.tracks.map(toPlayerTrack) ?? [];
+
+    if (currentTrack?.id === playerTrack.id) {
+      togglePlay();
+      return;
+    }
+
+    setPlayerTrack(playerTrack, queue);
+  };
+
   if (loading)
     return (
       <div className="animate-pulse p-20 text-center text-white">
@@ -127,6 +162,7 @@ function PlaylistSlugPage() {
                 tracks={playlist.tracks}
                 currentTrackId={currentTrack?.id}
                 isPlaying={isPlaying}
+                onTrackPlay={handleTrackPlay}
               />
             </div>
           </div>

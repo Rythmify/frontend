@@ -72,6 +72,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_name: "Artist A",
         cover_image: "https://picsum.photos/seed/track-one/300/300",
         duration: 225,
+        audio_url: "/audio/Track 1.mp3",
       },
     ],
   },
@@ -121,6 +122,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_name: "Artist B",
         cover_image: "https://picsum.photos/seed/track-2/300/300",
         duration: 200,
+        audio_url: "/audio/Track 2.mp3",
       },
     ],
     slug: "gym-hits",
@@ -145,6 +147,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_name: "Artist C",
         cover_image: "https://picsum.photos/seed/track-6/300/300",
         duration: 203,
+        audio_url: "/audio/Track 3.mp3",
       },
       {
         track_id: TRACK_IDS.t7,
@@ -153,6 +156,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Hayatak Maaky",
         artist_name: "Artist C",
         duration: 186,
+        audio_url: "/audio/Track 4.mp3",
       },
       {
         track_id: TRACK_IDS.t8,
@@ -161,6 +165,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Nedaa El Qalb",
         artist_name: "Artist D",
         duration: 194,
+        audio_url: "/audio/Track 5.mp3",
       },
       {
         track_id: TRACK_IDS.t9,
@@ -169,6 +174,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Mawgood",
         artist_name: "Artist D",
         duration: 210,
+        audio_url: "/audio/Track 1.mp3",
       },
       {
         track_id: TRACK_IDS.t10,
@@ -177,6 +183,7 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Dawam",
         artist_name: "Artist E",
         duration: 220,
+        audio_url: "/audio/Track 2.mp3",
       },
     ],
     slug: "summer-2026",
@@ -200,6 +207,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_name: "Artist F",
         cover_image: "https://picsum.photos/seed/track-3/300/300",
         duration: 205,
+        audio_url: "/audio/Track 3.mp3",
       },
       {
         track_id: TRACK_IDS.t5,
@@ -209,6 +217,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_name: "Artist F",
         cover_image: "https://picsum.photos/seed/track-5/300/300",
         duration: 198,
+        audio_url: "/audio/Track 4.mp3",
       },
       {
         track_id: TRACK_IDS.t6,
@@ -218,6 +227,7 @@ const mockPlaylists: PlaylistDetails[] = [
         artist_name: "Artist C",
         cover_image: "https://picsum.photos/seed/track-6/300/300",
         duration: 203,
+        audio_url: "/audio/Track 5.mp3",
       },
     ],
     slug: "late-night-chills",
