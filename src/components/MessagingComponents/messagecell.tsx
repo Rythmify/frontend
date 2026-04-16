@@ -21,11 +21,15 @@ export default function MessageCell({ message, displayName, profilePicture }: Me
   return (
     <div className="flex items-start gap-3 py-3">
       <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-[#2a2a2a]">
-        {profilePicture ? (
-          <img src={profilePicture} alt={displayName} className="object-cover w-full h-full" />
-        ) : (
-          <div className="w-full h-full bg-[#3a3a3a]" />
-        )}
+       {profilePicture ? (
+  <img
+    src={profilePicture}
+    alt={displayName}
+    className="object-cover rounded-full w-11 h-11"
+  />
+) : (
+  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b] flex-shrink-0" />
+)}
       </div>
 
       <div className="flex-1 min-w-0">
