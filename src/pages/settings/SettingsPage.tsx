@@ -291,6 +291,11 @@ function ChangeTheme() {
   );
 }
 
+type PendingEmail = {
+  email: string;
+  confirmed: boolean;
+};
+
 function EmailAddresses({
   onToast,
 }: {
@@ -300,18 +305,70 @@ function EmailAddresses({
   const [showInput, setShowInput] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
+  const [pendingEmails, setPendingEmails] = useState<PendingEmail[]>(() => {
+    try {
+      const stored = localStorage.getItem(`pending-emails-${user?.id}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist pending emails per user
+  useEffect(() => {
+    localStorage.setItem(
+      `pending-emails-${user?.id}`,
+      JSON.stringify(pendingEmails),
+    );
+  }, [pendingEmails, user?.id]);
+
+  // Poll to check if any pending email got confirmed
+  useEffect(() => {
+    const unconfirmed = pendingEmails.filter((e) => !e.confirmed);
+    if (unconfirmed.length === 0) return;
+
+    const interval = setInterval(async () => {
+      try {
+        // Re-fetch the current user profile to check if email changed
+        // Replace this with your actual "get me" API call if available
+        // For now we check if user.email changed to one of the pending ones
+        const confirmedPending = pendingEmails.find(
+          (e) => !e.confirmed && e.email === user?.email,
+        );
+        if (confirmedPending) {
+          setPendingEmails((prev) =>
+            prev.filter((e) => e.email !== confirmedPending.email),
+          );
+        }
+      } catch {
+        // silently ignore
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [pendingEmails, user?.email]);
 
   const handleAdd = async () => {
     const trimmedEmail = newEmail.trim();
-
     if (!trimmedEmail) return;
 
     const normalizedCurrentEmail = user?.email?.trim().toLowerCase();
     const normalizedNewEmail = trimmedEmail.toLowerCase();
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (normalizedCurrentEmail && normalizedNewEmail === normalizedCurrentEmail) {
+    if (
+      normalizedCurrentEmail &&
+      normalizedNewEmail === normalizedCurrentEmail
+    ) {
       onToast("This email is already your primary email address.", "error");
+      return;
+    }
+
+    if (
+      pendingEmails.some((e) => e.email.toLowerCase() === normalizedNewEmail)
+    ) {
+      onToast("This email is already pending confirmation.", "error");
       return;
     }
 
@@ -323,9 +380,11 @@ function EmailAddresses({
     setLoading(true);
     try {
       await changeEmail(trimmedEmail);
-
+      setPendingEmails((prev) => [
+        ...prev,
+        { email: trimmedEmail, confirmed: false },
+      ]);
       onToast(`Verification email sent to ${trimmedEmail}`, "success");
-
       setShowInput(false);
       setNewEmail("");
     } catch (err: any) {
@@ -339,15 +398,66 @@ function EmailAddresses({
     }
   };
 
+  const handleResend = async (email: string) => {
+    setResendingEmail(email);
+    try {
+      await changeEmail(email);
+      onToast(`Verification email resent to ${email}`, "success");
+    } catch (err: any) {
+      onToast("Failed to resend verification email.", "error");
+    } finally {
+      setResendingEmail(null);
+    }
+  };
+
+  const handleRemove = (email: string) => {
+    setPendingEmails((prev) => prev.filter((e) => e.email !== email));
+    onToast("Email address removed.", "success");
+  };
+
   return (
     <div>
       <SectionTitle>Email addresses</SectionTitle>
-      <p className="text-sm text-[var(--color-text-hover)] mb-4">
+
+      {/* Primary email */}
+      <p className="text-sm text-[var(--color-text-hover)] mb-2">
         {user?.email}{" "}
         <span className="text-[var(--color-text)]">(Primary)</span>
       </p>
+
+      {/* Pending / unconfirmed emails */}
+      {pendingEmails.map((entry) => (
+        <p
+          key={entry.email}
+          className="text-sm text-[var(--color-text)] mb-2 flex flex-wrap items-center gap-x-1"
+        >
+          <span>{entry.email}</span>
+          <span>(Not confirmed</span>
+          <span>-</span>
+          <button
+            onClick={() => handleResend(entry.email)}
+            disabled={resendingEmail === entry.email}
+            data-test={`settings-resend-email-${entry.email}`}
+            className="text-[var(--color-text-hover)] hover:underline disabled:opacity-50 transition-opacity"
+          >
+            {resendingEmail === entry.email
+              ? "Sending…"
+              : "Resend confirmation email"}
+          </button>
+          <span>)</span>
+          <button
+            onClick={() => handleRemove(entry.email)}
+            data-test={`settings-remove-email-${entry.email}`}
+            className="ml-2 text-[var(--color-text-hover)] hover:underline transition-opacity"
+          >
+            Remove address
+          </button>
+        </p>
+      ))}
+
+      {/* Add new email */}
       {showInput ? (
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center mt-3">
           <input
             type="email"
             value={newEmail}
