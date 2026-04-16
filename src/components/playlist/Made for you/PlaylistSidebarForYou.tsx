@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { FaHeart, FaUserFriends, FaMusic } from "react-icons/fa";
-import { BiRepost } from "react-icons/bi";
 import type { PlaylistDetails } from "../../../services/api/playlist/playlist.service";
 import type { MockUser } from "../../../services/mocks/users";
 import { followUser, unfollowUser } from "../../../services/mocks/User.service";
 import { useAuthStore } from "../../../stores/auth.store";
+import GoMobileSection from "@/components/UI/GoMobile";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
@@ -55,6 +55,9 @@ export default function PlaylistSidebar({
               ),
             )}
           </div>
+        </div>
+        <div data-test="go-mobile-section-playlist-mix">
+          <GoMobileSection showFooter={false} />
         </div>
       </aside>
     </Tooltip.Provider>
