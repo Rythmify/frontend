@@ -124,7 +124,7 @@ const UserCard = ({ user, widthClassName }: UserCardProps) => {
 
       {/* Follow Button — visible on hover */}
       <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <FollowButton username={user.username} />
+        <FollowButton username={user.username} userId={user.id} />
       </div>
     </div>
   );

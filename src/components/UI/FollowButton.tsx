@@ -4,10 +4,11 @@ import { useState } from "react";
 
 interface FollowButtonProps {
   username: string;
+  userId?: string;
   className?: string;
 }
 
-export default function FollowButton({ username, className }: FollowButtonProps) {
+export default function FollowButton({ username, userId, className }: FollowButtonProps) {
   const { user, toggleFollow } = useAuthStore();
   const isFollowing = user?.following_ids?.includes(username) ?? false;
   const [isLoading, setIsLoading] = useState(false);
@@ -16,10 +17,11 @@ export default function FollowButton({ username, className }: FollowButtonProps)
     e.stopPropagation();
     setIsLoading(true);
     try {
+      const targetId = userId || username;
       if (isFollowing) {
-        await unfollowUser(username);
+        await unfollowUser(targetId);
       } else {
-        await followUser(username);
+        await followUser(targetId);
       }
       toggleFollow(username);
     } catch (error) {

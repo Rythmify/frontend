@@ -64,7 +64,6 @@ const TrackItem: React.FC<TrackItemProps> = ({
     }
   };
 
-  const finalTrackSlug = trackSlug || title.toLowerCase().replace(/\s+/g, "-");
   const finalArtistSlug =
     artistUsername || artist.toLowerCase().replace(/\s+/g, "-");
 
@@ -76,7 +75,6 @@ const TrackItem: React.FC<TrackItemProps> = ({
       title,
       artistName: artist,
       artistUsername: finalArtistSlug,
-      trackSlug: finalTrackSlug,
       coverUrl: coverUrl || "",
       audioUrl: audioUrl || "",
       genre: genre,
@@ -114,7 +112,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
             src={coverUrl}
             alt={title}
             className="w-full h-full object-cover"
-            onClick={() => navigate(`/${finalArtistSlug}/${finalTrackSlug}`)}
+            onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
           />
         ) : (
           <div className="w-full h-full bg-border" />
@@ -147,7 +145,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
         </button>
         <button
           data-test={`track-title-${id}`}
-          onClick={() => navigate(`/${finalArtistSlug}/${finalTrackSlug}`)}
+          onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
           className="text-sm cursor-pointer font-semibold text-white text-left truncate"
         >
           {title}
@@ -183,7 +181,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
           {comments !== undefined && (
             <button
               data-test={`track-comments-${id}`}
-              onClick={() => navigate(`/${finalArtistSlug}/${finalTrackSlug}`)}
+              onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
               className="flex cursor-pointer items-center gap-1"
             >
               <i className="fa-solid fa-comment text-[10px]" />
