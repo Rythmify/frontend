@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import FollowButton from "./FollowButton";
 
 // ─── Types ────────────────────────────────────────────────
-interface Artist {
+export interface Artist {
   id: string;
   username: string;
   avatar?: string;
@@ -110,15 +110,15 @@ const ArtistListSection = ({
                 onClick={() => navigate(`/${artist.username}`)}
                 className={styles.avatar}
               >
-               {artist.avatar ? (
-  <img
-    src={artist.avatar}
-    alt={artist.username}
-    className={styles.avatarImg}
-  />
-) : (
-  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b]" />
-)}
+                {artist.avatar ? (
+                  <img
+                    src={artist.avatar}
+                    alt={artist.username}
+                    className={styles.avatarImg}
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b]" />
+                )}
               </div>
 
               {/* Details */}

@@ -47,15 +47,6 @@ export async function getTrackById(
 /**
  * GET /resolve?url=<permalink>
  * Resolves a Rythmify permalink to its resource type + UUID, then fetches the track.
- *
- * Supported permalink shapes (per API spec):
- *   https://rythmify.com/tracks/{id}
- *   https://rythmify.com/users/{username}
- *   https://rythmify.com/playlists/{id}
- *
- * The URL in the browser uses /{username}/{slug} so we first try resolving
- * the track-style permalink built from the slug segment, falling back to a
- * direct UUID lookup when the slug is already a valid UUID.
  */
 export async function getTrackBySlug(
   _username: string,
@@ -86,7 +77,6 @@ export async function getTrackComments(
     `/tracks/${trackId}/comments`,
     { params: { limit, offset } }
   );
-  // API shape: { data: { items: Comment[], meta: ListMeta } }
   return data?.data?.items ?? [];
 }
 
@@ -104,4 +94,12 @@ export async function postComment(
     track_timestamp: Math.floor(timestamp),
   });
   return data;
+}
+
+/**
+ * POST /tracks/{track_id}/repost
+ * Reposts a track on the authenticated user's profile.
+ */
+export async function repostTrack(trackId: string): Promise<void> {
+  await axiosInstance.post(`/tracks/${trackId}/repost`);
 }
