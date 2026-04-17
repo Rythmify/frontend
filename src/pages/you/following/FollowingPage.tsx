@@ -9,9 +9,10 @@ import {
 import FollowButton from "@/components/Profile/FollowButton/FollowButton";
 import {
   getFollowing,
+  getUserById,
   resolveUsername,
   type UserSummary,
-} from "@/services/mocks/User.service";
+} from "@/services/user.service";
 
 const tabs = ["Likes", "Following", "Followers"];
 
@@ -26,16 +27,70 @@ export default function FollowingPage() {
 
   // Real API data — replaces mock when loaded
   const [apiFollowing, setApiFollowing] = useState<UserSummary[] | null>(null);
+  const [followingDetails, setFollowingDetails] = useState<
+    Record<
+      string,
+      {
+        followers: number;
+        avatar: string;
+        username: string;
+        displayName: string;
+      }
+    >
+  >({});
 
   useEffect(() => {
-    const targetUsername = isOwner ? currentUser?.username : username;
-    if (!targetUsername) return;
+    const ownerId = currentUser?.id;
 
-    resolveUsername(targetUsername)
+    if (isOwner) {
+      if (!ownerId) return;
+
+      getFollowing(ownerId, { limit: 50, offset: 0 })
+        .then((res) => setApiFollowing(res.items))
+        .catch((err) => console.error("Failed to load following:", err));
+      return;
+    }
+
+    if (!username) return;
+
+    resolveUsername(username)
       .then((userId) => getFollowing(userId, { limit: 50, offset: 0 }))
       .then((res) => setApiFollowing(res.items))
       .catch((err) => console.error("Failed to load following:", err));
-  }, [username, isOwner]);
+  }, [username, isOwner, currentUser?.id]);
+
+  useEffect(() => {
+    if (!apiFollowing?.length) return;
+
+    Promise.all(
+      apiFollowing.map(async (u) => {
+        try {
+          const profile = await getUserById(u.user_id);
+          return [
+            u.user_id,
+            {
+              followers: profile.followers_count,
+              avatar: profile.profile_picture ?? "",
+              username: profile.username ?? u.user_id,
+              displayName: profile.display_name,
+            },
+          ] as const;
+        } catch {
+          return [
+            u.user_id,
+            {
+              followers: 0,
+              avatar: "",
+              username: u.user_id,
+              displayName: u.display_name,
+            },
+          ] as const;
+        }
+      }),
+    ).then((entries) => {
+      setFollowingDetails(Object.fromEntries(entries));
+    });
+  }, [apiFollowing]);
 
   const allMockUsers = Array.from(
     new Map(
@@ -49,11 +104,12 @@ export default function FollowingPage() {
       // Viewing someone else's profile — use API or mock as before
       if (apiFollowing) {
         return apiFollowing.map((u) => ({
-          username: u.user_id,
-          displayName: u.display_name,
-          avatar: "",
+          username: followingDetails[u.user_id]?.username ?? u.user_id,
+          displayName:
+            followingDetails[u.user_id]?.displayName ?? u.display_name,
+          avatar: followingDetails[u.user_id]?.avatar ?? "",
           isVerified: u.is_verified,
-          followers: 0,
+          followers: followingDetails[u.user_id]?.followers ?? 0,
         }));
       }
       return mockUserFollowing[username || ""] ?? [];
@@ -67,11 +123,12 @@ export default function FollowingPage() {
       ? apiFollowing
           .filter((u) => followingIds.has(u.user_id))
           .map((u) => ({
-            username: u.user_id,
-            displayName: u.display_name,
-            avatar: "",
+            username: followingDetails[u.user_id]?.username ?? u.user_id,
+            displayName:
+              followingDetails[u.user_id]?.displayName ?? u.display_name,
+            avatar: followingDetails[u.user_id]?.avatar ?? "",
             isVerified: u.is_verified,
-            followers: 0,
+            followers: followingDetails[u.user_id]?.followers ?? 0,
           }))
       : allMockUsers
           .filter((u) => followingIds.has(u.username))
@@ -90,7 +147,14 @@ export default function FollowingPage() {
       }));
 
     return [...fromApi, ...extraUsers];
-  }, [apiFollowing, isOwner, currentUser?.following_ids, allMockUsers, username]);
+  }, [
+    apiFollowing,
+    followingDetails,
+    isOwner,
+    currentUser?.following_ids,
+    allMockUsers,
+    username,
+  ]);
 
   if (!user) return null;
 

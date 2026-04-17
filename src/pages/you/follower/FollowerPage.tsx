@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  mockFollowers,
-  mockUserFollowers,
-} from "@/components/Profile/MockData/mock";
+import { mockUserFollowers } from "@/components/Profile/MockData/mock";
 import FollowButton from "@/components/Profile/FollowButton/FollowButton";
 import {
   getFollowers,
+  getUserById,
   resolveUsername,
   type UserSummary,
-} from "@/services/mocks/User.service";
+} from "@/services/user.service";
 
 const tabs = ["Likes", "Following", "Followers"];
 
@@ -25,28 +23,82 @@ export default function FollowerPage() {
 
   // Real API data — replaces mockFollowers when loaded
   const [apiFollowers, setApiFollowers] = useState<UserSummary[] | null>(null);
+  const [followerDetails, setFollowerDetails] = useState<
+    Record<
+      string,
+      {
+        followers: number;
+        avatar: string;
+        username: string;
+        displayName: string;
+      }
+    >
+  >({});
 
   useEffect(() => {
-    const targetUsername = isOwner ? currentUser?.username : username;
-    if (!targetUsername) return;
+    const ownerId = currentUser?.id;
 
-    resolveUsername(targetUsername)
+    if (isOwner) {
+      if (!ownerId) return;
+
+      getFollowers(ownerId, { limit: 50, offset: 0 })
+        .then((res) => setApiFollowers(res.items))
+        .catch((err) => console.error("Failed to load followers:", err));
+      return;
+    }
+
+    if (!username) return;
+
+    resolveUsername(username)
       .then((userId) => getFollowers(userId, { limit: 50, offset: 0 }))
       .then((res) => setApiFollowers(res.items))
       .catch((err) => console.error("Failed to load followers:", err));
-  }, [username, isOwner]);
+  }, [username, isOwner, currentUser?.id]);
+
+  useEffect(() => {
+    if (!apiFollowers?.length) return;
+
+    Promise.all(
+      apiFollowers.map(async (u) => {
+        try {
+          const profile = await getUserById(u.user_id);
+          return [
+            u.user_id,
+            {
+              followers: profile.followers_count,
+              avatar: profile.profile_picture ?? "",
+              username: profile.username ?? u.user_id,
+              displayName: profile.display_name,
+            },
+          ] as const;
+        } catch {
+          return [
+            u.user_id,
+            {
+              followers: 0,
+              avatar: "",
+              username: u.user_id,
+              displayName: u.display_name,
+            },
+          ] as const;
+        }
+      }),
+    ).then((entries) => {
+      setFollowerDetails(Object.fromEntries(entries));
+    });
+  }, [apiFollowers]);
 
   // Use real data when available, fall back to mock
   const followerList = apiFollowers
     ? apiFollowers.map((u) => ({
-        username: u.user_id,        // used as key and nav target (UUID)
-        displayName: u.display_name,
-        avatar: "",                 // UserSummary has no avatar per spec
+        username: followerDetails[u.user_id]?.username ?? u.user_id,
+        displayName: followerDetails[u.user_id]?.displayName ?? u.display_name,
+        avatar: followerDetails[u.user_id]?.avatar ?? "",
         isVerified: u.is_verified,
-        followers: 0,               // UserSummary has no follower_count per spec
+        followers: followerDetails[u.user_id]?.followers ?? 0,
       }))
     : isOwner
-      ? mockFollowers
+      ? []
       : (mockUserFollowers[username || ""] ?? []);
 
   if (!user) return null;
