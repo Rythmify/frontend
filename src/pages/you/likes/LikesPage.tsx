@@ -1,13 +1,44 @@
 import React, { useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import {
-  mockLikedTracks,
-  mockUserProfiles,
-} from "@/components/Profile/MockData/mock";
+import { mockUserProfiles } from "@/components/Profile/MockData/mock";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
+import LikesContent from "@/components/UI/LikesContent/LikesContent";
+import { useLikesStore } from "@/stores/likes.store";
+import type { Track } from "@/types/track";
 
 const tabs = ["Likes", "Following", "Followers"];
+
+function toTrack(
+  track: {
+    id: string;
+    title: string;
+    artist: string;
+    coverUrl?: string;
+    plays?: number;
+    likes?: number;
+    reposts?: number;
+    comments?: number;
+  },
+  username?: string,
+): Track {
+  return {
+    id: track.id,
+    title: track.title,
+    artistName: track.artist,
+    artistUsername: username || track.artist.toLowerCase().replace(/\s+/g, "-"),
+    coverUrl: track.coverUrl ?? "",
+    genre: "",
+    likeCount: track.likes ?? 0,
+    repostCount: track.reposts ?? 0,
+    playCount: track.plays ?? 0,
+    commentCount: track.comments ?? 0,
+    duration: "0:00",
+    postedAt: "",
+    waveformData: [],
+    audioUrl: "",
+  };
+}
 
 export default function LikesPage() {
   const navigate = useNavigate();
@@ -17,6 +48,7 @@ export default function LikesPage() {
 
   const isYouRoute = location.pathname.startsWith("/you/");
   const isOwner = isYouRoute || !username || username === currentUser?.username;
+  const { likedTracks: ownerLikedTracks } = useLikesStore();
 
   const user = isOwner
     ? currentUser
@@ -27,8 +59,10 @@ export default function LikesPage() {
       };
 
   const likedTracks = isOwner
-    ? mockLikedTracks
-    : (mockUserProfiles[username || ""]?.likedTracks ?? []);
+    ? ownerLikedTracks
+    : (mockUserProfiles[username || ""]?.likedTracks ?? []).map((track) =>
+        toTrack(track, username),
+      );
 
   if (!user) return null;
 
@@ -107,16 +141,20 @@ export default function LikesPage() {
         </button>
       </div>
 
-      {/* Empty state */}
-      <div className="flex items-center justify-center py-24">
-        <p
-          data-test="likes-empty-state"
-          className="text-white font-bold text-3xl"
-        >
-          {isOwner
-            ? "You have no likes yet."
-            : `${user.displayName || user.username} hasn't liked any tracks.`}
-        </p>
+      <div data-test="likes-content">
+        {(isOwner || likedTracks.length > 0) && (
+          <LikesContent tracks={likedTracks} showControls={isOwner} />
+        )}
+        {likedTracks.length === 0 && !isOwner && (
+          <div className="flex items-center justify-center py-24">
+            <p
+              data-test="likes-empty-state"
+              className="text-3xl font-bold text-white"
+            >
+              {`${user.displayName || user.username} hasn't liked any tracks.`}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Footer */}

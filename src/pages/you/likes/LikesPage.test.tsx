@@ -14,6 +14,10 @@ vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
 }));
 
+vi.mock("@/stores/likes.store", () => ({
+  useLikesStore: vi.fn(),
+}));
+
 vi.mock("@/components/Profile/MockData/mock", () => ({
   mockLikedTracks: [
     { id: "1", title: "Track One", artist: "Artist One" },
@@ -38,7 +42,16 @@ vi.mock("@/components/Profile/ShareModal/ShareModal", () => ({
   ),
 }));
 
+vi.mock("@/components/UI/LikesContent/LikesContent", () => ({
+  default: ({ tracks }: { tracks: Array<{ id: string; title: string }> }) => (
+    <div data-test="likes-content-mock">
+      {tracks.length === 0 ? "You have no likes yet." : tracks.map((t) => t.title).join(", ")}
+    </div>
+  ),
+}));
+
 import { useAuthStore } from "@/stores/auth.store";
+import { useLikesStore } from "@/stores/likes.store";
 import { useParams, useLocation } from "react-router-dom";
 
 const mockCurrentUser = {
@@ -53,6 +66,9 @@ describe("LikesPage", () => {
     vi.clearAllMocks();
     (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       user: mockCurrentUser,
+    });
+    (useLikesStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      likedTracks: [],
     });
     (useLocation as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       pathname: "/me/likes",
@@ -132,7 +148,7 @@ describe("LikesPage", () => {
 
   it("shows empty state for owner", () => {
     render(<LikesPage />);
-    expect(screen.getByTestId("likes-empty-state")).toHaveTextContent(
+    expect(screen.getByTestId("likes-content-mock")).toHaveTextContent(
       "You have no likes yet.",
     );
   });
@@ -148,6 +164,34 @@ describe("LikesPage", () => {
     render(<LikesPage />);
     expect(screen.getByTestId("likes-empty-state")).toHaveTextContent(
       "Travis Scott hasn't liked any tracks.",
+    );
+  });
+
+  it("renders owner likes from the likes store", () => {
+    (useLikesStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      likedTracks: [
+        {
+          id: "1",
+          title: "Store Track",
+          artistName: "Artist One",
+          artistUsername: "artist-one",
+          coverUrl: "",
+          genre: "",
+          likeCount: 1,
+          repostCount: 0,
+          playCount: 0,
+          commentCount: 0,
+          duration: "0:00",
+          postedAt: "",
+          waveformData: [],
+          audioUrl: "",
+        },
+      ],
+    });
+
+    render(<LikesPage />);
+    expect(screen.getByTestId("likes-content-mock")).toHaveTextContent(
+      "Store Track",
     );
   });
 

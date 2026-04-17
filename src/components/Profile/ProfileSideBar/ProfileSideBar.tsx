@@ -6,6 +6,9 @@ import FollowButton from "../FollowButton/FollowButton";
 
 interface FollowingUser {
   username: string;
+  userId?: string;
+  displayName?: string;
+  profilePath?: string;
   followers: number;
   tracks?: number;
   avatar?: string;
@@ -14,6 +17,8 @@ interface FollowingUser {
 
 interface FollowerUser {
   username: string;
+  displayName?: string;
+  profilePath?: string;
   avatar?: string;
 }
 
@@ -208,12 +213,14 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           <div className="flex items-center">
             {followers.slice(0, 9).map((follower, index) => (
               <button
-                key={follower.username}
+                key={follower.profilePath ?? follower.username}
                 data-test="follower-avatar"
-                onClick={() => navigate(`/${follower.username}`)}
+                onClick={() =>
+                  navigate(follower.profilePath ?? `/${follower.username}`)
+                }
                 className="w-12 h-12 rounded-full overflow-hidden bg-border flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
                 style={{ marginLeft: index === 0 ? 0 : "-8px", zIndex: index }}
-                title={follower.username}
+                title={follower.displayName || follower.username}
               >
                 {follower.avatar ? (
                   <img
@@ -252,14 +259,14 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 
           {following.slice(0, 3).map((u) => (
             <div
-              key={u.username}
+              key={u.profilePath ?? u.username}
               data-test="following-item"
               className="flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
                 <div
                   data-test="following-avatar"
-                  onClick={() => navigate(`/${u.username}`)}
+                  onClick={() => navigate(u.profilePath ?? `/${u.username}`)}
                   className="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-border flex-shrink-0"
                 >
                   {u.avatar ? (
@@ -276,10 +283,10 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                   <div className="flex items-center gap-1">
                     <button
                       data-test="following-username"
-                      onClick={() => navigate(`/${u.username}`)}
+                      onClick={() => navigate(u.profilePath ?? `/${u.username}`)}
                       className="cursor-pointer text-sm font-bold text-white hover:opacity-70 transition-opacity"
                     >
-                      {u.username}
+                      {u.displayName || u.username}
                     </button>
                     {u.isVerified && (
                       <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
@@ -288,7 +295,9 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <button
                       data-test="following-followers-count"
-                      onClick={() => navigate(`/${u.username}/follower`)}
+                      onClick={() =>
+                        navigate(`${u.profilePath ?? `/${u.username}`}/follower`)
+                      }
                       className="flex cursor-pointer items-center gap-0.5 hover:opacity-70 transition-opacity"
                     >
                       <i className="fa-solid fa-user text-[10px]" />
@@ -301,7 +310,9 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                     {u.tracks !== undefined && u.tracks > 0 && (
                       <button
                         data-test="following-tracks-count"
-                        onClick={() => navigate(`/${u.username}/tracks`)}
+                        onClick={() =>
+                          navigate(`${u.profilePath ?? `/${u.username}`}/tracks`)
+                        }
                         className="cursor-pointer flex items-center gap-1 hover:opacity-70 transition-opacity"
                       >
                         <i className="fa-solid fa-bars text-[10px]" />
@@ -311,7 +322,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                   </div>
                 </div>
               </div>
-              <FollowButton username={u.username} />
+              <FollowButton username={u.username} userId={u.userId} />
             </div>
           ))}
         </div>
