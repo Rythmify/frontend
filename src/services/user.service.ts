@@ -47,6 +47,7 @@ export interface UserSummary {
   gender: "male" | "female" | null;
   role: "artist" | "listener" | "admin";
   is_verified: boolean;
+  profile_picture?: string | null;
 }
 
 export interface ListMeta {
@@ -150,9 +151,7 @@ export async function getFollowing(
   return res.data.data;
 }
 
-export async function getFollowStatus(
-  userId: string,
-): Promise<{
+export async function getFollowStatus(userId: string): Promise<{
   is_following: boolean;
   is_followed_by?: boolean;
   is_blocking?: boolean;
@@ -165,10 +164,16 @@ export async function getFollowStatus(
       is_blocking?: boolean;
       is_blocked_by?: boolean;
     };
-  }>(
-    `/users/${userId}/follow-status`,
-  );
+  }>(`/users/${userId}/follow-status`);
   return res.data.data;
+}
+
+export async function followUser(userId: string): Promise<void> {
+  await axiosInstance.post(`/users/${userId}/follow`);
+}
+
+export async function unfollowUser(userId: string): Promise<void> {
+  await axiosInstance.delete(`/users/${userId}/follow`);
 }
 
 export async function blockUser(userId: string): Promise<void> {
@@ -177,4 +182,15 @@ export async function blockUser(userId: string): Promise<void> {
 
 export async function unblockUser(userId: string): Promise<void> {
   await axiosInstance.delete(`/users/${userId}/block`);
+}
+
+export async function getBlockedUsers(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<UserListData> {
+  const res = await axiosInstance.get<{ data: UserListData }>(
+    "/users/me/blocked",
+    { params },
+  );
+  return res.data.data;
 }
