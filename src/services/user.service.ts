@@ -158,3 +158,11 @@ export async function getFollowStatus(
   );
   return res.data.data;
 }
+
+export async function blockUser(userId: string): Promise<void> {
+  await axiosInstance.post(`/users/${userId}/block`);
+}
+
+export async function unblockUser(userId: string): Promise<void> {
+  await axiosInstance.delete(`/users/${userId}/block`);
+}

@@ -83,13 +83,12 @@ export default function PrivacyPage() {
     show_top_fans_on_tracks: true,
   });
 
-  // Load real settings on mount
   useEffect(() => {
     getPrivacySettings()
-      .then(setSettings)
-      .catch(() => {
-        // keep defaults silently
-      });
+      .then((data) => {
+        if (data) setSettings(data);
+      })
+      .catch(() => {});
   }, []);
 
   // Optimistic toggle — reverts on API failure
