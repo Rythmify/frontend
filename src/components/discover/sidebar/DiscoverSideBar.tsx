@@ -17,9 +17,10 @@ import type { Track } from "@/types/track";
 // ─── Mock Data ────────────────────────────────────────────
 const mockLikedTracks = [
   {
-    id: "101",
+    id: "a1b2c3d4-e5f6-7890-1234-567890abcd01",
     title: "Moonlight Sonata",
     artist: "Classical Vibes",
+    artistUsername: "classical-vibes",
     coverUrl: "https://picsum.photos/48/48?random=20",
     plays: 450000,
     likes: 8200,
@@ -27,9 +28,10 @@ const mockLikedTracks = [
     comments: 145,
   },
   {
-    id: "102",
+    id: "a1b2c3d4-e5f6-7890-1234-567890abcd02",
     title: "Summer Breeze",
     artist: "Jazz Collective",
+    artistUsername: "jazz-collective",
     coverUrl: "https://picsum.photos/48/48?random=21",
     plays: 380000,
     likes: 6500,
@@ -37,9 +39,10 @@ const mockLikedTracks = [
     comments: 108,
   },
   {
-    id: "103",
+    id: "a1b2c3d4-e5f6-7890-1234-567890abcd03",
     title: "Desert Wind",
     artist: "Ambient Soul",
+    artistUsername: "ambient-soul",
     coverUrl: "https://picsum.photos/48/48?random=22",
     plays: 290000,
     likes: 5100,

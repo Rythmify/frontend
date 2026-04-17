@@ -20,6 +20,9 @@ import type { Track } from "../../types/track";
 import { usePlayerStore } from "../../stores/player.store";
 import { useAuthStore } from "../../stores/auth.store";
 import { audio, seekAudio, setGlobalWaveSurfer, setTrackLoadedLocally } from "../../services/audioService";
+import * as engagementService from "../../services/engagement.service";
+import { getTrackWaveform } from "../../services/track.service";
+
 
 //  Helpers
 function fmtN(n?: number) {
@@ -110,69 +113,87 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
   const durRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    if (wsRef.current) { try { wsRef.current.destroy(); } catch { /* ok */ } wsRef.current = null; }
+    let ws: WaveSurfer | null = null;
+    let isMounted = true;
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const { g, pg } = buildGradients(ctx);
+    const initWaveform = async () => {
+      if (!containerRef.current) return;
+      if (wsRef.current) { try { wsRef.current.destroy(); } catch { /* ok */ } wsRef.current = null; }
 
-    let ws: WaveSurfer;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const { g, pg } = buildGradients(ctx);
 
-    if (isActive) {
-      const currentSrc = decodeURI(audio.src);
-      const targetSrc = decodeURI(track.audioUrl);
+      const peaks = track.waveformData || await getTrackWaveform(track.id);
+      if (!isMounted) return;
 
-      ws = WaveSurfer.create({
-        container: containerRef.current!,
-        waveColor: g,
-        progressColor: pg,
-        barWidth: 2,
-        barGap: 1,
-        barRadius: 2,
-        backend: "MediaElement",
-        media: audio,
-        url: currentSrc.includes(targetSrc) || currentSrc === targetSrc
-          ? audio.src
-          : track.audioUrl,
-      });
+      const hasPeaks = peaks && peaks.length > 0;
 
-      setGlobalWaveSurfer(ws);
-      setTrackLoadedLocally(track.id);
+      let parsedDur = 0;
+      if (track.duration && typeof track.duration === "string") {
+        const parts = track.duration.split(":");
+        if (parts.length === 2) {
+          parsedDur = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        }
+      }
 
-      ws.on("timeupdate", (currentTime: number) => {
-        if (timeRef.current) timeRef.current.textContent = fmt(currentTime);
-      });
+      if (isActive) {
+        ws = WaveSurfer.create({
+          container: containerRef.current!,
+          waveColor: g,
+          progressColor: pg,
+          barWidth: 2,
+          barGap: 0.5,
+          barRadius: 2,
+          backend: "MediaElement",
+          media: audio,
+          peaks: hasPeaks ? [peaks] : undefined,
+          duration: parsedDur > 0 ? parsedDur : undefined,
+        });
 
-      ws.on("interaction", (newTime: number) => {
-        seekAudio(newTime);
-      });
+        setGlobalWaveSurfer(ws);
+        setTrackLoadedLocally(track.id);
 
-      ws.on("decode", (dur: number) => {
-        if (durRef.current) durRef.current.textContent = fmt(dur);
-      });
-    } else {
-      ws = WaveSurfer.create({
-        container: containerRef.current!,
-        waveColor: g,
-        progressColor: pg,
-        barWidth: 2,
-        barGap: 1,
-        barRadius: 2,
-        url: track.audioUrl,
-        interact: false,
-      });
+        ws.on("timeupdate", (currentTime: number) => {
+          if (timeRef.current) timeRef.current.textContent = fmt(currentTime);
+        });
 
-      ws.on("decode", (dur: number) => {
-        if (durRef.current) durRef.current.textContent = fmt(dur);
-      });
-    }
+        ws.on("interaction", (newTime: number) => {
+          seekAudio(newTime);
+        });
 
-    wsRef.current = ws;
+        ws.on("decode", (dur: number) => {
+          if (durRef.current) durRef.current.textContent = fmt(dur);
+        });
+      } else {
+        ws = WaveSurfer.create({
+          container: containerRef.current!,
+          waveColor: g,
+          progressColor: pg,
+          barWidth: 2,
+          barGap: 0.5,
+          barRadius: 2,
+          interact: false,
+          peaks: hasPeaks ? [peaks] : undefined,
+          duration: parsedDur > 0 ? parsedDur : undefined,
+          url: !hasPeaks ? track.audioUrl : undefined,
+        });
+
+        ws.on("decode", (dur: number) => {
+          if (durRef.current) durRef.current.textContent = fmt(dur);
+        });
+      }
+
+      ws.on("error", () => {});
+      wsRef.current = ws;
+    };
+
+    initWaveform();
 
     return () => {
-      try { ws.destroy(); } catch { /* ok */ }
+      isMounted = false;
+      try { if (ws) ws.destroy(); } catch { /* ok */ }
       wsRef.current = null;
     };
   }, [isActive, track.id, track.audioUrl]);
@@ -298,6 +319,7 @@ export default function PlaylistComponent({
   const componentIsPlaying = isComponentActive && isPlaying;
 
   const [liked, setLiked] = useState(false);
+  const [reposted, setReposted] = useState(false);
   const [likeCount, setLikeCount] = useState(playlist.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(playlist.repostCount ?? 0);
   const [showSharePopup, setShowSharePopup] = useState(false);
@@ -323,7 +345,57 @@ export default function PlaylistComponent({
     setRepostCount(playlist.repostCount ?? 0);
   }, [playlist.likeCount, playlist.repostCount]);
 
-  const handleLike = () => { setLiked((p) => !p); setLikeCount((p) => liked ? p - 1 : p + 1); };
+  const handleLike = async () => {
+    const wasLiked = liked;
+    const newLiked = !wasLiked;
+
+    // Optimistic update
+    setLiked(newLiked);
+    setLikeCount((p) => (wasLiked ? p - 1 : p + 1));
+
+    try {
+      if (newLiked) {
+        await engagementService.likePlaylist(playlist.id);
+      } else {
+        await engagementService.unlikePlaylist(playlist.id);
+      }
+    } catch (err: any) {
+      // Revert on failure
+      setLiked(wasLiked);
+      setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
+      if (err.response?.status === 401) {
+        alert("Session expired or unauthorized. Please log out and back in.");
+      }
+      console.error("Failed to update playlist like status:", err);
+    }
+  };
+
+  const handleRepost = async () => {
+    const wasReposted = reposted;
+    const newReposted = !wasReposted;
+
+    // Optimistic update
+    setReposted(newReposted);
+    setRepostCount((p) => (wasReposted ? p - 1 : p + 1));
+
+    try {
+      if (newReposted) {
+        await engagementService.repostPlaylist(playlist.id);
+      } else {
+        await engagementService.removePlaylistRepost(playlist.id);
+      }
+    } catch (err: any) {
+      // Revert on failure
+      setReposted(wasReposted);
+      setRepostCount((p) => (wasReposted ? p + 1 : p - 1));
+      if (err.response?.status === 404) {
+        alert("Reposting is not supported by the Rythmify backend API yet!");
+      } else if (err.response?.status === 401) {
+        alert("Session expired or unauthorized. Please log out and back in.");
+      }
+      console.error("Failed to repost playlist:", err);
+    }
+  };
 
   /** Play/pause the whole playlist or resume/start the first track */
   const handlePlayPause = () => {
@@ -509,7 +581,7 @@ export default function PlaylistComponent({
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <ScBtn icon={<FaHeart size={13} />} label={fmtN(likeCount)} active={liked} tooltip="Like" onClick={handleLike} dataTest="playlist-component-btn-like" />
-            <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} tooltip="Repost" onClick={() => {}} dataTest="playlist-component-btn-repost" />
+            <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} active={reposted} tooltip="Repost" onClick={handleRepost} dataTest="playlist-component-btn-repost" />
             <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowSharePopup(true)} dataTest="playlist-component-btn-share" />
             <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} dataTest="playlist-component-btn-copy" />
             <ScBtn icon={<MdQueueMusic size={17} />} tooltip="Add to Next up" onClick={() => firstTrack && setTrack(firstTrack, playlist.tracks)} dataTest="playlist-component-btn-add-to-next" />

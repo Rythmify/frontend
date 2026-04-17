@@ -306,15 +306,11 @@ export default function UsernamePage() {
                   track={t}
                   onCopyLink={() => {
                     navigator.clipboard.writeText(
-                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`,
+                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`
                     );
                   }}
-                  onEdit={() =>
-                    navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)
-                  }
-                  onReplaceFile={() =>
-                    console.log("[TrackCard] replace file:", t.id)
-                  }
+                  onEdit={() => navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)}
+                  onReplaceFile={() => console.log("[TrackCard] replace file:", t.id)}
                   onDelete={() => console.log("[TrackCard] delete:", t.id)}
                   onDistribute={() =>
                     console.log("[TrackCard] distribute:", t.id)
