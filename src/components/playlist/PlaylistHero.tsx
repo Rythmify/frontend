@@ -9,7 +9,7 @@ interface PlaylistHeroProps {
   isPlaying?: boolean;
   activeTrackId?: string;
   onPlayPause?: () => void;
-  onImageUpload?: (file: File) => void;
+  onImageUpload?: (file: File) => void | Promise<void>;
   showUploadButton?: boolean;
   ownerUsername?: string | null;
 }
@@ -43,7 +43,7 @@ export default function PlaylistHero({
       setPreviewUrl(localUrl);
 
       if (onImageUpload) {
-        onImageUpload(file);
+        void onImageUpload(file);
       }
     }
   };

@@ -5,11 +5,13 @@ import PlaylistActions from "../../../components/playlist/PlaylistActions";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   getPlaylist,
+  updatePlaylist,
   type PlaylistDetails,
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { getUsers } from "../../../services/mocks/User.service";
 import { usePlayerStore } from "../../../stores/player.store";
+import { useAuthStore } from "../../../stores/auth.store";
 import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
@@ -24,6 +26,7 @@ function PlaylistSlugPage() {
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuthStore();
 
   const {
     setTrack: setPlayerTrack,
@@ -41,9 +44,8 @@ function PlaylistSlugPage() {
       setError(null);
       try {
         // Fetch playlist details including tracks
-        const [playlistRes, fetchedUsers] = await Promise.all([
+        const [playlistRes] = await Promise.all([
           getPlaylist(playlistSlug, { include_tracks: true }),
-          getUsers(),
         ]);
 
         if (cancelled) return;
@@ -138,6 +140,25 @@ function PlaylistSlugPage() {
     !!playlist &&
     playlist.tracks.some((track) => track.track_id === currentTrack?.id);
 
+  const handleCoverUpload = async (file: File) => {
+    if (!playlist) return;
+
+    try {
+      const res = await updatePlaylist(playlist.playlist_id, {
+        cover_image: file,
+      });
+
+      setPlaylist((prev) =>
+        prev ? { ...prev, ...res.data } : prev,
+      );
+    } catch (err) {
+      console.error("Failed to update playlist cover image:", err);
+      if (!error) setError("Failed to update playlist cover image.");
+    }
+  };
+
+  const canEditPlaylist = user?.id === playlist?.owner_user_id;
+
   if (loading)
     return (
       <div className="animate-pulse p-20 text-center text-white">
@@ -162,6 +183,9 @@ function PlaylistSlugPage() {
         isPlaying={isPlaylistActive}
         activeTrackId={currentTrack?.id}
         onPlayPause={handleHeroPlayPause}
+        onImageUpload={handleCoverUpload}
+        showUploadButton={canEditPlaylist}
+        ownerUsername={username}
       />
 
       <div className="container mx-auto">

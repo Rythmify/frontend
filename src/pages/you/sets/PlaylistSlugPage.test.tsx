@@ -3,9 +3,13 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import PlaylistSlugPage from "./PlaylistSlugPage";
-import { getPlaylist } from "@/services/api/playlist/playlist.service";
+import {
+  getPlaylist,
+  updatePlaylist,
+} from "@/services/api/playlist/playlist.service";
 import { getUsers } from "@/services/mocks/User.service";
 import { usePlayerStore } from "@/stores/player.store";
+import { useAuthStore } from "@/stores/auth.store";
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
   getPlaylist: vi.fn(),
@@ -19,16 +23,29 @@ vi.mock("@/stores/player.store", () => ({
   usePlayerStore: vi.fn(),
 }));
 
+vi.mock("@/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
+
 vi.mock("@/components/Upload/GuestPageFooter", () => ({
   default: () => <div data-test="guest-footer" />,
 }));
 
 vi.mock("../../../components/playlist/PlaylistHero", () => ({
-  default: ({ playlist, onPlayPause }: any) => (
+  default: ({ playlist, onPlayPause, onImageUpload }: any) => (
     <div data-test="playlist-hero">
       <span>{playlist.name}</span>
+      <span data-test="playlist-cover">{playlist.cover_image ?? "no-cover"}</span>
       <button onClick={onPlayPause} data-test="hero-play">
         Play
+      </button>
+      <button
+        data-test="hero-upload"
+        onClick={() =>
+          onImageUpload?.(new File(["cover"], "cover.png", { type: "image/png" }))
+        }
+      >
+        Upload
       </button>
     </div>
   ),
@@ -74,6 +91,13 @@ describe("PlaylistSlugPage", () => {
       currentTrack: null,
       togglePlay: vi.fn(),
       setTrack: vi.fn(),
+    } as any);
+    vi.mocked(useAuthStore).mockReturnValue({
+      user: {
+        id: "owner-1",
+        username: "testuser",
+        displayName: "Test User",
+      },
     } as any);
     vi.mocked(getUsers).mockResolvedValue([] as any);
   });
@@ -189,6 +213,35 @@ describe("PlaylistSlugPage", () => {
     fireEvent.click(screen.getByTestId("playlist-actions-update"));
 
     expect(screen.getByText("Updated Playlist")).toBeInTheDocument();
+  });
+
+  it("persists cover uploads from the hero", async () => {
+    vi.mocked(getPlaylist).mockResolvedValue({ data: mockPlaylistData } as any);
+    vi.mocked(updatePlaylist).mockResolvedValue({
+      data: { ...mockPlaylistData, cover_image: "https://cdn.example.com/new-cover.jpg" },
+      message: "ok",
+    } as any);
+
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("playlist-hero")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByTestId("hero-upload"));
+
+    await waitFor(() =>
+      expect(updatePlaylist).toHaveBeenCalledWith(
+        "pl-abc",
+        expect.objectContaining({
+          cover_image: expect.any(File),
+        }),
+      ),
+    );
+
+    expect(screen.getByTestId("playlist-cover")).toHaveTextContent(
+      "https://cdn.example.com/new-cover.jpg",
+    );
   });
 
   it("does nothing when the playlist has no tracks", async () => {
