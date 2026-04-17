@@ -8,6 +8,7 @@ import type {
 } from "@/services/api/playlist/playlist.service";
 import { getPlaylistsByUser } from "@/services/api/playlist/playlist.service";
 import { useAuthStore } from "@/stores/auth.store";
+import GoMobileSection from "../UI/GoMobile";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
@@ -89,6 +90,9 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
               ))}
             </div>
           )}
+        </div>
+        <div data-test="go-mobile-section-playlist">
+          <GoMobileSection showFooter={false} />
         </div>
       </aside>
     </Tooltip.Provider>

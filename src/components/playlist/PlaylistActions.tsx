@@ -14,8 +14,8 @@ import EditPlaylistModal from "./EditPlaylistModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
 interface PlaylistActionsProps {
-  playlist: PlaylistDetails; 
-  onPlaylistUpdated?: (updated: PlaylistDetails) => void; 
+  playlist: PlaylistDetails;
+  onPlaylistUpdated?: (updated: PlaylistDetails) => void;
 }
 
 export default function PlaylistActions({
@@ -164,9 +164,7 @@ function ActionButton({
           className={`transition-colors duration-150 ${
             active
               ? "text-[var(--color-accent)]"
-              : danger
-                ? "text-white group-hover:text-[#FB2C36]"
-                : "text-white group-hover:text-[#717171]"
+              : "text-white group-hover:text-[#717171]"
           }`}
         >
           {children}
