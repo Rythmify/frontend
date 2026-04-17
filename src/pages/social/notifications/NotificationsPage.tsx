@@ -2,20 +2,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchNotifications, type Notification, type NotificationType } from '@/services/api/notifications/notificationsAPI'
 import { fetchMyFollowing } from '@/services/api/notifications/notificationsAPI'
-import ArtistListSection from '@/components/UI/ArtistListSection'
+import ArtistListSection, { type Artist } from '@/components/UI/ArtistListSection'
 import NotificationHeader, { type FilterType } from '@/components/notificationsComponents/notificationHeader'
 import Spinner from '@/components/UI/Spinner'
 import GoMobileSection from '@/components/UI/GoMobile'
 import NotificationCard from '@/components/notificationsComponents/notificationCard'
 import { useNotificationStore } from '@/stores/notification.store'
-
-interface Artist {
-  username: string
-  avatar?: string
-  followers: number
-  tracks?: number
-  isVerified?: boolean
-}
 
 type Status = 'loading' | 'success' | 'empty' | 'error'
 
@@ -30,7 +22,6 @@ const NotificationsPage = () => {
   const loadNotifications = useCallback(async (type: FilterType) => {
     setStatus('loading')
     try {
-      // 'all' means no type filter — pass undefined so the param is omitted
       const typeParam = type === 'all' ? undefined : type as NotificationType
       const res = await fetchNotifications(1, 50, false, typeParam)
       const items = res.data.items
@@ -46,6 +37,7 @@ const NotificationsPage = () => {
       const res = await fetchMyFollowing(undefined, 4, 0)
       setRecentFollowers(
         res.data.items.map(u => ({
+          id:         u.id,
           username:   u.username,
           avatar:     u.profile_picture ?? undefined,
           followers:  0,
@@ -57,10 +49,8 @@ const NotificationsPage = () => {
     }
   }, [])
 
-  
-
   const handleTypeChange = (type: FilterType) => {
-    if (type === selectedType) return   // already selected, no re-fetch needed
+    if (type === selectedType) return
     setSelectedType(type)
   }
 
@@ -70,7 +60,7 @@ const NotificationsPage = () => {
 
   useEffect(() => {
     loadRecentFollowers()
-    fetchUnreadCount()  // initialize global unread count on page mount
+    fetchUnreadCount()
   }, [loadRecentFollowers, fetchUnreadCount])
 
   return (

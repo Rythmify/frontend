@@ -1,7 +1,7 @@
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import TrackCard from "@/components/UI/card/Card";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
-import { mockDiscoverTracks } from "@/services/mocks/discover";
+
 import type { DiscoveryTrack } from "@/services/api/discover.service";
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const MoreOfWhatYouLike = ({ tracks }: Props) => {
-  const items = tracks.length ? tracks.map(mapDiscoveryTrack) : mockDiscoverTracks;
+  const items = tracks.length ? tracks.map(mapDiscoveryTrack) : [];
 
   return (
     <div data-test="section-more-of-what-you-like">

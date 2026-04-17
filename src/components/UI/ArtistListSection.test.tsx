@@ -17,6 +17,7 @@ vi.mock("./FollowButton", () => ({
 
 const mockArtists = [
   {
+    id: "1",
     username: "travis-scott",
     avatar: "https://example.com/travis.jpg",
     followers: 6234000,
@@ -24,6 +25,7 @@ const mockArtists = [
     isVerified: true,
   },
   {
+    id: "2",
     username: "billie-eilish",
     avatar: "https://example.com/billie.jpg",
     followers: 4500,
@@ -31,6 +33,7 @@ const mockArtists = [
     isVerified: false,
   },
   {
+    id: "3",
     username: "the-weeknd",
     avatar: "https://example.com/weeknd.jpg",
     followers: 850,
@@ -38,6 +41,7 @@ const mockArtists = [
     isVerified: true,
   },
   {
+    id: "4",
     username: "dua-lipa",
     avatar: "https://example.com/dua.jpg",
     followers: 1200000,
@@ -224,7 +228,6 @@ describe("ArtistListSection", () => {
 
   it("hides tracks stat when tracks is 0", () => {
     render(<ArtistListSection title="ARTISTS" artists={mockArtists} />);
-    // mockArtists[2] has tracks: 0 — track button should not render
     expect(
       screen.queryByTestId(`artist-tracks-${mockArtists[2].username}`),
     ).not.toBeInTheDocument();
