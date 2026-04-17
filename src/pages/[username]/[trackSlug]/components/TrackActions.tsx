@@ -68,7 +68,10 @@ export default function TrackActions({
       setLiked(true);
       setLikeCount((p) => p + 1);
     }
-  } catch {
+  } catch (err: any) {
+    if (err.response?.status === 401) {
+      alert("Session expired or unauthorized. Please log out and back in.");
+    }
     setLiked((p) => !p);
   }
 };
@@ -78,7 +81,10 @@ export default function TrackActions({
   try {
     await engagementService.repostTrack(track.id);
     setRepostCount((p) => p + 1);
-  } catch {
+  } catch (err: any) {
+    if (err.response?.status === 404) {
+      alert("Reposting is not supported by the Rythmify backend API yet!");
+    }
     console.error("Repost failed");
   }
 };
@@ -165,7 +171,14 @@ export default function TrackActions({
               </IconButton>
 
               {/* Add to Next up */}
-              <IconButton data-test="button-add-next-up" onClick={onAddToNextUp} tooltip="Add to Next up">
+              <IconButton
+                data-test="button-add-next-up"
+                onClick={() => {
+                  onAddToNextUp?.();
+                  alert("Added to Next up list!");
+                }}
+                tooltip="Add to Next up"
+              >
                 <LuListEnd className="text-[17px]" />
               </IconButton>
 
@@ -185,7 +198,15 @@ export default function TrackActions({
                     data-test="dropdown-more"
                     className="absolute left-0 top-full mt-1 bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] shadow-[var(--shadow-md)] z-50 min-w-[190px] py-1"
                   >
-                    <DropdownItem icon={<FaAddToPlaylist />} label="Add to playlist" data-test="dropdown-item-add-playlist" onClick={() => setMoreOpen(false)} />
+                    <DropdownItem
+                      icon={<FaAddToPlaylist />}
+                      label="Add to playlist"
+                      data-test="dropdown-item-add-playlist"
+                      onClick={() => {
+                        alert("Add to playlist feature is not implemented yet.");
+                        setMoreOpen(false);
+                      }}
+                    />
                     {track.isPrivate && (
                       <DropdownItem icon={<FaGlobe />} label="Make public" data-test="dropdown-item-make-public" onClick={() => setMoreOpen(false)} />
                     )}

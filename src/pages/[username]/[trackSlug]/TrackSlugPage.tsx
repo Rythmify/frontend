@@ -5,7 +5,12 @@ import TrackActions from "./components/TrackActions";
 import TrackList from "./components/TrackList";
 import TrackSidebar from "./components/TrackSidebar";
 import type { Track } from "../../../types/track";
-import { getTrackById, getRelatedTracks, getTrackComments, postComment } from "../../../services/track.service";
+import {
+  getTrackBySlug,
+  getRelatedTracks,
+  getTrackComments,
+  postComment,
+} from "../../../services/track.service";
 import { usePlayerStore } from "../../../stores/player.store";
 
 export default function TrackSlugPage() {
@@ -23,16 +28,17 @@ export default function TrackSlugPage() {
 
   const { setTrack: setPlayerTrack, currentTrack, isPlaying } = usePlayerStore();
 
-  // The hero always shows the currently playing track if one exists,
-  // otherwise falls back to the page's track
-  const heroTrack = currentTrack ?? track;
+  // FIX: heroTrack is ALWAYS the page's track so the hero always shows what
+  // this page is about.  We only fall back to currentTrack while the page
+  // track is still loading.
+  const heroTrack = track ?? currentTrack ?? null;
 
-  // Fetch all data 
+  // Fetch all data
   useEffect(() => {
     let cancelled = false;
 
     async function fetchData() {
-      if (!trackId) {
+      if (!username || !trackId) {
         setError("Track not found.");
         setLoading(false);
         return;
@@ -40,19 +46,25 @@ export default function TrackSlugPage() {
 
       setLoading(true);
       setError(null);
+
       try {
-        const fetchedTrack = await getTrackById(trackId);
-
+        const fetchedTrack = await getTrackBySlug(username, trackId);
         if (cancelled) return;
-
         setTrack(fetchedTrack);
 
-        // Fetch related tracks after we have the track id
-        const related = await getRelatedTracks(String(fetchedTrack.id));
-        if (!cancelled) setRelatedTracks(Array.isArray(related) ? related : []);
+        getRelatedTracks(String(fetchedTrack.id))
+          .then((related) => {
+            if (!cancelled)
+              setRelatedTracks(Array.isArray(related) ? related : []);
+          })
+          .catch(() => {});
 
-        const fetchedComments = await getTrackComments(String(fetchedTrack.id));
-        if (!cancelled) setComments(Array.isArray(fetchedComments) ? fetchedComments : []);
+        getTrackComments(String(fetchedTrack.id))
+          .then((fetchedComments) => {
+            if (!cancelled)
+              setComments(Array.isArray(fetchedComments) ? fetchedComments : []);
+          })
+          .catch(() => {});
       } catch (err) {
         if (!cancelled) setError("Failed to load track. Please try again.");
         console.error(err);
@@ -65,13 +77,15 @@ export default function TrackSlugPage() {
     return () => { cancelled = true; };
   }, [username, trackId]);
 
-  // Playback handlers 
+  // FIX: play/pause handler now always uses the page's `track`, not heroTrack.
+  // If this page's track is already loaded in the player → toggle play/pause.
+  // Otherwise → load the page track into the player and start playing.
   const handleHeroPlayPause = () => {
-    if (!heroTrack) return;
-    if (currentTrack?.id === heroTrack.id) {
+    if (!track) return;
+    if (currentTrack?.id === track.id) {
       usePlayerStore.getState().togglePlay();
     } else {
-      setPlayerTrack(heroTrack, [heroTrack, ...relatedTracks]);
+      setPlayerTrack(track, [track, ...relatedTracks]);
     }
   };
 
@@ -79,7 +93,10 @@ export default function TrackSlugPage() {
     if (currentTrack?.id === t.id) {
       usePlayerStore.getState().togglePlay();
     } else {
-      setPlayerTrack(t, [track!, ...relatedTracks].filter(Boolean) as Track[]);
+      setPlayerTrack(
+        t,
+        [track!, ...relatedTracks].filter(Boolean) as Track[]
+      );
       navigate(`/${t.artistUsername}/${t.id}`);
     }
   };
@@ -93,19 +110,17 @@ export default function TrackSlugPage() {
     }
   };
 
-  // Loading state 
+  // Loading state
   if (loading) {
     return (
       <div
         data-test="track-slug-loading"
         className="flex-1 w-full animate-pulse"
       >
-        {/* Hero skeleton */}
         <div
           className="w-full bg-[var(--color-input-bg)]"
           style={{ minHeight: "300px" }}
         />
-        {/* Body skeleton */}
         <div className="flex flex-col lg:flex-row gap-8 py-2 w-full mt-4">
           <div className="flex-1 space-y-3">
             {[...Array(5)].map((_, i) => (
@@ -124,7 +139,7 @@ export default function TrackSlugPage() {
     );
   }
 
-  // Error state 
+  // Error state
   if (error || !track) {
     return (
       <div
@@ -138,25 +153,25 @@ export default function TrackSlugPage() {
     );
   }
 
-  // Main render 
+  // Main render
   return (
     <div
       data-test="track-slug-page"
       className="flex-1 container px-4 md:px-8 lg:px-20"
     >
-      {/* Hero — always shows the currently playing track */}
+      {/* Hero — always shows this page's track */}
       {heroTrack && (
         <TrackHero
           track={heroTrack}
           comments={comments}
-          isPlaying={currentTrack?.id === heroTrack.id && isPlaying}
+          // FIX: isPlaying is true only when THIS page's track is the active one
+          isPlaying={currentTrack?.id === track.id && isPlaying}
           onPlayPause={handleHeroPlayPause}
         />
       )}
 
       {/* Body — two columns */}
       <div className="flex flex-col lg:flex-row gap-8 py-2 w-full">
-
         {/* Left: actions + track list */}
         <div data-test="track-main-content" className="flex-1 min-w-0">
           <TrackActions
@@ -182,12 +197,8 @@ export default function TrackSlugPage() {
           data-test="track-sidebar-col"
           className="w-full lg:w-[280px] shrink-0 lg:pt-[12px]"
         >
-          <TrackSidebar
-            track={heroTrack ?? track}
-            featuredArtists={[]}
-          />
+          <TrackSidebar track={heroTrack ?? track} featuredArtists={[]} />
         </div>
-
       </div>
     </div>
   );

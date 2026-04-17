@@ -3,6 +3,7 @@ import FollowButton from "./FollowButton";
 
 // ─── Types ────────────────────────────────────────────────
 interface Artist {
+  id: string;
   username: string;
   avatar?: string;
   followers: number;
@@ -165,7 +166,7 @@ const ArtistListSection = ({
 
             {/* Follow Button */}
             <div data-test={`artist-follow-button-${artist.username}`}>
-              <FollowButton username={artist.username} />
+              <FollowButton username={artist.username} userId={artist.id} />
             </div>
           </div>
         ))}

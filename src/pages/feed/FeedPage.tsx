@@ -1,14 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DiscoverSideBar from "@/components/discover/sidebar/DiscoverSideBar";
 import FeedItemCard from "@/components/feed/FeedItemCard";
-import { mockFeedItems } from "@/services/mocks/feed";
+import { getActivityFeed } from "@/services/feed.service";
+import type { FeedItem } from "@/types/feedItem";
 
 const FeedPage = () => {
   const [showReposts, setShowReposts] = useState(true);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeed = async () => {
+      try {
+        setIsLoading(true);
+        const { items } = await getActivityFeed(20);
+        setFeedItems(items);
+      } catch (err) {
+        console.error("Failed to load feed:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFeed();
+  }, []);
 
   const displayItems = showReposts
-    ? mockFeedItems
-    : mockFeedItems.filter((item) => item.type === "post");
+    ? feedItems
+    : feedItems.filter((item) => item.type === "post");
+
   return (
     <div
       data-test="feed-page"
@@ -50,9 +69,15 @@ const FeedPage = () => {
 
           {/* Feed list */}
           <div data-test="feed-list" className="flex flex-col">
-            {displayItems.map((item) => (
-              <FeedItemCard key={item.id} item={item} />
-            ))}
+            {isLoading ? (
+              <p className="text-text-secondary text-center mt-10">Loading feed...</p>
+            ) : displayItems.length > 0 ? (
+              displayItems.map((item) => (
+                <FeedItemCard key={item.id} item={item} />
+              ))
+            ) : (
+              <p className="text-text-secondary text-center mt-10">Your feed is empty. Follow some artists!</p>
+            )}
           </div>
         </div>
 

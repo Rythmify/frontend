@@ -31,7 +31,7 @@ import {
 } from "../../services/audioService";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import * as engagementService from "../../services/engagement.service";
-
+import { getTrackWaveform } from "../../services/track.service";
 
 // helpers
 
@@ -195,78 +195,89 @@ function CardWaveform({
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const { g, pg } = buildGradients(ctx);
-
-    const durationFallback = parseDur(track.duration);
-    let ws: WaveSurfer;
+    let ws: WaveSurfer | null = null;
     let extraCleanup: (() => void) | undefined;
+    let isMounted = true;
 
-    if (isActive) {
-      const currentSrc = decodeURI(audio.src);
-      const targetSrc = decodeURI(track.audioUrl);
+    const initWaveform = async () => {
+      if (!ctx || !containerRef.current) return;
+      const { g, pg } = buildGradients(ctx);
+      const durationFallback = parseDur(track.duration);
 
-      ws = WaveSurfer.create({
-        container: containerRef.current!,
-        waveColor: g,
-        progressColor: pg,
-        barWidth: 2,
-        barGap: 1,
-        barRadius: 2,
-        backend: "MediaElement",
-        media: audio,
-        url:
-          currentSrc.includes(targetSrc) || currentSrc === targetSrc
-            ? audio.src
-            : track.audioUrl,
-      });
+      const peaks = track.waveformData || await getTrackWaveform(track.id);
+      if (!isMounted) return;
 
-      setGlobalWaveSurfer(ws);
-      setTrackLoadedLocally(track.id);
+      const hasPeaks = peaks && peaks.length > 0;
 
-      ws.on("timeupdate", (currentTime: number) => {
-        if (timeRef.current) timeRef.current.textContent = fmt(currentTime);
-      });
+      if (isActive) {
+        ws = WaveSurfer.create({
+          container: containerRef.current!,
+          waveColor: g,
+          progressColor: pg,
+          barWidth: 2,
+          barGap: 0.5,
+          barRadius: 2,
+          backend: "MediaElement",
+          media: audio,
+          peaks: hasPeaks ? [peaks] : undefined,
+          duration: durationFallback > 0 ? durationFallback : undefined,
+        });
 
-      ws.on("interaction", (newTime: number) => {
-        seekAudio(newTime);
-        const dur = audio.duration || durationFallback;
-        onWaveformClick(dur > 0 ? newTime / dur : 0);
-      });
+        setGlobalWaveSurfer(ws);
+        setTrackLoadedLocally(track.id);
 
-      ws.on("decode", (dur) => {
-        if (durRef.current) durRef.current.textContent = fmt(dur);
-        setWaveformDuration(dur);
-      });
-    } else {
-      ws = WaveSurfer.create({
-        container: containerRef.current!,
-        waveColor: g,
-        progressColor: pg,
-        barWidth: 2,
-        barGap: 1,
-        barRadius: 2,
-        url: track.audioUrl,
-        interact: false,
-      });
+        ws.on("timeupdate", (currentTime: number) => {
+          if (timeRef.current) timeRef.current.textContent = fmt(currentTime);
+        });
 
-      ws.on("decode", (dur) => {
-        if (durRef.current) durRef.current.textContent = fmt(dur);
-        setWaveformDuration(dur);
-        try {
-          cachedPeaks.current = ws.exportPeaks();
-        } catch {
-          /* ok */
-        }
-      });
-    }
+        ws.on("interaction", (newTime: number) => {
+          seekAudio(newTime);
+          const dur = audio.duration || durationFallback;
+          onWaveformClick(dur > 0 ? newTime / dur : 0);
+        });
+
+        ws.on("decode", (dur) => {
+          if (durRef.current) durRef.current.textContent = fmt(dur);
+          setWaveformDuration(dur);
+        });
+      } else {
+        ws = WaveSurfer.create({
+          container: containerRef.current!,
+          waveColor: g,
+          progressColor: pg,
+          barWidth: 2,
+          barGap: 0.5,
+          barRadius: 2,
+          interact: false,
+          peaks: hasPeaks ? [peaks] : undefined,
+          duration: durationFallback > 0 ? durationFallback : undefined,
+          url: !hasPeaks ? track.audioUrl : undefined,
+        });
+
+        ws.on("decode", (dur) => {
+          if (durRef.current) durRef.current.textContent = fmt(dur);
+          setWaveformDuration(dur);
+          try {
+            cachedPeaks.current = ws!.exportPeaks();
+          } catch {
+            /* ok */
+          }
+        });
+      }
+
+      ws.on("error", () => {});
+      wsRef.current = ws;
+    };
+
+    initWaveform();
 
     wsRef.current = ws;
 
     return () => {
+      isMounted = false;
       extraCleanup?.();
       try {
-        ws.destroy();
+        if (ws) ws.destroy();
       } catch {
         /* ok */
       }
@@ -736,10 +747,13 @@ export default function TrackCard({
       } else {
         await engagementService.unlikeTrack(track.id);
       }
-    } catch (err) {
+    } catch (err: any) {
       // Revert on failure
       setLiked(wasLiked);
       setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
+      if (err.response?.status === 401) {
+        alert("Session expired or unauthorized. Please log out and back in.");
+      }
       console.error("Failed to update like status:", err);
     }
   };
@@ -750,9 +764,14 @@ export default function TrackCard({
 
     try {
       await engagementService.repostTrack(track.id);
-    } catch (err) {
+    } catch (err: any) {
       // Revert on failure
       setRepostCount((p) => p - 1);
+      if (err.response?.status === 404) {
+        alert("Reposting is not supported by the Rythmify backend API yet!");
+      } else if (err.response?.status === 401) {
+        alert("Session expired or unauthorized. Please log out and back in.");
+      }
       console.error("Failed to repost track:", err);
     }
   };
@@ -905,7 +924,7 @@ export default function TrackCard({
               </div>
               <Link
                 data-test="track-card-title-link"
-                to={`/${track.artistUsername}/${track.trackSlug ?? ""}`}
+                to={`/${track.artistUsername}/${track.id}`}
                 style={{
                   color: "#fff",
                   textDecoration: "none",
