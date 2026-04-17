@@ -347,8 +347,8 @@ function EmailAddresses({
         );
         setUser({ ...user!, email: profile.email });
       }
-    } catch {
-    
+    } catch (error) {
+      console.error("Failed to refresh email state:", error);
     }
   }, 5000);
 
