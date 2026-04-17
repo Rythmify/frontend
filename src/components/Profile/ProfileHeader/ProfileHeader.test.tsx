@@ -3,9 +3,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import ProfileHeader from "@/components/Profile/ProfileHeader/ProfileHeader";
 
 const mockSetUser = vi.fn();
+const mockUploadAvatar = vi.fn();
+const mockDeleteAvatar = vi.fn();
+const mockUploadCover = vi.fn();
+const mockDeleteCover = vi.fn();
 
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
+}));
+
+vi.mock("@/services/user.service", () => ({
+  uploadAvatar: (...args: unknown[]) => mockUploadAvatar(...args),
+  deleteAvatar: (...args: unknown[]) => mockDeleteAvatar(...args),
+  uploadCover: (...args: unknown[]) => mockUploadCover(...args),
+  deleteCover: (...args: unknown[]) => mockDeleteCover(...args),
 }));
 
 import { useAuthStore } from "@/stores/auth.store";
@@ -29,6 +40,8 @@ const mockUser = {
 describe("ProfileHeader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDeleteAvatar.mockResolvedValue(undefined);
+    mockDeleteCover.mockResolvedValue(undefined);
     (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       setUser: mockSetUser,
     });
@@ -107,7 +120,7 @@ describe("ProfileHeader", () => {
     render(<ProfileHeader user={mockUser} isOwner={true} />);
     const avatarContainer = screen
       .getByTestId("avatar-file-input")
-      .closest("div.relative")
+      .closest("div")
       ?.querySelector(".rounded-full") as HTMLElement;
     fireEvent.mouseEnter(avatarContainer!);
     expect(screen.getByTestId("avatar-update-button")).toBeInTheDocument();
@@ -125,7 +138,7 @@ describe("ProfileHeader", () => {
     expect(screen.getByTestId("avatar-delete-button")).toBeInTheDocument();
   });
 
-  it("calls setUser with undefined avatar on delete", () => {
+  it("calls setUser with undefined avatar on delete", async () => {
     render(
       <ProfileHeader
         user={{ ...mockUser, avatar: "https://example.com/avatar.jpg" }}
@@ -155,13 +168,17 @@ describe("ProfileHeader", () => {
     expect(screen.getByTestId("cover-delete-button")).toBeInTheDocument();
   });
 
-  it("calls setUser with undefined coverUrl on cover delete", () => {
+  it("calls setUser with undefined coverUrl on cover delete", async () => {
     render(
       <ProfileHeader
         user={{ ...mockUser, coverUrl: "https://example.com/cover.jpg" }}
         isOwner={true}
       />,
     );
+    const coverDiv = document.querySelector(
+      "[style*='cover.jpg']",
+    ) as HTMLElement;
+    fireEvent.mouseEnter(coverDiv);
     fireEvent.click(screen.getByTestId("cover-update-button"));
     fireEvent.click(screen.getByTestId("cover-delete-button"));
     expect(mockSetUser).toHaveBeenCalledWith(

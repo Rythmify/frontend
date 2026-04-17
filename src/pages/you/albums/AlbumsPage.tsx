@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import SetsHeader from "@/components/playlist/SetsHeader";
 import {
@@ -6,11 +6,15 @@ import {
   getLikedPlaylists,
   type Playlist,
 } from "@/services/api/playlist/playlist.service";
-import PlaylistCard from "@/components/playlist/PlaylistCard";
-import { useLikesStore } from "@/stores/likes.store";
+import PlaylistCard, {
+  type PlaylistCardData,
+} from "@/components/UI/PlaylistCard/PlaylistCard";
+import { useAuthStore } from "@/stores/auth.store";
+
+const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
 
 const SkeletonCard = () => (
-  <div className="flex flex-col gap-2 w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px] shrink-0 animate-pulse">
+  <div className={`flex flex-col gap-2 ${CARD_WIDTH} shrink-0 animate-pulse`}>
     <div className="w-full aspect-square rounded-md bg-[#303030]" />
     <div className="h-3 bg-[#303030] rounded w-3/4" />
     <div className="h-3 bg-[#303030] rounded w-1/2" />
@@ -23,12 +27,11 @@ export default function AlbumsPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [createdAlbums, setCreatedAlbums] = useState<Playlist[]>([]);
-  const [apiLikedAlbums, setApiLikedAlbums] = useState<Playlist[]>([]);
+  const [likedAlbums, setLikedAlbums] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { likedAlbums: storeLikedAlbums } = useLikesStore();
-
+  const { user: currentUser } = useAuthStore();
   const filterOptions = ["All", "Created", "Liked"];
 
   useEffect(() => {
@@ -41,10 +44,9 @@ export default function AlbumsPage() {
           getLikedPlaylists({ limit: 50 }),
         ]);
         setCreatedAlbums(created.data.items.filter((p) => p.is_album_view));
-        setApiLikedAlbums(liked.data.items.filter((p) => p.is_album_view));
+        setLikedAlbums(liked.data.items.filter((p) => p.is_album_view));
       } catch (err) {
-        setError("Failed to load albums. Please try again.");
-        console.error(err);
+        setError("Failed to load albums.");
       } finally {
         setLoading(false);
       }
@@ -52,36 +54,40 @@ export default function AlbumsPage() {
     fetchAlbums();
   }, []);
 
-  // Merge API liked albums with store liked albums (store takes priority / fills gaps)
-  const allLikedAlbums: Playlist[] = (() => {
-    const merged = [...apiLikedAlbums, ...storeLikedAlbums];
-    const seen = new Set<string>();
-    return merged.filter((p) => {
-      if (seen.has(p.playlist_id)) return false;
-      seen.add(p.playlist_id);
-      return true;
-    });
-  })();
+  const visibleAlbums = useMemo(() => {
+    const match = (name: string) =>
+      name.toLowerCase().includes(filterText.toLowerCase());
+    let list: Playlist[] = [];
 
-  // Filter albums by search
-  const match = (name: string) =>
-    name.toLowerCase().includes(filterText.toLowerCase());
+    if (activeFilter === "Created") {
+      list = createdAlbums;
+    } else if (activeFilter === "Liked") {
+      list = likedAlbums;
+    } else {
+      const merged = [...createdAlbums, ...likedAlbums];
+      const seen = new Set<string>();
+      list = merged.filter((p) => {
+        if (seen.has(p.playlist_id)) return false;
+        seen.add(p.playlist_id);
+        return true;
+      });
+    }
+    return list.filter((p) => match(p.name));
+  }, [activeFilter, filterText, createdAlbums, likedAlbums]);
 
-  // Pick which albums to show based on filter & search
-  const visibleAlbums: Playlist[] = (() => {
-    if (activeFilter === "Created")
-      return createdAlbums.filter((p) => match(p.name));
-    if (activeFilter === "Liked")
-      return allLikedAlbums.filter((p) => match(p.name));
-    // Merge created + liked, remove duplicates
-    const merged = [...createdAlbums, ...allLikedAlbums];
-    const seen = new Set<string>();
-    return merged.filter((p) => {
-      if (seen.has(p.playlist_id)) return false;
-      seen.add(p.playlist_id);
-      return match(p.name);
-    });
-  })();
+  const mapToCardData = (p: Playlist): PlaylistCardData => ({
+    id: p.playlist_id,
+    title: p.name,
+    owner: p.owner_user_id,
+    ownerUsername:
+      currentUser && p.owner_user_id === currentUser.id
+        ? currentUser.username
+        : undefined,
+    coverUrl: p.cover_image || null,
+    isPrivate: !p.is_public,
+    isLiked: likedAlbums.some((la) => la.playlist_id === p.playlist_id),
+    isAlbumView: true,
+  });
 
   const skeletons = Array.from({ length: 6 }).map((_, i) => (
     <SkeletonCard key={i} />
@@ -89,34 +95,38 @@ export default function AlbumsPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {(visibleAlbums.length > 0 || loading) && (
-        <SetsHeader
-          title="Hear your own albums and the albums you've liked:"
-          filterText={filterText}
-          setFilterText={setFilterText}
-          activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-          isDropdownOpen={isDropdownOpen}
-          setIsDropdownOpen={setIsDropdownOpen}
-          filterOptions={filterOptions}
-        />
-      )}
+      <SetsHeader
+        title="Hear your own albums and the albums you've liked:"
+        filterText={filterText}
+        setFilterText={setFilterText}
+        activeFilter={activeFilter}
+        setActiveFilter={setActiveFilter}
+        isDropdownOpen={isDropdownOpen}
+        setIsDropdownOpen={setIsDropdownOpen}
+        filterOptions={filterOptions}
+      />
 
-      {error && <p className="text-red-500 text-sm px-4 mt-2">{error}</p>}
+      <div className="px-4 pt-2 pb-10">
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      <div className="flex px-4 pt-2 pb-10">
         {loading ? (
           <HorizontalCarousel title=" ">{skeletons}</HorizontalCarousel>
         ) : visibleAlbums.length > 0 ? (
           <HorizontalCarousel title=" ">
             {visibleAlbums.map((p) => (
-              <PlaylistCard key={p.playlist_id} playlist={p} />
+              <PlaylistCard
+                key={p.playlist_id}
+                item={mapToCardData(p)}
+                widthClassName={CARD_WIDTH}
+              />
             ))}
           </HorizontalCarousel>
         ) : (
-          <div className="flex flex-1 justify-center items-center">
-            <p className="text-text-upload text-2xl font-bold text-center pt-16 pb-30">
-              You haven't liked any albums yet.
+          <div className="flex flex-1 justify-center items-center py-20">
+            <p className="text-text-upload text-2xl font-bold text-center">
+              {filterText
+                ? "No albums match your search."
+                : "You haven't liked any albums yet."}
             </p>
           </div>
         )}

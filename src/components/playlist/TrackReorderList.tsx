@@ -13,7 +13,7 @@ import {
   arrayMove,
   useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities"; 
+import { CSS } from "@dnd-kit/utilities";
 import {
   reorderPlaylistTracks,
   removeTrackFromPlaylist,
@@ -25,7 +25,7 @@ import {
 interface SortableTrackRowProps {
   track: PlaylistTrackItem;
   playlistId: string;
-  onRemoved: (id: string) => void; 
+  onRemoved: (id: string) => void;
 }
 
 interface TrackReorderListProps {
@@ -69,6 +69,7 @@ function SortableTrackRow({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-3 p-3 rounded-md bg-bg hover:bg-[#303030]
                  transition-opacity ${isDragging ? "opacity-40" : "opacity-100"}`}
+      data-test="sortable-track-row"
     >
       {/* Drag handle */}
       <button
@@ -76,6 +77,7 @@ function SortableTrackRow({
         {...listeners}
         className="cursor-grab active:cursor-grabbing text-[#555] hover:text-[#888] transition-colors shrink-0"
         aria-label="Drag to reorder"
+        data-test="sortable-track-row-handle"
       >
         <i className="fa-solid fa-grip-lines" />
       </button>
@@ -84,6 +86,7 @@ function SortableTrackRow({
         src={track.cover_image || "https://via.placeholder.com/40"}
         alt={track.title ?? "Track"}
         className="w-10 h-10 object-cover shrink-0"
+        data-test="sortable-track-row-cover"
       />
 
       <div className="flex justify-start gap-2 min-w-0">
@@ -102,6 +105,7 @@ function SortableTrackRow({
         disabled={removing}
         className="text-text-secondary hover:text-[#717171] transition-colors disabled:opacity-40 flex justify-end cursor-pointer shrink-0"
         aria-label="Remove from playlist"
+        data-test="sortable-track-row-remove"
       >
         {removing ? (
           <i className="fa-solid fa-spinner animate-spin text-sm" />
@@ -134,18 +138,18 @@ export default function TrackReorderList({
 
     const oldIndex = tracks.findIndex((t) => t.track_id === active.id);
     const newIndex = tracks.findIndex((t) => t.track_id === over.id);
-    const reordered = arrayMove(tracks, oldIndex, newIndex).map((t, i) => ({
+    const reorder = arrayMove(tracks, oldIndex, newIndex).map((t, i) => ({
       ...t,
       position: i + 1,
     }));
 
-    setTracks(reordered); // optimistic update
-    onTracksChanged?.(reordered);
+    setTracks(reorder); // optimistic update
+    onTracksChanged?.(reorder);
 
     try {
       await reorderPlaylistTracks(
         playlistId,
-        reordered.map((t) => ({ track_id: t.track_id, position: t.position })),
+        reorder.map((t) => ({ track_id: t.track_id, position: t.position })),
       );
     } catch (err) {
       console.error("Failed to reorder tracks:", err);
@@ -187,6 +191,7 @@ export default function TrackReorderList({
               track={t}
               playlistId={playlistId}
               onRemoved={handleRemoved}
+              data-test="sortable-track-row-container"
             />
           ))}
         </div>

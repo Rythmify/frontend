@@ -47,6 +47,7 @@ const PlaylistList = ({
               </div>
             </div>
             <button
+              type="button"
               data-test={`button-add-to-playlist-${playlist.playlist_id}`}
               onClick={() => onAdd(playlist.playlist_id)}
               disabled={adding === playlist.playlist_id}
