@@ -24,8 +24,11 @@ const styles = {
   languageButton: `text-[#2196F3] hover:underline`,
 };
 
-// ─── Component ────────────────────────────────────────────
-const GoMobileSection = () => {
+interface GoMobileSectionProps {
+  showFooter?: boolean;
+}
+
+const GoMobileSection = ({ showFooter = true }: GoMobileSectionProps) => {
   return (
     <div className={styles.wrapper}>
       {/* Go Mobile */}
@@ -54,40 +57,45 @@ const GoMobileSection = () => {
       </div>
 
       {/* Footer */}
-      <div className={styles.footerContainer}>
-        <div className={styles.footerLinks}>
-          {[
-            "Legal",
-            "Privacy",
-            "Cookie Policy",
-            "Cookie Manager",
-            "Imprint",
-            "Artist Resources",
-            "Newsroom",
-            "Charts",
-            "Transparency Reports",
-          ].map((link, i, arr) => (
-            <span key={link} className={styles.linkWrapper}>
-              <button
-                data-test={`footer-${link.toLowerCase().replace(/\s+/g, "-")}`}
-                className={styles.link}
-              >
-                {link}
-              </button>
-              {i < arr.length - 1 && (
-                <span className={styles.separator}>·</span>
-              )}
-            </span>
-          ))}
-        </div>
+      {showFooter && (
+        <div className={styles.footerContainer}>
+          <div className={styles.footerLinks}>
+            {[
+              "Legal",
+              "Privacy",
+              "Cookie Policy",
+              "Cookie Manager",
+              "Imprint",
+              "Artist Resources",
+              "Newsroom",
+              "Charts",
+              "Transparency Reports",
+            ].map((link, i, arr) => (
+              <span key={link} className={styles.linkWrapper}>
+                <button
+                  data-test={`footer-${link.toLowerCase().replace(/\s+/g, "-")}`}
+                  className={styles.link}
+                >
+                  {link}
+                </button>
+                {i < arr.length - 1 && (
+                  <span className={styles.separator}>·</span>
+                )}
+              </span>
+            ))}
+          </div>
 
-        <div className={styles.languageContainer}>
-          Language:{" "}
-          <button data-test="language-button" className={styles.languageButton}>
-            English (US)
-          </button>
+          <div className={styles.languageContainer}>
+            Language:{" "}
+            <button
+              data-test="language-button"
+              className={styles.languageButton}
+            >
+              English (US)
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

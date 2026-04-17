@@ -1,51 +1,34 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { FaHeart, FaUserFriends, FaMusic } from "react-icons/fa";
-import { BiRepost } from "react-icons/bi";
+import { FaMusic, FaUserFriends } from "react-icons/fa";
 import type { PlaylistDetails } from "../../../services/api/playlist/playlist.service";
 import type { MockUser } from "../../../services/mocks/users";
 import { followUser, unfollowUser } from "../../../services/mocks/User.service";
-import { useAuthStore } from "../../../stores/auth.store";
+import GoMobileSection from "@/components/UI/GoMobile";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
   featuredArtists: MockUser[];
+  showLikes?: boolean;
+  showReposts?: boolean;
 }
 
 export default function PlaylistSidebar({
   playlist,
   featuredArtists,
+  showLikes = false,
+  showReposts = false,
 }: PlaylistSidebarProps) {
   const formatCount = (n: number | undefined) =>
     !n ? "0" : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
-  const { user } = useAuthStore();
+
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>
       <aside data-test="playlist-sidebar" className="flex flex-col w-full">
-        {/* Made for / Creator Section */}
-        <div
-          data-test="sidebar-made-for-playlist"
-          className="flex items-center gap-3 mb-5 px-4 py-2"
-        >
-          <img
-            src={user?.avatar}
-            alt={playlist.owner_user_id}
-            className="w-10 h-10 rounded-full object-cover shrink-0 bg-[#333]"
-          />
-          <div className="min-w-0">
-            <Link
-              to={`/${playlist.owner_user_id}`}
-              className="text-text-upload text-sm font-bold truncate hover:text-[#717171] transition-colors block"
-            >
-              Made for {user?.displayName}
-            </Link>
-          </div>
-        </div>
-
         {/* Artists Featured Section */}
         <div data-test="sidebar-artists-featured">
-          <p className="text-[var(--color-text-hover)] text-[12px] font-bold uppercase px-4 py-2 tracking-widest mb-4 flex items-center gap-2">
+          <p className="text-[var(--color-text-hover)] text-[12px] font-bold uppercase py-2 tracking-widest mb-4 flex items-center gap-2">
             Artists Featured
           </p>
           <div className="flex flex-col gap-4">
@@ -56,35 +39,35 @@ export default function PlaylistSidebar({
             )}
           </div>
         </div>
+
+        {(showLikes || showReposts) && (
+          <div className="mt-6 flex flex-col gap-4">
+            {showLikes && (
+              <div data-test="sidebar-playlist-likes">
+                <p className="text-white text-[12px] font-bold uppercase tracking-widest">
+                  {formatCount(playlist.like_count)} Likes
+                </p>
+              </div>
+            )}
+
+            {showReposts && (
+              <div data-test="sidebar-playlist-reposts">
+                <p className="text-white text-[12px] font-bold uppercase tracking-widest">
+                  {formatCount(playlist.repost_count)} Reposts
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div data-test="go-mobile-section-playlist-mix" className="mt-6">
+          <GoMobileSection showFooter={false} />
+        </div>
       </aside>
     </Tooltip.Provider>
   );
 }
 
-// Stats Helper Component
-function StatItem({
-  icon,
-  count,
-  label,
-}: {
-  icon: React.ReactNode;
-  count: string;
-  label: string;
-}) {
-  return (
-    <div className="flex flex-col items-start">
-      <div className="flex items-center gap-1.5 text-[var(--color-text-muted)] hover:text-white transition-colors cursor-default">
-        {icon}
-        <span className="text-xs font-bold">{count}</span>
-      </div>
-      <span className="text-[10px] text-gray-500 uppercase font-medium">
-        {label}
-      </span>
-    </div>
-  );
-}
-
-// Artist Card
 function ArtistCard({ artist }: { artist: MockUser }) {
   const [following, setFollowing] = useState(artist.isFollowing);
   const [followerCount, setFollowerCount] = useState(artist.followerCount);
@@ -108,7 +91,7 @@ function ArtistCard({ artist }: { artist: MockUser }) {
   return (
     <div
       data-test={`artist-card-${artist.username}`}
-      className="flex items-center gap-3 px-4"
+      className="flex items-center gap-3 "
     >
       <Link to={`/${artist.username}`} className="shrink-0">
         <img
@@ -143,7 +126,7 @@ function ArtistCard({ artist }: { artist: MockUser }) {
         className={`
           shrink-0 min-w-[70px] px-3 py-1
           rounded-[var(--radius-sm)] text-sm font-bold
-         transition-colors duration-150 cursor-pointer
+          transition-colors duration-150 cursor-pointer
           ${
             following
               ? "bg-[#303030] text-white "
