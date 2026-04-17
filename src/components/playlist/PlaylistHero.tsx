@@ -34,7 +34,7 @@ export default function PlaylistHero({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   useEffect(() => {
     setPreviewUrl(null);
-  },  [playlist.playlist_id]);;
+  }, [playlist.playlist_id]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -20,15 +20,15 @@ import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { useAuthStore } from "@/stores/auth.store";
 
-// ─── Mapper ───────────────────────────────────────────────
-const [user] = useAuthStore((state) => [state.user]);
+// ─── Mapper ──────────────────
 function mixToPlaylistDetails(
   mix: PersonalMix,
   tracks: DiscoveryTrack[],
+  userId: string,
 ): PlaylistDetails {
   return {
     playlist_id: mix.id,
-    owner_user_id: user?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+    owner_user_id: userId,
     name: mix.label ?? "Mix",
     description: null,
     is_public: true,
@@ -63,7 +63,10 @@ function mixToPlaylistDetails(
 
 function MixForYouSlugPage() {
   const { mixSlug } = useParams<{ mixSlug: string }>();
+  const user = useAuthStore((state) => state.user);
   const mixId = mixSlug?.includes(":") ? mixSlug.split(":").pop() : mixSlug;
+
+  const currentUserId = user?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890";
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
@@ -94,7 +97,7 @@ function MixForYouSlugPage() {
 
         if (cancelled) return;
 
-        setPlaylist(mixToPlaylistDetails(mix, tracks));
+        setPlaylist(mixToPlaylistDetails(mix, tracks, currentUserId));
         setFeaturedArtists(
           Array.isArray(fetchedUsers)
             ? (fetchedUsers as MockUser[]).slice(0, 3)
@@ -104,7 +107,9 @@ function MixForYouSlugPage() {
         if (cancelled) return;
 
         const mockMix = mockMixes.find((m) => m.id === mixId) ?? mockMixes[0];
-        setPlaylist(mixToPlaylistDetails(mockMix, mockMixTracks));
+        setPlaylist(
+          mixToPlaylistDetails(mockMix, mockMixTracks, currentUserId),
+        );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -114,7 +119,7 @@ function MixForYouSlugPage() {
     return () => {
       cancelled = true;
     };
-  }, [mixId]);
+  }, [mixId, currentUserId]);
 
   // Convert playlist tracks to Player format
   const toPlayerTrack = (
@@ -228,7 +233,6 @@ function MixForYouSlugPage() {
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           <div className="flex-1 min-w-0">
             <PlaylistActions playlist={playlist} />
-
             <div className="mt-8">
               <TrackList
                 tracks={playlist.tracks}
