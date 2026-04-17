@@ -35,7 +35,7 @@ export default function RepostsPage() {
 
   const activeUser = currentUser;
   const isOwner = !username || username === currentUser.username;
-  const followingCount = currentUser.following_ids?.length ?? 0;
+  //const followingCount = currentUser.following_ids?.length ?? 0;
 
   useEffect(() => {
     if (isOwner) {
@@ -158,9 +158,7 @@ export default function RepostsPage() {
         coverUrl: profileData?.cover_photo || "",
         location: (profileData as PublicUser | null)?.location || "",
       };
-  const displayedStats = isOwner
-    ? { ...stats, following: followingCount }
-    : stats;
+  const displayedStats = stats;
 
   const followersMapped = followers.map((u) => ({
     userId: u.id,
