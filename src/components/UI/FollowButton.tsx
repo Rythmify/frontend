@@ -4,7 +4,7 @@ import { useState } from "react";
 
 interface FollowButtonProps {
   username: string;
-  userId: string;
+  userId?: string;
   className?: string;
   initialIsFollowing?: boolean; // ← add this
   onFollowChange?: (isFollowing: boolean) => void;
@@ -20,7 +20,7 @@ export default function FollowButton({
   const { user, toggleFollow } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
-  const isSelf = !!user && user.id === userId;
+  const isSelf = !!user && !!userId && user.id === userId;
 
   // If initialIsFollowing is explicitly provided, use it as the base,
   // but still let the store override if it has tracked a change this session

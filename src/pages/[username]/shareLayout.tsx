@@ -26,6 +26,7 @@ interface ShareLayoutProps {
     avatar?: string;
   }>;
   following?: Array<{
+    userId?: string;
     username: string;
     followers: number;
     tracks?: number;

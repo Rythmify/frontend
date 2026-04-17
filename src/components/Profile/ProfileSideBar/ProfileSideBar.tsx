@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 
 interface FollowingUser {
-  userId: string;
+  userId?: string;
   username: string;
   followers: number;
   tracks?: number;
@@ -253,7 +253,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 
           {following.slice(0, 3).map((u) => (
             <div
-              key={u.username}
+              key={u.userId ?? u.username}
               data-test="following-item"
               className="flex items-center justify-between"
             >
@@ -314,7 +314,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               </div>
               <FollowButton
                 username={u.username}
-                userId={u.userId}
+                userId={u.userId ?? u.username}
                 initialIsFollowing={true}
               />
             </div>

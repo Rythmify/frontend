@@ -163,7 +163,8 @@ export default function RepostsPage() {
     : stats;
 
   const followersMapped = followers.map((u) => ({
-    username: u.user_id,
+    userId: u.id,
+    username: u.username || u.id,
     displayName: u.display_name,
     avatar: "",
     followers: 0,
@@ -172,7 +173,8 @@ export default function RepostsPage() {
   }));
 
   const followingMapped = following.map((u) => ({
-    username: u.user_id,
+    userId: u.id,
+    username: u.username || u.id,
     displayName: u.display_name,
     avatar: "",
     followers: 0,
