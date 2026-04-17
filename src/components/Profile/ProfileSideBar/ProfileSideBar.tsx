@@ -314,7 +314,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               </div>
               <FollowButton
                 username={u.username}
-                userId={u.userId ?? u.username}
+                userId={u.userId}
                 initialIsFollowing={true}
               />
             </div>
