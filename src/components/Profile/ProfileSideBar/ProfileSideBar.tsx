@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import type { User } from "@/stores/auth.store";
 import TrackItem from "./TrackItem";
 import { useNavigate } from "react-router-dom";
-import FollowButton from "../FollowButton/FollowButton";
+import FollowButton from "@/components/UI/FollowButton";
 
 interface FollowingUser {
+  userId: string;
   username: string;
   followers: number;
   tracks?: number;
@@ -311,7 +312,11 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                   </div>
                 </div>
               </div>
-              <FollowButton username={u.username} />
+              <FollowButton
+                username={u.username}
+                userId={u.userId}
+                initialIsFollowing={true}
+              />
             </div>
           ))}
         </div>

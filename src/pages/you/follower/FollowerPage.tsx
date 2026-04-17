@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
-import FollowButton from "@/components/Profile/FollowButton/FollowButton";
+import FollowButton from "@/components/UI/FollowButton";
 import {
   getFollowers,
   getUserById,
@@ -22,11 +22,24 @@ interface EnrichedUser {
 }
 
 async function enrich(u: UserSummary): Promise<EnrichedUser> {
-  try {
-    const profile = await getUserById(u.user_id);
-    const uname = profile.username ?? u.user_id;
+  if (!u.id) {
+    console.warn("enrich: received item with no id", u);
     return {
-      userId: u.user_id,
+      userId: "",
+      username: "",
+      displayName: u.display_name,
+      avatar: u.profile_picture ?? "",
+      followers: 0,
+      isVerified: u.is_verified,
+      profilePath: "/",
+    };
+  }
+
+  try {
+    const profile = await getUserById(u.id); // ← u.user_id → u.id
+    const uname = profile.username ?? u.id;
+    return {
+      userId: u.id, // ← u.user_id → u.id
       username: uname,
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
@@ -36,13 +49,13 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
     };
   } catch {
     return {
-      userId: u.user_id,
-      username: u.user_id,
+      userId: u.id, // ← u.user_id → u.id
+      username: u.id,
       displayName: u.display_name,
       avatar: u.profile_picture ?? "",
       followers: 0,
       isVerified: u.is_verified,
-      profilePath: `/${u.user_id}`,
+      profilePath: `/${u.id}`,
     };
   }
 }
@@ -51,47 +64,43 @@ export default function FollowerPage() {
   const navigate = useNavigate();
   const { username } = useParams();
   const { user: currentUser } = useAuthStore();
+
   const isOwner = !username || username === currentUser?.username;
   const profileUsername = isOwner
-    ? currentUser?.username ?? ""
-    : username ?? "";
+    ? (currentUser?.username ?? "")
+    : (username ?? "");
   const profileDisplayName = isOwner
     ? (currentUser?.displayName ?? profileUsername) || "Profile"
     : profileUsername || "Profile";
-  const profilePath = isOwner
-    ? currentUser?.username
-      ? `/${currentUser.username}`
-      : "/you"
-    : username
-      ? `/${username}`
-      : "/you";
-
-  const displayUser = isOwner
-    ? currentUser
-    : { username: profileUsername, displayName: profileDisplayName, avatar: "", id: "" };
+  const profilePath = profileUsername ? `/${profileUsername}` : "/you";
+  const profileAvatar = isOwner ? (currentUser?.avatar ?? "") : "";
 
   const [rawFollowers, setRawFollowers] = useState<UserSummary[] | null>(null);
   const [enriched, setEnriched] = useState<EnrichedUser[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
-  // Step 1 — fetch raw followers (resolve username → UUID for non-owner)
+  // Step 1 — fetch raw followers
   useEffect(() => {
     let cancelled = false;
+    setLoaded(false);
+    setRawFollowers(null);
+    setEnriched([]);
 
     async function load() {
       try {
         let userId: string | undefined;
-
         if (isOwner) {
           userId = currentUser?.id;
         } else if (username) {
           userId = await resolveUsername(username);
         }
-
         if (!userId) return;
+
         const res = await getFollowers(userId, { limit: 100, offset: 0 });
         if (!cancelled) setRawFollowers(res.items);
       } catch (err) {
-        console.error("Failed to load followers:", err);
+        console.error("FollowerPage: failed to load", err);
+        if (!cancelled) setRawFollowers([]);
       }
     }
 
@@ -103,14 +112,20 @@ export default function FollowerPage() {
 
   // Step 2 — enrich
   useEffect(() => {
-    if (!rawFollowers?.length) {
+    if (rawFollowers === null) return;
+
+    if (!rawFollowers.length) {
       setEnriched([]);
+      setLoaded(true);
       return;
     }
-    let cancelled = false;
 
+    let cancelled = false;
     Promise.all(rawFollowers.map(enrich)).then((items) => {
-      if (!cancelled) setEnriched(items);
+      if (!cancelled) {
+        setEnriched(items);
+        setLoaded(true);
+      }
     });
 
     return () => {
@@ -118,22 +133,16 @@ export default function FollowerPage() {
     };
   }, [rawFollowers]);
 
-  const isFollowedByMe = (userId?: string, uname?: string) =>
-    (!!userId && (currentUser?.following_ids?.includes(userId) ?? false)) ||
-    (!!uname && (currentUser?.following_ids?.includes(uname) ?? false));
+  if (!currentUser && isOwner) return null;
 
   const handleTabChange = (tab: string) => {
-    const base = `/${username ?? currentUser?.username}`;
+    const base = `/${profileUsername}`;
     if (tab === "Likes") navigate(`${base}/likes`);
     if (tab === "Following") navigate(`${base}/following`);
     if (tab === "Followers") navigate(`${base}/follower`);
   };
 
-  if (!displayUser) return null;
-
-  const COLS = 6;
-  const padCount =
-    enriched.length % COLS === 0 ? 0 : COLS - (enriched.length % COLS);
+  const padCount = enriched.length % 6 === 0 ? 0 : 6 - (enriched.length % 6);
 
   return (
     <div className="py-8 container px-4 md:px-8 lg:px-20">
@@ -144,26 +153,28 @@ export default function FollowerPage() {
           className="w-24 h-24 cursor-pointer rounded-full overflow-hidden bg-text-muted flex-shrink-0"
           onClick={() => navigate(profilePath)}
         >
-          {displayUser.avatar ? (
+          {profileAvatar ? (
             <img
-              src={displayUser.avatar}
-              alt={displayUser.username ?? ""}
+              src={profileAvatar}
+              alt={profileUsername}
               className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full bg-text-muted" />
           )}
         </div>
-        <h1
-          data-test="follower-page-title"
-          className="text-white cursor-pointer text-2xl font-bold"
-          onClick={() => navigate(profilePath)}
-        >
-          Followers of {displayUser.displayName || displayUser.username}
-        </h1>
-        {profileUsername && (
-          <p className="text-sm text-text-secondary">@{profileUsername}</p>
-        )}
+        <div>
+          <h1
+            data-test="follower-page-title"
+            className="text-white cursor-pointer text-2xl font-bold"
+            onClick={() => navigate(profilePath)}
+          >
+            Followers of {profileDisplayName}
+          </h1>
+          {profileUsername && (
+            <p className="text-sm text-text-secondary">@{profileUsername}</p>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -184,64 +195,85 @@ export default function FollowerPage() {
         ))}
       </div>
 
+      {/* Empty state */}
+      {loaded && enriched.length === 0 && (
+        <div className="flex items-center justify-center py-24">
+          <p className="text-white text-lg font-bold">
+            {isOwner
+              ? "You don't have any followers yet."
+              : `${profileDisplayName} doesn't have any followers yet.`}
+          </p>
+        </div>
+      )}
+
       {/* Grid */}
-      <div className="grid grid-cols-6 gap-6">
-        {enriched.map((u) => (
-          <div
-            key={u.profilePath}
-            className="flex flex-col items-center gap-2 group"
-          >
+      {enriched.length > 0 && (
+        <div className="grid grid-cols-6 gap-6">
+          {enriched.map((u) => (
             <div
-              data-test={`follower-avatar-${u.username}`}
-              className="w-full cursor-pointer aspect-square rounded-full overflow-hidden bg-text-muted"
-              onClick={() => navigate(u.profilePath)}
+              key={u.userId}
+              className="flex flex-col items-center gap-2 group"
             >
-              {u.avatar ? (
-                <img
-                  src={u.avatar}
-                  alt={u.username}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="h-full w-full bg-text-muted" />
-              )}
-            </div>
-            <span className="text-white cursor-pointer text-sm font-bold text-center truncate w-full">
-              {u.username}{" "}
-              {u.isVerified && (
-                <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
-              )}
-            </span>
-            <span
-              data-test={`follower-count-${u.username}`}
-              className="text-text-secondary cursor-pointer text-xs flex items-center gap-1"
-              onClick={() => navigate(`${u.profilePath}/follower`)}
-            >
-              <i className="fa-solid fa-user text-[10px]" />
-              {u.followers >= 1e6
-                ? `${(u.followers / 1e6).toFixed(2)}M`
-                : u.followers}{" "}
-              followers
-            </span>
-            <div className="h-8 flex items-center justify-center">
-              <div className="hidden group-hover:block">
-                <FollowButton
-                  username={u.username}
-                  userId={u.userId}
-                  isFollowingOverride={isFollowedByMe(u.userId, u.username)}
-                />
+              {/* Avatar */}
+              <div
+                data-test={`follower-avatar-${u.username}`}
+                className="w-full cursor-pointer aspect-square rounded-full overflow-hidden bg-text-muted"
+                onClick={() => navigate(u.profilePath)}
+              >
+                {u.avatar ? (
+                  <img
+                    src={u.avatar}
+                    alt={u.username}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-text-muted" />
+                )}
+              </div>
+
+              {/* Name */}
+              <span
+                className="text-white cursor-pointer text-sm font-bold text-center truncate w-full px-1"
+                onClick={() => navigate(u.profilePath)}
+              >
+                {u.displayName || u.username}{" "}
+                {u.isVerified && (
+                  <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
+                )}
+              </span>
+
+              {/* Follower count */}
+              <span
+                data-test={`follower-count-${u.username}`}
+                className="text-text-secondary cursor-pointer text-xs flex items-center gap-1"
+                onClick={() => navigate(`${u.profilePath}/follower`)}
+              >
+                <i className="fa-solid fa-user text-[10px]" />
+                {u.followers >= 1e6
+                  ? `${(u.followers / 1e6).toFixed(1)}M`
+                  : u.followers >= 1e3
+                    ? `${(u.followers / 1e3).toFixed(1)}K`
+                    : u.followers}{" "}
+                followers
+              </span>
+
+              {/* Follow button — reads from store, no override needed */}
+              <div className="h-8 flex items-center justify-center">
+                <div className="hidden group-hover:block">
+                  <FollowButton username={u.username} userId={u.userId} />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        {Array.from({ length: padCount }).map((_, i) => (
-          <div
-            key={`pad-${i}`}
-            className="w-full aspect-square rounded-sm bg-input-bg"
-          />
-        ))}
-      </div>
+          {Array.from({ length: padCount }).map((_, i) => (
+            <div
+              key={`pad-${i}`}
+              className="w-full aspect-square rounded-sm bg-input-bg"
+            />
+          ))}
+        </div>
+      )}
 
       {/* Footer */}
       <div className="mt-16 flex flex-col gap-8">

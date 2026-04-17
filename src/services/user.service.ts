@@ -41,7 +41,7 @@ export interface PublicUser {
 }
 
 export interface UserSummary {
-  user_id: string;
+  id: string;
   email: string;
   display_name: string;
   gender: "male" | "female" | null;

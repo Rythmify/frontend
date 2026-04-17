@@ -77,8 +77,8 @@ function BlockedUserRow({
   const handleUnblock = async () => {
     setLoading(true);
     try {
-      await unblockUser(user.user_id);
-      onUnblock(user.user_id);
+      await unblockUser(user.id);
+      onUnblock(user.id);
     } catch {
       // Keep the row visible if the API call fails.
     } finally {
@@ -169,7 +169,7 @@ export default function PrivacyPage() {
   );
 
   const handleUnblock = (userId: string) => {
-    setBlockedUsers((prev) => prev.filter((user) => user.user_id !== userId));
+    setBlockedUsers((prev) => prev.filter((user) => user.id !== userId));
   };
 
   return (
@@ -212,7 +212,7 @@ export default function PrivacyPage() {
           <div>
             {blockedUsers.map((user) => (
               <BlockedUserRow
-                key={user.user_id}
+                key={user.id}
                 user={user}
                 onUnblock={handleUnblock}
               />

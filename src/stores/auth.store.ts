@@ -31,7 +31,13 @@ interface AuthStore {
   logout: () => void;
   setUser: (user: User) => void;
   setLoading: (loading: boolean) => void;
-  toggleFollow: (username: string) => void;
+  /**
+  
+   * @param username 
+   * @param extraIds 
+ 
+   */
+  toggleFollow: (username: string, extraIds?: string[]) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -55,22 +61,36 @@ export const useAuthStore = create<AuthStore>()(
 
       setLoading: (isLoading) => set({ isLoading }),
 
-      toggleFollow: (username) =>
+      toggleFollow: (username, extraIds = []) =>
         set((state) => {
           if (!state.user) return state;
-          const isFollowing = state.user.following_ids.includes(username);
-          return {
-            user: {
-              ...state.user,
-              following_ids: isFollowing
-                ? state.user.following_ids.filter((u) => u !== username)
-                : [...state.user.following_ids, username],
-            },
-          };
+
+          // Collect all identifiers for this profile (deduplicated)
+          const allIds = Array.from(
+            new Set([username, ...extraIds].filter(Boolean)),
+          );
+
+          // Currently following if ANY of the ids is already tracked
+          const isFollowing = allIds.some((id) =>
+            state.user!.following_ids.includes(id),
+          );
+
+          const following_ids = isFollowing
+            ? // Unfollow: remove every identifier for this profile
+              state.user.following_ids.filter((id) => !allIds.includes(id))
+            : // Follow: add any identifier not already present
+              [
+                ...state.user.following_ids,
+                ...allIds.filter(
+                  (id) => !state.user!.following_ids.includes(id),
+                ),
+              ];
+
+          return { user: { ...state.user, following_ids } };
         }),
     }),
     {
-      name: "auth-storage", // key in localStorage
+      name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

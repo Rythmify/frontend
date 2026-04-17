@@ -218,7 +218,8 @@ export default function UsernamePage() {
       };
 
   const followersMapped = followers.map((u) => ({
-    username: u.user_id,
+    userId: u.id,
+    username: u.id,
     displayName: u.display_name,
     avatar: "",
     followers: 0,
@@ -227,7 +228,8 @@ export default function UsernamePage() {
   }));
 
   const followingMapped = following.map((u) => ({
-    username: u.user_id,
+    userId: u.id,
+    username: u.id,
     displayName: u.display_name,
     avatar: "",
     followers: 0,
