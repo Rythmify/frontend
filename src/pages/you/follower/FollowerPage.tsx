@@ -12,29 +12,6 @@ import {
 
 const tabs = ["Likes", "Following", "Followers"];
 
-function toProfileCard(
-  user: UserSummary,
-  details?: {
-    followers: number;
-    avatar: string;
-    username: string;
-    displayName: string;
-  },
-) {
-  const fallbackName = user.display_name?.trim() || user.user_id || "Unknown user";
-  const username = details?.username?.trim() || fallbackName;
-
-  return {
-    username,
-    userId: user.user_id,
-    displayName: details?.displayName?.trim() || fallbackName,
-    avatar: details?.avatar ?? "",
-    isVerified: user.is_verified,
-    followers: details?.followers ?? 0,
-    profilePath: `/${username.toLowerCase().replace(/\s+/g, "-")}`,
-  };
-}
-
 export default function FollowerPage() {
   const navigate = useNavigate();
   const { username } = useParams();
@@ -113,21 +90,18 @@ export default function FollowerPage() {
 
   // Use real data when available, fall back to mock
   const followerList = apiFollowers
-    ? apiFollowers.map((u) => toProfileCard(u, followerDetails[u.user_id]))
+    ? apiFollowers.map((u) => ({
+        username: followerDetails[u.user_id]?.username ?? u.user_id,
+        displayName: followerDetails[u.user_id]?.displayName ?? u.display_name,
+        avatar: followerDetails[u.user_id]?.avatar ?? "",
+        isVerified: u.is_verified,
+        followers: followerDetails[u.user_id]?.followers ?? 0,
+      }))
     : isOwner
       ? []
-      : (mockUserFollowers[username || ""] ?? []).map((u) => ({
-          ...u,
-          userId: u.username,
-          profilePath: `/${(u.username || u.displayName || "unknown-user").toLowerCase().replace(/\s+/g, "-")}`,
-        }));
+      : (mockUserFollowers[username || ""] ?? []);
 
   if (!user) return null;
-
-  const isFollowedByCurrentUser = (userId?: string, targetUsername?: string) =>
-    (!!userId && (currentUser?.following_ids?.includes(userId) ?? false)) ||
-    (!!targetUsername &&
-      (currentUser?.following_ids?.includes(targetUsername) ?? false));
 
   const handleTabChange = (tab: string) => {
     const profileUsername = username ?? currentUser?.username;
@@ -187,13 +161,15 @@ export default function FollowerPage() {
       <div className="grid grid-cols-6 gap-6">
         {followerList.map((u) => (
           <div
-            key={u.profilePath}
+            key={u.username}
             className="flex flex-col items-center gap-2 group"
           >
             <div
               data-test={`follower-avatar-${u.username}`}
               className="w-full cursor-pointer aspect-square rounded-full overflow-hidden bg-text-muted"
-              onClick={() => navigate(u.profilePath)}
+              onClick={() =>
+                navigate(`/${u.username.toLowerCase().replace(/\s+/g, "-")}`)
+              }
             >
               {u.avatar ? (
                 <img
@@ -214,7 +190,11 @@ export default function FollowerPage() {
             <span
               data-test={`follower-count-${u.username}`}
               className="text-text-secondary cursor-pointer text-xs flex items-center gap-1"
-              onClick={() => navigate(`${u.profilePath}/follower`)}
+              onClick={() =>
+                navigate(
+                  `/${u.username.toLowerCase().replace(/\s+/g, "-")}/follower`,
+                )
+              }
             >
               <i className="fa-solid fa-user text-[10px]" />
               {u.followers >= 1e6
@@ -224,14 +204,7 @@ export default function FollowerPage() {
             </span>
             <div className="h-8 flex items-center justify-center">
               <div className="hidden group-hover:block">
-                <FollowButton
-                  username={u.username}
-                  userId={u.userId}
-                  isFollowingOverride={isFollowedByCurrentUser(
-                    u.userId,
-                    u.username,
-                  )}
-                />
+                <FollowButton username={u.username} />
               </div>
             </div>
           </div>

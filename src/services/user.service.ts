@@ -171,14 +171,6 @@ export async function getFollowStatus(
   return res.data.data;
 }
 
-export async function followUser(userId: string): Promise<void> {
-  await axiosInstance.post(`/users/${userId}/follow`);
-}
-
-export async function unfollowUser(userId: string): Promise<void> {
-  await axiosInstance.delete(`/users/${userId}/follow`);
-}
-
 export async function blockUser(userId: string): Promise<void> {
   await axiosInstance.post(`/users/${userId}/block`);
 }

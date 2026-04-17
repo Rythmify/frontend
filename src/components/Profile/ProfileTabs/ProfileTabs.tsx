@@ -46,7 +46,6 @@ interface ProfileTabsProps {
   onShare?: () => void;
   onEdit?: () => void;
   username?: string;
-  userId?: string;
   displayName?: string;
   tracks?: number;
   extraActions?: React.ReactNode;
@@ -59,7 +58,6 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   onShare,
   onEdit,
   username = "",
-  userId,
   displayName = "",
   tracks = 0,
   extraActions,
@@ -114,7 +112,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             </button>
           )}
 
-          <FollowButton username={username} userId={userId} />
+          <FollowButton username={username} />
 
           <button
             data-test="share-button"

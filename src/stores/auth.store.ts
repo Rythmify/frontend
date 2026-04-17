@@ -31,7 +31,7 @@ interface AuthStore {
   logout: () => void;
   setUser: (user: User) => void;
   setLoading: (loading: boolean) => void;
-  toggleFollow: (primaryKey: string, aliases?: string[]) => void;
+  toggleFollow: (username: string) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -55,22 +55,16 @@ export const useAuthStore = create<AuthStore>()(
 
       setLoading: (isLoading) => set({ isLoading }),
 
-      toggleFollow: (primaryKey, aliases = []) =>
+      toggleFollow: (username) =>
         set((state) => {
           if (!state.user) return state;
-          const keys = [primaryKey, ...aliases].filter(Boolean);
-          const isFollowing = keys.some((key) =>
-            state.user?.following_ids.includes(key),
-          );
+          const isFollowing = state.user.following_ids.includes(username);
           return {
             user: {
               ...state.user,
               following_ids: isFollowing
-                ? state.user.following_ids.filter((u) => !keys.includes(u))
-                : [
-                    ...state.user.following_ids.filter((u) => !keys.includes(u)),
-                    primaryKey,
-                  ],
+                ? state.user.following_ids.filter((u) => u !== username)
+                : [...state.user.following_ids, username],
             },
           };
         }),

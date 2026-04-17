@@ -12,37 +12,10 @@ import {
 
 const tabs = ["Likes", "Following", "Followers"];
 
-function sameIds(a: string[] = [], b: string[] = []) {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
-}
-
-function toProfileCard(
-  user: UserSummary,
-  details?: {
-    followers: number;
-    avatar: string;
-    username: string;
-    displayName: string;
-  },
-) {
-  const fallbackName = user.display_name?.trim() || user.user_id || "Unknown user";
-  const username = details?.username?.trim() || fallbackName;
-
-  return {
-    username,
-    userId: user.user_id,
-    displayName: details?.displayName?.trim() || fallbackName,
-    avatar: details?.avatar ?? "",
-    isVerified: user.is_verified,
-    followers: details?.followers ?? 0,
-    profilePath: `/${username.toLowerCase().replace(/\s+/g, "-")}`,
-  };
-}
-
 export default function FollowingPage() {
   const navigate = useNavigate();
   const { username } = useParams();
-  const { user: currentUser, setUser } = useAuthStore();
+  const { user: currentUser } = useAuthStore();
   const isOwner = !username || username === currentUser?.username;
   const user = isOwner
     ? currentUser
@@ -87,17 +60,6 @@ export default function FollowingPage() {
 
   useEffect(() => {
     if (!apiFollowing?.length) {
-      if (
-        isOwner &&
-        apiFollowing?.length === 0 &&
-        currentUser &&
-        currentUser.following_ids.length > 0
-      ) {
-        setUser({
-          ...currentUser,
-          following_ids: [],
-        });
-      }
       return;
     }
 
@@ -127,51 +89,30 @@ export default function FollowingPage() {
         }
       }),
     ).then((entries) => {
-      const details = Object.fromEntries(entries);
-      setFollowingDetails(details);
-
-      if (isOwner && currentUser) {
-        const normalizedFollowingIds = apiFollowing.flatMap((user) => {
-          const resolvedUsername = details[user.user_id]?.username;
-          return resolvedUsername && resolvedUsername !== user.user_id
-            ? [user.user_id, resolvedUsername]
-            : [user.user_id];
-        });
-
-        if (!sameIds(currentUser.following_ids, normalizedFollowingIds)) {
-          setUser({
-            ...currentUser,
-            following_ids: normalizedFollowingIds,
-          });
-        }
-      }
+      setFollowingDetails(Object.fromEntries(entries));
     });
-  }, [apiFollowing, isOwner, currentUser, setUser]);
+  }, [apiFollowing]);
 
   const following = useMemo(() => {
     if (apiFollowing) {
-      return apiFollowing.map((u) =>
-        toProfileCard(u, followingDetails[u.user_id]),
-      );
+      return apiFollowing.map((u) => ({
+        username: followingDetails[u.user_id]?.username ?? u.user_id,
+        displayName:
+          followingDetails[u.user_id]?.displayName ?? u.display_name,
+        avatar: followingDetails[u.user_id]?.avatar ?? "",
+        isVerified: u.is_verified,
+        followers: followingDetails[u.user_id]?.followers ?? 0,
+      }));
     }
 
     if (!isOwner) {
-      return (mockUserFollowing[username || ""] ?? []).map((u) => ({
-        ...u,
-        userId: u.username,
-        profilePath: `/${(u.username || u.displayName || "unknown-user").toLowerCase().replace(/\s+/g, "-")}`,
-      }));
+      return mockUserFollowing[username || ""] ?? [];
     }
 
     return [];
   }, [apiFollowing, followingDetails, isOwner, username]);
 
   if (!user) return null;
-
-  const isFollowedByCurrentUser = (userId?: string, targetUsername?: string) =>
-    (!!userId && (currentUser?.following_ids?.includes(userId) ?? false)) ||
-    (!!targetUsername &&
-      (currentUser?.following_ids?.includes(targetUsername) ?? false));
 
   const handleTabChange = (tab: string) => {
     const profileUsername = username ?? currentUser?.username;
@@ -228,13 +169,15 @@ export default function FollowingPage() {
       <div className="grid grid-cols-6 gap-6">
         {following.map((u) => (
           <div
-            key={u.profilePath}
+            key={u.username}
             className="group flex flex-col items-center gap-2"
           >
             <div
               data-test={`following-avatar-${u.username}`}
               className="aspect-square w-full cursor-pointer overflow-hidden rounded-full bg-text-muted"
-              onClick={() => navigate(u.profilePath)}
+              onClick={() =>
+                navigate(`/${u.username.toLowerCase().replace(/\s+/g, "-")}`)
+              }
             >
               {u.avatar ? (
                 <img
@@ -255,7 +198,11 @@ export default function FollowingPage() {
             <span
               data-test={`following-count-${u.username}`}
               className="flex cursor-pointer items-center gap-1 text-xs text-text-secondary"
-              onClick={() => navigate(`${u.profilePath}/follower`)}
+              onClick={() =>
+                navigate(
+                  `/${u.username.toLowerCase().replace(/\s+/g, "-")}/follower`,
+                )
+              }
             >
               <i className="fa-solid fa-user text-[10px]" />
               {u.followers >= 1e6
@@ -265,31 +212,7 @@ export default function FollowingPage() {
             </span>
             <div className="flex h-8 items-center justify-center">
               <div className="hidden group-hover:block">
-                <FollowButton
-                  username={u.username}
-                  userId={u.userId}
-                  isFollowingOverride={
-                    isOwner
-                      ? true
-                      : isFollowedByCurrentUser(u.userId, u.username)
-                  }
-                  onFollowChange={(nextFollowing) => {
-                    if (!isOwner || nextFollowing) {
-                      return;
-                    }
-
-                    setApiFollowing((prev) =>
-                      prev?.filter((item) => item.user_id !== u.userId) ?? prev,
-                    );
-                    setFollowingDetails((prev) => {
-                      const next = { ...prev };
-                      if (u.userId) {
-                        delete next[u.userId];
-                      }
-                      return next;
-                    });
-                  }}
-                />
+                <FollowButton username={u.username} />
               </div>
             </div>
           </div>

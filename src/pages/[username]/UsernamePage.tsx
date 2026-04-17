@@ -26,48 +26,6 @@ import {
   type UserSummary,
 } from "@/services/user.service";
 
-interface ProfileListUser {
-  userId: string;
-  username: string;
-  displayName: string;
-  profilePath: string;
-  avatar: string;
-  followers: number;
-  tracks: number;
-  isVerified: boolean;
-}
-
-async function enrichUserSummary(user: UserSummary): Promise<ProfileListUser> {
-  try {
-    const profile = await getUserById(user.user_id);
-    return {
-      userId: user.user_id,
-      username: profile.username ?? user.user_id,
-      displayName: profile.display_name || user.display_name,
-      profilePath: `/${(profile.username ?? user.user_id).toLowerCase().replace(/\s+/g, "-")}`,
-      avatar: profile.profile_picture ?? "",
-      followers: profile.followers_count ?? 0,
-      tracks: 0,
-      isVerified: profile.is_verified ?? user.is_verified,
-    };
-  } catch {
-    return {
-      userId: user.user_id,
-      username: user.user_id,
-      displayName: user.display_name,
-      profilePath: `/${user.user_id}`,
-      avatar: "",
-      followers: 0,
-      tracks: 0,
-      isVerified: user.is_verified,
-    };
-  }
-}
-
-function sameIds(a: string[] = [], b: string[] = []) {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
-}
-
 export default function UsernamePage() {
   const { username } = useParams();
   const { user: currentUser, setUser } = useAuthStore();
@@ -81,8 +39,6 @@ export default function UsernamePage() {
   );
   const [followers, setFollowers] = useState<UserSummary[]>([]);
   const [following, setFollowing] = useState<UserSummary[]>([]);
-  const [followersDetails, setFollowersDetails] = useState<ProfileListUser[]>([]);
-  const [followingDetails, setFollowingDetails] = useState<ProfileListUser[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -166,50 +122,6 @@ export default function UsernamePage() {
   }, [username, isOwner, currentUserId, currentUsername, setUser]);
 
   useEffect(() => {
-    if (!followers.length) {
-      setFollowersDetails([]);
-      return;
-    }
-
-    Promise.all(followers.map(enrichUserSummary))
-      .then((items) => setFollowersDetails(items))
-      .catch(console.error);
-  }, [followers]);
-
-  useEffect(() => {
-    if (!following.length) {
-      setFollowingDetails([]);
-      return;
-    }
-
-    Promise.all(following.map(enrichUserSummary))
-      .then((items) => {
-        setFollowingDetails(items);
-
-        if (isOwner) {
-          const latestUser = useAuthStore.getState().user ?? currentUser;
-          if (!latestUser) {
-            return;
-          }
-
-          const normalizedFollowingIds = items.flatMap((item) =>
-            item.username && item.username !== item.userId
-              ? [item.userId, item.username]
-              : [item.userId],
-          );
-
-          if (!sameIds(latestUser.following_ids, normalizedFollowingIds)) {
-            setUser({
-              ...latestUser,
-              following_ids: normalizedFollowingIds,
-            });
-          }
-        }
-      })
-      .catch(console.error);
-  }, [following, isOwner, currentUser, setUser]);
-
-  useEffect(() => {
     if (!isOwner && profileData) {
       getFollowers(profileData.id, { limit: 100 })
         .then((res) => setFollowers(res.items))
@@ -235,9 +147,7 @@ export default function UsernamePage() {
   useEffect(() => {
     if (!isOwner && profileData) {
       const nowFollowing =
-        (currentUser?.following_ids?.includes(profileData.id) ?? false) ||
-        (!!profileData.username &&
-          (currentUser?.following_ids?.includes(profileData.username) ?? false));
+        currentUser?.following_ids?.includes(profileData.id) ?? false;
       setIsFollowing(nowFollowing);
     }
   }, [currentUser?.following_ids, profileData?.id, isOwner]);
@@ -307,6 +217,24 @@ export default function UsernamePage() {
         location: (profileData as PublicUser | null)?.location || "",
       };
 
+  const followersMapped = followers.map((u) => ({
+    username: u.user_id,
+    displayName: u.display_name,
+    avatar: "",
+    followers: 0,
+    tracks: 0,
+    isVerified: u.is_verified,
+  }));
+
+  const followingMapped = following.map((u) => ({
+    username: u.user_id,
+    displayName: u.display_name,
+    avatar: "",
+    followers: 0,
+    tracks: 0,
+    isVerified: u.is_verified,
+  }));
+
   return (
     <div className="container px-4 md:px-8 lg:px-20">
       <ProfileHeader user={user} isOwner={isOwner} />
@@ -318,7 +246,6 @@ export default function UsernamePage() {
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
         username={user.username}
-        userId={profileData?.id}
         displayName={user.displayName}
         tracks={displayedStats.tracks ?? 0}
         // Extra slot for Block button — rendered inside ProfileTabs "more actions"
@@ -399,8 +326,8 @@ export default function UsernamePage() {
             user={user}
             isOwner={isOwner}
             likedTracks={likedTracks}
-            followers={followersDetails}
-            following={followingDetails}
+            followers={followersMapped}
+            following={followingMapped}
             stats={displayedStats}
             onTabChange={handleTabChange}
             onUnlike={handleUnlike}
