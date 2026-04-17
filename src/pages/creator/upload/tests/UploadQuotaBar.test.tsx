@@ -3,6 +3,19 @@ import { render, screen, waitFor } from "@testing-library/react";
 import UploadQuotaBar from "../../../../components/Upload/UploadQuotaBar";
 import { MemoryRouter } from "react-router-dom"; // <-- import MemoryRouter
 
+const mockNavigate = vi.fn();
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-router-dom")>(
+    "react-router-dom",
+  );
+
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 // ─── Mock quota service ───────────────────────────────────────────────────────
 
 vi.mock("@/services/api/upload/quota.service", () => ({
@@ -150,5 +163,18 @@ describe("UploadQuotaBar", () => {
       ),
     );
     consoleSpy.mockRestore();
+  });
+
+  it("navigates to checkout when the CTA is clicked", async () => {
+    mockGetUploadQuota.mockResolvedValue({ usedTracks: 1, trackLimit: 3 });
+    renderWithRouter();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("get-unlimited-uploads-button-quota-bar"),
+      ).toBeInTheDocument(),
+    );
+
+    screen.getByTestId("get-unlimited-uploads-button-quota-bar").click();
+    expect(mockNavigate).toHaveBeenCalledWith("/creator/checkout");
   });
 });
