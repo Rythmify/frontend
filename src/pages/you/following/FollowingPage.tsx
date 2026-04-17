@@ -53,9 +53,22 @@ export default function FollowingPage() {
   const { username } = useParams();
   const { user: currentUser } = useAuthStore();
   const isOwner = !username || username === currentUser?.username;
+  const profileUsername = isOwner
+    ? currentUser?.username ?? ""
+    : username ?? "";
+  const profileDisplayName = isOwner
+    ? (currentUser?.displayName ?? profileUsername) || "Profile"
+    : profileUsername || "Profile";
+  const profilePath = isOwner
+    ? currentUser?.username
+      ? `/${currentUser.username}`
+      : "/you"
+    : username
+      ? `/${username}`
+      : "/you";
   const user = isOwner
     ? currentUser
-    : { username, displayName: username, avatar: "" };
+    : { username: profileUsername, displayName: profileDisplayName, avatar: "" };
 
   const [rawFollowing, setRawFollowing] = useState<UserSummary[] | null>(null);
   const [following, setFollowing] = useState<EnrichedUser[]>([]);
@@ -135,7 +148,7 @@ export default function FollowingPage() {
         <div
           data-test="following-page-avatar"
           className="h-25 w-25 cursor-pointer flex-shrink-0 overflow-hidden rounded-full bg-text-muted"
-          onClick={() => navigate(`/${user.username}`)}
+          onClick={() => navigate(profilePath)}
         >
           {user.avatar ? (
             <img
@@ -150,10 +163,13 @@ export default function FollowingPage() {
         <h1
           data-test="following-page-title"
           className="cursor-pointer text-2xl font-bold text-white"
-          onClick={() => navigate(`/${user.username}`)}
+          onClick={() => navigate(profilePath)}
         >
-          {user.displayName || user.username} is following
+          {profileDisplayName} is following
         </h1>
+        {profileUsername && (
+          <p className="text-sm text-text-secondary">@{profileUsername}</p>
+        )}
       </div>
 
       <div className="mb-8 flex gap-6">

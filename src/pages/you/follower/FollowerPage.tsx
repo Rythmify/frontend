@@ -52,10 +52,23 @@ export default function FollowerPage() {
   const { username } = useParams();
   const { user: currentUser } = useAuthStore();
   const isOwner = !username || username === currentUser?.username;
+  const profileUsername = isOwner
+    ? currentUser?.username ?? ""
+    : username ?? "";
+  const profileDisplayName = isOwner
+    ? (currentUser?.displayName ?? profileUsername) || "Profile"
+    : profileUsername || "Profile";
+  const profilePath = isOwner
+    ? currentUser?.username
+      ? `/${currentUser.username}`
+      : "/you"
+    : username
+      ? `/${username}`
+      : "/you";
 
   const displayUser = isOwner
     ? currentUser
-    : { username, displayName: username, avatar: "", id: "" };
+    : { username: profileUsername, displayName: profileDisplayName, avatar: "", id: "" };
 
   const [rawFollowers, setRawFollowers] = useState<UserSummary[] | null>(null);
   const [enriched, setEnriched] = useState<EnrichedUser[]>([]);
@@ -129,7 +142,7 @@ export default function FollowerPage() {
         <div
           data-test="follower-page-avatar"
           className="w-24 h-24 cursor-pointer rounded-full overflow-hidden bg-text-muted flex-shrink-0"
-          onClick={() => navigate(`/${displayUser.username}`)}
+          onClick={() => navigate(profilePath)}
         >
           {displayUser.avatar ? (
             <img
@@ -144,10 +157,13 @@ export default function FollowerPage() {
         <h1
           data-test="follower-page-title"
           className="text-white cursor-pointer text-2xl font-bold"
-          onClick={() => navigate(`/${displayUser.username}`)}
+          onClick={() => navigate(profilePath)}
         >
           Followers of {displayUser.displayName || displayUser.username}
         </h1>
+        {profileUsername && (
+          <p className="text-sm text-text-secondary">@{profileUsername}</p>
+        )}
       </div>
 
       {/* Tabs */}
@@ -242,7 +258,10 @@ export default function FollowerPage() {
             "Transparency Reports",
           ].map((link, i, arr) => (
             <span key={link} className="flex items-center gap-1">
-              <button className="cursor-pointer hover:underline hover:text-text">
+              <button
+                data-test={`follower-footer-${link.toLowerCase().replace(/\s+/g, "-")}`}
+                className="cursor-pointer hover:underline hover:text-text"
+              >
                 {link}
               </button>
               {i < arr.length - 1 && <span>·</span>}
@@ -251,7 +270,10 @@ export default function FollowerPage() {
         </div>
         <div className="text-xs text-left text-bg-inverted">
           Language:{" "}
-          <button className="text-[#2196F3] cursor-pointer hover:underline">
+          <button
+            data-test="follower-language-button"
+            className="text-[#2196F3] cursor-pointer hover:underline"
+          >
             English (US)
           </button>
         </div>

@@ -119,6 +119,11 @@ describe("FollowingPage", () => {
     );
   });
 
+  it("displays the username in the header", () => {
+    render(<FollowingPage />);
+    expect(screen.getByText("@me")).toBeInTheDocument();
+  });
+
   it("renders all three tabs", () => {
     render(<FollowingPage />);
     expect(screen.getByTestId("following-tab-likes")).toBeInTheDocument();
