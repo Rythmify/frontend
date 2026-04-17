@@ -101,6 +101,28 @@ export default function UsernamePage() {
             setStats((s) => ({ ...s, following: res.meta.total }));
           })
           .catch(console.error);
+        getFollowing(currentUserId, { limit: 100 })
+          .then((res) => {
+            setFollowing(res.items);
+            setStats((s) => ({ ...s, following: res.meta.total }));
+
+            // Seed store so FollowButton knows who is already followed
+            const { user: storeUser, setUser: storeSetUser } =
+              useAuthStore.getState();
+            if (storeUser) {
+              const existingIds = new Set(storeUser.following_ids);
+              const newIds = res.items
+                .map((u) => u.id)
+                .filter((id) => !existingIds.has(id));
+              if (newIds.length > 0) {
+                storeSetUser({
+                  ...storeUser,
+                  following_ids: [...storeUser.following_ids, ...newIds],
+                });
+              }
+            }
+          })
+          .catch(console.error);
       }
     } else {
       if (!username) {
@@ -217,21 +239,21 @@ export default function UsernamePage() {
         location: (profileData as PublicUser | null)?.location || "",
       };
 
-  const followersMapped = followers.map((u) => ({
+  const followingMapped = following.map((u) => ({
     userId: u.id,
-    username: u.id,
+    username: u.username ?? u.id,
     displayName: u.display_name,
-    avatar: "",
+    avatar: u.profile_picture ?? "",
     followers: 0,
     tracks: 0,
     isVerified: u.is_verified,
   }));
 
-  const followingMapped = following.map((u) => ({
+  const followersMapped = followers.map((u) => ({
     userId: u.id,
-    username: u.id,
+    username: u.username ?? u.id,
+    avatar: u.profile_picture ?? "",
     displayName: u.display_name,
-    avatar: "",
     followers: 0,
     tracks: 0,
     isVerified: u.is_verified,
