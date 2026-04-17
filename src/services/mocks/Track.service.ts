@@ -1,80 +1,105 @@
-import axios from "axios";
-import type { Track } from "../../../src/types/track";
+import axiosInstance from "../api/axiosInstance";
+import type { Track } from "../../types/track";
 
-// All requests go through axios — MSW intercepts them in dev,
-// real backend handles them later
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? "/api",
-});
-
-// Track endpoints 
-
-/** GET /api/tracks */
-export async function getTracks(): Promise<Track[]> {
-  const { data } = await api.get<Track[]>("/tracks");
-  return data;
+/**
+ * GET /users/{user_id}/tracks
+ * Returns paginated public tracks for a specific user.
+ */
+export async function getUserTracks(
+  userId: string,
+  page = 1,
+  limit = 20
+): Promise<Track[]> {
+  const { data } = await axiosInstance.get<{
+    data: Track[];
+    pagination: unknown;
+  }>(`/users/${userId}/tracks`, { params: { page, limit } });
+  return data.data;
 }
 
-/** GET /api/tracks/:id */
-export async function getTrackById(id: string): Promise<Track> {
-  const { data } = await api.get<Track>(`/tracks/${id}`);
-  return data;
+/**
+ * GET /tracks/me
+ * Returns the authenticated user's own tracks (including private ones).
+ */
+export async function getMyTracks(page = 1, limit = 20): Promise<Track[]> {
+  const { data } = await axiosInstance.get<{
+    data: Track[];
+    pagination: unknown;
+  }>("/tracks/me", { params: { page, limit } });
+  return data.data;
 }
 
-/** GET /api/:username/:slug */
-export async function getTrackBySlug(
-  username: string,
-  slug: string
+/**
+ * GET /tracks/{track_id}
+ * Fetches a single track by its UUID.
+ * For private tracks pass secretToken to gain access.
+ */
+export async function getTrackById(
+  id: string,
+  secretToken?: string
 ): Promise<Track> {
-  const { data } = await api.get<Track>(`/${username}/${slug}`);
-  return data;
+  const { data } = await axiosInstance.get<{ data: Track }>(`/tracks/${id}`, {
+    params: secretToken ? { secret_token: secretToken } : undefined,
+  });
+  return data.data;
 }
 
-/** GET /api/tracks/:id/related */
-export async function getRelatedTracks(trackId: string): Promise<Track[]> {
-  const { data } = await api.get<Track[]>(`/tracks/${trackId}/related`);
-  return Array.isArray(data) ? data : [];
+/**
+ * GET /resolve?url=<permalink>
+ * Resolves a Rythmify permalink to its resource type + UUID, then fetches the track.
+ */
+export async function getTrackBySlug(
+  _username: string,
+  trackId: string
+): Promise<Track> {
+  const { data } = await axiosInstance.get<{ data: Track }>(`/tracks/${trackId}`);
+  return data.data;
 }
 
-/** POST /api/tracks/:id/like */
-export async function likeTrack(
-  id: string
-): Promise<{ liked: boolean; likeCount: number }> {
-  const { data } = await api.post(`/tracks/${id}/like`);
-  return data;
+/**
+ * No related-tracks endpoint exists in the API spec.
+ * Returns an empty array so callers don't break.
+ */
+export async function getRelatedTracks(_trackId: string): Promise<Track[]> {
+  return [];
 }
 
-/** DELETE /api/tracks/:id/like */
-export async function unlikeTrack(
-  id: string
-): Promise<{ liked: boolean; likeCount: number }> {
-  const { data } = await api.delete(`/tracks/${id}/like`);
-  return data;
+/**
+ * GET /tracks/{track_id}/comments
+ * Returns top-level comments for a track.
+ */
+export async function getTrackComments(
+  trackId: string,
+  limit = 20,
+  offset = 0
+) {
+  const { data } = await axiosInstance.get(
+    `/tracks/${trackId}/comments`,
+    { params: { limit, offset } }
+  );
+  return data?.data?.items ?? [];
 }
 
-/** POST /api/tracks/:id/repost */
-export async function repostTrack(
-  id: string
-): Promise<{ reposted: boolean; repostCount: number }> {
-  const { data } = await api.post(`/tracks/${id}/repost`);
-  return data;
-}
-
-/** GET /api/tracks/:id/comments */
-export async function getTrackComments(trackId: string) {
-  const { data } = await api.get(`/tracks/${trackId}/comments`);
-  return data;
-}
-
-/** POST /api/tracks/:id/comments */
+/**
+ * POST /tracks/{track_id}/comments
+ * Posts a timestamped comment on a track.
+ */
 export async function postComment(
   trackId: string,
   text: string,
   timestamp: number
 ) {
-  const { data } = await api.post(`/tracks/${trackId}/comments`, {
-    text,
-    timestamp,
+  const { data } = await axiosInstance.post(`/tracks/${trackId}/comments`, {
+    content: text,
+    track_timestamp: Math.floor(timestamp),
   });
   return data;
+}
+
+/**
+ * POST /tracks/{track_id}/repost
+ * Reposts a track on the authenticated user's profile.
+ */
+export async function repostTrack(trackId: string): Promise<void> {
+  await axiosInstance.post(`/tracks/${trackId}/repost`);
 }

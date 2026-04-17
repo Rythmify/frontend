@@ -13,14 +13,16 @@ import { HiUpload } from "react-icons/hi";
 import { IoSend } from "react-icons/io5";
 import SharePopup from "./SharePopup";
 import type { Track } from "../../../../types/track";
-import { likeTrack, unlikeTrack, repostTrack, postComment } from "../../../../services/mocks/Track.service";
+import * as engagementService from "../../../../services/engagement.service";
+import { postComment } from "../../../../services/track.service";
+import { usePlayerStore } from "../../../../stores/player.store";
 
 interface TrackActionsProps {
   track: Track;
   isLiked?: boolean;
   currentUserAvatar?: string;
   onAddToNextUp?: () => void;
-  onComment?: (text: string) => void;
+  onComment?: (text: string, timestampSec: number) => void;
 }
 
 export default function TrackActions({
@@ -56,43 +58,49 @@ export default function TrackActions({
 
   // Like - calls MSW ( /api/tracks/:id/like )
   const handleLike = async () => {
-    try {
-      if (liked) {
-        const res = await unlikeTrack(track.id);
-        setLiked(false);
-        setLikeCount(res.likeCount);
-      } else {
-        const res = await likeTrack(track.id);
-        setLiked(true);
-        setLikeCount(res.likeCount);
-      }
-    } catch {
-      // optimistic fallback
-      setLiked((p) => !p);
+  try {
+    if (liked) {
+      await engagementService.unlikeTrack(track.id);
+      setLiked(false);
+      setLikeCount((p) => p - 1);
+    } else {
+      await engagementService.likeTrack(track.id);
+      setLiked(true);
+      setLikeCount((p) => p + 1);
     }
-  };
+  } catch (err: any) {
+    if (err.response?.status === 401) {
+      alert("Session expired or unauthorized. Please log out and back in.");
+    }
+    setLiked((p) => !p);
+  }
+};
 
   // Repost - calls MSW (/api/tracks/:id/repost) 
   const handleRepost = async () => {
+  try {
+    await engagementService.repostTrack(track.id);
+    setRepostCount((p) => p + 1);
+  } catch (err: any) {
+    if (err.response?.status === 404) {
+      alert("Reposting is not supported by the Rythmify backend API yet!");
+    }
+    console.error("Repost failed");
+  }
+};
+
+  // Comment - calls MSW (/api/tracks/:id/comments)
+  const handleCommentSubmit = async () => {
+    if (!comment.trim()) return;
+    const currentTime = usePlayerStore.getState().currentTime;
     try {
-      const res = await repostTrack(track.id);
-      setRepostCount(res.repostCount);
+      // Internal service call if needed, but we pass it up to the parent
+      onComment?.(comment.trim(), Math.floor(currentTime));
+      setComment("");
     } catch {
-      console.error("Repost failed");
+      console.error("Comment failed");
     }
   };
-
-  // Comment - calls MSW (/api/tracks/:id/comments) => not sure i should implement it now or later 
-//   const handleCommentSubmit = async () => {
-//     if (!comment.trim()) return;
-//     try {
-//       await postComment(track.id, comment.trim(), 0);
-//       onComment?.(comment.trim());
-//       setComment("");
-//     } catch {
-//       console.error("Comment failed");
-//     }
-//   };
 
   const formatCount = (n: number | undefined) =>
     n == null ? "0" : n >= 1000 ? `${(n / 1000).toFixed(0)}K` : String(n);
@@ -105,7 +113,7 @@ export default function TrackActions({
         <div data-test="track-actions-wrapper" className="flex flex-col">
 
           {/* ── Comment Input ── */}
-          {/* <div data-test="comment-input-row" className="flex items-center gap-3 py-3">
+          <div data-test="comment-input-row" className="flex items-center gap-3 py-3">
             <img
               src={currentUserAvatar}
               alt="Your avatar"
@@ -143,7 +151,7 @@ export default function TrackActions({
                 <IoSend className="text-base text-[var(--color-text-muted)] group-hover:text-white transition-colors duration-150" />
               </button>
             </div>
-          </div> */}
+          </div>
 
           {/* Action Icons + Stats*/}
           <div
@@ -163,7 +171,14 @@ export default function TrackActions({
               </IconButton>
 
               {/* Add to Next up */}
-              <IconButton data-test="button-add-next-up" onClick={onAddToNextUp} tooltip="Add to Next up">
+              <IconButton
+                data-test="button-add-next-up"
+                onClick={() => {
+                  onAddToNextUp?.();
+                  alert("Added to Next up list!");
+                }}
+                tooltip="Add to Next up"
+              >
                 <LuListEnd className="text-[17px]" />
               </IconButton>
 
@@ -183,7 +198,15 @@ export default function TrackActions({
                     data-test="dropdown-more"
                     className="absolute left-0 top-full mt-1 bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] shadow-[var(--shadow-md)] z-50 min-w-[190px] py-1"
                   >
-                    <DropdownItem icon={<FaAddToPlaylist />} label="Add to playlist" data-test="dropdown-item-add-playlist" onClick={() => setMoreOpen(false)} />
+                    <DropdownItem
+                      icon={<FaAddToPlaylist />}
+                      label="Add to playlist"
+                      data-test="dropdown-item-add-playlist"
+                      onClick={() => {
+                        alert("Add to playlist feature is not implemented yet.");
+                        setMoreOpen(false);
+                      }}
+                    />
                     {track.isPrivate && (
                       <DropdownItem icon={<FaGlobe />} label="Make public" data-test="dropdown-item-make-public" onClick={() => setMoreOpen(false)} />
                     )}

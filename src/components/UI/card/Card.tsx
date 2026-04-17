@@ -135,7 +135,7 @@ const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
   return (
     <div
       className={styles.card(widthClassName)}
-      onClick={() => navigate(`/${track.artistUsername}/${track.trackSlug}`)}
+      onClick={() => navigate(`/${track.artistUsername}/${track.id}`)}
       data-test="card-track"
     >
       <div className={styles.imageWrapper}>

@@ -129,7 +129,7 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
           onClick={e => e.stopPropagation()}
         >
           {n.type === 'follow' && (
-            <FollowButton username={n.actor.username} />
+            <FollowButton username={n.actor.username} userId={n.actor.id} />
           )}
 
           {/* 3 dots */}
