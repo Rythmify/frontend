@@ -44,6 +44,7 @@ export interface UserSummary {
   id: string;
   email: string;
   display_name: string;
+  username: string | null;
   gender: "male" | "female" | null;
   role: "artist" | "listener" | "admin";
   is_verified: boolean;

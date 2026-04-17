@@ -35,6 +35,7 @@ export default function BlockButton({
       onBlockChange?.(true);
     } catch {
       // silently revert
+      console.error("BlockButton: Failed to block user");
     } finally {
       setLoading(false);
       setShowModal(false);
@@ -49,6 +50,7 @@ export default function BlockButton({
       onBlockChange?.(false);
     } catch {
       // silently revert
+      console.error("BlockButton: Failed to unblock user");
     } finally {
       setLoading(false);
     }
