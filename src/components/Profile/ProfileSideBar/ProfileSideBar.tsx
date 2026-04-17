@@ -205,8 +205,8 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               View all
             </button>
           </div>
-          <div className="flex">
-            {followers.slice(0, 10).map((follower, index) => (
+          <div className="flex items-center">
+            {followers.slice(0, 9).map((follower, index) => (
               <button
                 key={follower.username}
                 data-test="follower-avatar"
@@ -239,7 +239,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               onClick={() => navigate(`/${user.username}/following`)}
               className="text-xs cursor-pointer font-semibold text-white"
             >
-              {following.length} FOLLOWING
+              {formatCount(stats.following)} FOLLOWING
             </button>
             <button
               data-test="following-view-all"

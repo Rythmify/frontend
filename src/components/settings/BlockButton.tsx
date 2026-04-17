@@ -24,7 +24,10 @@ export default function BlockButton({
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleBlockConfirm = async () => {
+  const handleBlockConfirm = async (_opts: {
+    removeContent: boolean;
+    reportSpam: boolean;
+  }) => {
     setLoading(true);
     try {
       await blockUser(userId);

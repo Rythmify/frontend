@@ -152,8 +152,20 @@ export async function getFollowing(
 
 export async function getFollowStatus(
   userId: string,
-): Promise<{ is_following: boolean }> {
-  const res = await axiosInstance.get<{ data: { is_following: boolean } }>(
+): Promise<{
+  is_following: boolean;
+  is_followed_by?: boolean;
+  is_blocking?: boolean;
+  is_blocked_by?: boolean;
+}> {
+  const res = await axiosInstance.get<{
+    data: {
+      is_following: boolean;
+      is_followed_by?: boolean;
+      is_blocking?: boolean;
+      is_blocked_by?: boolean;
+    };
+  }>(
     `/users/${userId}/follow-status`,
   );
   return res.data.data;

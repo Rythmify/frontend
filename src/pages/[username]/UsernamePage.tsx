@@ -5,6 +5,7 @@ import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideB
 import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
+import BlockButton from "@/components/settings/BlockButton";
 import { useNavigate, useLocation } from "react-router-dom";
 import { mockLikedTracks } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
@@ -18,6 +19,7 @@ import {
   getFollowers,
   getFollowing,
   getFollowStatus,
+  resolveUsername,
   updateMyProfile,
   type OwnUser,
   type PublicUser,
@@ -40,13 +42,14 @@ export default function UsernamePage() {
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
-  const followingCount = currentUser?.following_ids?.length ?? 0;
+  const [isBlocked, setIsBlocked] = useState(false);
   const initiallyFollowing = useRef<boolean | null>(null);
-  const isOwner = !!currentUser && (!username || username === currentUser.username);
+  const currentUserId = currentUser?.id;
+  const currentUsername = currentUser?.username;
+  const isOwner =
+    !!currentUser && (!username || username === currentUser.username);
 
   useEffect(() => {
-    // Load tracks for this profile (owner → all mock tracks, others → first 3)
-    // TODO: replace with real API call — e.g. getTracks({ username })
     setProfileTracks(isOwner ? mockTracks : mockTracks.slice(0, 3));
   }, [isOwner]);
 
@@ -57,11 +60,11 @@ export default function UsernamePage() {
       getMyProfile()
         .then((profile) => {
           setProfileData(profile);
-          setStats({
+          setStats((prev) => ({
+            ...prev,
             followers: profile.followers_count,
             following: profile.following_count,
-            tracks: 0,
-          });
+          }));
           const latestUser = useAuthStore.getState().user ?? currentUser;
           setUser({
             ...latestUser,
@@ -85,14 +88,14 @@ export default function UsernamePage() {
         })
         .catch(console.error);
 
-      if (currentUser.id) {
-        getFollowers(currentUser.id, { limit: 100 })
+      if (currentUserId) {
+        getFollowers(currentUserId, { limit: 100 })
           .then((res) => {
             setFollowers(res.items);
             setStats((s) => ({ ...s, followers: res.meta.total }));
           })
           .catch(console.error);
-        getFollowing(currentUser.id, { limit: 100 })
+        getFollowing(currentUserId, { limit: 100 })
           .then((res) => {
             setFollowing(res.items);
             setStats((s) => ({ ...s, following: res.meta.total }));
@@ -100,7 +103,12 @@ export default function UsernamePage() {
           .catch(console.error);
       }
     } else {
-      getUserById(username!)
+      if (!username) {
+        return;
+      }
+
+      resolveUsername(username)
+        .then((userId) => getUserById(userId))
         .then((profile) => {
           setProfileData(profile);
           setStats({
@@ -111,14 +119,12 @@ export default function UsernamePage() {
         })
         .catch(console.error);
     }
-  }, [username, isOwner]);
+  }, [username, isOwner, currentUserId, currentUsername, setUser]);
 
   useEffect(() => {
     if (!isOwner && profileData) {
       getFollowers(profileData.id, { limit: 100 })
-        .then((res) => {
-          setFollowers(res.items);
-        })
+        .then((res) => setFollowers(res.items))
         .catch(console.error);
 
       getFollowing(profileData.id, { limit: 100 })
@@ -131,6 +137,7 @@ export default function UsernamePage() {
       getFollowStatus(profileData.id)
         .then((status) => {
           setIsFollowing(status.is_following);
+          setIsBlocked(status.is_blocking ?? false);
           initiallyFollowing.current = status.is_following;
         })
         .catch(console.error);
@@ -156,20 +163,15 @@ export default function UsernamePage() {
   };
 
   const selectedTab = getActiveTab();
-  const storageKey = `likedTracks_${isOwner ? currentUser?.username ?? "" : username ?? ""}`;
-
-  const followerDelta =
-    initiallyFollowing.current === null
-      ? 0
-      : isFollowing === initiallyFollowing.current
-        ? 0
-        : isFollowing
-          ? 1
-          : -1;
+  const storageKey = `likedTracks_${isOwner ? (currentUser?.username ?? "") : (username ?? "")}`;
 
   const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
     const stored = localStorage.getItem(storageKey);
-    return stored ? JSON.parse(stored) : currentUser && isOwner ? mockLikedTracks : [];
+    return stored
+      ? JSON.parse(stored)
+      : currentUser && isOwner
+        ? mockLikedTracks
+        : [];
   });
 
   const handleUnlike = (id: string) => {
@@ -183,7 +185,9 @@ export default function UsernamePage() {
   };
 
   const handleTabChange = (tab: string) => {
-    const targetUsername = isOwner ? currentUser?.username ?? "" : username || "";
+    const targetUsername = isOwner
+      ? (currentUser?.username ?? "")
+      : username || "";
     const tabRoutes: Record<string, string> = {
       All: `/${targetUsername}`,
       "Popular tracks": `/${targetUsername}/popular-tracks`,
@@ -198,9 +202,7 @@ export default function UsernamePage() {
 
   if (!currentUser) return null;
 
-  const displayedStats = isOwner
-    ? { ...stats, following: followingCount }
-    : { ...stats, followers: stats.followers + followerDelta };
+  const displayedStats = stats;
 
   const user = isOwner
     ? currentUser
@@ -246,6 +248,18 @@ export default function UsernamePage() {
         username={user.username}
         displayName={user.displayName}
         tracks={displayedStats.tracks ?? 0}
+        // Extra slot for Block button — rendered inside ProfileTabs "more actions"
+        extraActions={
+          !isOwner && profileData ? (
+            <BlockButton
+              userId={profileData.id}
+              username={profileData.username ?? ""}
+              displayName={profileData.display_name ?? user.displayName}
+              isBlocked={isBlocked}
+              onBlockChange={(blocked) => setIsBlocked(blocked)}
+            />
+          ) : undefined
+        }
       />
 
       <div className="flex gap-6 py-6 items-start">

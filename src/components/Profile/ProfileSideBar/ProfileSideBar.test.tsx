@@ -139,6 +139,24 @@ describe("ProfileSideBar", () => {
     expect(screen.getByText("2 FOLLOWERS")).toBeInTheDocument();
   });
 
+  it("shows up to 9 follower avatars for non-owner", () => {
+    const followers = Array.from({ length: 12 }, (_, index) => ({
+      username: `follower${index + 1}`,
+      avatar: "",
+    }));
+
+    render(
+      <ProfileSideBar
+        {...defaultProps}
+        isOwner={false}
+        followers={followers}
+        stats={{ followers: 12, following: 0, tracks: 0 }}
+      />,
+    );
+
+    expect(screen.getAllByTestId("follower-avatar")).toHaveLength(9);
+  });
+
   it("hides followers section for owner", () => {
     const followers = [{ username: "follower1", avatar: "" }];
     render(
@@ -157,8 +175,15 @@ describe("ProfileSideBar", () => {
         isVerified: true,
       },
     ];
-    render(<ProfileSideBar {...defaultProps} following={following} />);
+    render(
+      <ProfileSideBar
+        {...defaultProps}
+        following={following}
+        stats={{ followers: 100, following: 1, tracks: 5 }}
+      />,
+    );
     expect(screen.getByText("travis-scott")).toBeInTheDocument();
+    expect(screen.getByText("1 FOLLOWING")).toBeInTheDocument();
     expect(
       screen.getByTestId("follow-button-travis-scott"),
     ).toBeInTheDocument();
