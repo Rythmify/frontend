@@ -294,14 +294,14 @@ export const router = createBrowserRouter([
                     element: <Lazy component={StationsPage} />,
                   },
                   {
-                    path: "following",
-                    element: <Lazy component={YouFollowingPage} />,
-                  },
-                  {
                     path: "history",
                     element: <Lazy component={HistoryPage} />,
                   },
                 ],
+              },
+              {
+                path: "following",
+                element: <Lazy component={FollowingPage} />,
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },

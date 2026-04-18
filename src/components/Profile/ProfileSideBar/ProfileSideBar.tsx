@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import type { User } from "@/stores/auth.store";
-import TrackItem from "./TrackItem";
 import { useNavigate } from "react-router-dom";
-import FollowButton from "../FollowButton/FollowButton";
+import FollowButton from "@/components/UI/FollowButton";
+import TrackItem from "@/components/UI/TrackItem";
+import { useLikesStore } from "@/stores/likes.store";
 
 interface FollowingUser {
+  userId?: string;
   username: string;
   followers: number;
   tracks?: number;
@@ -65,6 +67,53 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 }) => {
   const navigate = useNavigate();
   const [bioExpanded, setBioExpanded] = useState(false);
+  const storedLikedTracks = useLikesStore((state) => state.likedTracks);
+  const storedLikedTracksMapped: LikedTracks[] = storedLikedTracks.map(
+    (track) => ({
+      id: track.id,
+      title: track.title,
+      artist: track.artistName,
+      coverUrl: track.coverUrl,
+      plays: track.playCount,
+      likes: track.likeCount,
+      reposts: track.repostCount,
+      comments: track.commentCount,
+    }),
+  );
+  const removeLikedTrack = (trackId: string) => {
+    const track = resolvedLikedTracks.find((item) => item.id === trackId);
+    if (!track) {
+      onUnlike?.(trackId);
+      return;
+    }
+
+    useLikesStore.getState().toggleTrack({
+      id: track.id,
+      title: track.title,
+      artistName: track.artist,
+      artistUsername: track.artist.toLowerCase().replace(/\s+/g, "-"),
+      coverUrl: track.coverUrl ?? "",
+      audioUrl: "",
+      genre: "",
+      likeCount: track.likes ?? 0,
+      repostCount: track.reposts ?? 0,
+      playCount: track.plays ?? 0,
+      commentCount: track.comments ?? 0,
+      duration: "0:00",
+      postedAt: "",
+      waveformData: [],
+    });
+
+    onUnlike?.(trackId);
+  };
+  const resolvedLikedTracks = Array.from(
+    new Map(
+      [...likedTracks, ...storedLikedTracksMapped].map((track) => [
+        track.id,
+        track,
+      ]),
+    ).values(),
+  );
 
   const bio = user.bio ?? "";
   const isBioLong = bio.length > BIO_CHAR_LIMIT;
@@ -137,7 +186,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       )}
 
       {/* Liked tracks */}
-      {likedTracks.length > 0 && (
+      {resolvedLikedTracks.length > 0 && (
         <div>
           <div className="flex items-center justify-between w-full hover:opacity-70 transition-opacity">
             <button
@@ -145,7 +194,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               onClick={() => navigate(`/${user.username}/likes`)}
               className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
             >
-              {likedTracks.length} LIKES
+              {resolvedLikedTracks.length} LIKES
             </button>
             <button
               data-test="likes-view-all"
@@ -159,8 +208,13 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       )}
 
       <div className="flex flex-col gap-4">
-        {likedTracks.slice(0, 3).map((track) => (
-          <TrackItem key={track.id} {...track} onUnlike={onUnlike} />
+        {resolvedLikedTracks.slice(0, 3).map((track) => (
+          <TrackItem
+            key={track.id}
+            {...track}
+            initialLiked
+            onUnlike={removeLikedTrack}
+          />
         ))}
       </div>
 
@@ -205,8 +259,8 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               View all
             </button>
           </div>
-          <div className="flex">
-            {followers.slice(0, 10).map((follower, index) => (
+          <div className="flex items-center">
+            {followers.slice(0, 9).map((follower, index) => (
               <button
                 key={follower.username}
                 data-test="follower-avatar"
@@ -239,7 +293,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               onClick={() => navigate(`/${user.username}/following`)}
               className="text-xs cursor-pointer font-semibold text-white"
             >
-              {following.length} FOLLOWING
+              {formatCount(stats.following)} FOLLOWING
             </button>
             <button
               data-test="following-view-all"
@@ -252,7 +306,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 
           {following.slice(0, 3).map((u) => (
             <div
-              key={u.username}
+              key={u.userId ?? u.username}
               data-test="following-item"
               className="flex items-center justify-between"
             >
@@ -311,7 +365,11 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                   </div>
                 </div>
               </div>
-              <FollowButton username={u.username} />
+              <FollowButton
+                username={u.username}
+                userId={u.userId}
+                initialIsFollowing={true}
+              />
             </div>
           ))}
         </div>

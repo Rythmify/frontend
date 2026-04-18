@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import SettingsLayout from "@/pages/settings/SettingsLayout";
 import { useAuthStore, type User } from "@/stores/auth.store";
+import { getMe } from "@/services/auth.service";
 import {
   changeEmail,
   deleteMyAccount,
@@ -291,27 +292,89 @@ function ChangeTheme() {
   );
 }
 
+type PendingEmail = {
+  email: string;
+  confirmed: boolean;
+};
+
 function EmailAddresses({
   onToast,
 }: {
   onToast: (msg: string, type: "success" | "error") => void;
 }) {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore(); 
+  //const { user } = useAuthStore();
   const [showInput, setShowInput] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
+  const [pendingEmails, setPendingEmails] = useState<PendingEmail[]>(() => {
+    try {
+      const stored = localStorage.getItem(`pending-emails-${user?.id}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist pending emails per user
+  useEffect(() => {
+    localStorage.setItem(
+      `pending-emails-${user?.id}`,
+      JSON.stringify(pendingEmails),
+    );
+  }, [pendingEmails, user?.id]);
+
+  // Poll to check if any pending email got confirmed
+  useEffect(() => {
+  const unconfirmed = pendingEmails.filter((e) => !e.confirmed);
+  if (unconfirmed.length === 0) return;
+
+  // Capture current pending emails in the closure to avoid stale ref issues
+  const pendingSnapshot = pendingEmails.map((e) => e.email.toLowerCase());
+
+  const interval = setInterval(async () => {
+    try {
+      const response = await getMe();
+      const profile = response.data;
+
+      const freshEmail = profile.email?.toLowerCase();
+
+      if (freshEmail && pendingSnapshot.includes(freshEmail)) {
+        
+        setPendingEmails((prev) =>
+          prev.filter((e) => e.email.toLowerCase() !== freshEmail),
+        );
+        setUser({ ...user!, email: profile.email });
+      }
+    } catch (error) {
+      console.error("Failed to refresh email state:", error);
+    }
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [pendingEmails, setUser]);
 
   const handleAdd = async () => {
     const trimmedEmail = newEmail.trim();
-
     if (!trimmedEmail) return;
 
     const normalizedCurrentEmail = user?.email?.trim().toLowerCase();
     const normalizedNewEmail = trimmedEmail.toLowerCase();
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (normalizedCurrentEmail && normalizedNewEmail === normalizedCurrentEmail) {
+    if (
+      normalizedCurrentEmail &&
+      normalizedNewEmail === normalizedCurrentEmail
+    ) {
       onToast("This email is already your primary email address.", "error");
+      return;
+    }
+
+    if (
+      pendingEmails.some((e) => e.email.toLowerCase() === normalizedNewEmail)
+    ) {
+      onToast("This email is already pending confirmation.", "error");
       return;
     }
 
@@ -323,9 +386,11 @@ function EmailAddresses({
     setLoading(true);
     try {
       await changeEmail(trimmedEmail);
-
+      setPendingEmails((prev) => [
+        ...prev,
+        { email: trimmedEmail, confirmed: false },
+      ]);
       onToast(`Verification email sent to ${trimmedEmail}`, "success");
-
       setShowInput(false);
       setNewEmail("");
     } catch (err: any) {
@@ -339,15 +404,66 @@ function EmailAddresses({
     }
   };
 
+  const handleResend = async (email: string) => {
+    setResendingEmail(email);
+    try {
+      await changeEmail(email);
+      onToast(`Verification email resent to ${email}`, "success");
+    } catch (err: any) {
+      onToast("Failed to resend verification email.", "error");
+    } finally {
+      setResendingEmail(null);
+    }
+  };
+
+  const handleRemove = (email: string) => {
+    setPendingEmails((prev) => prev.filter((e) => e.email !== email));
+    onToast("Email address removed.", "success");
+  };
+
   return (
     <div>
       <SectionTitle>Email addresses</SectionTitle>
-      <p className="text-sm text-[var(--color-text-hover)] mb-4">
+
+      {/* Primary email */}
+      <p className="text-sm text-[var(--color-text-hover)] mb-2">
         {user?.email}{" "}
         <span className="text-[var(--color-text)]">(Primary)</span>
       </p>
+
+      {/* Pending / unconfirmed emails */}
+      {pendingEmails.map((entry) => (
+        <p
+          key={entry.email}
+          className="text-sm text-[var(--color-text)] mb-2 flex flex-wrap items-center gap-x-1"
+        >
+          <span>{entry.email}</span>
+          <span>(Not confirmed</span>
+          <span>-</span>
+          <button
+            onClick={() => handleResend(entry.email)}
+            disabled={resendingEmail === entry.email}
+            data-test={`settings-resend-email-${entry.email}`}
+            className="text-[var(--color-text-hover)] hover:underline disabled:opacity-50 transition-opacity"
+          >
+            {resendingEmail === entry.email
+              ? "Sending…"
+              : "Resend confirmation email"}
+          </button>
+          <span>)</span>
+          <button
+            onClick={() => handleRemove(entry.email)}
+            data-test={`settings-remove-email-${entry.email}`}
+            className="ml-2 text-[var(--color-text-hover)] hover:underline transition-opacity"
+          >
+            Remove address
+          </button>
+        </p>
+      ))}
+
+      {/* Add new email */}
       {showInput ? (
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center mt-3">
           <input
             type="email"
             value={newEmail}
@@ -1068,12 +1184,12 @@ function DeleteAccountModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
-      <div className="relative w-full max-w-xl rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-5 py-5 text-[var(--color-text-hover)] shadow-[var(--shadow-md)]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/45 px-4 pt-16 sm:pt-20 pb-6 overflow-y-auto">
+      <div className="relative w-full max-w-[28rem] sm:max-w-[32rem] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-4 sm:px-5 sm:py-5 text-[var(--color-text-hover)] shadow-[var(--shadow-md)] my-6">
         <button
           onClick={onClose}
           data-test="settings-delete-account-modal-close-button"
-          className="absolute right-4 top-4 text-[var(--color-text)] transition hover:text-[var(--color-text-hover)]"
+          className="absolute right-3 top-3 sm:right-4 sm:top-4 text-[var(--color-text)] transition hover:text-[var(--color-text-hover)]"
           aria-label="Close delete account modal"
         >
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -1086,13 +1202,13 @@ function DeleteAccountModal({
           </svg>
         </button>
 
-        <h2 className="mb-5 text-2xl font-bold tracking-tight text-[var(--color-text-hover)]">
+        <h2 className="mb-4 text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text-hover)]">
           Delete account
         </h2>
 
-        <div className="flex flex-col gap-3.5">
+        <div className="flex flex-col gap-3">
           <div>
-            <p className="mb-3 text-base font-semibold text-[var(--color-text-hover)]">
+            <p className="mb-3 text-sm sm:text-base font-semibold text-[var(--color-text-hover)]">
               Why are you choosing to delete your account?
             </p>
             <div className="flex flex-col gap-2">
@@ -1149,7 +1265,7 @@ function DeleteAccountModal({
             </span>
           </label>
 
-          <div className="flex justify-end gap-3 pt-1">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-1">
             <button
               onClick={onClose}
               disabled={isDeleting}

@@ -1,46 +1,107 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth.store";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
-import {
-  mockLikedTracks,
-  mockUserProfiles,
-} from "@/components/Profile/MockData/mock";
+import { useLikesStore } from "@/stores/likes.store";
+import { useNavigate, useParams } from "react-router-dom";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
+import LikesContent from "@/components/UI/LikesContent/LikesContent";
+import {
+  getMyLikedTracks,
+  resolveUsername,
+  getUserById,
+  type TrackSummary,
+} from "@/services/user.service";
+import type { Track } from "@/types/track";
 
 const tabs = ["Likes", "Following", "Followers"];
+
+function mapToTrack(t: TrackSummary): Track {
+  return {
+    id: t.id,
+    title: t.title,
+    artistName: t.artist_name,
+    artistUsername: "",
+    trackSlug: "",
+    coverUrl: t.cover_image ?? "",
+    audioUrl: t.stream_url ?? "",
+    duration: String(t.duration ?? 0),
+    playCount: t.play_count,
+    likeCount: t.like_count,
+    repostCount: 0,
+    commentCount: 0,
+    genre: t.genre ?? "",
+    waveformData: [],
+    postedAt: "",
+  };
+}
 
 export default function LikesPage() {
   const navigate = useNavigate();
   const { username } = useParams();
-  const location = useLocation();
   const { user: currentUser } = useAuthStore();
+  const localLikedTracks = useLikesStore((state) => state.likedTracks);
+  const [showShare, setShowShare] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [profileDisplayName, setProfileDisplayName] = useState("");
+  const [profileAvatar, setProfileAvatar] = useState("");
+  const [profileUsername, setProfileUsername] = useState("");
 
-  const isYouRoute = location.pathname.startsWith("/you/");
-  const isOwner = isYouRoute || !username || username === currentUser?.username;
+  const isOwner = !username || username === currentUser?.username;
 
-  const user = isOwner
-    ? currentUser
-    : {
-        username,
-        displayName: mockUserProfiles[username || ""]?.displayName || username,
-        avatar: mockUserProfiles[username || ""]?.avatar || "",
-      };
+  useEffect(() => {
+    if (isOwner) {
+      setProfileDisplayName(
+        currentUser?.displayName ?? currentUser?.username ?? "",
+      );
+      setProfileAvatar(currentUser?.avatar ?? "");
+      setProfileUsername(currentUser?.username ?? "");
+    } else if (username) {
+      resolveUsername(username)
+        .then((id) => getUserById(id))
+        .then((profile) => {
+          setProfileDisplayName(profile.display_name);
+          setProfileAvatar(profile.profile_picture ?? "");
+          setProfileUsername(profile.username ?? username);
+        })
+        .catch(console.error);
+    }
+  }, [username, isOwner, currentUser]);
 
-  const likedTracks = isOwner
-    ? mockLikedTracks
-    : (mockUserProfiles[username || ""]?.likedTracks ?? []);
+  useEffect(() => {
+    if (!isOwner) {
+      // Public liked tracks per user not in API spec, show empty
+      setLoading(false);
+      return;
+    }
 
-  if (!user) return null;
+    setLoading(true);
+    getMyLikedTracks({ limit: 100 })
+      .then((res) => {
+        const fetchedTracks = res.items.map(mapToTrack);
+        useLikesStore.setState((state) => {
+          const merged = new Map(
+            [...fetchedTracks, ...state.likedTracks].map((track) => [
+              track.id,
+              track,
+            ]),
+          );
+          return { likedTracks: Array.from(merged.values()) };
+        });
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [isOwner]);
+
+  const displayedTracks = isOwner ? localLikedTracks : [];
+  const showLoading = loading && displayedTracks.length === 0;
 
   const handleTabChange = (tab: string) => {
-    const profileUsername = username ?? currentUser?.username;
     const base = profileUsername ? `/${profileUsername}` : "/you";
     if (tab === "Likes") navigate(`${base}/likes`);
     if (tab === "Following") navigate(`${base}/following`);
     if (tab === "Followers") navigate(`${base}/follower`);
   };
 
-  const [showShare, setShowShare] = useState(false);
+  if (!currentUser && isOwner) return null;
 
   return (
     <div className="py-8 container px-4 md:px-8 lg:px-20">
@@ -48,13 +109,13 @@ export default function LikesPage() {
       <div className="flex items-center gap-4 mb-3">
         <div
           data-test="likes-user-avatar"
-          className="w-25 h-25 rounded-full overflow-hidden bg-text-muted flex-shrink-0 cursor-pointer"
-          onClick={() => navigate(`/${user.username}`)}
+          className="w-24 h-24 rounded-full overflow-hidden bg-text-muted flex-shrink-0 cursor-pointer"
+          onClick={() => navigate(`/${profileUsername}`)}
         >
-          {user.avatar ? (
+          {profileAvatar ? (
             <img
-              src={user.avatar}
-              alt={user.username}
+              src={profileAvatar}
+              alt={profileUsername}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -65,7 +126,7 @@ export default function LikesPage() {
           data-test="likes-page-title"
           className="text-white text-2xl font-bold"
         >
-          Likes by {user.displayName || user.username}
+          Likes by {profileDisplayName || profileUsername}
         </h1>
       </div>
 
@@ -95,7 +156,7 @@ export default function LikesPage() {
         >
           {isOwner
             ? "Hear the tracks you've liked"
-            : `Hear the tracks ${user.displayName || user.username} has liked`}
+            : `Hear the tracks ${profileDisplayName || profileUsername} has liked`}
         </p>
         <button
           data-test="likes-share-button"
@@ -107,17 +168,14 @@ export default function LikesPage() {
         </button>
       </div>
 
-      {/* Empty state */}
-      <div className="flex items-center justify-center py-24">
-        <p
-          data-test="likes-empty-state"
-          className="text-white font-bold text-3xl"
-        >
-          {isOwner
-            ? "You have no likes yet."
-            : `${user.displayName || user.username} hasn't liked any tracks.`}
-        </p>
-      </div>
+      {/* Content */}
+      {showLoading ? (
+        <div className="flex items-center justify-center py-24">
+          <p className="text-text-secondary text-sm">Loading...</p>
+        </div>
+      ) : (
+        <LikesContent tracks={displayedTracks} showControls={true} />
+      )}
 
       {/* Footer */}
       <div className="mt-16 flex flex-col gap-8">
@@ -157,7 +215,7 @@ export default function LikesPage() {
 
       {showShare && (
         <ShareModal
-          url={`https://rythmify.com/${user.username}/likes`}
+          url={`https://rythmify.com/${profileUsername}/likes`}
           onClose={() => setShowShare(false)}
         />
       )}

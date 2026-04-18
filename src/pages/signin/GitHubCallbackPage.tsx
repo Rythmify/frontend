@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMe } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
@@ -7,37 +7,31 @@ export default function GitHubCallbackPage() {
   const navigate = useNavigate();
   const { login: storeLogin } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
+  const hasRun = useRef(false); // prevents double execution
 
   useEffect(() => {
+    if (hasRun.current) return; // stop second run
+    hasRun.current = true;
+
     const params = new URLSearchParams(window.location.search);
-    
+
     const oauthError = params.get("error");
     if (oauthError) {
       navigate(`/signin?error=${oauthError}`, { replace: true });
       return;
     }
 
-    
-
     const accessToken = params.get("access_token");
     const isNewUser = params.get("is_new_user") === "true";
     const email = params.get("email") ?? "";
     const displayName = params.get("display_name") ?? "";
-    
-    console.log('🔵 Full callback URL:', window.location.href);
-  console.log('🔵 Search params:', window.location.search);
-  console.log('🔵 access_token:', params.get('access_token'));
-  console.log('🔵 is_new_user:', params.get('is_new_user'));
 
     if (!accessToken) {
       navigate("/signin?error=missing_token", { replace: true });
       return;
     }
 
-    // Save token so getMe() axios interceptor can attach it
     localStorage.setItem("auth_token", accessToken);
-
-    // Remove token from browser history
     window.history.replaceState({}, "", "/auth/callback");
 
     if (isNewUser) {

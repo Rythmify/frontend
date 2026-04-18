@@ -23,6 +23,7 @@ import type { Track } from "../../types/track";
 import type { TrackComment } from "./types";
 import { usePlayerStore } from "../../stores/player.store";
 import { useAuthStore } from "../../stores/auth.store";
+import { useLikesStore } from "@/stores/likes.store";
 import {
   audio,
   seekAudio,
@@ -736,10 +737,12 @@ export default function TrackCard({
   const handleLike = async () => {
     const wasLiked = liked;
     const newLiked = !wasLiked;
+    const likesStore = useLikesStore.getState();
     
     // Optimistic update
     setLiked(newLiked);
     setLikeCount((p) => (wasLiked ? p - 1 : p + 1));
+    likesStore.toggleTrack(track);
 
     try {
       if (newLiked) {
@@ -751,6 +754,7 @@ export default function TrackCard({
       // Revert on failure
       setLiked(wasLiked);
       setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
+      likesStore.toggleTrack(track);
       if (err.response?.status === 401) {
         alert("Session expired or unauthorized. Please log out and back in.");
       }

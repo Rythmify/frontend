@@ -44,7 +44,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [bio, setBio] = useState(user.bio || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{ displayName?: string }>({});
+  const [errors, setErrors] = useState<{
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+    city?: string;
+    country?: string;
+  }>({});
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,10 +74,33 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     };
   }, [avatarPreview]);
 
+  const isNumericOnly = (value: string) => /^\d+$/.test(value.trim());
+
   const validate = () => {
-    const newErrors: { displayName?: string } = {};
-    if (!displayName.trim())
+    const newErrors: typeof errors = {};
+
+    if (!displayName.trim()) {
       newErrors.displayName = "Display name is required.";
+    } else if (isNumericOnly(displayName)) {
+      newErrors.displayName = "Display name cannot be numbers only.";
+    }
+
+    if (firstName.trim() && isNumericOnly(firstName)) {
+      newErrors.firstName = "First name cannot be numbers only.";
+    }
+
+    if (lastName.trim() && isNumericOnly(lastName)) {
+      newErrors.lastName = "Last name cannot be numbers only.";
+    }
+
+    if (city.trim() && isNumericOnly(city)) {
+      newErrors.city = "City cannot be numbers only.";
+    }
+
+    if (country.trim() && isNumericOnly(country)) {
+      newErrors.country = "Country cannot be numbers only.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -98,27 +127,27 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       <button
         data-test="edit-modal-close-button"
         onClick={onClose}
-        className="fixed top-3 right-3 cursor-pointer text-white text-lg hover:opacity-70 z-60 bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center mt-6 mr-6"
+        className="fixed top-14 right-4 sm:top-16 sm:right-6 cursor-pointer text-white text-lg hover:opacity-70 z-60 bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center"
       >
         <i className="fa-solid fa-xmark" />
       </button>
 
       <div
-        className="fixed inset-0 bg-white/50 flex items-start justify-center z-50 pt-10"
+        className="fixed inset-0 bg-white/50 flex items-start justify-center z-50 pt-16 sm:pt-20 px-4 overflow-y-auto"
         onClick={onClose}
       >
         <div
-          className="bg-black rounded-sm p-9 w-[780px]"
+          className="bg-black rounded-sm p-5 sm:p-7 lg:p-8 w-full max-w-[720px] my-6"
           onClick={(e) => e.stopPropagation()}
         >
           <h2 className="text-white text-left font-bold text-xl mb-6">
             Edit your Profile
           </h2>
 
-          <div className="flex gap-8">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
             {/* Avatar */}
-            <div className="flex-shrink-0">
-              <div className="w-48 h-48 rounded-full overflow-hidden bg-gray-600 relative cursor-pointer">
+            <div className="flex-shrink-0 self-center lg:self-start">
+              <div className="w-36 h-36 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full overflow-hidden bg-gray-600 relative cursor-pointer">
                 {currentAvatar ? (
                   <img
                     data-test="edit-avatar-preview"
@@ -129,7 +158,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 ) : (
                   <div className="w-full h-full bg-gray-600" />
                 )}
-                <label className="absolute bottom-6 left-1/2 -translate-x-1/2 cursor-pointer">
+                <label className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 cursor-pointer">
                   <input
                     data-test="edit-avatar-input"
                     type="file"
@@ -145,7 +174,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             </div>
 
             {/* Fields */}
-            <div className="flex-1 flex flex-col gap-4">
+            <div className="flex-1 flex flex-col gap-4 min-w-0">
               <div className="flex flex-col gap-1">
                 <label className="text-sm text-left text-white">
                   Display name <span className="text-red-500">*</span>
@@ -155,7 +184,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   value={displayName}
                   onChange={(e) => {
                     setDisplayName(e.target.value);
-                    if (errors.displayName) setErrors({});
+                    if (errors.displayName) {
+                      const { displayName: _displayName, ...rest } = errors;
+                      setErrors(rest);
+                    }
                   }}
                   className={`bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border focus:border-white ${errors.displayName ? "border-red-500" : "border-transparent"}`}
                 />
@@ -176,7 +208,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-sm text-left text-white">
                     First name
@@ -184,9 +216,20 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   <input
                     data-test="edit-first-name-input"
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      if (errors.firstName) {
+                        const { firstName: _firstName, ...rest } = errors;
+                        setErrors(rest);
+                      }
+                    }}
                     className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
                   />
+                  {errors.firstName && (
+                    <span className="text-red-500 text-xs">
+                      {errors.firstName}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-sm text-left text-white">
@@ -195,21 +238,43 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   <input
                     data-test="edit-last-name-input"
                     value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      if (errors.lastName) {
+                        const { lastName: _lastName, ...rest } = errors;
+                        setErrors(rest);
+                      }
+                    }}
                     className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
                   />
+                  {errors.lastName && (
+                    <span className="text-red-500 text-xs">
+                      {errors.lastName}
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-sm text-left text-white">City</label>
                   <input
                     data-test="edit-city-input"
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={(e) => {
+                      setCity(e.target.value);
+                      if (errors.city) {
+                        const { city: _city, ...rest } = errors;
+                        setErrors(rest);
+                      }
+                    }}
                     className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
                   />
+                  {errors.city && (
+                    <span className="text-red-500 text-xs">
+                      {errors.city}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-sm text-left text-white">
@@ -218,9 +283,20 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   <input
                     data-test="edit-country-input"
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                    onChange={(e) => {
+                      setCountry(e.target.value);
+                      if (errors.country) {
+                        const { country: _country, ...rest } = errors;
+                        setErrors(rest);
+                      }
+                    }}
                     className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
                   />
+                  {errors.country && (
+                    <span className="text-red-500 text-xs">
+                      {errors.country}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -260,7 +336,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
             <button
               data-test="edit-cancel-button"
               onClick={onClose}

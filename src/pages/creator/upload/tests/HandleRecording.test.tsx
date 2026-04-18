@@ -1,15 +1,33 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  render,
+  screen,
+  act,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import HandleRecording from "../HandleRecording";
 
+vi.mock("../../../../services/api/upload/audioTranscoder", () => ({
+  default: vi.fn().mockResolvedValue(new Blob(["wav"], { type: "audio/wav" })),
+}));
+
+import toWav from "../../../../services/api/upload/audioTranscoder";
+const mockToWav = vi.mocked(toWav);
+
 // ── Mock MediaRecorder ─────────────────────────────────────────────────────
-globalThis.MediaRecorder = vi.fn().mockImplementation(() => ({
-  start: vi.fn(),
-  stop: vi.fn(),
-  ondataavailable: null,
-  onstop: null,
-})) as any;
+class MockMediaRecorder {
+  start = vi.fn();
+  stop = vi.fn(() => {
+    this.onstop?.({} as any);
+  });
+  ondataavailable: ((event: any) => void) | null = null;
+  onstop: ((event: any) => void) | null = null;
+  mimeType = "audio/ogg";
+}
+
+globalThis.MediaRecorder = MockMediaRecorder as any;
 
 Object.defineProperty(globalThis.navigator, "mediaDevices", {
   value: { getUserMedia: vi.fn().mockResolvedValue({}) },
@@ -44,24 +62,57 @@ const makeProps = (overrides = {}) => ({
   ...overrides,
 });
 
+const createStatefulSetter = <T,>(initial: T) => {
+  let current = initial;
+  const setter = vi.fn((next: T | ((prev: T) => T)) => {
+    current =
+      typeof next === "function" ? (next as (prev: T) => T)(current) : next;
+  });
+  return { setter, getCurrent: () => current };
+};
+
+const createRecorder = () => {
+  const recorder: any = {
+    start: vi.fn(),
+    stop: vi.fn(() => recorder.onstop?.({} as any)),
+    ondataavailable: null,
+    onstop: null,
+    mimeType: "audio/ogg",
+  };
+  return recorder;
+};
+
 describe("HandleRecording", () => {
   beforeEach(() => vi.clearAllMocks());
+  afterEach(() => vi.useRealTimers());
 
   // ── Rendering ──────────────────────────────────────────────────────────────
 
   it("shows Start recording when not recording", () => {
     render(<HandleRecording {...makeProps()} />);
-    expect(screen.getByTestId("record-toggle-button")).toHaveTextContent(/start recording/i);
+    expect(screen.getByTestId("record-toggle-button")).toHaveTextContent(
+      /start recording/i,
+    );
   });
 
   it("shows Pause recording when actively recording", () => {
-    render(<HandleRecording {...makeProps({ isRecording: true, isPaused: false })} />);
-    expect(screen.getByTestId("record-toggle-button")).toHaveTextContent(/pause recording/i);
+    render(
+      <HandleRecording
+        {...makeProps({ isRecording: true, isPaused: false })}
+      />,
+    );
+    expect(screen.getByTestId("record-toggle-button")).toHaveTextContent(
+      /pause recording/i,
+    );
   });
 
   it("shows Resume recording when paused", () => {
-    render(<HandleRecording {...makeProps({ isRecording: true, isPaused: true })} />);
-    expect(screen.getByTestId("record-toggle-button")).toHaveTextContent(/resume recording/i);
+    render(
+      <HandleRecording {...makeProps({ isRecording: true, isPaused: true })} />,
+    );
+    expect(screen.getByTestId("record-toggle-button")).toHaveTextContent(
+      /resume recording/i,
+    );
   });
 
   it("displays 0:00 timer at start", () => {
@@ -108,7 +159,12 @@ describe("HandleRecording", () => {
   // ── Pausing ────────────────────────────────────────────────────────────────
 
   it("calls setIsPaused(true) when pausing active recording", async () => {
-    const mockRecorder = { start: vi.fn(), stop: vi.fn(), ondataavailable: null, onstop: null };
+    const mockRecorder = {
+      start: vi.fn(),
+      stop: vi.fn(),
+      ondataavailable: null,
+      onstop: null,
+    };
     const props = makeProps({
       isRecording: true,
       isPaused: false,
@@ -122,7 +178,12 @@ describe("HandleRecording", () => {
   });
 
   it("saves segment duration to history when pausing", async () => {
-    const mockRecorder = { start: vi.fn(), stop: vi.fn(), ondataavailable: null, onstop: null };
+    const mockRecorder = {
+      start: vi.fn(),
+      stop: vi.fn(),
+      ondataavailable: null,
+      onstop: null,
+    };
     const props = makeProps({
       isRecording: true,
       isPaused: false,
@@ -175,7 +236,11 @@ describe("HandleRecording", () => {
   // ── Redo ───────────────────────────────────────────────────────────────────
 
   it("does nothing on redo when redo stack is empty", async () => {
-    const props = makeProps({ isPaused: true, redoStack: [], redoAudioStack: [] });
+    const props = makeProps({
+      isPaused: true,
+      redoStack: [],
+      redoAudioStack: [],
+    });
     render(<HandleRecording {...props} />);
     await userEvent.click(screen.getByTestId("redo-recording-button"));
     expect(props.setRedoStack).not.toHaveBeenCalled();
@@ -224,9 +289,15 @@ describe("HandleRecording", () => {
 
   it("auto-stops when seconds reach 60", () => {
     vi.useFakeTimers();
-    const props = makeProps({ isRecording: true, isPaused: false, seconds: 60 });
+    const props = makeProps({
+      isRecording: true,
+      isPaused: false,
+      seconds: 60,
+    });
     render(<HandleRecording {...props} />);
-    act(() => { vi.runAllTimers(); });
+    act(() => {
+      vi.runAllTimers();
+    });
     expect(props.setIsRecordingFinished).toHaveBeenCalledWith(true);
     expect(props.setIsRecording).toHaveBeenCalledWith(false);
     vi.useRealTimers();
@@ -236,11 +307,195 @@ describe("HandleRecording", () => {
 
   it("action buttons show cursor-pointer when paused", () => {
     render(<HandleRecording {...makeProps({ isPaused: true })} />);
-    expect(screen.getByTestId("stop-recording-button").className).toContain("cursor-pointer");
+    expect(screen.getByTestId("stop-recording-button").className).toContain(
+      "cursor-pointer",
+    );
   });
 
   it("action buttons show cursor-default when not recording or paused", () => {
     render(<HandleRecording {...makeProps()} />);
-    expect(screen.getByTestId("stop-recording-button").className).toContain("cursor-default");
+    expect(screen.getByTestId("stop-recording-button").className).toContain(
+      "cursor-default",
+    );
+  });
+
+  it("updates the timer while recording", () => {
+    vi.useFakeTimers();
+    const props = makeProps({ isRecording: true, isPaused: false, seconds: 0 });
+    render(<HandleRecording {...props} />);
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(props.setSeconds).toHaveBeenCalled();
+  });
+
+  it("resumes recording when paused", async () => {
+    const props = makeProps({
+      isRecording: true,
+      isPaused: true,
+      seconds: 12,
+      currentSegmentStart: 7,
+    });
+    render(<HandleRecording {...props} />);
+
+    await userEvent.click(screen.getByTestId("record-toggle-button"));
+
+    expect(props.setCurrentSegmentStart).toHaveBeenCalledWith(12);
+    expect(props.setIsPaused).toHaveBeenCalledWith(false);
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
+  });
+
+  it("does nothing when stop is clicked while idle", async () => {
+    const props = makeProps();
+    render(<HandleRecording {...props} />);
+
+    await userEvent.click(screen.getByTestId("stop-recording-button"));
+
+    expect(props.onFinish).not.toHaveBeenCalled();
+    expect(props.mediaRecorderRef.current).toBeNull();
+  });
+
+  it("stops an active recording and sends the transcoded blob", async () => {
+    const recorder = createRecorder();
+    const segments = createStatefulSetter([
+      new Blob(["part"], { type: "audio/ogg" }),
+    ]);
+    const onFinish = vi.fn();
+    const props = makeProps({
+      isRecording: true,
+      isPaused: false,
+      seconds: 10,
+      currentSegmentStart: 5,
+      mediaRecorderRef: { current: recorder },
+      audioSegments: segments.getCurrent(),
+      setAudioSegments: segments.setter,
+      onFinish,
+    });
+
+    render(<HandleRecording {...props} />);
+    fireEvent.click(screen.getByTestId("stop-recording-button"));
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await waitFor(() => expect(mockToWav).toHaveBeenCalled());
+    expect(onFinish).toHaveBeenCalledWith(expect.any(Blob));
+    expect(props.setIsRecording).toHaveBeenCalledWith(false);
+    expect(props.setIsPaused).toHaveBeenCalledWith(false);
+    expect(props.setIsRecordingFinished).toHaveBeenCalledWith(true);
+  });
+
+  it("falls back to the raw blob when transcoding fails", async () => {
+    mockToWav.mockRejectedValueOnce(new Error("transcode failed"));
+
+    const recorder = createRecorder();
+    const rawBlob = new Blob(["part"], { type: "audio/ogg" });
+    const segments = createStatefulSetter([rawBlob]);
+    const onFinish = vi.fn();
+    const props = makeProps({
+      isRecording: true,
+      isPaused: false,
+      seconds: 10,
+      currentSegmentStart: 5,
+      mediaRecorderRef: { current: recorder },
+      audioSegments: segments.getCurrent(),
+      setAudioSegments: segments.setter,
+      onFinish,
+    });
+
+    render(<HandleRecording {...props} />);
+    fireEvent.click(screen.getByTestId("stop-recording-button"));
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(onFinish).toHaveBeenCalledWith(rawBlob);
+  });
+
+  it("restarts and starts a new recording after finishing", async () => {
+    const recorder = createRecorder();
+    const props = makeProps({
+      isRecordingFinished: true,
+      mediaRecorderRef: { current: recorder },
+    });
+
+    render(<HandleRecording {...props} />);
+    await userEvent.click(screen.getByTestId("record-toggle-button"));
+
+    expect(props.setSeconds).toHaveBeenCalledWith(0);
+    expect(props.setIsRecording).toHaveBeenCalledWith(true);
+    expect(props.setIsRecordingFinished).toHaveBeenCalledWith(false);
+    expect(props.setAudioSegments).toHaveBeenCalledWith([]);
+    expect(props.setRedoStack).toHaveBeenCalledWith([]);
+    expect(props.setRedoAudioStack).toHaveBeenCalledWith([]);
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
+  });
+
+  it("finalizes the recording when stop is clicked while paused", async () => {
+    const segments = createStatefulSetter([
+      new Blob(["part"], { type: "audio/ogg" }),
+    ]);
+    const onFinish = vi.fn();
+    const props = makeProps({
+      isRecording: false,
+      isPaused: true,
+      audioSegments: segments.getCurrent(),
+      setAudioSegments: segments.setter,
+      onFinish,
+    });
+
+    render(<HandleRecording {...props} />);
+    fireEvent.click(screen.getByTestId("stop-recording-button"));
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await waitFor(() => expect(mockToWav).toHaveBeenCalled());
+    expect(onFinish).toHaveBeenCalledWith(expect.any(Blob));
+    expect(props.setIsRecording).toHaveBeenCalledWith(false);
+    expect(props.setIsPaused).toHaveBeenCalledWith(false);
+    expect(props.setIsRecordingFinished).toHaveBeenCalledWith(true);
+  });
+
+  it("collects recorded chunks before finalizing a started recording", async () => {
+    const segments = createStatefulSetter([] as Blob[]);
+    const onFinish = vi.fn();
+    const props = makeProps({
+      audioSegments: segments.getCurrent(),
+      setAudioSegments: segments.setter,
+      onFinish,
+    });
+
+    const view = render(<HandleRecording {...props} />);
+    await userEvent.click(screen.getByTestId("record-toggle-button"));
+    expect(props.setIsRecording).toHaveBeenCalledWith(true);
+    view.rerender(
+      <HandleRecording
+        {...props}
+        isRecording={true}
+        isRecordingFinished={false}
+      />,
+    );
+
+    await waitFor(() => expect(props.mediaRecorderRef.current).not.toBeNull());
+    const recorder = props.mediaRecorderRef.current as any;
+    recorder.ondataavailable?.({
+      data: new Blob(["chunk"], { type: "audio/ogg" }),
+    } as any);
+
+    fireEvent.click(screen.getByTestId("stop-recording-button"));
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await waitFor(() => expect(mockToWav).toHaveBeenCalled());
+    expect(segments.setter).toHaveBeenCalled();
+    expect(onFinish).toHaveBeenCalledWith(expect.any(Blob));
   });
 });
