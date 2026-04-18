@@ -157,7 +157,8 @@ const mockDailyMix: CuratedMixSummary = {
   description: "New releases based on your taste",
   track_count: 20,
   refreshes_at: "2026-04-09T00:00:00Z",
-  preview_track: null,
+  cover_url: "https://picsum.photos/seed/801/200/200",
+  preview_track: mockDiscoveryTracks[3],
 };
 
 const mockWeeklyMix: CuratedMixSummary = {
@@ -166,7 +167,8 @@ const mockWeeklyMix: CuratedMixSummary = {
   description: "The best of Rythmify this week",
   track_count: 30,
   refreshes_at: "2026-04-15T00:00:00Z",
-  preview_track: null,
+  cover_url: "https://picsum.photos/seed/802/200/200",
+  preview_track: mockDiscoveryTracks[2],
 };
 
 // ─── Mock Stations ────────────────────────────────────────────────────────────

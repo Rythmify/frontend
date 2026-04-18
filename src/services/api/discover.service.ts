@@ -37,7 +37,8 @@ export interface CuratedMixSummary {
   description: string;
   track_count: number;
   refreshes_at: string;
-  preview_track: DiscoveryTrack | null;
+  cover_url: string | null;
+  preview_track: DiscoveryTrack;
 }
 
 export interface DiscoveryStation {
