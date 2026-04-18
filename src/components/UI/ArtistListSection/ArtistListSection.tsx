@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import FollowButton from "./FollowButton";
+import FollowButton from "../FollowButton";
 
 // ─── Types ────────────────────────────────────────────────
 export interface Artist {
