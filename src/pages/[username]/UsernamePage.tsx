@@ -350,7 +350,7 @@ export default function UsernamePage() {
             </div>
           )}
         </div>
-        <div>
+        <div className="sticky top-24 self-start">
           <ProfileSidebar
             user={user}
             isOwner={isOwner}
