@@ -45,6 +45,7 @@ const CreatePlaylistTab = ({
   const handleRemove = (id: string) => {
     setTracksToAdd((prev) => prev.filter((x) => x.id !== id));
   };
+  const visibleLikedTracks = likedTracks.slice(0, 3);
 
   return (
     <div className="mt-6 space-y-5 pb-2">
@@ -97,7 +98,7 @@ const CreatePlaylistTab = ({
               Looking for more tracks? Add some from your likes.
             </h3>
           </div>
-          {likedTracks.map((t) => (
+          {visibleLikedTracks.map((t) => (
             <div key={t.id} className="p-2 rounded-md transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1">

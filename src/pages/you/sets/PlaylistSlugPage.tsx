@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import PlaylistSidebar from "../../../components/playlist/PlaylistSidebar";
-import PlaylistActions from "../../../components/playlist/PlaylistActions";
+import PlaylistSidebar from "@/components/playlist/PlaylistSidebar";
+import PlaylistActions from "@/components/playlist/PlaylistActions";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   getPlaylist,
@@ -9,13 +9,13 @@ import {
   type PlaylistDetails,
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
-import { getUsers } from "../../../services/mocks/User.service";
+import { getUserById, type PublicUser } from "@/services/user.service";
 import { usePlayerStore } from "../../../stores/player.store";
-import { useAuthStore } from "../../../stores/auth.store";
 import type { Track } from "../../../types/track";
-import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+import AlbumOwnerInfo from "@/components/playlist/Album/AlbumOwnerInfo";
+import { useAuthStore } from "../../../stores/auth.store";
 
 function PlaylistSlugPage() {
   const { username, playlistSlug } = useParams<{
@@ -26,8 +26,9 @@ function PlaylistSlugPage() {
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuthStore();
+  const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
 
+  const { user } = useAuthStore();
   const {
     setTrack: setPlayerTrack,
     togglePlay,
@@ -37,59 +38,53 @@ function PlaylistSlugPage() {
 
   useEffect(() => {
     let cancelled = false;
+
     async function fetchData() {
-      if (!playlistSlug) return;
+      if (!playlistSlug) {
+        setError("Playlist not found.");
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
       setError(null);
+
       try {
-        // Fetch playlist details including tracks
-        const [playlistRes] = await Promise.all([
-          getPlaylist(playlistSlug, { include_tracks: true }),
-        ]);
+        const playlistId = playlistSlug.includes(":")
+          ? (playlistSlug.split(":").pop() ?? playlistSlug)
+          : playlistSlug;
+
+        const playlistRes = await getPlaylist(playlistId, {
+          include_tracks: true,
+        });
 
         if (cancelled) return;
 
         setPlaylist(playlistRes.data);
+
+        try {
+          const owner = await getUserById(playlistRes.data.owner_user_id);
+          if (!cancelled) setAlbumOwner(owner);
+        } catch {
+          if (!cancelled) setAlbumOwner(null);
+        }
       } catch (err) {
-        if (!cancelled) setError("Failed to load playlist.");
         console.error(err);
+        if (!cancelled) {
+          setError("Failed to load playlist.");
+          setAlbumOwner(null);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
     fetchData();
+
     return () => {
       cancelled = true;
     };
   }, [playlistSlug]);
-
-  const handleHeroPlayPause = () => {
-    if (!playlist || !playlist.tracks.length) return;
-
-    const firstTrack = playlist.tracks[0];
-    const playerTrack = toPlayerTrack(firstTrack);
-    const queue = playlist.tracks.map(toPlayerTrack);
-    const isThisPlaylistPlaying =
-      (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
-
-    if (isThisPlaylistPlaying) {
-      togglePlay();
-    } else {
-      setPlayerTrack(
-        {
-          ...playerTrack,
-          context: {
-            type: "playlist",
-            playlist_id: playlist.playlist_id,
-            queue: playlist.tracks.map((t) => t.track_id),
-          },
-        } as any,
-        queue,
-      );
-    }
-  };
 
   const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
     id: track.track_id,
@@ -111,6 +106,33 @@ function PlaylistSlugPage() {
     audioUrl: track.audio_url ?? "",
     isPrivate: !track.is_public,
   });
+
+  const handleHeroPlayPause = () => {
+    if (!playlist || !playlist.tracks.length) return;
+
+    const firstTrack = playlist.tracks[0];
+    const playerTrack = toPlayerTrack(firstTrack);
+    const queue = playlist.tracks.map(toPlayerTrack);
+    const isThisPlaylistPlaying =
+      (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
+
+    if (isThisPlaylistPlaying) {
+      togglePlay();
+      return;
+    }
+
+    setPlayerTrack(
+      {
+        ...playerTrack,
+        context: {
+          type: "playlist",
+          playlist_id: playlist.playlist_id,
+          queue: playlist.tracks.map((t) => t.track_id),
+        },
+      } as any,
+      queue,
+    );
+  };
 
   const handleTrackPlay = (track: PlaylistTrackItem) => {
     const playerTrack = toPlayerTrack(track);
@@ -148,9 +170,7 @@ function PlaylistSlugPage() {
         cover_image: file,
       });
 
-      setPlaylist((prev) =>
-        prev ? { ...prev, ...res.data } : prev,
-      );
+      setPlaylist((prev) => (prev ? { ...prev, ...res.data } : prev));
     } catch (err) {
       console.error("Failed to update playlist cover image:", err);
       if (!error) setError("Failed to update playlist cover image.");
@@ -159,25 +179,27 @@ function PlaylistSlugPage() {
 
   const canEditPlaylist = user?.id === playlist?.owner_user_id;
 
-  if (loading)
+  if (loading) {
     return (
       <div className="animate-pulse p-20 text-center text-white">
         Loading playlist...
       </div>
     );
-  if (error || !playlist)
+  }
+
+  if (error || !playlist) {
     return (
       <div className="p-20 text-center text-red-500">
         {error || "Playlist not found."}
       </div>
     );
+  }
 
   return (
     <div
       data-test="playlist-slug-page"
       className="flex-1 w-full bg-bg min-h-screen"
     >
-      {/* Hero Section using the fetched playlist data */}
       <PlaylistHero
         playlist={playlist}
         isPlaying={isPlaylistActive}
@@ -185,7 +207,7 @@ function PlaylistSlugPage() {
         onPlayPause={handleHeroPlayPause}
         onImageUpload={handleCoverUpload}
         showUploadButton={canEditPlaylist}
-        ownerUsername={username}
+        ownerUsername={albumOwner?.username ?? username}
       />
 
       <div className="container mx-auto">
@@ -199,17 +221,27 @@ function PlaylistSlugPage() {
               }
             />
 
-            <div className="mt-8">
-              <TrackList
-                tracks={playlist.tracks}
-                currentTrackId={currentTrack?.id}
-                isPlaying={isPlaying}
-                onTrackPlay={handleTrackPlay}
+            <div className="flex flex-col lg:flex-row gap-6 mt-8">
+              <AlbumOwnerInfo
+                trackNum={playlist.tracks.length}
+                followers={albumOwner?.followers_count ?? 0}
+                username={
+                  albumOwner?.username ?? username ?? playlist.owner_user_id
+                }
+                displayName={albumOwner?.display_name ?? undefined}
+                avatarUrl={albumOwner?.profile_picture}
               />
+              <div className="flex-1 min-w-0">
+                <TrackList
+                  tracks={playlist.tracks}
+                  currentTrackId={currentTrack?.id}
+                  isPlaying={isPlaying}
+                  onTrackPlay={handleTrackPlay}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Right Column: Sidebar */}
           <div className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar playlist={playlist} />
             <GuestPageFooter />
