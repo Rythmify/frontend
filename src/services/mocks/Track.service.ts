@@ -76,12 +76,18 @@ interface RelatedTrackItem {
 }
 
 interface RelatedTracksResponse {
-  reference_track: RelatedTrackItem;
-  data: RelatedTrackItem[];
+  data: {
+    tracks: RelatedTrackItem[];
+    reference_track: RelatedTrackItem;
+  };
+  message: string;
   pagination: {
-    limit: number;
-    offset: number;
-    total: number;
+    page: number;
+    per_page: number;
+    total_items: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
   };
 }
 
@@ -93,9 +99,7 @@ export async function getRelatedTracks(trackId: string): Promise<{
     `/tracks/${trackId}/related`,
   );
 
-  // The API returns { reference_track, data: [...], pagination }
-  // axiosInstance wraps this in response.data
-  const payload = response.data;
+  const payload = response.data.data;
 
   const mapItem = (item: RelatedTrackItem): Track => ({
     id: item.id,
@@ -119,7 +123,7 @@ export async function getRelatedTracks(trackId: string): Promise<{
 
   return {
     referenceTrack: mapItem(payload.reference_track),
-    tracks: Array.isArray(payload.data) ? payload.data.map(mapItem) : [],
+    tracks: Array.isArray(payload.tracks) ? payload.tracks.map(mapItem) : [],
   };
 }
 

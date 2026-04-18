@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "@/components/playlist/Made for you/PlaylistSidebarForYou";
 import PlaylistActions from "@/components/playlist/Album/PlaylistActionsAlbum";
-import AlbumOwnerInfo from "@/components/playlist/Album/AlbumOwnerInfo";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   type PlaylistDetails,
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
-import { getRelatedTracks } from "@/services/track.service";
+import { getRelatedTracks } from "@/services/mocks/Track.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
@@ -107,7 +106,8 @@ function MoreOfLikeSlugPage() {
       setError(null);
 
       try {
-        const trackId = playlistSlug.includes(":")
+        const trackId = playlist?.tracks[0]?.track_id ??
+        playlistSlug.includes(":")
           ? (playlistSlug.split(":").pop() ?? playlistSlug)
           : playlistSlug;
 
@@ -135,7 +135,6 @@ function MoreOfLikeSlugPage() {
         if (!cancelled) {
           setError("Failed to load related tracks.");
           setFeaturedArtists([]);
-          setAlbumOwner(null);
           setSeedTrack(null);
           setRelatedTracks([]);
         }
@@ -229,7 +228,7 @@ function MoreOfLikeSlugPage() {
   if (loading)
     return (
       <div className="animate-pulse p-20 text-center text-white">
-        Loading album...
+        Loading playlist...
       </div>
     );
   if (error || !playlist)
