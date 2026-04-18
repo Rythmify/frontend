@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import ArtistToolsCard from "./ArtistToolsCard";
 import TrackItem from "@/components/UI/TrackItem";
 import TrackListSection from "@/components/UI/TrackListSection/TrackListSection";
-import ArtistListSection from "@/components/UI/ArtistListSection";
+import ArtistListSection from "@/components/UI/ArtistListSection/ArtistListSection";
 import GoMobileSection from "@/components/UI/GoMobile";
 import {
   getSuggestedArtists,
@@ -15,6 +15,51 @@ import {
 import type { Track } from "@/types/track";
 
 // ─── Mock Data ────────────────────────────────────────────
+const mockSuggestedArtists = [
+  {
+    id: "mock-artist-1",
+    username: "amir_salam",
+    avatar: undefined,
+    followers: 12400,
+    isVerified: true,
+  },
+  {
+    id: "mock-artist-2",
+    username: "layla_beats",
+    avatar: undefined,
+    followers: 8700,
+    isVerified: false,
+  },
+  {
+    id: "mock-artist-3",
+    username: "nour_wave",
+    avatar: undefined,
+    followers: 5300,
+    isVerified: false,
+  },
+  {
+    id: "mock-artist-4",
+    username: "omar_fm",
+    avatar: undefined,
+    followers: 21000,
+    isVerified: true,
+  },
+  {
+    id: "mock-artist-5",
+    username: "hana_sound",
+    avatar: undefined,
+    followers: 3900,
+    isVerified: false,
+  },
+  {
+    id: "mock-artist-6",
+    username: "ziad_records",
+    avatar: undefined,
+    followers: 16500,
+    isVerified: true,
+  },
+];
+
 const mockLikedTracks = [
   {
     id: "a1b2c3d4-e5f6-7890-1234-567890abcd01",
@@ -92,26 +137,34 @@ const styles = {
   `,
 };
 
+const ARTIST_BATCH_SIZE = 6;
+const ARTIST_PAGE_SIZE = 3;
+
 // ─── Component ────────────────────────────────────────────
 const DiscoverSidebar = () => {
-  const [suggestedArtists, setSuggestedArtists] = useState<
+  const [allArtists, setAllArtists] = useState<
     ReturnType<typeof mapSuggestedArtistToArtistCard>[]
   >([]);
+  const [displayStart, setDisplayStart] = useState(0);
+  const [fetchedCount, setFetchedCount] = useState(0);
+  const [total, setTotal] = useState(0);
   const [artistsLoading, setArtistsLoading] = useState(true);
-  const [artistsError, setArtistsError] = useState<string | null>(null);
   const [historyTracks, setHistoryTracks] = useState<Track[] | null>(null);
 
   useEffect(() => {
-    getSuggestedArtists({ limit: 10 })
+    getSuggestedArtists({ limit: ARTIST_BATCH_SIZE, offset: 0 })
       .then((res) => {
-        setSuggestedArtists(res.data.map(mapSuggestedArtistToArtistCard));
+        const mapped = res.data.map(mapSuggestedArtistToArtistCard);
+        setAllArtists(mapped);
+        setFetchedCount(mapped.length);
+        setTotal(res.pagination.total);
       })
-      .catch((err: Error) => {
-        setArtistsError(err.message);
+      .catch(() => {
+        setAllArtists(mockSuggestedArtists);
+        setFetchedCount(mockSuggestedArtists.length);
+        setTotal(mockSuggestedArtists.length);
       })
-      .finally(() => {
-        setArtistsLoading(false);
-      });
+      .finally(() => setArtistsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -124,9 +177,32 @@ const DiscoverSidebar = () => {
       .catch(() => {});
   }, []);
 
-  // Shuffle the already-loaded list — no extra network call needed.
-  const handleRefreshArtists = () => {
-    setSuggestedArtists((prev) => [...prev].sort(() => Math.random() - 0.5));
+  const handleRefreshArtists = async () => {
+    const nextStart = displayStart + ARTIST_PAGE_SIZE;
+
+    // Wrap around when we've shown all available artists
+    if (nextStart >= total) {
+      setDisplayStart(0);
+      return;
+    }
+
+    // Fetch next batch if the upcoming window isn't loaded yet
+    if (nextStart + ARTIST_PAGE_SIZE > fetchedCount && fetchedCount < total) {
+      try {
+        const res = await getSuggestedArtists({
+          limit: ARTIST_BATCH_SIZE,
+          offset: fetchedCount,
+        });
+        const mapped = res.data.map(mapSuggestedArtistToArtistCard);
+        setAllArtists((prev) => [...prev, ...mapped]);
+        setFetchedCount((prev) => prev + mapped.length);
+      } catch {
+        setDisplayStart(0);
+        return;
+      }
+    }
+
+    setDisplayStart(nextStart);
   };
 
   // Normalize API tracks to the flat shape TrackItem expects.
@@ -156,16 +232,16 @@ const DiscoverSidebar = () => {
 
       {/* Suggested Artists Section */}
       <div data-test="discover-sidebar-suggested-artists">
-        {artistsError ? (
-          <p className="text-xs text-text-secondary">{artistsError}</p>
-        ) : (
-          <ArtistListSection
-            title="ARTISTS YOU SHOULD FOLLOW"
-            artists={artistsLoading ? [] : suggestedArtists}
-            onRefresh={handleRefreshArtists}
-            maxDisplay={3}
-          />
-        )}
+        <ArtistListSection
+          title="ARTISTS YOU SHOULD FOLLOW"
+          artists={
+            artistsLoading
+              ? []
+              : allArtists.slice(displayStart, displayStart + ARTIST_PAGE_SIZE)
+          }
+          onRefresh={handleRefreshArtists}
+          maxDisplay={3}
+        />
       </div>
 
       {/* Liked Tracks Section */}
