@@ -16,7 +16,6 @@ interface TrackItemProps {
   onUnlike?: (id: string) => void;
   initialLiked?: boolean;
   artistUsername?: string;
-  trackSlug?: string;
   audioUrl?: string;
   genre?: string;
   duration?: string;
@@ -42,7 +41,6 @@ const TrackItem: React.FC<TrackItemProps> = ({
   onUnlike,
   initialLiked = false,
   artistUsername,
-  trackSlug,
   audioUrl,
   genre = "",
   duration = "0:00",
@@ -163,7 +161,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
         <button
           data-test={`track-title-${id}`}
           onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
-          className="text-sm cursor-pointer font-semibold text-white text-left truncate"
+          className="text-sm cursor-pointer font-semibold text-text-hover text-left truncate"
         >
           {title}
         </button>
@@ -214,22 +212,22 @@ const TrackItem: React.FC<TrackItemProps> = ({
           <button
             data-test={`track-like-button-${id}`}
             onClick={handleLike}
-            className="w-9 h-8 cursor-pointer flex items-center justify-center rounded bg-zinc-700 hover:bg-zinc-600 transition-colors"
+            className="w-9 h-8 cursor-pointer flex items-center justify-center rounded bg-input-bg hover:bg-border transition-colors"
           >
             <i
-              className={`fa-heart text-sm ${liked ? "fa-solid text-red-500" : "fa-regular text-white"}`}
+              className={`fa-heart text-sm ${liked ? "fa-solid text-red-500" : "fa-regular text-text-hover"}`}
             />
           </button>
           <div className="relative">
             <button
               data-test={`track-more-button-${id}`}
               onClick={() => setShowMore((p) => !p)}
-              className="w-9 cursor-pointer h-8 flex items-center justify-center rounded bg-zinc-700 hover:bg-zinc-600 text-white transition-colors"
+              className="w-9 cursor-pointer h-8 flex items-center justify-center rounded bg-input-bg hover:bg-border text-text-hover transition-colors"
             >
               <i className="fa-solid fa-ellipsis text-sm" />
             </button>
             {showMore && (
-              <div className="absolute right-0 top-10 z-50 bg-[#1a1a1a] border border-border rounded shadow-lg w-48 py-1">
+              <div className="absolute right-0 top-10 z-50 bg-input-bg border border-border rounded shadow-lg w-48 py-1">
                 {[
                   { icon: "fa-retweet", label: "Repost" },
                   { icon: "fa-arrow-up-from-bracket", label: "Share" },
@@ -240,7 +238,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
                   <button
                     key={label}
                     data-test={`track-more-${label.toLowerCase().replace(/\s+/g, "-")}-${id}`}
-                    className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                    className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-text-hover hover:bg-border/50 transition-colors"
                   >
                     <i className={`fa-solid ${icon} text-xs w-4`} />
                     {label}
