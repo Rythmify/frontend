@@ -9,16 +9,15 @@ import {
   type PlaylistDetails,
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
-import {
-  getUserById,
-  getUsers,
-  type PublicUser,
-} from "../../../services/mocks/User.service";
+import { getUserById, type PublicUser } from "@/services/user.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function AlbumSlugPage() {
   const { username, albumSlug } = useParams<{
@@ -48,18 +47,23 @@ function AlbumSlugPage() {
       setError(null);
 
       try {
-        const [playlistRes, fetchedUsers] = await Promise.all([
-          getPlaylist(albumSlug, { include_tracks: true }),
-          getUsers(),
-        ]);
+        const playlistId =
+          albumSlug.includes(":")
+            ? albumSlug.split(":").pop() ?? albumSlug
+            : albumSlug;
+
+        const resolvedPlaylistId = UUID_RE.test(playlistId)
+          ? playlistId
+          : playlistId;
+
+        const playlistRes = await getPlaylist(resolvedPlaylistId, {
+          include_tracks: true,
+        });
 
         if (cancelled) return;
 
         setPlaylist(playlistRes.data);
-
-        setFeaturedArtists(
-          Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
-        );
+        setFeaturedArtists([]);
 
         try {
           const owner = await getUserById(playlistRes.data.owner_user_id);
@@ -72,16 +76,8 @@ function AlbumSlugPage() {
 
         if (!cancelled) {
           setError("Failed to load playlist.");
-
-          try {
-            const fetchedUsers = await getUsers();
-            setFeaturedArtists(
-              Array.isArray(fetchedUsers) ? fetchedUsers.slice(0, 3) : [],
-            );
-          } catch {
-            setFeaturedArtists([]);
-            setAlbumOwner(null);
-          }
+          setFeaturedArtists([]);
+          setAlbumOwner(null);
         }
       } finally {
         if (!cancelled) setLoading(false);
