@@ -5,6 +5,7 @@ import type {
   DiscoveryStation,
   EmergingArtist,
   CuratedMixSummary,
+  CuratedHomeMixPreview,
   TrackSummary,
   RecentlyPlayedEntry,
   ListeningHistoryEntry,
@@ -145,6 +146,41 @@ const mockMixes: PersonalMix[] = [
     cover_image: "https://picsum.photos/seed/305/200/200",
     track_count: 15,
     generated_at: "2026-04-01T00:00:00Z",
+    preview_track: mockDiscoveryTracks[0],
+  },
+];
+
+// ─── Mock Curated Mixes ───────────────────────────────────────────────────────
+
+const mockCuratedMixes: CuratedHomeMixPreview[] = [
+  {
+    mix_id: "mix_custom_111-aaa",
+    title: "Night Drive",
+    cover_url: "https://picsum.photos/seed/601/200/200",
+    preview_track: mockDiscoveryTracks[0],
+  },
+  {
+    mix_id: "mix_custom_222-bbb",
+    title: "Synthwave Sunsets",
+    cover_url: "https://picsum.photos/seed/602/200/200",
+    preview_track: mockDiscoveryTracks[1],
+  },
+  {
+    mix_id: "mix_custom_333-ccc",
+    title: "Pop Afternoons",
+    cover_url: "https://picsum.photos/seed/603/200/200",
+    preview_track: mockDiscoveryTracks[2],
+  },
+  {
+    mix_id: "mix_custom_444-ddd",
+    title: "Alt Vibes",
+    cover_url: "https://picsum.photos/seed/604/200/200",
+    preview_track: mockDiscoveryTracks[3],
+  },
+  {
+    mix_id: "mix_custom_555-eee",
+    title: "R&B Glow",
+    cover_url: "https://picsum.photos/seed/605/200/200",
     preview_track: mockDiscoveryTracks[0],
   },
 ];
@@ -405,6 +441,7 @@ export const discoverHandlers = [
   http.get("*/home", () => {
     return HttpResponse.json({
       data: {
+        curated: { mixes: mockCuratedMixes },
         more_of_what_you_like: {
           tracks: mockDiscoveryTracks,
           source: "personalized",

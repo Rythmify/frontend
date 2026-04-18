@@ -3,7 +3,106 @@ import type { Mix } from "@/types/mix";
 import type { Station } from "@/types/station";
 import type { User } from "@/types/user";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
-import type { PersonalMix, DiscoveryTrack } from "@/services/api/discover.service";
+import type { PersonalMix, DiscoveryTrack, CuratedHomeMixPreview } from "@/services/api/discover.service";
+
+// ─── Curated by Rythmify Mocks ────────────────────────────
+export const mockCuratedMixes: CuratedHomeMixPreview[] = [
+  {
+    mix_id: "mix_custom_111-aaa",
+    title: "Night Drive",
+    cover_url: "https://picsum.photos/seed/601/200/200",
+    preview_track: {
+      id: "e5f6a7b8-c9d0-4123-8fab-567890abcdef",
+      title: "Butterfly Effect",
+      artist_name: "Travis Scott",
+      user_id: "a1b2c3d4-e5f6-4790-8bcd-ef1234567890",
+      genre_name: "Hip-Hop",
+      duration: 225,
+      play_count: 75000,
+      like_count: 3500,
+      repost_count: 400,
+      cover_image: "https://picsum.photos/seed/601/200/200",
+      stream_url: "/audio/Track 1.mp3",
+      created_at: "2026-01-15T00:00:00Z",
+    },
+  },
+  {
+    mix_id: "mix_custom_222-bbb",
+    title: "Synthwave Sunsets",
+    cover_url: "https://picsum.photos/seed/602/200/200",
+    preview_track: {
+      id: "22222222-2222-4222-8222-222222222222",
+      title: "Blinding Lights",
+      artist_name: "The Weeknd",
+      user_id: "b2c3d4e5-f6a7-4891-9cde-f01234567891",
+      genre_name: "Synthwave",
+      duration: 200,
+      play_count: 95000,
+      like_count: 5200,
+      repost_count: 700,
+      cover_image: "https://picsum.photos/seed/602/200/200",
+      stream_url: "/audio/Track 2.mp3",
+      created_at: "2026-02-01T00:00:00Z",
+    },
+  },
+  {
+    mix_id: "mix_custom_333-ccc",
+    title: "Pop Afternoons",
+    cover_url: "https://picsum.photos/seed/603/200/200",
+    preview_track: {
+      id: "33333333-3333-4333-8333-333333333333",
+      title: "Levitating",
+      artist_name: "Dua Lipa",
+      user_id: "c3d4e5f6-a7b8-4902-ad12-123456789012",
+      genre_name: "Pop",
+      duration: 203,
+      play_count: 65000,
+      like_count: 3200,
+      repost_count: 300,
+      cover_image: "https://picsum.photos/seed/603/200/200",
+      stream_url: "/audio/Track 3.mp3",
+      created_at: "2026-02-15T00:00:00Z",
+    },
+  },
+  {
+    mix_id: "mix_custom_444-ddd",
+    title: "Alt Vibes",
+    cover_url: "https://picsum.photos/seed/604/200/200",
+    preview_track: {
+      id: "44444444-4444-4444-8444-444444444444",
+      title: "Bad Guy",
+      artist_name: "Billie Eilish",
+      user_id: "d4e5f6a7-b8c9-4013-bd23-234567890123",
+      genre_name: "Alternative",
+      duration: 194,
+      play_count: 71000,
+      like_count: 3800,
+      repost_count: 420,
+      cover_image: "https://picsum.photos/seed/604/200/200",
+      stream_url: "/audio/Track 1.mp3",
+      created_at: "2026-03-01T00:00:00Z",
+    },
+  },
+  {
+    mix_id: "mix_custom_555-eee",
+    title: "R&B Glow",
+    cover_url: "https://picsum.photos/seed/605/200/200",
+    preview_track: {
+      id: "55555555-5555-4555-8555-555555555555",
+      title: "Good As Hell",
+      artist_name: "Lizzo",
+      user_id: "e5f6a7b8-c9d0-4012-8abc-234567890abc",
+      genre_name: "R&B",
+      duration: 252,
+      play_count: 58000,
+      like_count: 2900,
+      repost_count: 310,
+      cover_image: "https://picsum.photos/seed/605/200/200",
+      stream_url: "/audio/Track 2.mp3",
+      created_at: "2026-03-10T00:00:00Z",
+    },
+  },
+];
 
 // ─── Mixed For You Mocks ──────────────────────────────────
 export const mockMixes: PersonalMix[] = [
