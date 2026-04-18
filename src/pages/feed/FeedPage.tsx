@@ -84,7 +84,7 @@ const FeedPage = () => {
         {/* Sidebar — 30% */}
         <div
           data-test="feed-sidebar"
-          className="flex flex-col gap-6 flex-[2] ps-2 pt-8"
+          className="flex-[2] ps-2 pt-8"
         >
           <DiscoverSideBar />
         </div>

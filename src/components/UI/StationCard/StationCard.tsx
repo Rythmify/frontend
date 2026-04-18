@@ -125,10 +125,10 @@ export default function StationCard({
           <div className="flex items-center justify-center flex-1">
             <button
               data-test={`station-card-play-${station.id}`}
-              className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg"
+              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
               onClick={(e) => { e.stopPropagation(); addStation(station); }}
             >
-              <i className="fa-solid fa-play text-black text-lg ml-1" />
+              <i className="fa-solid fa-play text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ml-0.5" />
             </button>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
