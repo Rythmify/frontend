@@ -13,6 +13,7 @@ import { useAuthStore } from "@/stores/auth.store";
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
   getPlaylist: vi.fn(),
+  updatePlaylist: vi.fn(),
 }));
 
 vi.mock("@/services/mocks/User.service", () => ({
