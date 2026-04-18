@@ -31,24 +31,24 @@ export default function LikesContent({ tracks, showControls = true, maxItems, wi
   return (
     <div className="flex flex-col gap-6 w-full">
       {showControls && (
-        <div className="flex items-center justify-between">
-          <p className="text-white text-lg font-semibold">Hear the tracks you've liked:</p>
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-white text-sm sm:text-lg font-semibold shrink-0">Hear the tracks you've liked:</p>
+          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
             <div className="flex items-center gap-2">
-              <div className="text-base">View</div>
+              <div className="text-sm sm:text-base">View</div>
               <button onClick={() => setView("grid")}
-                className={`w-10 h-10 flex items-center justify-center rounded transition-colors ${view === "grid" ? "bg-input-bg text-accent" : "bg-input-bg text-text-secondary hover:text-white"}`}
+                className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded transition-colors ${view === "grid" ? "bg-input-bg text-accent" : "bg-input-bg text-text-secondary hover:text-white"}`}
                 data-test="likes-view-grid">
-                <i className="fa-solid fa-border-all text-lg" />
+                <i className="fa-solid fa-border-all text-sm sm:text-lg" />
               </button>
               <button onClick={() => setView("list")}
-                className={`w-10 h-10 flex items-center justify-center rounded transition-colors ${view === "list" ? "bg-input-bg text-accent" : "bg-input-bg text-text-secondary hover:text-white"}`}
+                className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded transition-colors ${view === "list" ? "bg-input-bg text-accent" : "bg-input-bg text-text-secondary hover:text-white"}`}
                 data-test="likes-view-list">
-                <i className="fa-solid fa-list text-lg" />
+                <i className="fa-solid fa-list text-sm sm:text-lg" />
               </button>
             </div>
             <input type="text" placeholder="Filter" value={filter} onChange={(e) => setFilter(e.target.value)}
-              className="bg-input-bg text-white text-sm placeholder-gray-500 rounded px-3 py-2 w-80 focus:outline-none focus:ring-1 focus:ring-gray-600"
+              className="bg-input-bg text-white text-sm placeholder-gray-500 rounded px-3 py-2 w-full sm:w-40 md:w-56 lg:w-80 focus:outline-none focus:ring-1 focus:ring-gray-600"
               data-test="likes-filter" />
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function LikesContent({ tracks, showControls = true, maxItems, wi
 
       {displayed.length === 0 ? (
         <div className="flex items-center justify-center py-24">
-          <p className="text-white font-bold text-2xl">
+          <p className="text-white font-bold text-lg sm:text-2xl">
             {filter ? "No results found." : "You have no likes yet."}
           </p>
         </div>

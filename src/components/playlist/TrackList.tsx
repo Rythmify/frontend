@@ -30,7 +30,10 @@ export default function TrackList({
 
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>
-      <div data-test="track-list" className="flex flex-col w-full">
+      <div
+        data-test="track-list"
+        className="flex flex-col w-full min-w-0 overflow-hidden"
+      >
         {visibleTracks.map((track, index) => (
           <TrackItem
             key={track.track_id}

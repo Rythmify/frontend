@@ -42,6 +42,7 @@ export interface Playlist {
 
 export interface PlaylistTrackItem {
   track_id: string;
+  trackSlug?: string;
   position: number;
   added_at: string;
   title?: string;

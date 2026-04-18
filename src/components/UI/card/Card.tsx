@@ -119,7 +119,13 @@ const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
+  const playlistSlug = (track.trackSlug ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 
+  const playlistPath = `/discover/personalised/${playlistSlug}:${track.id}`;
   // Handler for play button click (play/pause toggle)
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -135,7 +141,7 @@ const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
   return (
     <div
       className={styles.card(widthClassName)}
-      onClick={() => navigate(`/${track.artistUsername}/${track.id}`)}
+      onClick={() => navigate(playlistPath)}
       data-test="card-track"
     >
       <div className={styles.imageWrapper}>

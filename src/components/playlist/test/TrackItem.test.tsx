@@ -66,6 +66,10 @@ describe("Playlist TrackItem", () => {
       "src",
       "https://example.com/cover.jpg",
     );
+    expect(screen.getByTestId("link-track-title-t1")).toHaveAttribute(
+      "href",
+      "/ua/t1",
+    );
     expect(screen.getByText("2.5K")).toBeInTheDocument();
   });
 

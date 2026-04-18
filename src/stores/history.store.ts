@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { writeListeningHistory } from "@/services/api/discover.service";
 import type { Track } from "@/types/track";
 import type { Station } from "@/types/station";
 import type { PersonalMix } from "@/services/api/discover.service";
@@ -42,14 +43,19 @@ export const useHistoryStore = create<HistoryStore>()(
     (set, get) => ({
       entries: [],
 
-      addTrack: (track) =>
+      addTrack: (track) => {
+        const playedAt = new Date().toISOString();
         set((s) => ({
           entries: dedupeAndPrepend(s.entries, {
             type: "track",
             item: track,
-            playedAt: new Date().toISOString(),
+            playedAt,
           }),
-        })),
+        }));
+        writeListeningHistory(String(track.id), playedAt).catch(() => {
+          // best-effort — don't surface errors to the user
+        });
+      },
 
       addStation: (station) =>
         set((s) => ({

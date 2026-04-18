@@ -29,9 +29,8 @@ export default function PlaylistStatsWaveform({
   const [comments, setComments] = useState<Comment[]>(commentsProp ?? []);
 
   const activePlaylistTrack =
-    playlist.tracks.find((track) => track.track_id === activeTrackId) ??
-    playlist.tracks[0] ??
-    null;
+    playlist.tracks.find((track) => track.track_id === activeTrackId) ?? null;
+  const hasActiveTrackInPlaylist = Boolean(activePlaylistTrack);
 
   const formatDuration = (seconds?: number | null) => {
     if (typeof seconds !== "number" || Number.isNaN(seconds)) return "0:00";
@@ -60,7 +59,7 @@ export default function PlaylistStatsWaveform({
       }
     : null;
 
-  const showWaveform = isPlaying && !!waveformTrack;
+  const showComments = isPlaying && hasActiveTrackInPlaylist;
 
   useEffect(() => {
     if (commentsProp) {
@@ -71,7 +70,7 @@ export default function PlaylistStatsWaveform({
     let cancelled = false;
 
     async function loadComments() {
-      if (!showWaveform || !activeTrackId) {
+      if (!showComments || !activeTrackId) {
         setComments([]);
         return;
       }
@@ -100,11 +99,24 @@ export default function PlaylistStatsWaveform({
     return () => {
       cancelled = true;
     };
-  }, [activeTrackId, commentsProp, showWaveform]);
+  }, [activeTrackId, commentsProp, showComments]);
 
   return (
     <div className="flex flex-col items-start gap-2 w-full min-w-0">
-      {!showWaveform && (
+      {waveformTrack ? (
+        <div className="w-full min-w-0 overflow-hidden">
+          <div
+            data-test="playlist-waveform-container"
+            className="transition-opacity duration-150 w-full min-w-0"
+            style={{ minHeight: "120px" }}
+          >
+            <TrackWaveform
+              key={`${playlist.playlist_id}-${waveformTrack.id}`}
+              track={waveformTrack}
+            />
+          </div>
+        </div>
+      ) : (
         <div
           data-test="playlist-stats-badge"
           className="w-24 h-24 rounded-full bg-bg flex flex-col items-center justify-center"
@@ -121,19 +133,7 @@ export default function PlaylistStatsWaveform({
         </div>
       )}
 
-      {showWaveform && waveformTrack && (
-        <div className="w-full min-w-0 overflow-hidden">
-          <div
-            data-test="playlist-waveform-container"
-            className="transition-opacity duration-150 w-full min-w-0"
-            style={{ minHeight: "120px" }}
-          >
-            <TrackWaveform track={waveformTrack} />
-          </div>
-        </div>
-      )}
-
-      {showWaveform && comments.length > 0 && (
+      {showComments && comments.length > 0 && (
         <div
           data-test="playlist-comment-avatars"
           className="flex items-center gap-2 pl-1"

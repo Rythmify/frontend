@@ -53,9 +53,9 @@ export default function TrackSlugPage() {
         setTrack(fetchedTrack);
 
         getRelatedTracks(String(fetchedTrack.id))
-          .then((related) => {
+          .then(({ tracks }) => {
             if (!cancelled)
-              setRelatedTracks(Array.isArray(related) ? related : []);
+              setRelatedTracks(Array.isArray(tracks) ? tracks : []);
           })
           .catch(() => {});
 

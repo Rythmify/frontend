@@ -341,7 +341,7 @@ const mockSuggestedUsers: SuggestedUser[] = [
     username: "novapulse",
     profile_picture: "https://picsum.photos/seed/901/150/150",
     is_verified: false,
-    follower_count: 1200,
+    followers_count: 1200,
     mutual_count: null,
     suggestion_source: "popular",
     is_following: false,
@@ -352,7 +352,7 @@ const mockSuggestedUsers: SuggestedUser[] = [
     username: "junoray",
     profile_picture: "https://picsum.photos/seed/902/150/150",
     is_verified: true,
-    follower_count: 8500,
+    followers_count: 8500,
     mutual_count: 3,
     suggestion_source: "mutual",
     is_following: false,
@@ -363,7 +363,7 @@ const mockSuggestedUsers: SuggestedUser[] = [
     username: "celestialbeat",
     profile_picture: "https://picsum.photos/seed/903/150/150",
     is_verified: false,
-    follower_count: 640,
+    followers_count: 640,
     mutual_count: null,
     suggestion_source: "popular",
     is_following: false,
@@ -510,7 +510,7 @@ export const discoverHandlers = [
   // GET /users/suggested — suggested users for "New Crew For You"
   http.get("*/users/suggested", () => {
     return HttpResponse.json({
-      data: mockSuggestedUsers,
+      data: { items: mockSuggestedUsers },
       pagination: mockSuggestedMeta,
     });
   }),

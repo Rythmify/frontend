@@ -137,7 +137,7 @@ export interface SuggestedUser {
   username: string | null;
   profile_picture: string | null;
   is_verified: boolean;
-  follower_count: number;
+  followers_count: number;
   mutual_count: number | null;
   suggestion_source: "mutual" | "popular";
   is_following: boolean;
@@ -206,10 +206,13 @@ export const getSuggestedUsers = async (params?: {
   offset?: number;
 }): Promise<{ data: SuggestedUser[]; pagination: ListMeta }> => {
   const res = await axiosInstance.get<{
-    data: SuggestedUser[];
+    data: { items: SuggestedUser[] };
     pagination: ListMeta;
   }>("/users/suggested", { params });
-  return res.data;
+  return {
+    data: res.data.data.items,
+    pagination: res.data.pagination,
+  };
 };
 
 // Artist you should follow (sidebar), GET /users/suggested/artists
@@ -249,6 +252,17 @@ export const getMixTracks = async (
     data: { mix: PersonalMix; tracks: DiscoveryTrack[] };
   }>(`/home/mixes/${mixId}/tracks`);
   return res.data.data;
+};
+
+// POST /me/listening-history — record a play event (fire-and-forget)
+export const writeListeningHistory = async (
+  trackId: string,
+  playedAt: string,
+): Promise<void> => {
+  await axiosInstance.post("/me/listening-history", {
+    track_id: trackId,
+    played_at: playedAt,
+  });
 };
 
 // to do

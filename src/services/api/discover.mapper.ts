@@ -178,7 +178,7 @@ export function mapSuggestedUserToUser(api: SuggestedUser): User {
     username: api.username ?? api.display_name,
     displayName: api.display_name,
     avatar: api.profile_picture ?? undefined,
-    followers: api.follower_count,
+    followers: api.followers_count ?? 0,
     isVerified: api.is_verified,
   };
 }

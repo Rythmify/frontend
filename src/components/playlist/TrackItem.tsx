@@ -118,7 +118,7 @@ function TrackItem({
       <div
         data-test={`track-Item-${track.track_id}`}
         className={`
-          flex items-center gap-0 py-2 rounded
+          flex items-center gap-0 py-2 rounded min-w-0 w-full
           transition-colors duration-100 cursor-pointer relative group
           border-b border-[var(--color-border)] last:border-b-0
           ${isCurrent ? "bg-[#303030]" : "hover:bg-[#303030]"}
@@ -169,16 +169,21 @@ function TrackItem({
           <Link
             to={`/${artistSlug}`}
             onClick={(e) => e.stopPropagation()}
-            className={`text-sm shrink-0 font-bold transition-colors ${playbackTextClass}`}
+            className={`text-sm shrink-0 max-w-[30%] truncate font-bold transition-colors ${playbackTextClass}`}
           >
             {artistName}
           </Link>
           <span className="text-[var(--color-text-muted)] text-sm shrink-0">
             ·
           </span>
-          <span className={`text-sm font-bold truncate ${playbackTitleClass}`}>
+          <Link
+            to={`/${artistSlug}/${track.trackSlug ?? track.track_id}`}
+            onClick={(e) => e.stopPropagation()}
+            className={`text-sm font-bold truncate transition-colors ${playbackTitleClass}`}
+            data-test={`link-track-title-${track.track_id}`}
+          >
             {track.title ?? "Untitled track"}
-          </span>
+          </Link>
         </div>
 
         <div className="flex items-center shrink-0 ml-3">

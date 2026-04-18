@@ -7,7 +7,7 @@ interface DisplayTrack {
 
 interface TracksToAddListProps {
   tracks: DisplayTrack[];
-  isPlaylist: boolean; // playlist = scrollable list with X; single track
+  isPlaylist: boolean; 
   onRemove: (id: string) => void;
 }
 
