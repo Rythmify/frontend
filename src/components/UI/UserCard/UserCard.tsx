@@ -2,7 +2,7 @@
 
 import { useNavigate } from "react-router-dom";
 import type { User } from "@/types/user";
-import FollowButton from "@/components/Profile/FollowButton/FollowButton";
+import FollowButton from "@/components/UI/FollowButton";
 
 // ─── Props ────────────────────────────────────────────────
 interface UserCardProps {
@@ -52,7 +52,7 @@ const styles = {
 };
 
 // ─── Utility Functions ────────────────────────────────────
-const formatFollowers = (count: number): string => {
+const formatFollowers = (count: number = 0): string => {
   if (count >= 1_000_000) {
     return `${(count / 1_000_000).toFixed(1)}M`;
   }
@@ -131,3 +131,5 @@ const UserCard = ({ user, widthClassName }: UserCardProps) => {
 };
 
 export default UserCard;
+
+

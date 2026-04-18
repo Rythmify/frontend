@@ -490,7 +490,7 @@ export const discoverHandlers = [
   // GET /users/suggested — suggested users for "New Crew For You"
   http.get("*/users/suggested", () => {
     return HttpResponse.json({
-      data: mockSuggestedUsers,
+      data: { items: mockSuggestedUsers },
       pagination: mockSuggestedMeta,
     });
   }),
