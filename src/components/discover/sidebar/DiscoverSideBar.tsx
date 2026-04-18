@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import ArtistToolsCard from "./ArtistToolsCard";
 import TrackItem from "@/components/UI/TrackItem";
 import TrackListSection from "@/components/UI/TrackListSection/TrackListSection";
-import ArtistListSection from "@/components/UI/ArtistListSection";
+import ArtistListSection from "@/components/UI/ArtistListSection/ArtistListSection";
 import GoMobileSection from "@/components/UI/GoMobile";
 import {
   getSuggestedArtists,
@@ -17,9 +17,12 @@ import { useHistoryStore } from "@/stores/history.store";
 import type { Track } from "@/types/track";
 
 const DiscoverSidebar = () => {
-  const [suggestedArtists, setSuggestedArtists] = useState<
+  const [allArtists, setAllArtists] = useState<
     ReturnType<typeof mapSuggestedArtistToArtistCard>[]
   >([]);
+  const [displayStart, setDisplayStart] = useState(0);
+  const [fetchedCount, setFetchedCount] = useState(0);
+  const [total, setTotal] = useState(0);
   const [artistsLoading, setArtistsLoading] = useState(true);
   const [artistsError, setArtistsError] = useState<string | null>(null);
   const [apiHistoryTracks, setApiHistoryTracks] = useState<Track[]>([]);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import TrendingByGenres from "@/components/discover/TrendingByGenres";
+import TrendingByGenres from "@/components/discover/TrendingByGenre/TrendingByGenres";
+import CuratedByRythmify from "@/components/discover/CuratedByRythmify/CuratedByRythmify";
 import { getHome } from "@/services/api/discover.service";
 import type { HomeData } from "@/services/api/discover.service";
 import GoMobile from "@/components/UI/GoMobile";
@@ -33,6 +34,7 @@ const DiscoverPageGuest = () => {
               {homeError}
             </p>
           )}
+          <CuratedByRythmify mixes={homeData?.curated?.mixes ?? []} />
           <TrendingByGenres
             genres={homeData?.trending_by_genre?.genres ?? []}
           />

@@ -60,7 +60,19 @@ export interface EmergingArtist {
   track_count: number;
 }
 
+export interface CuratedHomeMixPreview {
+  mix_id: string;
+  title: string;
+  cover_url: string | null;
+  preview_track: DiscoveryTrack;
+}
+
+export interface CuratedHomeSection {
+  mixes: CuratedHomeMixPreview[];
+}
+
 export interface HomeData {
+  curated: CuratedHomeSection | null;
   more_of_what_you_like: {
     tracks: DiscoveryTrack[];
     source: "personalized" | "trending_fallback";
