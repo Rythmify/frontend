@@ -176,16 +176,19 @@ export async function setTrackVisibility(trackId: string, is_public: boolean) {
 
 // ─── Genre API ────────────────────────────────────────────────────────────────
 
+export interface GenreOption {
+  id: string;
+  name: string;
+}
+
 /** GET /genres — fetch all available genres. */
-export async function getGenres(): Promise<string[]> {
+export async function getGenres(): Promise<GenreOption[]> {
   try {
     const res = await axiosInstance.get<{
       data: { id: string; name: string }[];
     }>("/genres");
 
-    const genreNames = res.data?.data?.map((genre) => genre.name) ?? [];
-
-    return genreNames;
+    return Array.isArray(res.data?.data) ? res.data.data : [];
   } catch (error) {
     console.error("Backend error fetching genres:", error);
     return [];

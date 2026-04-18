@@ -52,14 +52,12 @@ describe("PlaylistStatsWaveform", () => {
     vi.clearAllMocks();
   });
 
-  it("shows the stats badge when not playing", () => {
+  it("shows the waveform when not playing", () => {
     render(<PlaylistStatsWaveform playlist={playlist} />);
 
-    expect(screen.getByTestId("playlist-stats-badge")).toBeInTheDocument();
-    expect(screen.getByText("2")).toBeInTheDocument();
-    expect(screen.getByText("Tracks")).toBeInTheDocument();
-    expect(screen.getByText("4:00")).toBeInTheDocument();
-    expect(screen.queryByTestId("mock-track-waveform")).not.toBeInTheDocument();
+    expect(screen.getByTestId("playlist-waveform-container")).toBeInTheDocument();
+    expect(screen.getByTestId("mock-track-waveform")).toBeInTheDocument();
+    expect(screen.queryByTestId("playlist-stats-badge")).not.toBeInTheDocument();
   });
 
   it("shows the waveform and fetched comment avatars when playing", async () => {
