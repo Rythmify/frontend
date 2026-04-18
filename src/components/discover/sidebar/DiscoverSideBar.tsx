@@ -17,12 +17,9 @@ import { useHistoryStore } from "@/stores/history.store";
 import type { Track } from "@/types/track";
 
 const DiscoverSidebar = () => {
-  const [allArtists, setAllArtists] = useState<
+  const [suggestedArtists, setSuggestedArtists] = useState<
     ReturnType<typeof mapSuggestedArtistToArtistCard>[]
   >([]);
-  const [displayStart, setDisplayStart] = useState(0);
-  const [fetchedCount, setFetchedCount] = useState(0);
-  const [total, setTotal] = useState(0);
   const [artistsLoading, setArtistsLoading] = useState(true);
   const [artistsError, setArtistsError] = useState<string | null>(null);
   const [apiHistoryTracks, setApiHistoryTracks] = useState<Track[]>([]);
@@ -32,21 +29,24 @@ const DiscoverSidebar = () => {
 
   useEffect(() => {
     getSuggestedArtists({ limit: 10 })
-      .then((res) => setSuggestedArtists(res.data.map(mapSuggestedArtistToArtistCard)))
+      .then((res) =>
+        setSuggestedArtists(res.data.map(mapSuggestedArtistToArtistCard)),
+      )
       .catch((err: Error) => setArtistsError(err.message))
       .finally(() => setArtistsLoading(false));
   }, []);
 
   useEffect(() => {
     getListeningHistory({ limit: 3 })
-      .then(({ data }) => setApiHistoryTracks(data.map((e) => mapTrackSummaryToTrack(e.track))))
+      .then(({ data }) =>
+        setApiHistoryTracks(data.map((e) => mapTrackSummaryToTrack(e.track))),
+      )
       .catch(() => {});
   }, []);
 
   const handleRefreshArtists = () =>
     setSuggestedArtists((prev) => [...prev].sort(() => Math.random() - 0.5));
 
-  // History: prioritise store entries (tracks only), fall back to API fetch
   const historyTracks: Track[] =
     historyEntries.length > 0
       ? historyEntries
@@ -96,10 +96,6 @@ const DiscoverSidebar = () => {
               <TrackItem
                 key={String(track.id)}
                 {...toItem(track)}
-                initialLiked={true}
-                onUnlike={(id) => useLikesStore.getState().toggleTrack(
-                  likedTracks.find((t) => String(t.id) === id)!
-                )}
               />
             ))}
           </TrackListSection>
