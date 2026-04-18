@@ -1184,12 +1184,12 @@ function DeleteAccountModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
-      <div className="relative w-full max-w-xl rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-5 py-5 text-[var(--color-text-hover)] shadow-[var(--shadow-md)]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/45 px-4 pt-16 sm:pt-20 pb-6 overflow-y-auto">
+      <div className="relative w-full max-w-[28rem] sm:max-w-[32rem] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-4 sm:px-5 sm:py-5 text-[var(--color-text-hover)] shadow-[var(--shadow-md)] my-6">
         <button
           onClick={onClose}
           data-test="settings-delete-account-modal-close-button"
-          className="absolute right-4 top-4 text-[var(--color-text)] transition hover:text-[var(--color-text-hover)]"
+          className="absolute right-3 top-3 sm:right-4 sm:top-4 text-[var(--color-text)] transition hover:text-[var(--color-text-hover)]"
           aria-label="Close delete account modal"
         >
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -1202,13 +1202,13 @@ function DeleteAccountModal({
           </svg>
         </button>
 
-        <h2 className="mb-5 text-2xl font-bold tracking-tight text-[var(--color-text-hover)]">
+        <h2 className="mb-4 text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text-hover)]">
           Delete account
         </h2>
 
-        <div className="flex flex-col gap-3.5">
+        <div className="flex flex-col gap-3">
           <div>
-            <p className="mb-3 text-base font-semibold text-[var(--color-text-hover)]">
+            <p className="mb-3 text-sm sm:text-base font-semibold text-[var(--color-text-hover)]">
               Why are you choosing to delete your account?
             </p>
             <div className="flex flex-col gap-2">
@@ -1265,7 +1265,7 @@ function DeleteAccountModal({
             </span>
           </label>
 
-          <div className="flex justify-end gap-3 pt-1">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-1">
             <button
               onClick={onClose}
               disabled={isDeleting}
