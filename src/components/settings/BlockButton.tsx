@@ -1,119 +1,48 @@
 import { useState } from "react";
-import { blockUser, unblockUser } from "@/services/user.service";
-import BlockModal from "./BlockModal";
+import { Modal } from "@/components/UI/Modal";
+import { BlockUserModal } from "@/components/UI/BlockModal";
 
 interface BlockButtonProps {
   userId: string;
   username: string;
-  displayName: string;
+  displayName?: string;
   isBlocked?: boolean;
   onBlockChange?: (blocked: boolean) => void;
-  /** Show as icon-only (for compact layouts) */
-  iconOnly?: boolean;
 }
 
 export default function BlockButton({
   userId,
   username,
   displayName,
-  isBlocked: initialBlocked = false,
+  isBlocked = false,
   onBlockChange,
-  iconOnly = false,
 }: BlockButtonProps) {
-  const [isBlocked, setIsBlocked] = useState(initialBlocked);
-  const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const handleBlockConfirm = async (_opts: {
-    removeContent: boolean;
-    reportSpam: boolean;
-  }) => {
-    setLoading(true);
-    try {
-      await blockUser(userId);
-      setIsBlocked(true);
-      onBlockChange?.(true);
-    } catch {
-      // silently revert
-      console.error("BlockButton: Failed to block user");
-    } finally {
-      setLoading(false);
-      setShowModal(false);
-    }
-  };
-
-  const handleUnblock = async () => {
-    setLoading(true);
-    try {
-      await unblockUser(userId);
-      setIsBlocked(false);
-      onBlockChange?.(false);
-    } catch {
-      // silently revert
-      console.error("BlockButton: Failed to unblock user");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (isBlocked) {
-    return (
-      <button
-        onClick={handleUnblock}
-        disabled={loading}
-        className={`flex items-center gap-1.5 text-sm font-semibold text-[var(--color-error)] border border-[var(--color-error)] rounded-[var(--radius-sm)] transition-all duration-150 hover:bg-[var(--color-error)] hover:text-white disabled:opacity-50 ${
-          iconOnly ? "p-2" : "px-3 py-1.5"
-        }`}
-        title="Unblock user"
-      >
-        <BlockIcon />
-        {!iconOnly && <span>Blocked</span>}
-      </button>
-    );
-  }
+  const label = displayName || username;
 
   return (
     <>
       <button
-        onClick={() => setShowModal(true)}
-        disabled={loading}
-        className={`flex items-center gap-1.5 text-sm text-[var(--color-text)] border border-[var(--color-border)] rounded-[var(--radius-sm)] transition-all duration-150 hover:border-[var(--color-border-light)] hover:text-[var(--color-text-hover)] disabled:opacity-50 ${
-          iconOnly ? "p-2" : "px-3 py-1.5"
-        }`}
-        title="Block user"
+        data-test="block-button"
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
       >
-        <BlockIcon />
-        {!iconOnly && <span>Block</span>}
+        <i className="fa-solid fa-ban text-xs w-4" />
+        {isBlocked ? `Blocked ${label}` : `Block ${label}`}
       </button>
 
-      {showModal && (
-        <BlockModal
-          username={username}
-          displayName={displayName}
-          onConfirm={handleBlockConfirm}
-          onCancel={() => setShowModal(false)}
+      <Modal isOpen={open} onClose={() => setOpen(false)}>
+        <BlockUserModal
+          username={label}
+          userId={userId}
+          onClose={() => setOpen(false)}
+          onBlocked={() => {
+            onBlockChange?.(true);
+            setOpen(false);
+          }}
         />
-      )}
+      </Modal>
     </>
-  );
-}
-
-function BlockIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M4.93 4.93l14.14 14.14"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }

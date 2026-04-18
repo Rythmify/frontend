@@ -13,6 +13,7 @@ import { TrackCard } from "../../components/track";
 import { mockTracks } from "../../services/mocks/tracks";
 import { getMyTracks } from "@/services/api/upload/track.service";
 import type { Track } from "../../types/track";
+import { getMyLikedTracks } from "@/services/user.service";
 import {
   getMyProfile,
   getUserById,
@@ -185,25 +186,29 @@ export default function UsernamePage() {
   };
 
   const selectedTab = getActiveTab();
-  const storageKey = `likedTracks_${isOwner ? (currentUser?.username ?? "") : (username ?? "")}`;
+  const [likedTracks, setLikedTracks] = useState<
+    { id: string; title: string; artist: string; coverUrl?: string }[]
+  >([]);
 
-  const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
-    const stored = localStorage.getItem(storageKey);
-    return stored
-      ? JSON.parse(stored)
-      : currentUser && isOwner
-        ? mockLikedTracks
-        : [];
-  });
+  useEffect(() => {
+    if (!isOwner) return;
+    getMyLikedTracks({ limit: 3 })
+      .then((res) => {
+        setLikedTracks(
+          res.items.map((t) => ({
+            id: t.id,
+            title: t.title,
+            artist: t.artist_name,
+            coverUrl: t.cover_image ?? "",
+          })),
+        );
+      })
+      .catch(console.error);
+  }, [isOwner]);
 
-  const handleUnlike = (id: string) => {
-    setLikedTracks((prev: typeof mockLikedTracks) => {
-      const updated = prev.filter(
-        (t: (typeof mockLikedTracks)[0]) => t.id !== id,
-      );
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      return updated;
-    });
+  const handleUnlike = (_id: string) => {
+    // optimistic removal from sidebar preview
+    setLikedTracks((prev) => prev.filter((t) => t.id !== _id));
   };
 
   const handleTabChange = (tab: string) => {
@@ -306,11 +311,15 @@ export default function UsernamePage() {
                   track={t}
                   onCopyLink={() => {
                     navigator.clipboard.writeText(
-                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`
+                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`,
                     );
                   }}
-                  onEdit={() => navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)}
-                  onReplaceFile={() => console.log("[TrackCard] replace file:", t.id)}
+                  onEdit={() =>
+                    navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)
+                  }
+                  onReplaceFile={() =>
+                    console.log("[TrackCard] replace file:", t.id)
+                  }
                   onDelete={() => console.log("[TrackCard] delete:", t.id)}
                   onDistribute={() =>
                     console.log("[TrackCard] distribute:", t.id)

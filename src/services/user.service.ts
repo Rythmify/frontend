@@ -62,6 +62,24 @@ export interface UserListData {
   meta: ListMeta;
 }
 
+export interface TrackSummary {
+  id: string;
+  title: string;
+  genre: string | null;
+  duration: number | null;
+  cover_image: string | null;
+  user_id: string;
+  artist_name: string;
+  play_count: number;
+  like_count: number;
+  stream_url: string | null;
+}
+
+export interface TrackListData {
+  items: TrackSummary[];
+  meta: ListMeta;
+}
+
 export async function getMyProfile(): Promise<OwnUser> {
   const res = await axiosInstance.get<{ data: OwnUser }>("/users/me");
   return res.data.data;
@@ -194,4 +212,26 @@ export async function getBlockedUsers(params?: {
     { params },
   );
   return res.data.data;
+}
+
+export async function getMyLikedTracks(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<TrackListData> {
+  const res = await axiosInstance.get<{
+    data: TrackSummary[];
+    pagination: ListMeta;
+  }>("/me/liked-tracks", { params });
+  return { items: res.data.data, meta: res.data.pagination };
+}
+
+export async function getUserLikedTracks(
+  userId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<TrackListData> {
+  const res = await axiosInstance.get<{
+    data: TrackSummary[];
+    pagination: ListMeta;
+  }>(`/users/${userId}/liked-tracks`, { params });
+  return { items: res.data.data, meta: res.data.pagination };
 }
