@@ -5,7 +5,8 @@ import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideB
 import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
-import BlockButton from "@/components/settings/BlockButton";
+import { Modal } from "@/components/UI/Modal";
+import { BlockUserModal } from "@/components/UI/BlockModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { mockLikedTracks } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
@@ -32,6 +33,7 @@ export default function UsernamePage() {
   const { user: currentUser, setUser } = useAuthStore();
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showBlock, setShowBlock] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -266,8 +268,7 @@ export default function UsernamePage() {
 
   return (
     <div className="container px-4 md:px-8 lg:px-20">
-      <ProfileHeader user={user} isOwner={isOwner} />
-
+      <ProfileHeader user={user} isOwner={isOwner} />
       <ProfileTabs
         isOwner={isOwner}
         selectedTab={selectedTab}
@@ -277,18 +278,8 @@ export default function UsernamePage() {
         username={user.username}
         displayName={user.displayName}
         tracks={displayedStats.tracks ?? 0}
-        // Extra slot for Block button — rendered inside ProfileTabs "more actions"
-        extraActions={
-          !isOwner && profileData ? (
-            <BlockButton
-              userId={profileData.id}
-              username={profileData.username ?? ""}
-              displayName={profileData.display_name ?? user.displayName}
-              isBlocked={isBlocked}
-              onBlockChange={(blocked) => setIsBlocked(blocked)}
-            />
-          ) : undefined
-        }
+        onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
+        blockDisabled={!profileData}
       />
 
       <div className="flex gap-6 py-6 items-start">
@@ -399,8 +390,26 @@ export default function UsernamePage() {
             });
             setShowEdit(false);
           }}
-        />
+          />
+        )}
+      {showBlock && profileData && (
+        <Modal isOpen={showBlock} onClose={() => setShowBlock(false)}>
+          <BlockUserModal
+            username={
+              profileData.display_name ?? profileData.username ?? user.displayName
+            }
+            userId={profileData.id}
+            onClose={() => setShowBlock(false)}
+            onBlocked={() => {
+              setIsBlocked(true);
+              setShowBlock(false);
+            }}
+          />
+        </Modal>
       )}
     </div>
   );
 }
+
+
+

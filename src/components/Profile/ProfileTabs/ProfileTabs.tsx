@@ -45,6 +45,8 @@ interface ProfileTabsProps {
   selectedTab?: string;
   onShare?: () => void;
   onEdit?: () => void;
+  onBlock?: () => void;
+  blockDisabled?: boolean;
   username?: string;
   displayName?: string;
   tracks?: number;
@@ -57,6 +59,8 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   selectedTab = "All",
   onShare,
   onEdit,
+  onBlock,
+  blockDisabled = false,
   username = "",
   displayName = "",
   tracks = 0,
@@ -146,6 +150,8 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
                 ) : (
                   <button
                     data-test="block-button"
+                    onClick={onBlock}
+                    disabled={blockDisabled}
                     className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
                   >
                     <i className="fa-solid fa-ban text-xs w-4" />
