@@ -31,7 +31,7 @@ import { useAuthStore } from "@/stores/auth.store";
 
 // ─── Constants ────────────────────────────────────────────
 
-const TITLE_CLASS = "text-white font-semibold text-[19px] text-left";
+const TITLE_CLASS = "text-white font-semibold text-base sm:text-[19px] text-left";
 const CARD_WIDTH = "w-[180px] sm:w-[200px] md:w-[220px] lg:w-[230px]";
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -49,7 +49,7 @@ function Section({
 }) {
   return (
     <div className="flex flex-col gap-3" data-test={dataTest}>
-      <div className="flex items-center justify-between pb-4">
+      <div className="flex items-center justify-between pb-2 sm:pb-4">
         <h2
           className={TITLE_CLASS}
           data-test={dataTest ? `${dataTest}-title` : undefined}
@@ -59,7 +59,7 @@ function Section({
         {action}
       </div>
       <div
-        className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide"
+        className="flex gap-3 sm:gap-4 overflow-x-auto pb-1 scrollbar-hide"
         data-test={dataTest ? `${dataTest}-cards` : undefined}
       >
         {children}
@@ -271,7 +271,7 @@ export default function LibraryPage() {
   }, [followingUsers, user?.following_ids]);
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-8 sm:gap-10 md:gap-12">
       {/* Recently Played */}
       <Section title="Recently played" data-test="library-recently-played">
         {recentEntries.map((entry, i) => {
