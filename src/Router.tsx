@@ -41,6 +41,9 @@ const VerifyEmailPage = lazy(() => import("@/pages/signin/VerifyEmailPage"));
 const CompleteProfilePage = lazy(
   () => import("@/pages/signin/CompleteProfilePage"),
 );
+const GitHubCallbackPage = lazy(
+  () => import("@/pages/signin/GitHubCallbackPage"),
+);
 
 // Download
 const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
@@ -183,7 +186,9 @@ export const router = createBrowserRouter([
       {
         element: <PublicOnlyRoute />,
         children: [
-          { path: "signin", element: <Lazy component={SigninPage} /> },
+          { path: "signin", element: <Lazy component={SigninPage} />
+         },
+         
         ],
       },
     ],
@@ -405,6 +410,11 @@ export const router = createBrowserRouter([
     path: "complete-profile",
     element: <Lazy component={CompleteProfilePage} />,
   },
+
+  {
+  path: "auth/callback",
+  element: <Lazy component={GitHubCallbackPage} />,
+},
 
   // 9. Not Found
   {
