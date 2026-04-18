@@ -181,7 +181,7 @@ const mockStations: DiscoveryStation[] = [
     artist_name: "Drake",
     cover_image: "https://picsum.photos/seed/501/200/200",
     track_count: 50,
-    followers_count: 5000000,
+    follower_count: 5000000,
   },
   {
     id: "bbbb1111-2222-4333-8444-555566667777",
@@ -190,7 +190,7 @@ const mockStations: DiscoveryStation[] = [
     artist_name: "SZA",
     cover_image: "https://picsum.photos/seed/502/200/200",
     track_count: 50,
-    followers_count: 3200000,
+    follower_count: 3200000,
   },
 ];
 
