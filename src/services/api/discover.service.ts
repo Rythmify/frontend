@@ -125,7 +125,7 @@ export interface SuggestedUser {
   username: string | null;
   profile_picture: string | null;
   is_verified: boolean;
-  follower_count: number;
+  followers_count: number;
   mutual_count: number | null;
   suggestion_source: "mutual" | "popular";
   is_following: boolean;
@@ -194,10 +194,13 @@ export const getSuggestedUsers = async (params?: {
   offset?: number;
 }): Promise<{ data: SuggestedUser[]; pagination: ListMeta }> => {
   const res = await axiosInstance.get<{
-    data: SuggestedUser[];
+    data: { items: SuggestedUser[] };
     pagination: ListMeta;
   }>("/users/suggested", { params });
-  return res.data;
+  return {
+    data: res.data.data.items,
+    pagination: res.data.pagination,
+  };
 };
 
 // Artist you should follow (sidebar), GET /users/suggested/artists

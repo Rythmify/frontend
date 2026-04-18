@@ -16,7 +16,7 @@ const BADGE_COLORS: { bg: string; text: string }[] = [
 
 function stableColorIndex(id: string): number {
   let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+  for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
   return h % BADGE_COLORS.length;
 }
 
