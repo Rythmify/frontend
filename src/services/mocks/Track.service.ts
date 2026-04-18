@@ -57,12 +57,72 @@ export async function getTrackBySlug(
 }
 
 /**
- * No related-tracks endpoint exists in the API spec.
- * Returns an empty array so callers don't break.
+ * GET /tracks/{track_id}/related
+ * Returns tracks related to the given track.
  */
-export async function getRelatedTracks(_trackId: string): Promise<Track[]> {
-  return [];
+interface RelatedTrackItem {
+  id: string;
+  title: string;
+  cover_image: string;
+  duration: number;
+  genre_name: string;
+  play_count: number;
+  like_count: number;
+  repost_count: number;
+  user_id: string;
+  artist_name: string;
+  stream_url: string;
+  created_at: string;
 }
+
+interface RelatedTracksResponse {
+  reference_track: RelatedTrackItem;
+  data: RelatedTrackItem[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+  };
+}
+
+export async function getRelatedTracks(trackId: string): Promise<{
+  referenceTrack: Track;
+  tracks: Track[];
+}> {
+  const response = await axiosInstance.get<RelatedTracksResponse>(
+    `/tracks/${trackId}/related`,
+  );
+
+  // The API returns { reference_track, data: [...], pagination }
+  // axiosInstance wraps this in response.data
+  const payload = response.data;
+
+  const mapItem = (item: RelatedTrackItem): Track => ({
+    id: item.id,
+    title: item.title,
+    coverUrl: item.cover_image ?? "",
+    duration: item.duration
+      ? `${Math.floor(item.duration / 60)}:${String(item.duration % 60).padStart(2, "0")}`
+      : "0:00",
+    genre: item.genre_name ?? "",
+    playCount: item.play_count ?? 0,
+    likeCount: item.like_count ?? 0,
+    repostCount: item.repost_count ?? 0,
+    commentCount: 0,
+    artistName: item.artist_name ?? "",
+    artistUsername: item.user_id ?? "",
+    audioUrl: item.stream_url ?? "",
+    postedAt: item.created_at ?? "",
+    waveformData: [],
+    isPrivate: false,
+  });
+
+  return {
+    referenceTrack: mapItem(payload.reference_track),
+    tracks: Array.isArray(payload.data) ? payload.data.map(mapItem) : [],
+  };
+}
+
 
 /**
  * GET /tracks/{track_id}/comments
