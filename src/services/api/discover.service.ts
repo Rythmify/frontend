@@ -242,6 +242,17 @@ export const getMixTracks = async (
   return res.data.data;
 };
 
+// POST /me/listening-history — record a play event (fire-and-forget)
+export const writeListeningHistory = async (
+  trackId: string,
+  playedAt: string,
+): Promise<void> => {
+  await axiosInstance.post("/me/listening-history", {
+    track_id: trackId,
+    played_at: playedAt,
+  });
+};
+
 // to do
 // get liked tracks
 // GET /home/trending-by-genre/{genre_id}
