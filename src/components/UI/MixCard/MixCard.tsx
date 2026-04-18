@@ -99,12 +99,12 @@ export default function MixCard({
 
         {/* MIX badge */}
         <div
-          className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm flex items-baseline gap-1"
+          className="w-[90%] absolute left-2 bottom-2 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-sm flex items-baseline gap-1"
           style={{ backgroundColor: badge.bg }}
           data-test="mix-card-badge"
         >
           <span
-            className="text-2xl tracking-widest uppercase leading-none"
+            className="text-sm sm:text-lg md:text-xl lg:text-2xl tracking-widest uppercase leading-none"
             style={{
               color: badge.text,
               fontFamily: "'Barlow Condensed', sans-serif",
@@ -153,7 +153,7 @@ export default function MixCard({
 
       {/* Subtitle */}
       <p
-        className="text-text-secondary text-xs truncate"
+        className="text-text-secondary text-[10px] sm:text-xs truncate"
         data-test="mix-card-subtitle"
       >
         {mix.track_count} tracks

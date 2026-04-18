@@ -24,12 +24,13 @@ const styles = {
   w-full
 `,
   arrowButton: `
+  hidden sm:flex
   absolute top-[55%] -translate-y-1/1
   z-10
   w-8 h-8 shrink-0
   rounded-full
   bg-gray-800
-  flex items-center justify-center
+  items-center justify-center
   text-gray-200
   hover:text-gray-500
   transition-colors duration-200
@@ -43,7 +44,7 @@ const styles = {
   right-6 translate-x-1/2
 `,
   scrollContainer: `
-  flex gap-8
+  flex gap-4 sm:gap-6 md:gap-8
   overflow-x-auto
   scroll-smooth
   [&::-webkit-scrollbar]:hidden
