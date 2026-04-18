@@ -8,6 +8,7 @@ const mockGetUserById = vi.fn();
 const mockGetFollowers = vi.fn();
 const mockGetFollowing = vi.fn();
 const mockGetFollowStatus = vi.fn();
+const mockResolveUsername = vi.fn();
 const mockUpdateMyProfile = vi.fn();
 const mockGetMyTracks = vi.fn();
 
@@ -27,6 +28,7 @@ vi.mock("@/services/user.service", () => ({
   getFollowers: (...args: unknown[]) => mockGetFollowers(...args),
   getFollowing: (...args: unknown[]) => mockGetFollowing(...args),
   getFollowStatus: (...args: unknown[]) => mockGetFollowStatus(...args),
+  resolveUsername: (...args: unknown[]) => mockResolveUsername(...args),
   updateMyProfile: (...args: unknown[]) => mockUpdateMyProfile(...args),
 }));
 
@@ -172,6 +174,12 @@ describe("UsernamePage", () => {
     mockGetFollowers.mockResolvedValue({ items: [], meta: { total: 0 } });
     mockGetFollowing.mockResolvedValue({ items: [], meta: { total: 0 } });
     mockGetFollowStatus.mockResolvedValue({ is_following: true });
+    mockResolveUsername.mockImplementation(async (value: unknown) => {
+      if (value === "travis-scott") {
+        return "travis-scott-id";
+      }
+      return "1";
+    });
     mockUpdateMyProfile.mockResolvedValue({});
     mockGetMyTracks.mockResolvedValue({
       data: [],

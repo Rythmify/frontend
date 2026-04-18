@@ -1,5 +1,6 @@
 import type React from "react";
-interface BuzzingPlaylist {
+import { useHistoryStore } from "@/stores/history.store";
+export interface BuzzingPlaylist {
   id: string;
   genre: string;
   cover_image: string | null;
@@ -34,15 +35,24 @@ export default function GenreCard({
 }: GenreCardProps) {
   const badge = BADGE_COLORS[index % BADGE_COLORS.length];
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const { addGenre } = useHistoryStore();
   const liked = isPlaylistLiked(item.id);
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    togglePlaylist({ id: item.id, title: item.genre, owner: `${item.track_count} tracks`, coverUrl: item.cover_image });
+    togglePlaylist({
+      id: item.id,
+      title: item.genre,
+      owner: `${item.track_count} tracks`,
+      coverUrl: item.cover_image,
+    });
   };
 
   return (
-    <div className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`} data-test={`genre-card-${item.id}`}>
+    <div
+      className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
+      data-test={`genre-card-${item.id}`}
+    >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
         {item.cover_image && (
@@ -60,7 +70,11 @@ export default function GenreCard({
         >
           <span
             className="text-base tracking-widest uppercase leading-none"
-            style={{ color: badge.text, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
+            style={{
+              color: badge.text,
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 900,
+            }}
           >
             {item.genre}
           </span>
@@ -71,17 +85,30 @@ export default function GenreCard({
           <div className="absolute inset-0 bg-black/30 pointer-events-none" />
           <div />
           <div className="flex items-center justify-center flex-1">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg">
-              <i className="fa-solid fa-play text-black text-sm ml-0.5" />
-            </div>
+            <button
+              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
+              onClick={(e) => { e.stopPropagation(); addGenre(item); }}
+            >
+              <i className="fa-solid fa-play text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ml-0.5" />
+            </button>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button className="flex flex-col items-center gap-0.5 group/btn" data-test={`button-like-genre-${item.id}`} onClick={handleLike}>
-              <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
+            <button
+              className="flex flex-col items-center gap-0.5 group/btn"
+              data-test={`button-like-genre-${item.id}`}
+              onClick={handleLike}
+            >
+              <i
+                className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`}
+              />
             </button>
-            <button className="flex flex-col items-center gap-0.5 group/btn" data-test={`button-more-genre-${item.id}`} onClick={(e) => e.stopPropagation()}>
+            {/* <button
+              className="flex flex-col items-center gap-0.5 group/btn"
+              data-test={`button-more-genre-${item.id}`}
+              onClick={(e) => e.stopPropagation()}
+            >
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

@@ -3,17 +3,26 @@ import { persist } from "zustand/middleware";
 import type { Track } from "@/types/track";
 import type { Station } from "@/types/station";
 import type { PersonalMix } from "@/services/api/discover.service";
+import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
+import type { BuzzingPlaylist } from "@/components/UI/GenreCard/GenreCard";
+import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
 
 export type HistoryEntry =
   | { type: "track"; item: Track; playedAt: string }
   | { type: "station"; item: Station; playedAt: string }
-  | { type: "mix"; item: PersonalMix; playedAt: string };
+  | { type: "mix"; item: PersonalMix; playedAt: string }
+  | { type: "playlist"; item: PlaylistCardData; playedAt: string }
+  | { type: "genre"; item: BuzzingPlaylist; playedAt: string }
+  | { type: "madeForYou"; item: MadeForYouItem; playedAt: string };
 
 interface HistoryStore {
   entries: HistoryEntry[];
   addTrack: (track: Track) => void;
   addStation: (station: Station) => void;
   addMix: (mix: PersonalMix) => void;
+  addPlaylist: (playlist: PlaylistCardData) => void;
+  addGenre: (genre: BuzzingPlaylist) => void;
+  addMadeForYou: (item: MadeForYouItem) => void;
   clearHistory: () => void;
   getRecentTracks: () => Track[];
   getRecentStations: () => Station[];
@@ -56,6 +65,33 @@ export const useHistoryStore = create<HistoryStore>()(
           entries: dedupeAndPrepend(s.entries, {
             type: "mix",
             item: mix,
+            playedAt: new Date().toISOString(),
+          }),
+        })),
+
+      addPlaylist: (playlist) =>
+        set((s) => ({
+          entries: dedupeAndPrepend(s.entries, {
+            type: "playlist",
+            item: playlist,
+            playedAt: new Date().toISOString(),
+          }),
+        })),
+
+      addGenre: (genre) =>
+        set((s) => ({
+          entries: dedupeAndPrepend(s.entries, {
+            type: "genre",
+            item: genre,
+            playedAt: new Date().toISOString(),
+          }),
+        })),
+
+      addMadeForYou: (item) =>
+        set((s) => ({
+          entries: dedupeAndPrepend(s.entries, {
+            type: "madeForYou",
+            item,
             playedAt: new Date().toISOString(),
           }),
         })),

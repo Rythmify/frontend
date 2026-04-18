@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import TrackItem from "@/components/Profile/ProfileSideBar/TrackItem";
+import TrackItem from "@/components/UI/TrackItem";
 
 const mockNavigate = vi.fn();
 

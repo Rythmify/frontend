@@ -494,12 +494,12 @@ export default function ContentPage() {
   useEffect(() => {
     getContentSettings()
       .then((data) => {
-        setSettings(data);
-        setSaved(data);
+        if (data) {
+          setSettings(data);
+          setSaved(data);
+        }
       })
-      .catch(() => {
-        // keep defaults silently
-      });
+      .catch(() => {});
   }, []);
 
   const patch = (delta: Partial<ContentSettings>) => {
@@ -531,171 +531,171 @@ export default function ContentPage() {
   return (
     <>
       <div className="max-w-3xl flex flex-col gap-10 pb-24">
-      {/* ── RSS Feed ── */}
-      <div>
-        <SectionTitle info>RSS feed</SectionTitle>
+        {/* ── RSS Feed ── */}
+        <div>
+          <SectionTitle info>RSS feed</SectionTitle>
 
-        {/* RSS feed URL + Email address displayed */}
-        <div className="flex gap-6 mb-6">
-          <div className="flex-[2]">
-            <FieldLabel>RSS feed</FieldLabel>
-            <input
-              className={inputClass}
-              readOnly
-              defaultValue="https://feeds.rythmify.com/users/rythmify:users:483320034/sounds.rss"
-              data-test="settings-content-rss-feed-input"
-            />
-          </div>
-          <div className="flex-1">
-            <FieldLabel>Email address displayed</FieldLabel>
-            <SelectField
-              value={settings.rss_show_email ? "display" : "dont"}
-              onChange={(v) => patch({ rss_show_email: v === "display" })}
-              dataTest="settings-content-rss-show-email-select"
-            >
-              <option value="dont">Don't display email address</option>
-              <option value="display">Display email address</option>
-            </SelectField>
-          </div>
-        </div>
-
-        {/* Row 2: Custom feed title, Category, Stats-service URL prefix */}
-        <div className="flex gap-6 mb-6">
-          <div className="flex-1">
-            <FieldLabel>Custom feed title</FieldLabel>
-            <input
-              className={inputClass}
-              value={settings.rss_title ?? ""}
-              onChange={(e) => patch({ rss_title: e.target.value })}
-              data-test="settings-content-rss-title-input"
-            />
-          </div>
-          <div className="flex-1">
-            <FieldLabel required>Category</FieldLabel>
-            <SelectField
-              value={settings.rss_category ?? ""}
-              onChange={(v) => patch({ rss_category: v })}
-              dataTest="settings-content-rss-category-select"
-            >
-              <option value=""></option>
-              <option>Arts</option>
-              <option>Business</option>
-              <option>Comedy</option>
-              <option>Education</option>
-              <option>Fiction</option>
-              <option>Government</option>
-              <option>Health & Fitness</option>
-              <option>History</option>
-              <option>Kids & Family</option>
-              <option>Leisure</option>
-              <option>Music</option>
-              <option>News</option>
-              <option>Religion & Spirituality</option>
-              <option>Science</option>
-              <option>Society & Culture</option>
-              <option>Sports</option>
-              <option>Technology</option>
-              <option>True Crime</option>
-              <option>TV & Film</option>
-            </SelectField>
-          </div>
-          <div className="flex-1">
-            <FieldLabel info>Stats-service URL prefix</FieldLabel>
-            <input
-              className={inputClass}
-              placeholder="http://"
-              data-test="settings-content-stats-service-url-input"
-            />
-          </div>
-        </div>
-
-        {/* Row 3: Custom author name, Language, Subscriber redirect */}
-        <div className="flex gap-6 mb-6">
-          <div className="flex-1">
-            <FieldLabel>Custom author name</FieldLabel>
-            <input
-              className={inputClass}
-              data-test="settings-content-author-name-input"
-            />
-          </div>
-          <div className="flex-1">
-            <FieldLabel required>Language</FieldLabel>
-            <SelectField
-              value={settings.rss_language ?? "English"}
-              onChange={(v) => patch({ rss_language: v })}
-              dataTest="settings-content-rss-language-select"
-            >
-              <option>English</option>
-              <option>Arabic</option>
-              <option>French</option>
-              <option>German</option>
-              <option>Spanish</option>
-            </SelectField>
-          </div>
-          <div className="flex-1">
-            <FieldLabel info>Subscriber redirect</FieldLabel>
-            <input
-              className={inputClass}
-              placeholder="http://"
-              data-test="settings-content-subscriber-redirect-input"
-            />
-          </div>
-        </div>
-
-        {/* Contains explicit content — wired to rss_explicit */}
-        <label className="flex items-center gap-3 cursor-pointer">
-          <div
-            onClick={() => patch({ rss_explicit: !settings.rss_explicit })}
-            className={`w-5 h-5 border rounded-[var(--radius-xs)] flex items-center justify-center transition-colors duration-150 ${
-              settings.rss_explicit
-                ? "bg-[var(--color-text-hover)] border-[var(--color-text-hover)]"
-                : "bg-transparent border-[var(--color-border)]"
-            }`}
-          >
-            {settings.rss_explicit && (
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+          {/* RSS feed URL + Email address displayed */}
+          <div className="flex gap-6 mb-6">
+            <div className="flex-[2]">
+              <FieldLabel>RSS feed</FieldLabel>
+              <input
+                className={inputClass}
+                readOnly
+                defaultValue="https://feeds.rythmify.com/users/rythmify:users:483320034/sounds.rss"
+                data-test="settings-content-rss-feed-input"
+              />
+            </div>
+            <div className="flex-1">
+              <FieldLabel>Email address displayed</FieldLabel>
+              <SelectField
+                value={settings.rss_show_email ? "display" : "dont"}
+                onChange={(v) => patch({ rss_show_email: v === "display" })}
+                dataTest="settings-content-rss-show-email-select"
               >
-                <path
-                  d="M2 6l3 3 5-5"
-                  stroke="var(--color-bg)"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
+                <option value="dont">Don't display email address</option>
+                <option value="display">Display email address</option>
+              </SelectField>
+            </div>
           </div>
-          <span className="text-sm text-[var(--color-text-hover)]">
-            Contains explicit content
-          </span>
-        </label>
-      </div>
 
-      {/* ── Upload Defaults ── */}
-      <UploadDefaults settings={settings} onPatch={patch} />
+          {/* Row 2: Custom feed title, Category, Stats-service URL prefix */}
+          <div className="flex gap-6 mb-6">
+            <div className="flex-1">
+              <FieldLabel>Custom feed title</FieldLabel>
+              <input
+                className={inputClass}
+                value={settings.rss_title ?? ""}
+                onChange={(e) => patch({ rss_title: e.target.value })}
+                data-test="settings-content-rss-title-input"
+              />
+            </div>
+            <div className="flex-1">
+              <FieldLabel required>Category</FieldLabel>
+              <SelectField
+                value={settings.rss_category ?? ""}
+                onChange={(v) => patch({ rss_category: v })}
+                dataTest="settings-content-rss-category-select"
+              >
+                <option value=""></option>
+                <option>Arts</option>
+                <option>Business</option>
+                <option>Comedy</option>
+                <option>Education</option>
+                <option>Fiction</option>
+                <option>Government</option>
+                <option>Health & Fitness</option>
+                <option>History</option>
+                <option>Kids & Family</option>
+                <option>Leisure</option>
+                <option>Music</option>
+                <option>News</option>
+                <option>Religion & Spirituality</option>
+                <option>Science</option>
+                <option>Society & Culture</option>
+                <option>Sports</option>
+                <option>Technology</option>
+                <option>True Crime</option>
+                <option>TV & Film</option>
+              </SelectField>
+            </div>
+            <div className="flex-1">
+              <FieldLabel info>Stats-service URL prefix</FieldLabel>
+              <input
+                className={inputClass}
+                placeholder="http://"
+                data-test="settings-content-stats-service-url-input"
+              />
+            </div>
+          </div>
 
-      {/* Cancel + Save ── */}
-      <div className="left-0 right-0 flex items-center justify-end gap-4 px-8 py-4 bg-[var(--color-bg)] ">
-        <button
-          onClick={handleCancel}
-          data-test="settings-content-cancel-button"
-          className="text-sm text-[var(--color-text-hover)] hover:opacity-70 transition-opacity duration-150"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          data-test="settings-content-save-button"
-          className="px-5 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150"
-        >
-          Save changes
-        </button>
-      </div>
+          {/* Row 3: Custom author name, Language, Subscriber redirect */}
+          <div className="flex gap-6 mb-6">
+            <div className="flex-1">
+              <FieldLabel>Custom author name</FieldLabel>
+              <input
+                className={inputClass}
+                data-test="settings-content-author-name-input"
+              />
+            </div>
+            <div className="flex-1">
+              <FieldLabel required>Language</FieldLabel>
+              <SelectField
+                value={settings.rss_language ?? "English"}
+                onChange={(v) => patch({ rss_language: v })}
+                dataTest="settings-content-rss-language-select"
+              >
+                <option>English</option>
+                <option>Arabic</option>
+                <option>French</option>
+                <option>German</option>
+                <option>Spanish</option>
+              </SelectField>
+            </div>
+            <div className="flex-1">
+              <FieldLabel info>Subscriber redirect</FieldLabel>
+              <input
+                className={inputClass}
+                placeholder="http://"
+                data-test="settings-content-subscriber-redirect-input"
+              />
+            </div>
+          </div>
+
+          {/* Contains explicit content — wired to rss_explicit */}
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div
+              onClick={() => patch({ rss_explicit: !settings.rss_explicit })}
+              className={`w-5 h-5 border rounded-[var(--radius-xs)] flex items-center justify-center transition-colors duration-150 ${
+                settings.rss_explicit
+                  ? "bg-[var(--color-text-hover)] border-[var(--color-text-hover)]"
+                  : "bg-transparent border-[var(--color-border)]"
+              }`}
+            >
+              {settings.rss_explicit && (
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M2 6l3 3 5-5"
+                    stroke="var(--color-bg)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+            <span className="text-sm text-[var(--color-text-hover)]">
+              Contains explicit content
+            </span>
+          </label>
+        </div>
+
+        {/* ── Upload Defaults ── */}
+        <UploadDefaults settings={settings} onPatch={patch} />
+
+        {/* Cancel + Save ── */}
+        <div className="left-0 right-0 flex items-center justify-end gap-4 px-8 py-4 bg-[var(--color-bg)] ">
+          <button
+            onClick={handleCancel}
+            data-test="settings-content-cancel-button"
+            className="text-sm text-[var(--color-text-hover)] hover:opacity-70 transition-opacity duration-150"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            data-test="settings-content-save-button"
+            className="px-5 py-2 text-sm bg-[var(--color-input-bg)] text-[var(--color-text-hover)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150"
+          >
+            Save changes
+          </button>
+        </div>
       </div>
       {toast && (
         <Toast
