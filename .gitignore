@@ -30,3 +30,4 @@ CLAUDE.md
 *.njsproj
 *.sln
 *.sw?
+src/openapi.yaml

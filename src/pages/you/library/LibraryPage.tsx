@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
@@ -18,6 +18,7 @@ import type {
   LibraryPlaylist,
   FollowingUser,
 } from "@/services/api/library.service";
+import { getUserById } from "@/services/user.service";
 import {
   getMyPlaylists as getMyPlaylistsApi,
   getLikedPlaylists,
@@ -140,13 +141,13 @@ function mapPlaylistToCard(
   };
 }
 
-function mapFollowingToUser(f: FollowingUser, index: number): User {
+function mapFollowingToUser(f: FollowingUser): User {
   return {
-    id: String(index + 1),
+    id: f.id,
     username: f.username,
     displayName: f.display_name,
     avatar: f.profile_picture ?? undefined,
-    followers: 0,
+    followers: f.followers_count ?? 0,
     isVerified: f.is_verified,
   };
 }
@@ -210,7 +211,16 @@ export default function LibraryPage() {
 
   useEffect(() => {
     getMyFollowing()
-      .then((items) => setFollowingUsers(items.map(mapFollowingToUser)))
+      .then((items) =>
+        Promise.all(
+          items.map((f) =>
+            getUserById(f.id)
+              .then((profile) => mapFollowingToUser({ ...f, followers_count: profile.followers_count }))
+              .catch(() => mapFollowingToUser(f)),
+          ),
+        ),
+      )
+      .then(setFollowingUsers)
       .catch(() => setFollowingUsers([]));
   }, []);
 
@@ -257,20 +267,7 @@ export default function LibraryPage() {
     });
   })();
 
-  const displayedFollowing = useMemo(() => {
-    const followingSet = new Set(user?.following_ids ?? []);
-    const fromApi = followingUsers.filter((u) => followingSet.has(u.username));
-    const apiUsernames = new Set(fromApi.map((u) => u.username));
-    const extraUsers: User[] = (user?.following_ids ?? [])
-      .filter((username) => !apiUsernames.has(username))
-      .map((username, i) => ({
-        id: String(-(i + 1)),
-        username,
-        displayName: username,
-        followers: 0,
-      }));
-    return [...fromApi, ...extraUsers];
-  }, [followingUsers, user?.following_ids]);
+  const displayedFollowing = followingUsers;
 
   return (
     <div className="flex flex-col gap-8 sm:gap-10 md:gap-12">
@@ -387,7 +384,13 @@ export default function LibraryPage() {
       {/* Following */}
       <Section title="Following" data-test="library-following">
         {displayedFollowing.map((u) => (
-          <UserCard key={u.id} user={u} widthClassName={CARD_WIDTH} />
+          <UserCard
+            key={u.id}
+            user={u}
+            widthClassName={CARD_WIDTH}
+            initialIsFollowing={true}
+            onUnfollow={() => setFollowingUsers((prev) => prev.filter((f) => f.id !== u.id))}
+          />
         ))}
       </Section>
     </div>

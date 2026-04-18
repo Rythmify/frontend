@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
+import { useLikesStore } from "@/stores/likes.store";
 import type { Track } from "@/types/track";
 
 interface TrackItemProps {
@@ -50,18 +51,34 @@ const TrackItem: React.FC<TrackItemProps> = ({
 }) => {
   const [hovered, setHovered] = useState(false);
   const [coverHovered, setCoverHovered] = useState(false);
-  const [liked, setLiked] = useState(initialLiked);
   const [showMore, setShowMore] = useState(false);
   const navigate = useNavigate();
   const setTrack = usePlayerStore((state) => state.setTrack);
+  const isTrackLiked = useLikesStore((s) => s.isTrackLiked);
+  const toggleTrack = useLikesStore((s) => s.toggleTrack);
+
+  const liked = isTrackLiked(id);
 
   const handleLike = () => {
-    if (liked) {
-      setLiked(false);
-      onUnlike?.(id);
-    } else {
-      setLiked(true);
-    }
+    const trackObj: Track = {
+      id,
+      title,
+      artistName: artist,
+      artistUsername: artistUsername || artist.toLowerCase().replace(/\s+/g, "-"),
+      coverUrl: coverUrl || "",
+      audioUrl: audioUrl || "",
+      genre: genre || "",
+      likeCount: likes || 0,
+      repostCount: reposts || 0,
+      playCount: plays || 0,
+      commentCount: comments || 0,
+      duration: duration || "0:00",
+      postedAt: postedAt || "",
+      waveformData: [],
+      isPrivate,
+    };
+    toggleTrack(trackObj);
+    if (liked) onUnlike?.(id);
   };
 
   const finalArtistSlug =

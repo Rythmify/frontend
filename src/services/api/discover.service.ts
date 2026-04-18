@@ -60,7 +60,19 @@ export interface EmergingArtist {
   track_count: number;
 }
 
+export interface CuratedHomeMixPreview {
+  mix_id: string;
+  title: string;
+  cover_url: string | null;
+  preview_track: DiscoveryTrack;
+}
+
+export interface CuratedHomeSection {
+  mixes: CuratedHomeMixPreview[];
+}
+
 export interface HomeData {
+  curated: CuratedHomeSection | null;
   more_of_what_you_like: {
     tracks: DiscoveryTrack[];
     source: "personalized" | "trending_fallback";
@@ -240,6 +252,17 @@ export const getMixTracks = async (
     data: { mix: PersonalMix; tracks: DiscoveryTrack[] };
   }>(`/home/mixes/${mixId}/tracks`);
   return res.data.data;
+};
+
+// POST /me/listening-history — record a play event (fire-and-forget)
+export const writeListeningHistory = async (
+  trackId: string,
+  playedAt: string,
+): Promise<void> => {
+  await axiosInstance.post("/me/listening-history", {
+    track_id: trackId,
+    played_at: playedAt,
+  });
 };
 
 // to do

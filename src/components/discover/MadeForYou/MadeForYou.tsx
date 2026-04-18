@@ -1,7 +1,10 @@
-import HorizontalCarousel from "./HorizontalCarousel";
+import HorizontalCarousel from "../HorizontalCarousel";
 import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
-import type { CuratedMixSummary, HomeData } from "@/services/api/discover.service";
+import type {
+  CuratedMixSummary,
+  HomeData,
+} from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 
 const FALLBACK_ITEMS: MadeForYouItem[] = [
