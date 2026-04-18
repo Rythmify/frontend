@@ -65,9 +65,17 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const isSameTrack = get().currentTrack?.id === track.id;
 
     if (isSameTrack) {
-      // Same track - just ensure it is playing. Dont touch currentTime or
-      // trigger a reload. The waveform already seeked audio.currentTime directly.
-      set({ isPlaying: true });
+      // Keep the loaded audio, but merge in any missing metadata
+      // such as playlist context so downstream UI can reflect the active source.
+      set({
+        currentTrack: {
+          ...(get().currentTrack ?? track),
+          ...track,
+        },
+        queue: newQueue,
+        queueIndex: index >= 0 ? index : get().queueIndex,
+        isPlaying: true,
+      });
       return;
     }
 

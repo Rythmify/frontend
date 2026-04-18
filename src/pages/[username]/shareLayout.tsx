@@ -26,6 +26,7 @@ interface ShareLayoutProps {
     avatar?: string;
   }>;
   following?: Array<{
+    userId?: string;
     username: string;
     followers: number;
     tracks?: number;
@@ -71,7 +72,7 @@ export default function ShareLayout({
 
       <div className="flex gap-6 py-6 items-start">
         <div className="flex-1">{children}</div>
-        <div>
+        <div className="sticky top-24 self-start">
           <ProfileSidebar
             user={user}
             isOwner={isOwner}

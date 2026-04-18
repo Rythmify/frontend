@@ -140,7 +140,7 @@ export default function TrackHero({
 
           {/* Waveform */}
           <div data-test="track-waveform-container">
-            <TrackWaveform ref={waveformRef} track={track} />
+            <TrackWaveform ref={waveformRef} track={track} onPlayPause={handlePlayPause} />
           </div>
 
           {/* Comment avatars pinned along the waveform */}

@@ -86,7 +86,7 @@ function buildTrackFormData(payload: UploadTrackPayload): FormData {
 /** POST /tracks — upload a new audio track (multipart/form-data) */
 export async function uploadTrack(
   payload: UploadTrackPayload,
-  onProgress?: (pct: number) => void
+  onProgress?: (pct: number) => void,
 ) {
   const formData = buildTrackFormData(payload);
 
@@ -105,15 +105,14 @@ export async function uploadTrack(
     const res = await axiosInstance.post<{
       data: Track;
       message: string;
-    }>('/tracks', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    }>("/tracks", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
     if (interval) clearInterval(interval);
     onProgress?.(100);
 
     return res.data;
-
   } catch (err) {
     if (interval) clearInterval(interval);
     throw err;
@@ -176,18 +175,19 @@ export async function setTrackVisibility(trackId: string, is_public: boolean) {
 }
 
 // ─── Genre API ────────────────────────────────────────────────────────────────
- 
-/** GET /genres — fetch all available genres. Falls back to empty array on failure. */
+
+/** GET /genres — fetch all available genres. */
 export async function getGenres(): Promise<string[]> {
   try {
     const res = await axiosInstance.get<{
-      data: { genres: string[] };
+      data: { id: string; name: string }[];
     }>("/genres");
- 
-    const genres = res.data?.data?.genres ?? [];
-    return genres.length > 0 ? genres : [];
-  } catch {
-    // Backend unreachable or endpoint not implemented yet — caller handles fallback
+
+    const genreNames = res.data?.data?.map((genre) => genre.name) ?? [];
+
+    return genreNames;
+  } catch (error) {
+    console.error("Backend error fetching genres:", error);
     return [];
   }
 }

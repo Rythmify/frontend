@@ -7,10 +7,6 @@ import {
   resolveUsername,
   type UserSummary,
 } from "@/services/mocks/User.service";
-import {
-  mockFollowers,
-  mockFollowing,
-} from "@/components/Profile/MockData/mock";
 
 export default function YouFollowingPage() {
   const navigate = useNavigate();
@@ -26,28 +22,18 @@ export default function YouFollowingPage() {
       .catch((err) => console.error("Failed to load following:", err));
   }, [currentUser?.username]);
 
-  const allMockUsers = Array.from(
-    new Map(
-      [...mockFollowing, ...mockFollowers].map((u) => [u.username, u]),
-    ).values(),
-  );
-
   const all = useMemo(() => {
     const followingIds = new Set(currentUser?.following_ids ?? []);
 
-    const fromApi = apiFollowing
-      ? apiFollowing
-          .filter((u) => followingIds.has(u.user_id))
-          .map((u) => ({
-            username: u.user_id,
-            displayName: u.display_name,
-            avatar: "",
-            isVerified: u.is_verified,
-            followers: 0,
-          }))
-      : allMockUsers
-          .filter((u) => followingIds.has(u.username))
-          .map((u) => ({ ...u, followers: u.followers ?? 0 }));
+    const fromApi = (apiFollowing ?? [])
+      .filter((u) => followingIds.has(u.user_id))
+      .map((u) => ({
+        username: u.user_id,
+        displayName: u.display_name,
+        avatar: "",
+        isVerified: u.is_verified,
+        followers: 0,
+      }));
 
     const coveredUsernames = new Set(fromApi.map((u) => u.username));
     const extraUsers = (currentUser?.following_ids ?? [])
@@ -61,7 +47,7 @@ export default function YouFollowingPage() {
       }));
 
     return [...fromApi, ...extraUsers];
-  }, [apiFollowing, currentUser?.following_ids, allMockUsers]);
+  }, [apiFollowing, currentUser?.following_ids]);
 
   const displayed = filter.trim()
     ? all.filter(

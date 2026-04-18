@@ -1,28 +1,27 @@
-import { Link } from "react-router-dom";
 import { FaPlay, FaPause, FaLock } from "react-icons/fa";
-import type { Playlist } from "@/services/api/playlist/playlist.service";
+import { type PlaylistDetails } from "@/services/api/playlist/playlist.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRef, useState, useEffect } from "react";
-interface Comment {
-  id: number;
-  avatarUrl: string;
-  timestamp: number;
-}
+import PlaylistStatsWaveform from "./PlaylistStatsWaveform";
 
 interface PlaylistHeroProps {
-  playlist: Playlist;
+  playlist: PlaylistDetails;
   isPlaying?: boolean;
+  activeTrackId?: string;
   onPlayPause?: () => void;
   onImageUpload?: (file: File) => void;
   showUploadButton?: boolean;
+  ownerUsername?: string | null;
 }
 
 export default function PlaylistHero({
   playlist,
   isPlaying = false,
+  activeTrackId,
   onPlayPause,
   onImageUpload,
   showUploadButton = true,
+  ownerUsername,
 }: PlaylistHeroProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
@@ -35,7 +34,7 @@ export default function PlaylistHero({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   useEffect(() => {
     setPreviewUrl(null);
-  }, [playlist.cover_image]);
+  }, [playlist.playlist_id]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,28 +98,21 @@ export default function PlaylistHero({
             {/* "Playlist owner" */}
             <div className="bg-bg px-4 py-1.5">
               <p className="text-[17px] text-text-upload hover:text-[#484848] font-bold cursor-pointer transition-colors">
-                {user?.displayName === playlist.owner_user_id
-                  ? "You"
-                  : user?.displayName}
+                {user?.username === ownerUsername || user?.id === playlist.owner_user_id
+                  ? user?.displayName
+                  : ownerUsername || playlist.owner_user_id}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Bottom Section: Circular Stats Badge */}
-        <div className="flex items-end">
-          <div className="w-24 h-24 rounded-full bg-bg flex flex-col items-center justify-center">
-            <span className="text-[28px] font-bold leading-none text-text-upload">
-              {playlist.track_count}
-            </span>
-            <span className="text-[14px] uppercase font-bold text-text-upload mt-1">
-              Tracks
-            </span>
-            {/* Total duration placeholder - usually calculated from tracks list */}
-            <span className="text-[14px] text-text-secondary mt-1">
-              1:06:29
-            </span>
-          </div>
+        {/* Bottom Section: Circular Stats Badge + Comments */}
+        <div className="flex items-end w-full">
+          <PlaylistStatsWaveform
+            playlist={playlist}
+            isPlaying={isPlaying}
+            activeTrackId={activeTrackId}
+          />
         </div>
       </div>
 

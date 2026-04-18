@@ -39,13 +39,13 @@ export function mapDiscoveryTrack(api: DiscoveryTrack): Track {
     id: api.id as unknown as string,
     title: api.title,
     artistName: api.artist_name ?? "",
-    artistUsername: "", // DiscoveryTrack has no username — navigate by user_id if needed
+    artistUsername: api.user_id, // user_id used as URL segment; getTrackBySlug only needs the track UUID
     coverUrl: api.cover_image ?? "",
     genre: api.genre_name ?? "",
     likeCount: api.like_count,
     repostCount: api.repost_count ?? 0,
     playCount: api.play_count,
-    commentCount: 0, // not in DiscoveryTrack
+    commentCount: 0,
     duration: api.duration ? formatDuration(api.duration) : "0:00",
     postedAt: api.created_at,
     audioUrl: api.stream_url ?? "",
@@ -190,6 +190,7 @@ export function mapSuggestedUserToUser(api: SuggestedUser): User {
  */
 export function mapSuggestedArtistToArtistCard(api: SuggestedArtist) {
   return {
+    id: api.id as unknown as string,
     username: api.username ?? api.display_name,
     avatar: api.profile_picture ?? undefined,
     followers: api.follower_count,
@@ -203,6 +204,7 @@ export function mapSuggestedArtistToArtistCard(api: SuggestedArtist) {
  */
 export function mapApiUserToArtist(api: PublicUser) {
   return {
+    id: api.id as unknown as string,
     username: api.username ?? api.display_name,
     avatar: api.profile_picture ?? undefined,
     followers: api.followers_count,

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { mockDiscoverTracks } from "@/services/mocks/discover";
 import type { Track } from "@/types/track";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 // ── Types ──────────────────────────────────────────────────────────────
@@ -59,7 +58,7 @@ const AUTOPLAY_INTERVAL = 5000;
 
 const TrendingTrackCard = ({ track }: { track: Track }) => (
   <Link
-    to={`/${track.artistUsername}/${track.trackSlug}`}
+    to={`/${track.artistUsername}/${track.id}`}
     className="group block"
   >
     <div className="aspect-square rounded bg-[#333] mb-2 overflow-hidden relative">
@@ -91,7 +90,27 @@ const LandingPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [trendingTracks, setTrendingTracks] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    import("@/services/feed.service").then(({ getHome }) => {
+      getHome().then((homeData) => {
+        if (homeData?.trending_by_genre?.initial_tab?.tracks) {
+          // Map backend row shape to the track shape expected by TrendingTrackCard
+          const mappedTracks = homeData.trending_by_genre.initial_tab.tracks.map((t: any) => ({
+            id: t.id,
+            title: t.title,
+            coverUrl: t.cover_image,
+            artistName: t.artist_name,
+            artistUsername: "artist", // Fallback if backend doesn't return artist_username
+            audioUrl: t.stream_url,
+          }));
+          setTrendingTracks(mappedTracks.slice(0, 10)); // Limit to max 10
+        }
+      }).catch((e) => console.error("Failed to load home data", e));
+    });
+  }, []);
 
   const goToSlide = useCallback((index: number) => setCurrentSlide(index), []);
 
@@ -288,9 +307,11 @@ const LandingPage = () => {
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
-          {mockDiscoverTracks.map((track) => (
+          {trendingTracks.length > 0 ? trendingTracks.map((track) => (
             <TrendingTrackCard key={track.id} track={track} />
-          ))}
+          )) : (
+            <p className="text-[#999] col-span-full text-center">Loading trending tracks...</p>
+          )}
         </div>
 
         {/* Explore trending playlists button */}

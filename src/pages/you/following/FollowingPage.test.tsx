@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import FollowingPage from "@/pages/you/following/FollowingPage";
 
@@ -20,40 +20,6 @@ vi.mock("@/services/user.service", () => ({
   getFollowing: (...args: unknown[]) => mockGetFollowing(...args),
   getUserById: (...args: unknown[]) => mockGetUserById(...args),
   resolveUsername: (...args: unknown[]) => mockResolveUsername(...args),
-}));
-
-vi.mock("@/components/Profile/MockData/mock", () => ({
-  mockFollowing: [
-    {
-      username: "artist1",
-      displayName: "Artist One",
-      followers: 500000,
-      tracks: 20,
-      avatar: "",
-      isVerified: true,
-    },
-    {
-      username: "artist2",
-      displayName: "Artist Two",
-      followers: 1200,
-      tracks: 5,
-      avatar: "",
-      isVerified: false,
-    },
-  ],
-  mockFollowers: [],
-  mockUserFollowing: {
-    "travis-scott": [
-      {
-        username: "producer1",
-        displayName: "Producer One",
-        followers: 3000,
-        tracks: 10,
-        avatar: "",
-        isVerified: false,
-      },
-    ],
-  },
 }));
 
 vi.mock("@/components/Profile/FollowButton/FollowButton", () => ({
@@ -153,6 +119,11 @@ describe("FollowingPage", () => {
     );
   });
 
+  it("displays the username in the header", () => {
+    render(<FollowingPage />);
+    expect(screen.getByText("@me")).toBeInTheDocument();
+  });
+
   it("renders all three tabs", () => {
     render(<FollowingPage />);
     expect(screen.getByTestId("following-tab-likes")).toBeInTheDocument();
@@ -205,13 +176,13 @@ describe("FollowingPage", () => {
     expect(screen.getByTestId("following-avatar-artist2")).toBeInTheDocument();
   });
 
-  it("renders non-owner following list", () => {
+  it("renders non-owner following list", async () => {
     (useParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       username: "travis-scott",
     });
     render(<FollowingPage />);
     expect(
-      screen.getByTestId("following-avatar-producer1"),
+      await screen.findByTestId("following-avatar-artist1"),
     ).toBeInTheDocument();
   });
 
@@ -254,16 +225,21 @@ describe("FollowingPage", () => {
 
   it("shows formatted follower count", async () => {
     render(<FollowingPage />);
-    expect(await screen.findByTestId("following-count-artist1")).toHaveTextContent(
-      "500000 followers",
-    );
+    expect(
+      await screen.findByTestId("following-count-artist1"),
+    ).toHaveTextContent("500000 followers");
   });
 
-  it("renders empty following list for non-owner with no data", () => {
+  it("renders empty following list for non-owner with no data", async () => {
     (useParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       username: "unknown-user",
     });
+    mockResolveUsername.mockRejectedValueOnce(new Error("not found"));
     render(<FollowingPage />);
-    expect(screen.queryByTestId(/^following-avatar-/)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("following-avatar-artist1"),
+      ).not.toBeInTheDocument();
+    });
   });
 });

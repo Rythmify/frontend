@@ -159,12 +159,14 @@ describe("PlaylistSlugPage", () => {
     expect(setTrack).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "t-1",
+        title: "Track 1",
         context: {
           type: "playlist",
           playlist_id: "pl-abc",
           queue: ["t-1"],
         },
       }),
+      [expect.objectContaining({ id: "t-1" })],
     );
   });
 

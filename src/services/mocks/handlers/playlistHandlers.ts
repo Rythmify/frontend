@@ -12,7 +12,7 @@ interface PlaylistDetails extends Playlist {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MOCK_OWNER_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+const MOCK_OWNER_ID = "1";
 const SECRET_TOKEN = "mock-secret-token-xyz";
 
 const TRACK_IDS = {
@@ -71,6 +71,9 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Track One",
         artist_name: "Artist A",
         cover_image: "https://picsum.photos/seed/track-one/300/300",
+        duration: 225,
+        audio_url: "/audio/Track 1.mp3",
+        play_count: 12840,
       },
     ],
   },
@@ -119,6 +122,8 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Track Two",
         artist_name: "Artist B",
         cover_image: "https://picsum.photos/seed/track-2/300/300",
+        duration: 200,
+        audio_url: "/audio/Track 2.mp3",
       },
     ],
     slug: "gym-hits",
@@ -142,6 +147,9 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Sahar El Leil",
         artist_name: "Artist C",
         cover_image: "https://picsum.photos/seed/track-6/300/300",
+        duration: 203,
+        audio_url: "/audio/Track 3.mp3",
+        play_count: 12840,
       },
       {
         track_id: TRACK_IDS.t7,
@@ -149,6 +157,9 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-01T12:02:00Z",
         title: "Hayatak Maaky",
         artist_name: "Artist C",
+        duration: 186,
+        audio_url: "/audio/Track 4.mp3",
+        play_count: 840,
       },
       {
         track_id: TRACK_IDS.t8,
@@ -156,6 +167,9 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-01T12:03:00Z",
         title: "Nedaa El Qalb",
         artist_name: "Artist D",
+        duration: 194,
+        audio_url: "/audio/Track 5.mp3",
+        play_count: 9340,
       },
       {
         track_id: TRACK_IDS.t9,
@@ -163,6 +177,8 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-01T12:04:00Z",
         title: "Mawgood",
         artist_name: "Artist D",
+        duration: 210,
+        audio_url: "/audio/Track 1.mp3",
       },
       {
         track_id: TRACK_IDS.t10,
@@ -170,6 +186,8 @@ const mockPlaylists: PlaylistDetails[] = [
         added_at: "2026-04-01T12:05:00Z",
         title: "Dawam",
         artist_name: "Artist E",
+        duration: 220,
+        audio_url: "/audio/Track 2.mp3",
       },
     ],
     slug: "summer-2026",
@@ -192,6 +210,8 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Shababek'",
         artist_name: "Artist F",
         cover_image: "https://picsum.photos/seed/track-3/300/300",
+        duration: 205,
+        audio_url: "/audio/Track 3.mp3",
       },
       {
         track_id: TRACK_IDS.t5,
@@ -200,6 +220,9 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Elwa2t Eldaye3",
         artist_name: "Artist F",
         cover_image: "https://picsum.photos/seed/track-5/300/300",
+        duration: 198,
+        audio_url: "/audio/Track 4.mp3",
+        play_count: 9340,
       },
       {
         track_id: TRACK_IDS.t6,
@@ -208,6 +231,9 @@ const mockPlaylists: PlaylistDetails[] = [
         title: "Sahar El Leil",
         artist_name: "Artist C",
         cover_image: "https://picsum.photos/seed/track-6/300/300",
+        duration: 203,
+        audio_url: "/audio/Track 5.mp3",
+        play_count: 120,
       },
     ],
     slug: "late-night-chills",
@@ -526,6 +552,70 @@ const mockPlaylists: PlaylistDetails[] = [
   },
 ];
 
+//Mock PlaylistTracks
+export const mockPlaylistTracks: PlaylistTrackItem[] = [
+  {
+    track_id: "11111111-1111-4111-8111-111111111111",
+    position: 1,
+    added_at: "2026-04-10T10:00:00Z",
+    title: "Track One",
+    artist_name: "Artist A",
+    artist_username: "artist-a",
+    cover_image: "https://picsum.photos/seed/playlist-track-1/300/300",
+    duration: 225,
+    play_count: 12840,
+    audio_url: "/audio/Track 1.mp3",
+  },
+  {
+    track_id: "22222222-2222-4222-8222-222222222222",
+    position: 2,
+    added_at: "2026-04-10T10:01:00Z",
+    title: "Track Two",
+    artist_name: "Artist B",
+    artist_username: "artist-b",
+    cover_image: "https://picsum.photos/seed/playlist-track-2/300/300",
+    duration: 200,
+    play_count: 9340,
+    audio_url: "/audio/Track 2.mp3",
+  },
+  {
+    track_id: "33333333-3333-4333-8333-333333333333",
+    position: 3,
+    added_at: "2026-04-10T10:02:00Z",
+    title: "Track Three",
+    artist_name: "Artist C",
+    artist_username: "artist-c",
+    cover_image: "https://picsum.photos/seed/playlist-track-3/300/300",
+    duration: 194,
+    play_count: 7450,
+    audio_url: "/audio/Track 3.mp3",
+  },
+  {
+    track_id: "44444444-4444-4444-8444-444444444444",
+    position: 4,
+    added_at: "2026-04-10T10:03:00Z",
+    title: "Track Four",
+    artist_name: "Artist D",
+    artist_username: "artist-d",
+    cover_image: "https://picsum.photos/seed/playlist-track-4/300/300",
+    duration: 180,
+    play_count: 6210,
+    audio_url: "/audio/Track 4.mp3",
+  },
+  {
+    track_id: "55555555-5555-4555-8555-555555555555",
+    position: 5,
+    added_at: "2026-04-10T10:04:00Z",
+    title: "Track Five",
+    artist_name: "Artist E",
+    artist_username: "artist-e",
+    cover_image: "https://picsum.photos/seed/playlist-track-5/300/300",
+    duration: 210,
+    play_count: 5150,
+    audio_url: "/audio/Track 5.mp3",
+  },
+];
+
 // ─── Liked playlists (owned by OTHER users, liked by current user) ─────────────
 
 const mockLikedPlaylists: PlaylistDetails[] = [
@@ -546,6 +636,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-10T10:01:00Z",
         title: "Track One",
         artist_name: "Artist A",
+        duration: 225,
       },
     ],
     slug: "chill-house-mix",
@@ -606,6 +697,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-05T20:01:00Z",
         title: "Seneen",
         artist_name: "Artist G",
+        duration: 200,
       },
       {
         track_id: TRACK_IDS.t6,
@@ -613,6 +705,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-05T20:02:00Z",
         title: "Sahar El Leil",
         artist_name: "Artist C",
+        duration: 203,
       },
       {
         track_id: TRACK_IDS.t8,
@@ -620,6 +713,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-05T20:03:00Z",
         title: "Nedaa El Qalb",
         artist_name: "Artist D",
+        duration: 194,
       },
       {
         track_id: TRACK_IDS.t9,
@@ -627,6 +721,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-01-05T20:04:00Z",
         title: "Mawgood",
         artist_name: "Artist D",
+        duration: 210,
       },
     ],
   },
@@ -647,6 +742,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-02-20T11:01:00Z",
         title: "Shababek'",
         artist_name: "Artist F",
+        duration: 205,
       },
       {
         track_id: TRACK_IDS.t5,
@@ -654,6 +750,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-02-20T11:02:00Z",
         title: "Elwa2t Eldaye3",
         artist_name: "Artist F",
+        duration: 198,
       },
       {
         track_id: TRACK_IDS.t8,
@@ -661,6 +758,7 @@ const mockLikedPlaylists: PlaylistDetails[] = [
         added_at: "2026-02-20T11:03:00Z",
         title: "Nedaa El Qalb",
         artist_name: "Artist D",
+        duration: 194,
       },
     ],
   },
@@ -1186,18 +1284,21 @@ export const playlistHandlers = [
       message: "Playlist embed code generated successfully.",
     });
   }),
-  
-// Mock POST Repost
+
+  // Mock POST Repost
   http.post("*/playlists/:playlistId/repost", ({ params }) => {
-    return HttpResponse.json({
-      data: {
-        repost_id: "mock-repost-id",
-        user_id: "current-user-id",
-        playlist_id: params.playlistId,
-        created_at: new Date().toISOString()
+    return HttpResponse.json(
+      {
+        data: {
+          repost_id: "mock-repost-id",
+          user_id: "current-user-id",
+          playlist_id: params.playlistId,
+          created_at: new Date().toISOString(),
+        },
+        message: "Playlist reposted successfully.",
       },
-      message: "Playlist reposted successfully."
-    }, { status: 201 });
+      { status: 201 },
+    );
   }),
 
   // Mock DELETE Repost

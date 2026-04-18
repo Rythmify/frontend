@@ -41,12 +41,14 @@ export interface PublicUser {
 }
 
 export interface UserSummary {
-  user_id: string;
+  id: string;
   email: string;
   display_name: string;
+  username: string | null;
   gender: "male" | "female" | null;
   role: "artist" | "listener" | "admin";
   is_verified: boolean;
+  profile_picture?: string | null;
 }
 
 export interface ListMeta {
@@ -57,6 +59,24 @@ export interface ListMeta {
 
 export interface UserListData {
   items: UserSummary[];
+  meta: ListMeta;
+}
+
+export interface TrackSummary {
+  id: string;
+  title: string;
+  genre: string | null;
+  duration: number | null;
+  cover_image: string | null;
+  user_id: string;
+  artist_name: string;
+  play_count: number;
+  like_count: number;
+  stream_url: string | null;
+}
+
+export interface TrackListData {
+  items: TrackSummary[];
   meta: ListMeta;
 }
 
@@ -150,11 +170,68 @@ export async function getFollowing(
   return res.data.data;
 }
 
-export async function getFollowStatus(
-  userId: string,
-): Promise<{ is_following: boolean }> {
-  const res = await axiosInstance.get<{ data: { is_following: boolean } }>(
-    `/users/${userId}/follow-status`,
+export async function getFollowStatus(userId: string): Promise<{
+  is_following: boolean;
+  is_followed_by?: boolean;
+  is_blocking?: boolean;
+  is_blocked_by?: boolean;
+}> {
+  const res = await axiosInstance.get<{
+    data: {
+      is_following: boolean;
+      is_followed_by?: boolean;
+      is_blocking?: boolean;
+      is_blocked_by?: boolean;
+    };
+  }>(`/users/${userId}/follow-status`);
+  return res.data.data;
+}
+
+export async function followUser(userId: string): Promise<void> {
+  await axiosInstance.post(`/users/${userId}/follow`);
+}
+
+export async function unfollowUser(userId: string): Promise<void> {
+  await axiosInstance.delete(`/users/${userId}/follow`);
+}
+
+export async function blockUser(userId: string): Promise<void> {
+  await axiosInstance.post(`/users/${userId}/block`);
+}
+
+export async function unblockUser(userId: string): Promise<void> {
+  await axiosInstance.delete(`/users/${userId}/block`);
+}
+
+export async function getBlockedUsers(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<UserListData> {
+  const res = await axiosInstance.get<{ data: UserListData }>(
+    "/users/me/blocked",
+    { params },
   );
   return res.data.data;
+}
+
+export async function getMyLikedTracks(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<TrackListData> {
+  const res = await axiosInstance.get<{
+    data: TrackSummary[];
+    pagination: ListMeta;
+  }>("/me/liked-tracks", { params });
+  return { items: res.data.data, meta: res.data.pagination };
+}
+
+export async function getUserLikedTracks(
+  userId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<TrackListData> {
+  const res = await axiosInstance.get<{
+    data: TrackSummary[];
+    pagination: ListMeta;
+  }>(`/users/${userId}/liked-tracks`, { params });
+  return { items: res.data.data, meta: res.data.pagination };
 }
