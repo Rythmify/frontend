@@ -1,4 +1,5 @@
 import axiosInstance from "./axiosInstance";
+import type { Playlist } from "./playlist/playlist.service";
 
 // =============================================================================
 // TYPES — API response shapes (aligned to OpenAPI spec)
@@ -27,7 +28,7 @@ export interface PersonalMix {
   cover_image: string | null;
   track_count: number;
   generated_at: string;
-  preview_track: DiscoveryTrack | null; // new — one track embedded inside each mix
+  preview_track: DiscoveryTrack;
 }
 
 export interface CuratedMixSummary {
@@ -36,7 +37,8 @@ export interface CuratedMixSummary {
   description: string;
   track_count: number;
   refreshes_at: string;
-  preview_track: DiscoveryTrack | null;
+  cover_url: string | null;
+  preview_track: DiscoveryTrack;
 }
 
 export interface DiscoveryStation {
@@ -58,7 +60,19 @@ export interface EmergingArtist {
   track_count: number;
 }
 
+export interface CuratedHomeMixPreview {
+  mix_id: string;
+  title: string;
+  cover_url: string | null;
+  preview_track: DiscoveryTrack;
+}
+
+export interface CuratedHomeSection {
+  mixes: CuratedHomeMixPreview[];
+}
+
 export interface HomeData {
+  curated: CuratedHomeSection | null;
   more_of_what_you_like: {
     tracks: DiscoveryTrack[];
     source: "personalized" | "trending_fallback";
@@ -123,7 +137,7 @@ export interface SuggestedUser {
   username: string | null;
   profile_picture: string | null;
   is_verified: boolean;
-  follower_count: number;
+  followers_count: number;
   mutual_count: number | null;
   suggestion_source: "mutual" | "popular";
   is_following: boolean;
@@ -186,16 +200,19 @@ export const getListeningHistory = async (params?: {
   return res.data;
 };
 
-// New crew suggested for you, GET /users/suggested/artists
+// New crew suggested for you, GET /users/suggested
 export const getSuggestedUsers = async (params?: {
   limit?: number;
   offset?: number;
 }): Promise<{ data: SuggestedUser[]; pagination: ListMeta }> => {
   const res = await axiosInstance.get<{
-    data: SuggestedUser[];
+    data: { items: SuggestedUser[] };
     pagination: ListMeta;
   }>("/users/suggested", { params });
-  return res.data;
+  return {
+    data: res.data.data.items,
+    pagination: res.data.pagination,
+  };
 };
 
 // Artist you should follow (sidebar), GET /users/suggested/artists
@@ -215,15 +232,15 @@ export const getAlbumsForYou = async (params?: {
   limit?: number;
   offset?: number;
 }): Promise<{
-  data: DiscoveryAlbum[];
+  data: Playlist[];
   source: "followed_artists" | "global_fallback";
   pagination: ListMeta;
 }> => {
   const res = await axiosInstance.get<{
-    data: DiscoveryAlbum[];
+    data: Playlist[];
     source: "followed_artists" | "global_fallback";
     pagination: ListMeta;
-  }>("/home/albums-for-you", { params });
+  }>("/home/albums-for-you", { params: { ...params, is_album_view: true } });
   return res.data;
 };
 
@@ -237,13 +254,28 @@ export const getMixTracks = async (
   return res.data.data;
 };
 
+// POST /me/listening-history — record a play event (fire-and-forget)
+export const writeListeningHistory = async (
+  trackId: string,
+  playedAt: string,
+): Promise<void> => {
+  await axiosInstance.post("/me/listening-history", {
+    track_id: trackId,
+    played_at: playedAt,
+  });
+};
+
 // to do
 // get liked tracks
 // GET /home/trending-by-genre/{genre_id}
 export const getTrendingByGenre = async (
   genreId: string,
-  params?: { limit?: number; offset?: number }
-): Promise<{ genre_id: string; genre_name: string; tracks: DiscoveryTrack[] }> => {
+  params?: { limit?: number; offset?: number },
+): Promise<{
+  genre_id: string;
+  genre_name: string;
+  tracks: DiscoveryTrack[];
+}> => {
   const res = await axiosInstance.get<{
     data: { genre_id: string; genre_name: string; tracks: DiscoveryTrack[] };
     message: string;

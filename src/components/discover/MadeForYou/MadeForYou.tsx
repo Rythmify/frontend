@@ -1,7 +1,11 @@
-import HorizontalCarousel from "./HorizontalCarousel";
+import HorizontalCarousel from "../HorizontalCarousel";
 import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
-import type { CuratedMixSummary, HomeData } from "@/services/api/discover.service";
+import type {
+  CuratedMixSummary,
+  HomeData,
+} from "@/services/api/discover.service";
+import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 
 const FALLBACK_ITEMS: MadeForYouItem[] = [
   {
@@ -31,7 +35,8 @@ function toMadeForYouItem(
     id: mix.id,
     title: mix.label,
     subtitle: mix.description,
-    coverUrl: mix.preview_track?.cover_image ?? fallback.coverUrl,
+    coverUrl: mix.cover_url ?? fallback.coverUrl,
+    previewTrack: mapDiscoveryTrack(mix.preview_track),
   };
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
@@ -18,6 +18,7 @@ import type {
   LibraryPlaylist,
   FollowingUser,
 } from "@/services/api/library.service";
+import { getUserById } from "@/services/user.service";
 import {
   getMyPlaylists as getMyPlaylistsApi,
   getLikedPlaylists,
@@ -28,10 +29,12 @@ import type { User } from "@/types/user";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { useAuthStore } from "@/stores/auth.store";
+import MixedForYou from "@/components/discover/MixedForYou";
+import MixCard from "@/components/UI/MixCard/MixCard";
 
 // ─── Constants ────────────────────────────────────────────
 
-const TITLE_CLASS = "text-white font-semibold text-[19px] text-left";
+const TITLE_CLASS = "text-white font-semibold text-base sm:text-[19px] text-left";
 const CARD_WIDTH = "w-[180px] sm:w-[200px] md:w-[220px] lg:w-[230px]";
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -49,7 +52,7 @@ function Section({
 }) {
   return (
     <div className="flex flex-col gap-3" data-test={dataTest}>
-      <div className="flex items-center justify-between pb-4">
+      <div className="flex items-center justify-between pb-2 sm:pb-4">
         <h2
           className={TITLE_CLASS}
           data-test={dataTest ? `${dataTest}-title` : undefined}
@@ -59,7 +62,7 @@ function Section({
         {action}
       </div>
       <div
-        className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide"
+        className="flex gap-3 sm:gap-4 overflow-x-auto pb-1 scrollbar-hide"
         data-test={dataTest ? `${dataTest}-cards` : undefined}
       >
         {children}
@@ -138,13 +141,13 @@ function mapPlaylistToCard(
   };
 }
 
-function mapFollowingToUser(f: FollowingUser, index: number): User {
+function mapFollowingToUser(f: FollowingUser): User {
   return {
-    id: String(index + 1),
+    id: f.id,
     username: f.username,
     displayName: f.display_name,
     avatar: f.profile_picture ?? undefined,
-    followers: 0,
+    followers: f.followers_count ?? 0,
     isVerified: f.is_verified,
   };
 }
@@ -208,7 +211,16 @@ export default function LibraryPage() {
 
   useEffect(() => {
     getMyFollowing()
-      .then((items) => setFollowingUsers(items.map(mapFollowingToUser)))
+      .then((items) =>
+        Promise.all(
+          items.map((f) =>
+            getUserById(f.id)
+              .then((profile) => mapFollowingToUser({ ...f, followers_count: profile.followers_count }))
+              .catch(() => mapFollowingToUser(f)),
+          ),
+        ),
+      )
+      .then(setFollowingUsers)
       .catch(() => setFollowingUsers([]));
   }, []);
 
@@ -255,23 +267,10 @@ export default function LibraryPage() {
     });
   })();
 
-  const displayedFollowing = useMemo(() => {
-    const followingSet = new Set(user?.following_ids ?? []);
-    const fromApi = followingUsers.filter((u) => followingSet.has(u.username));
-    const apiUsernames = new Set(fromApi.map((u) => u.username));
-    const extraUsers: User[] = (user?.following_ids ?? [])
-      .filter((username) => !apiUsernames.has(username))
-      .map((username, i) => ({
-        id: String(-(i + 1)),
-        username,
-        displayName: username,
-        followers: 0,
-      }));
-    return [...fromApi, ...extraUsers];
-  }, [followingUsers, user?.following_ids]);
+  const displayedFollowing = followingUsers;
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-8 sm:gap-10 md:gap-12">
       {/* Recently Played */}
       <Section title="Recently played" data-test="library-recently-played">
         {recentEntries.map((entry, i) => {
@@ -294,9 +293,9 @@ export default function LibraryPage() {
             );
           if (entry.type === "mix")
             return (
-              <MadeForYouCard
+              <MixCard
                 key={`mix-${entry.item.id}`}
-                item={mixToCard(entry.item)}
+                mix={entry.item}
                 widthClassName={CARD_WIDTH}
               />
             );
@@ -318,7 +317,11 @@ export default function LibraryPage() {
           </Link>
         }
       >
-        <LikesContent tracks={likesDisplay} showControls={false} widthClassName={CARD_WIDTH} />
+        <LikesContent
+          tracks={likesDisplay}
+          showControls={false}
+          widthClassName={CARD_WIDTH}
+        />
       </Section>
 
       {/* Playlists */}
@@ -326,10 +329,7 @@ export default function LibraryPage() {
         title="Playlists"
         data-test="library-playlists"
         action={
-          <FilterDropdown
-            value={playlistFilter}
-            onChange={setPlaylistFilter}
-          />
+          <FilterDropdown value={playlistFilter} onChange={setPlaylistFilter} />
         }
       >
         {visiblePlaylists.map((item) => (
@@ -347,7 +347,13 @@ export default function LibraryPage() {
               seen.add(p.playlist_id);
               return true;
             })
-            .map((p) => <AlbumCard key={p.playlist_id} playlist={p} widthClassName={CARD_WIDTH} />);
+            .map((p) => (
+              <AlbumCard
+                key={p.playlist_id}
+                playlist={p}
+                widthClassName={CARD_WIDTH}
+              />
+            ));
         })()}
       </Section>
 
@@ -378,7 +384,13 @@ export default function LibraryPage() {
       {/* Following */}
       <Section title="Following" data-test="library-following">
         {displayedFollowing.map((u) => (
-          <UserCard key={u.id} user={u} widthClassName={CARD_WIDTH} />
+          <UserCard
+            key={u.id}
+            user={u}
+            widthClassName={CARD_WIDTH}
+            initialIsFollowing={true}
+            onUnfollow={() => setFollowingUsers((prev) => prev.filter((f) => f.id !== u.id))}
+          />
         ))}
       </Section>
     </div>

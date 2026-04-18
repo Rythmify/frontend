@@ -20,6 +20,7 @@ export interface FollowingUser {
   username: string;
   profile_picture: string | null;
   is_verified: boolean;
+  followers_count?: number;
 }
 
 // ─── Services ─────────────────────────────────────────────

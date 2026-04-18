@@ -57,6 +57,10 @@ describe("TrackList", () => {
     );
     expect(screen.getByText("Alpha")).toBeInTheDocument();
     expect(screen.getByText("Beta")).toBeInTheDocument();
+    expect(screen.getByTestId("link-track-title-t1")).toHaveAttribute(
+      "href",
+      "/ua/t1",
+    );
   });
 
   it("renders artist names as valid links", () => {
@@ -76,7 +80,7 @@ describe("TrackList", () => {
         <TrackList tracks={mockTracks} onTrackPlay={play} />
       </MemoryRouter>,
     );
-    fireEvent.click(screen.getByText("Alpha"));
+    fireEvent.click(screen.getByTestId("track-Item-t1"));
     expect(play).toHaveBeenCalledWith(mockTracks[0]);
   });
 

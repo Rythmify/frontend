@@ -41,6 +41,9 @@ const VerifyEmailPage = lazy(() => import("@/pages/signin/VerifyEmailPage"));
 const CompleteProfilePage = lazy(
   () => import("@/pages/signin/CompleteProfilePage"),
 );
+const GitHubCallbackPage = lazy(
+  () => import("@/pages/signin/GitHubCallbackPage"),
+);
 
 // Download
 const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
@@ -52,6 +55,12 @@ const PeoplePage = lazy(() => import("@/pages/people/PeoplePage"));
 const DiscoverPage = lazy(() => import("@/pages/feed/discover/DiscoverPage"));
 const MixForYouSlugPage = lazy(
   () => import("@/pages/you/sets/MixForYouSlugPage"),
+);
+const StationSlugPage = lazy(
+  () => import("@/pages/you/stations/StationSlugPage"),
+);
+const MoreOfLikeSlugPage = lazy(
+  () => import("@/pages/you/sets/MoreOfLikeSlugPage"),
 );
 
 // Feed
@@ -197,6 +206,14 @@ export const router = createBrowserRouter([
       {
         path: "discover/sets/:mixSlug",
         element: <Lazy component={MixForYouSlugPage} />,
+      },
+      {
+        path: "discover/stations/:stationSlug",
+        element: <Lazy component={StationSlugPage} />,
+      },
+      {
+        path: "discover/personalised/:playlistSlug",
+        element: <Lazy component={MoreOfLikeSlugPage} />,
       },
       { path: "people", element: <Lazy component={PeoplePage} /> },
       { path: "download", element: <Lazy component={DownloadPage} /> },
@@ -404,6 +421,11 @@ export const router = createBrowserRouter([
   {
     path: "complete-profile",
     element: <Lazy component={CompleteProfilePage} />,
+  },
+
+  {
+    path: "auth/callback",
+    element: <Lazy component={GitHubCallbackPage} />,
   },
 
   // 9. Not Found

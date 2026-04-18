@@ -236,6 +236,7 @@ export async function getMyContentSettings() {
   return res.data;
 }
 
+
 /** PATCH /users/me/content-settings */
 export async function updateMyContentSettings(data: ContentSettings) {
   const res = await axiosInstance.patch<{
@@ -290,4 +291,11 @@ export async function checkEmail(email: string): Promise<{ exists: boolean }> {
     // In real mode with no backend endpoint, fall back to "not found"
     return { exists: true };
   }
+}
+
+
+export function initiateGithubLogin() {
+  const base = (import.meta.env.VITE_API_BASE_URL as string ?? "")
+    .replace(/\/api\/v1\/?$/i, "");
+  window.location.href = `${base}/api/v1/auth/oauth/github`;
 }

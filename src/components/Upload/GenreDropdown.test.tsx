@@ -10,7 +10,10 @@ vi.mock("@/services/api/upload/track.service", () => ({
 
 describe("GenreDropdown", () => {
   it("renders genres returned by the API", async () => {
-    getGenresMock.mockResolvedValueOnce(["Rock", "Pop"]);
+    getGenresMock.mockResolvedValueOnce([
+      { id: "genre-rock", name: "Rock" },
+      { id: "genre-pop", name: "Pop" },
+    ]);
 
     render(<GenreDropdown value="" onChange={vi.fn()} />);
 

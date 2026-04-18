@@ -1,4 +1,6 @@
 import axiosInstance from "./api/axiosInstance";
+import type { TrackSummary, ListMeta } from "./api/discover.service";
+import type { Playlist } from "./api/playlist/playlist.service";
 
 /**
  * Rythmify Engagement Service
@@ -37,6 +39,39 @@ export async function repostTrack(trackId: string | number) {
 export async function removeRepost(trackId: string | number) {
   const { data } = await axiosInstance.delete(`/tracks/${trackId}/repost`);
   return data;
+}
+
+// ─── Liked Content Fetching ───────────────────────────────────────────────────
+
+/**
+ * GET /me/liked-tracks — paginated list of tracks the user has liked
+ */
+export async function getMyLikedTracks(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: TrackSummary[]; pagination: ListMeta }> {
+  const res = await axiosInstance.get<{
+    data: TrackSummary[];
+    pagination: ListMeta;
+  }>("/me/liked-tracks", { params });
+  return res.data;
+}
+
+/**
+ * GET /me/liked-playlists — paginated list of playlists the user has liked
+ */
+export async function getMyLikedPlaylistsApi(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: Playlist[]; total: number }> {
+  const res = await axiosInstance.get<{
+    data: { items: Playlist[]; meta: { total: number } };
+    message: string;
+  }>("/me/liked-playlists", { params });
+  return {
+    data: res.data.data.items,
+    total: res.data.data.meta.total,
+  };
 }
 
 // ─── Playlist Engagement ──────────────────────────────────────────────────────

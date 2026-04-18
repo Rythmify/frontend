@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { FaFacebook, FaApple } from "react-icons/fa";
+import { FaFacebook, FaApple, FaGithub } from "react-icons/fa";
 import { Button } from "@heroui/react";
 import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
 import Email from "./Email";
@@ -11,14 +11,30 @@ import ForgotPasswordSent from "./ForgotPasswordSent";
 import Profile from "./Profile";
 import VerifyEmail from "./VerifyEmail";
 import { useNavigate } from "react-router-dom";
-import { login, register, resendVerification, getMe, forgotPassword, googleLogin } from "@/services/auth.service";
+import {
+  login,
+  register,
+  resendVerification,
+  getMe,
+  forgotPassword,
+  googleLogin,
+  initiateGithubLogin,
+} from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { GoogleLogin } from "@react-oauth/google";
-import { connectSocket } from '@/services/api/messaging/socketService';
+import { connectSocket } from "@/services/api/messaging/socketService";
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? "";
 
-type Step = "main" | "email" | "login" | "register" | "forgot-password" | "forgot-password-sent" | "profile" | "verify-email";
+type Step =
+  | "main"
+  | "email"
+  | "login"
+  | "register"
+  | "forgot-password"
+  | "forgot-password-sent"
+  | "profile"
+  | "verify-email";
 
 function SigninFlow() {
   const [step, setStep] = useState<Step>("main");
@@ -44,96 +60,109 @@ function SigninFlow() {
       }
 
       const me = await getMe();
-      storeLogin({
-        id: me.data.id,
-        username: me.data.username,
-        displayName: me.data.display_name,
-        firstName: me.data.first_name,
-        lastName: me.data.last_name,
-        bio: me.data.bio,
-        email: me.data.email,
-        role: me.data.role,
-        isPro: false,
-        avatar: me.data.profile_picture,
-        coverUrl: me.data.cover_photo,
-        city: me.data.city,
-        country: me.data.country,
-        following_ids: [],
-      }, googleRes.data.access_token);
-      const token = localStorage.getItem('access_token') ?? '';
+      storeLogin(
+        {
+          id: me.data.id,
+          username: me.data.username,
+          displayName: me.data.display_name,
+          firstName: me.data.first_name,
+          lastName: me.data.last_name,
+          bio: me.data.bio,
+          email: me.data.email,
+          role: me.data.role,
+          isPro: false,
+          avatar: me.data.profile_picture,
+          coverUrl: me.data.cover_photo,
+          city: me.data.city,
+          country: me.data.country,
+          following_ids: [],
+        },
+        googleRes.data.access_token,
+      );
+      const token = localStorage.getItem("access_token") ?? "";
       connectSocket(token);
       navigate("/discover");
     } catch (err: any) {
-      setLoginError(err?.response?.data?.error?.message ?? "Google sign-in failed.");
+      setLoginError(
+        err?.response?.data?.error?.message ?? "Google sign-in failed.",
+      );
     }
   };
-
 
   function handleEmailContinue(resolvedEmail: string, exists: boolean) {
     setEmail(resolvedEmail);
     setStep(exists ? "login" : "register");
   }
 
-  const card = "mt-20 container grid gap-7 bg-bg border-2 rounded-md border-input-bg w-lg p-8";
+  const card =
+    "mt-20 container grid gap-7 bg-bg border-2 rounded-md border-input-bg w-lg p-8";
 
   if (step === "email") {
     return (
       <div className={card}>
-        <Email onBack={() => setStep("main")} onContinue={handleEmailContinue} />
+        <Email
+          onBack={() => setStep("main")}
+          onContinue={handleEmailContinue}
+        />
       </div>
     );
   }
 
   if (step === "login") {
-  return (
-    <div className={card}>
-      {loginError && <p className="text-red-500 text-sm -mb-4">{loginError}</p>}
-      <PasswordLogin
-        email={email}
-        onBack={() => setStep("email")}
-        onContinue={async (pw) => {
-          setLoginError("");
-          try {
-            const res = await login(email, pw);
-            const me = await getMe();
-            storeLogin({
-              id: me.data.id,
-              username: me.data.username,
-              displayName: me.data.display_name,
-              firstName: me.data.first_name,
-              lastName: me.data.last_name,
-              bio: me.data.bio,
-              email: me.data.email,
-              role: me.data.role,
-              isPro: false,
-              avatar: me.data.profile_picture,
-              coverUrl: me.data.cover_photo,
-              city: me.data.city,
-              country: me.data.country,
-              following_ids: [],
-            }, res.data.access_token);
-            connectSocket(res.data.access_token);
-            navigate("/discover");
-          } catch (err: any) {
-            setLoginError(err?.response?.data?.error?.message ?? "Invalid credentials.");
-          }
-        }}
-        onForgotPassword={() => setStep("forgot-password")}
-      />
-      <p className="text-sm text-center text-text-secondary">
-        Don't have an account?{" "}
-        <button
-        
-          onClick={() => setStep("register")}
-          className="text-text-link hover:text-text-link-hover"
-        >
-          Create one
-        </button>
-      </p>
-    </div>
-  );
-}
-
+    return (
+      <div className={card}>
+        {loginError && (
+          <p className="text-red-500 text-sm -mb-4">{loginError}</p>
+        )}
+        <PasswordLogin
+          email={email}
+          onBack={() => setStep("email")}
+          onContinue={async (pw) => {
+            setLoginError("");
+            try {
+              const res = await login(email, pw);
+              const me = await getMe();
+              storeLogin(
+                {
+                  id: me.data.id,
+                  username: me.data.username,
+                  displayName: me.data.display_name,
+                  firstName: me.data.first_name,
+                  lastName: me.data.last_name,
+                  bio: me.data.bio,
+                  email: me.data.email,
+                  role: me.data.role,
+                  isPro: false,
+                  avatar: me.data.profile_picture,
+                  coverUrl: me.data.cover_photo,
+                  city: me.data.city,
+                  country: me.data.country,
+                  following_ids: [],
+                },
+                res.data.access_token,
+              );
+              connectSocket(res.data.access_token);
+              navigate("/discover");
+            } catch (err: any) {
+              setLoginError(
+                err?.response?.data?.error?.message ?? "Invalid credentials.",
+              );
+            }
+          }}
+          onForgotPassword={() => setStep("forgot-password")}
+        />
+        <p className="text-sm text-center text-text-secondary">
+          Don't have an account?{" "}
+          <button
+            onClick={() => setStep("register")}
+            className="text-text-link hover:text-text-link-hover"
+          >
+            Create one
+          </button>
+        </p>
+      </div>
+    );
+  }
 
   if (step === "forgot-password") {
     return (
@@ -198,7 +227,9 @@ function SigninFlow() {
               });
               setStep("verify-email");
             } catch (err: any) {
-              alert(err?.response?.data?.error?.message ?? "Registration failed.");
+              alert(
+                err?.response?.data?.error?.message ?? "Registration failed.",
+              );
             }
           }}
         />
@@ -214,7 +245,9 @@ function SigninFlow() {
           onSendAgain={async () => {
             if (!executeRecaptcha) return;
             try {
-              const captchaToken = await executeRecaptcha("resend_verification");
+              const captchaToken = await executeRecaptcha(
+                "resend_verification",
+              );
               await resendVerification(email, captchaToken);
             } catch {
               // silently fail — user can try again
@@ -238,36 +271,53 @@ function SigninFlow() {
           Terms of Use
         </a>{" "}
         and acknowledge our{" "}
-        <a href="/privacy" className="text-text-link hover:text-text-link-hover">
+        <a
+          href="/privacy"
+          className="text-text-link hover:text-text-link-hover"
+        >
           Privacy Policy
         </a>
         .
       </p>
 
       <div className="grid gap-6">
-        <Button data-test="btn-continue-facebook" className="flex items-center justify-center gap-2 text-center text-md font-bold text-white rounded-sm bg-[#003BB3] py-6 w-full">
+        <Button
+          data-test="btn-continue-facebook"
+          className="flex items-center justify-center gap-2 text-center text-md font-bold text-white rounded-sm bg-[#003BB3] py-6 w-full"
+        >
           <FaFacebook className="text-xl" />
           Continue with Facebook
         </Button>
 
         <div className="relative w-full">
-          <Button data-test="btn-continue-google" className="flex items-center justify-center gap-2 text-center text-md font-bold text-text-hover rounded-sm bg-input-bg py-6 w-full">
+          <Button
+            data-test="btn-continue-google"
+            className="flex items-center justify-center gap-2 text-center text-md font-bold text-text-hover rounded-sm bg-input-bg py-6 w-full"
+          >
             <FcGoogle className="text-xl" />
             Continue with Google
           </Button>
           <div className="absolute inset-0 opacity-0 overflow-hidden">
             <GoogleLogin
-              onSuccess={(cr) => cr.credential && handleGoogleCredential(cr.credential)}
-              onError={() => setLoginError("Google sign-in was cancelled or failed.")}
+              onSuccess={(cr) =>
+                cr.credential && handleGoogleCredential(cr.credential)
+              }
+              onError={() =>
+                setLoginError("Google sign-in was cancelled or failed.")
+              }
               width="500"
               shape="rectangular"
             />
           </div>
         </div>
 
-        <Button data-test="btn-continue-apple" className="flex items-center justify-center gap-2 text-center text-md font-bold text-white rounded-sm bg-black py-6 w-full">
-          <FaApple className="text-xl" />
-          Continue with Apple
+        <Button
+          data-test="btn-continue-github"
+          className="flex items-center justify-center gap-2 text-center text-md font-bold text-white rounded-sm bg-black py-6 w-full"
+          onClick={initiateGithubLogin}
+        >
+          <FaGithub className="text-xl" />
+          Continue with Github
         </Button>
       </div>
 
@@ -288,7 +338,10 @@ function SigninFlow() {
         >
           Continue
         </button>
-        <a href="/help" className="text-text-link hover:text-text-link-hover text-md">
+        <a
+          href="/help"
+          className="text-text-link hover:text-text-link-hover text-md"
+        >
           Need help?
         </a>
       </div>
@@ -297,8 +350,18 @@ function SigninFlow() {
 }
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export default function SigninPage() {

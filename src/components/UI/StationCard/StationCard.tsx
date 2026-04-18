@@ -1,7 +1,7 @@
 import type { Station } from "@/types/station";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
-
+import { useNavigate } from "react-router-dom";
 // ─── Color Schemes ────────────────────────────────────────
 
 const COLOR_SCHEMES = [
@@ -27,13 +27,29 @@ function StationRings({ colorIndex = 0 }: { colorIndex?: number }) {
     >
       {/* Color A rings — lower-left focal point */}
       {RADII.map((r, i) => (
-        <circle key={`a${i}`} cx="55" cy="155" r={r} fill="none"
-          stroke={a} strokeWidth="1.2" opacity={Math.max(0.04, 0.45 - i * 0.055)} />
+        <circle
+          key={`a${i}`}
+          cx="55"
+          cy="155"
+          r={r}
+          fill="none"
+          stroke={a}
+          strokeWidth="1.2"
+          opacity={Math.max(0.04, 0.45 - i * 0.055)}
+        />
       ))}
       {/* Color B rings — upper-right focal point */}
       {RADII.map((r, i) => (
-        <circle key={`b${i}`} cx="155" cy="55" r={r} fill="none"
-          stroke={b} strokeWidth="1.2" opacity={Math.max(0.04, 0.45 - i * 0.055)} />
+        <circle
+          key={`b${i}`}
+          cx="155"
+          cy="55"
+          r={r}
+          fill="none"
+          stroke={b}
+          strokeWidth="1.2"
+          opacity={Math.max(0.04, 0.45 - i * 0.055)}
+        />
       ))}
     </svg>
   );
@@ -57,21 +73,35 @@ export default function StationCard({
   const { isStationLiked, toggleStation } = useLikesStore();
   const { addStation } = useHistoryStore();
   const liked = isStationLiked(station.id);
-
+  const navigate = useNavigate();
   // Use the artists array if available, otherwise fall back to seedArtist for all 3
   const artists = station.artists?.length
     ? station.artists
     : [
-        { avatarUrl: station.seedArtist.avatarUrl, displayName: station.seedArtist.displayName },
+        {
+          avatarUrl: station.seedArtist.avatarUrl,
+          displayName: station.seedArtist.displayName,
+        },
         { avatarUrl: station.coverUrl ?? undefined, displayName: "" },
         { avatarUrl: undefined, displayName: "" },
       ];
 
+  const stationSlug = (station.name ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
+  const stationPath = `/discover/stations/${stationSlug}:${station.id}`;
+
   return (
-    <div className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}>
+    <div
+      className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
+      data-test={`station-card-${station.id}`}
+      onClick={() => navigate(stationPath)}
+    >
       {/* ── Card art ─────────────────────────────────────── */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-[#0d0d1a]">
-
         {/* Rings background */}
         <StationRings colorIndex={colorIndex} />
 
@@ -79,7 +109,11 @@ export default function StationCard({
         {/* Circle 1 — top-left, small */}
         <div className="absolute top-[6%] left-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20 z-10">
           {artists[0]?.avatarUrl ? (
-            <img src={artists[0].avatarUrl} alt={artists[0].displayName ?? ""} className="w-full h-full object-cover" />
+            <img
+              src={artists[0].avatarUrl}
+              alt={artists[0].displayName ?? ""}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full bg-[#2a2a3a]" />
           )}
@@ -88,7 +122,11 @@ export default function StationCard({
         {/* Circle 2 — center, largest */}
         <div className="absolute top-[22%] left-[24%] w-[50%] aspect-square rounded-full overflow-hidden border-[2px] border-white/25 z-20">
           {artists[1]?.avatarUrl ? (
-            <img src={artists[1].avatarUrl} alt={artists[1].displayName ?? ""} className="w-full h-full object-cover" />
+            <img
+              src={artists[1].avatarUrl}
+              alt={artists[1].displayName ?? ""}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full bg-[#2a2a3a]" />
           )}
@@ -97,7 +135,11 @@ export default function StationCard({
         {/* Circle 3 — bottom-right, small */}
         <div className="absolute bottom-[14%] right-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20 z-10">
           {artists[2]?.avatarUrl ? (
-            <img src={artists[2].avatarUrl} alt={artists[2].displayName ?? ""} className="w-full h-full object-cover" />
+            <img
+              src={artists[2].avatarUrl}
+              alt={artists[2].displayName ?? ""}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full bg-[#2a2a3a]" />
           )}
@@ -125,21 +167,33 @@ export default function StationCard({
           <div className="flex items-center justify-center flex-1">
             <button
               data-test={`station-card-play-${station.id}`}
-              className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg"
-              onClick={(e) => { e.stopPropagation(); addStation(station); }}
+              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                addStation(station);
+              }}
             >
-              <i className="fa-solid fa-play text-black text-lg ml-1" />
+              <i className="fa-solid fa-play text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ml-0.5" />
             </button>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">
             <button
               data-test={`station-card-like-${station.id}`}
               className="flex flex-col items-center gap-0.5 group/btn"
-              onClick={(e) => { e.stopPropagation(); toggleStation(station); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleStation(station);
+              }}
             >
-              <i className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`} />
+              <i
+                className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`}
+              />
             </button>
-            <button data-test={`station-card-more-${station.id}`} className="flex flex-col items-center gap-0.5 group/btn" onClick={(e) => e.stopPropagation()}>
+            <button
+              data-test={`station-card-more-${station.id}`}
+              className="flex flex-col items-center gap-0.5 group/btn"
+              onClick={(e) => e.stopPropagation()}
+            >
               <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
             </button>
           </div>

@@ -9,9 +9,10 @@ interface PlaylistHeroProps {
   isPlaying?: boolean;
   activeTrackId?: string;
   onPlayPause?: () => void;
-  onImageUpload?: (file: File) => void;
+  onImageUpload?: (file: File) => void | Promise<void>;
   showUploadButton?: boolean;
   ownerUsername?: string | null;
+  moreOfLike?: boolean;
 }
 
 export default function PlaylistHero({
@@ -22,6 +23,7 @@ export default function PlaylistHero({
   onImageUpload,
   showUploadButton = true,
   ownerUsername,
+  moreOfLike = false,
 }: PlaylistHeroProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
@@ -43,7 +45,7 @@ export default function PlaylistHero({
       setPreviewUrl(localUrl);
 
       if (onImageUpload) {
-        onImageUpload(file);
+        void onImageUpload(file);
       }
     }
   };
@@ -79,9 +81,15 @@ export default function PlaylistHero({
           {/* Title Block */}
           <div className="flex flex-col items-start">
             <div className="bg-bg px-4 py-3">
-              <h1 className="text-2xl md:text-3xl text-text-upload font-bold tracking-tight leading-tight">
-                {playlist.name}
-              </h1>
+              {moreOfLike ? (
+  <h1 className="text-2xl md:text-3xl text-text-upload font-bold tracking-tight leading-tight">
+    Related Tracks: {playlist.tracks[0]?.title}
+  </h1>
+) : (
+  <h1 className="text-2xl md:text-3xl text-text-upload font-bold tracking-tight leading-tight">
+    {playlist.name}
+  </h1>
+)}
 
               {/* Privacy Badge inside Title Block */}
               <div className="mt-2">
@@ -98,9 +106,12 @@ export default function PlaylistHero({
             {/* "Playlist owner" */}
             <div className="bg-bg px-4 py-1.5">
               <p className="text-[17px] text-text-upload hover:text-[#484848] font-bold cursor-pointer transition-colors">
-                {user?.username === ownerUsername || user?.id === playlist.owner_user_id
-                  ? user?.displayName
-                  : ownerUsername || playlist.owner_user_id}
+                {moreOfLike
+                  ? `Made for ${user?.displayName ?? "you"}`
+                  : user?.username === ownerUsername ||
+                      user?.id === playlist.owner_user_id
+                    ? user?.displayName
+                    : ownerUsername || playlist.owner_user_id}
               </p>
             </div>
           </div>

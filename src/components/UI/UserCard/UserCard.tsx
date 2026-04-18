@@ -2,12 +2,14 @@
 
 import { useNavigate } from "react-router-dom";
 import type { User } from "@/types/user";
-import FollowButton from "@/components/Profile/FollowButton/FollowButton";
+import FollowButton from "@/components/UI/FollowButton";
 
 // ─── Props ────────────────────────────────────────────────
 interface UserCardProps {
   user: User;
   widthClassName?: string;
+  initialIsFollowing?: boolean;
+  onUnfollow?: () => void;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -52,7 +54,7 @@ const styles = {
 };
 
 // ─── Utility Functions ────────────────────────────────────
-const formatFollowers = (count: number): string => {
+const formatFollowers = (count: number = 0): string => {
   if (count >= 1_000_000) {
     return `${(count / 1_000_000).toFixed(1)}M`;
   }
@@ -67,7 +69,7 @@ const getInitial = (name: string): string => {
 };
 
 // ─── Component ────────────────────────────────────────────
-const UserCard = ({ user, widthClassName }: UserCardProps) => {
+const UserCard = ({ user, widthClassName, initialIsFollowing, onUnfollow }: UserCardProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -124,10 +126,17 @@ const UserCard = ({ user, widthClassName }: UserCardProps) => {
 
       {/* Follow Button — visible on hover */}
       <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <FollowButton username={user.username} userId={user.id} />
+        <FollowButton
+          username={user.username}
+          userId={user.id}
+          initialIsFollowing={initialIsFollowing}
+          onFollowChange={(next) => { if (!next) onUnfollow?.(); }}
+        />
       </div>
     </div>
   );
 };
 
 export default UserCard;
+
+

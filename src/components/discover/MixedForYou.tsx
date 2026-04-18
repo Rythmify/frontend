@@ -14,9 +14,11 @@ const MixedForYou = ({ mixes }: Props) => {
 
   return (
     <div data-test="section-mixed-for-you">
-      <HorizontalCarousel title={`Mixed for ${user?.displayName ?? user?.username ?? "You"}`}>
+      <HorizontalCarousel
+        title={`Mixed for ${user?.displayName ?? user?.username ?? "You"}`}
+      >
         {items.map((mix, i) => (
-          <MixCard key={mix.id} mix={mix} index={i} />
+          <MixCard key={mix.id} mix={mix} />
         ))}
       </HorizontalCarousel>
     </div>
