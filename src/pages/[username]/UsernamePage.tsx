@@ -257,6 +257,7 @@ export default function UsernamePage() {
 
   const followersMapped = followers.map((u) => ({
     userId: u.id,
+
     username: u.username ?? u.id,
     avatar: u.profile_picture ?? "",
     displayName: u.display_name,
@@ -267,9 +268,11 @@ export default function UsernamePage() {
 
   return (
     <div className="container px-4 md:px-8 lg:px-20">
-      <ProfileHeader user={user} isOwner={isOwner} />
+      <ProfileHeader user={user} isOwner={isOwner} />
+
       <ProfileTabs
         isOwner={isOwner}
+        userId={profileData?.id}
         selectedTab={selectedTab}
         onTabChange={handleTabChange}
         onShare={() => setShowShare(true)}
@@ -277,8 +280,6 @@ export default function UsernamePage() {
         username={user.username}
         displayName={user.displayName}
         tracks={displayedStats.tracks ?? 0}
-        onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
-        blockDisabled={!profileData}
       />
 
       <div className="flex gap-6 py-6 items-start">
@@ -388,13 +389,15 @@ export default function UsernamePage() {
             });
             setShowEdit(false);
           }}
-          />
-        )}
+        />
+      )}
       {showBlock && profileData && (
         <Modal isOpen={showBlock} onClose={() => setShowBlock(false)}>
           <BlockUserModal
             username={
-              profileData.display_name ?? profileData.username ?? user.displayName
+              profileData.display_name ??
+              profileData.username ??
+              user.displayName
             }
             userId={profileData.id}
             onClose={() => setShowBlock(false)}
@@ -408,6 +411,3 @@ export default function UsernamePage() {
     </div>
   );
 }
-
-
-

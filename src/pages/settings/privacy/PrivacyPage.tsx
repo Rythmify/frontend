@@ -4,7 +4,11 @@ import {
   updatePrivacySettings,
   type PrivacySettings,
 } from "@/services/settings.service";
-import { unblockUser, type UserSummary } from "@/services/user.service";
+import {
+  unblockUser,
+  getBlockedUsers,
+  type UserSummary,
+} from "@/services/user.service";
 
 function Toggle({
   checked,
@@ -140,14 +144,15 @@ export default function PrivacyPage() {
     show_top_fans_on_tracks: true,
   });
   const [blockedUsers, setBlockedUsers] = useState<UserSummary[]>([]);
-
   useEffect(() => {
     getPrivacySettings()
       .then((data) => {
-        if (data) {
-          setSettings(data);
-        }
+        if (data) setSettings(data);
       })
+      .catch(() => {});
+
+    getBlockedUsers({ limit: 100 })
+      .then((data) => setBlockedUsers(data.items))
       .catch(() => {});
   }, []);
 

@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import FollowButton from "../FollowButton/FollowButton";
 import { useNavigate } from "react-router-dom";
+import BlockButton from "@/components/settings/BlockButton";
 
 interface TabButtonProps {
+  userId?: string;
   children: React.ReactNode;
   onSelect: () => void;
   isSelected: boolean;
@@ -19,7 +21,7 @@ function TabButton({
     <button
       data-test={dataTest}
       onClick={onSelect}
-      className={`cursor-pointer pb-2.5 pt-3 px-1.5 text-sm transition-colors border-b-[2px] ${
+      className={`cursor-pointer pb-2.5 pt-3 px-1.5 text-sm transition-colors border-b-2 ${
         isSelected
           ? "text-white font-bold border-white"
           : "font-semibold border-transparent text-[#858687] hover:text-white"
@@ -50,6 +52,7 @@ interface ProfileTabsProps {
   username?: string;
   displayName?: string;
   tracks?: number;
+  userId?: string;
   extraActions?: React.ReactNode;
 }
 
@@ -64,6 +67,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   username = "",
   displayName = "",
   tracks = 0,
+  userId,
   extraActions,
 }) => {
   const [showMore, setShowMore] = useState(false);
@@ -148,15 +152,12 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
                 {extraActions ? (
                   <div className="px-2 py-1">{extraActions}</div>
                 ) : (
-                  <button
-                    data-test="block-button"
-                    onClick={onBlock}
-                    disabled={blockDisabled}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
-                  >
-                    <i className="fa-solid fa-ban text-xs w-4" />
-                    Block {displayName || username}
-                  </button>
+                  <BlockButton
+                    userId={userId!}
+                    username={username}
+                    displayName={displayName}
+                    onBlockChange={(blocked: boolean) => blocked && setShowMore(false)}
+                  />
                 )}
                 <button
                   data-test="report-button"
