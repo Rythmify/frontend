@@ -256,6 +256,7 @@ function MoreOfLikeSlugPage() {
           seedTrack?.artistUsername ??
           undefined
         }
+        moreOfLike={true}
       />
 
       <div className="container mx-auto">
