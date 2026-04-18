@@ -60,7 +60,10 @@ const TrackWaveform = forwardRef<TrackWaveformHandle, { track: Track; onPlayPaus
         const currentSrc = decodeURI(audio.src);
         const targetSrc = decodeURI(track.audioUrl);
 
-        const peaks = track.waveformData || await getTrackWaveform(track.id);
+        const peaks =
+          Array.isArray(track.waveformData) && track.waveformData.length > 0
+            ? track.waveformData
+            : await getTrackWaveform(track.id);
         if (!isMounted) return;
 
         let parsedDur = 0;
@@ -80,10 +83,10 @@ const TrackWaveform = forwardRef<TrackWaveformHandle, { track: Track; onPlayPaus
           barRadius: 2,
           backend: "MediaElement",
           media: audio,
-          peaks: peaks && peaks.length > 0 ? [peaks] : undefined,
+          peaks: peaks.length > 0 ? [peaks] : undefined,
           duration: parsedDur > 0 ? parsedDur : undefined,
           // Only pass url if peaks are missing, though it might fail due to CORS
-          url: (!peaks || peaks.length === 0) ? (currentSrc.includes(targetSrc) || currentSrc === targetSrc ? audio.src : track.audioUrl) : undefined,
+          url: peaks.length === 0 ? (currentSrc.includes(targetSrc) || currentSrc === targetSrc ? audio.src : track.audioUrl) : undefined,
         });
 
         waveSurferRef.current = ws;
