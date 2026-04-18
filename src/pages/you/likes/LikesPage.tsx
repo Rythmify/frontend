@@ -40,7 +40,6 @@ export default function LikesPage() {
   const { user: currentUser } = useAuthStore();
   const localLikedTracks = useLikesStore((state) => state.likedTracks);
   const [showShare, setShowShare] = useState(false);
-  const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [profileAvatar, setProfileAvatar] = useState("");
@@ -70,25 +69,29 @@ export default function LikesPage() {
   useEffect(() => {
     if (!isOwner) {
       // Public liked tracks per user not in API spec, show empty
-      setTracks([]);
       setLoading(false);
       return;
     }
 
     setLoading(true);
     getMyLikedTracks({ limit: 100 })
-      .then((res) => setTracks(res.items.map(mapToTrack)))
+      .then((res) => {
+        const fetchedTracks = res.items.map(mapToTrack);
+        useLikesStore.setState((state) => {
+          const merged = new Map(
+            [...fetchedTracks, ...state.likedTracks].map((track) => [
+              track.id,
+              track,
+            ]),
+          );
+          return { likedTracks: Array.from(merged.values()) };
+        });
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [isOwner]);
 
-  const displayedTracks = isOwner
-    ? Array.from(
-        new Map(
-          [...localLikedTracks, ...tracks].map((track) => [track.id, track]),
-        ).values(),
-      )
-    : tracks;
+  const displayedTracks = isOwner ? localLikedTracks : [];
   const showLoading = loading && displayedTracks.length === 0;
 
   const handleTabChange = (tab: string) => {

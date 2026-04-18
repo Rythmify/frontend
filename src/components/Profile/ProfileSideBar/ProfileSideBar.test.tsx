@@ -14,7 +14,7 @@ vi.mock("@/components/Profile/FollowButton", () => ({
   ),
 }));
 
-vi.mock("@/components/Profile/ProfileSideBar/TrackItem", () => ({
+vi.mock("@/components/UI/TrackItem", () => ({
   default: ({ title }: { title: string }) => (
     <div data-test={`track-item-${title}`}>{title}</div>
   ),
