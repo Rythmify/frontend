@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import ShareLayout from "../../[username]/shareLayout";
+import TrackCard from "@/components/track/TrackCard";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
-import { mockLikedTracks } from "@/components/Profile/MockData/mock";
-import { getMyTracks } from "@/services/api/upload/track.service";
+import { getMyTracks, getUserTracks } from "@/services/track.service";
+import { resolveUsername } from "@/services/user.service";
+
 import {
   getFollowers,
   getFollowing,
@@ -16,6 +18,7 @@ import {
   type PublicUser,
   type UserSummary,
 } from "@/services/user.service";
+import type { Track } from "@/types/track";
 
 export default function TracksPage() {
   const { username } = useParams();
@@ -30,6 +33,8 @@ export default function TracksPage() {
   const [followers, setFollowers] = useState<UserSummary[]>([]);
   const [following, setFollowing] = useState<UserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [loadingTracks, setLoadingTracks] = useState(true);
 
   if (!currentUser) return null;
 
@@ -38,15 +43,27 @@ export default function TracksPage() {
   //const followingCount = currentUser.following_ids?.length ?? 0;
 
   useEffect(() => {
-    if (isOwner) {
-      getMyProfile()
-        .then((profile) => {
+    let cancelled = false;
+    setLoadingTracks(true);
+
+    const load = async () => {
+      try {
+        if (isOwner) {
+          const [profile, ownedTracks] = await Promise.all([
+            getMyProfile(),
+            getMyTracks(1, 100),
+          ]);
+
+          if (cancelled) return;
+
           setProfileData(profile);
+          setTracks(ownedTracks);
           setStats({
             followers: profile.followers_count,
             following: profile.following_count,
-            tracks: 0,
+            tracks: ownedTracks.length,
           });
+
           const latestUser = useAuthStore.getState().user ?? activeUser;
           setUser({
             ...latestUser,
@@ -58,44 +75,61 @@ export default function TracksPage() {
                 .filter(Boolean)
                 .join(", ") || latestUser.location,
           });
-        })
-        .catch(console.error);
 
-      getMyTracks({ page: 1, limit: 1 })
-        .then((res) => {
-          setStats((s) => ({
-            ...s,
-            tracks: res.pagination?.total ?? s.tracks,
-          }));
-        })
-        .catch(console.error);
+          if (activeUser.id) {
+            const [followersRes, followingRes] = await Promise.all([
+              getFollowers(activeUser.id, { limit: 100 }),
+              getFollowing(activeUser.id, { limit: 100 }),
+            ]);
 
-      if (activeUser.id) {
-        getFollowers(activeUser.id, { limit: 100 })
-          .then((res) => {
-            setFollowers(res.items);
-            setStats((s) => ({ ...s, followers: res.meta.total }));
-          })
-          .catch(console.error);
-        getFollowing(activeUser.id, { limit: 100 })
-          .then((res) => {
-            setFollowing(res.items);
-            setStats((s) => ({ ...s, following: res.meta.total }));
-          })
-          .catch(console.error);
+            if (cancelled) return;
+
+            setFollowers(followersRes.items);
+            setFollowing(followingRes.items);
+            setStats((s) => ({
+              ...s,
+              followers: followersRes.meta.total,
+              following: followingRes.meta.total,
+            }));
+          }
+          return;
+        }
+
+        if (!username) return;
+
+        const userId = await resolveUsername(username);
+        const [profile, userTracks, followersRes, followingRes] =
+          await Promise.all([
+            getUserById(userId),
+            getUserTracks(userId, 1, 100),
+            getFollowers(userId, { limit: 100 }),
+            getFollowing(userId, { limit: 100 }),
+          ]);
+
+        if (cancelled) return;
+
+        setProfileData(profile);
+        setTracks(userTracks);
+        setFollowers(followersRes.items);
+        setFollowing(followingRes.items);
+        setStats({
+          followers: followersRes.meta.total,
+          following: followingRes.meta.total,
+          tracks: userTracks.length,
+        });
+      } catch (error) {
+        console.error(error);
+      } finally {
+        if (!cancelled) {
+          setLoadingTracks(false);
+        }
       }
-    } else {
-      getUserById(username!)
-        .then((profile) => {
-          setProfileData(profile);
-          setStats({
-            followers: profile.followers_count,
-            following: profile.following_count,
-            tracks: 0,
-          });
-        })
-        .catch(console.error);
-    }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [username, isOwner]);
 
   useEffect(() => {
@@ -114,23 +148,6 @@ export default function TracksPage() {
         .catch(console.error);
     }
   }, [profileData?.id, isOwner]);
-
-  const storageKey = `likedTracks_${isOwner ? currentUser.username : username}`;
-
-  const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
-    const stored = localStorage.getItem(storageKey);
-    return stored ? JSON.parse(stored) : isOwner ? mockLikedTracks : [];
-  });
-
-  const handleUnlike = (id: string) => {
-    setLikedTracks((prev: typeof mockLikedTracks) => {
-      const updated = prev.filter(
-        (t: (typeof mockLikedTracks)[0]) => t.id !== id,
-      );
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      return updated;
-    });
-  };
 
   const handleTabChange = (tab: string) => {
     const targetUsername = isOwner ? currentUser.username : username || "";
@@ -189,19 +206,42 @@ export default function TracksPage() {
         onTabChange={handleTabChange}
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
-        likedTracks={likedTracks}
         followers={followersMapped}
         following={followingMapped}
         stats={displayedStats}
-        onUnlike={handleUnlike}
       >
-        <div className="flex flex-col items-center justify-center gap-4 py-16">
-          <p
-            data-test="empty-state-message"
-            className="text-white font-bold text-17px"
-          >
-            Tracks Page
-          </p>
+        <div className="flex flex-col gap-4">
+          {tracks.length > 0 ? (
+            tracks.map((track) => (
+              <TrackCard
+                key={track.id}
+                track={track}
+                onCopyLink={() =>
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/${track.artistUsername}/${track.id}`,
+                  )
+                }
+                onEdit={() => navigate(`/${track.artistUsername}/${track.id}`)}
+                onReplaceFile={() =>
+                  console.log("[TrackCard] replace file:", track.id)
+                }
+                onDelete={() => console.log("[TrackCard] delete:", track.id)}
+                onDistribute={() =>
+                  console.log("[TrackCard] distribute:", track.id)
+                }
+                onAddToPlaylist={() => {}}
+              />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-4 py-16">
+              <p
+                data-test="empty-state-message"
+                className="text-white font-bold text-17px"
+              >
+                {loadingTracks ? "Loading tracks..." : "No tracks yet."}
+              </p>
+            </div>
+          )}
         </div>
       </ShareLayout>
 

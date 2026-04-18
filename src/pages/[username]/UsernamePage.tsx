@@ -8,13 +8,11 @@ import EditProfileModal from "../../components/Profile/EditProfileModal/EditProf
 import { Modal } from "@/components/UI/Modal";
 import { BlockUserModal } from "@/components/UI/BlockModal";
 import { useNavigate, useLocation } from "react-router-dom";
-import { mockLikedTracks } from "@/components/Profile/MockData/mock";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
-import { mockTracks } from "../../services/mocks/tracks";
-import { getMyTracks } from "@/services/api/upload/track.service";
 import type { Track } from "../../types/track";
 import { getMyLikedTracks } from "@/services/user.service";
+import { getMyTracks, getUserTracks } from "@/services/track.service";
 import {
   getMyProfile,
   getUserById,
@@ -53,8 +51,36 @@ export default function UsernamePage() {
     !!currentUser && (!username || username === currentUser.username);
 
   useEffect(() => {
-    setProfileTracks(isOwner ? mockTracks : mockTracks.slice(0, 3));
-  }, [isOwner]);
+    let cancelled = false;
+
+    const loadTracks = async () => {
+      try {
+        if (isOwner) {
+          const ownedTracks = await getMyTracks(1, 100);
+          if (cancelled) return;
+          setProfileTracks(ownedTracks);
+          setStats((prev) => ({ ...prev, tracks: ownedTracks.length }));
+          return;
+        }
+
+        if (!username) return;
+        const userId = await resolveUsername(username);
+        const publicTracks = await getUserTracks(userId, 1, 3);
+        if (cancelled) return;
+        setProfileTracks(publicTracks);
+        setStats((prev) => ({ ...prev, tracks: publicTracks.length }));
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setProfileTracks([]);
+      }
+    };
+
+    loadTracks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner, username]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -79,15 +105,6 @@ export default function UsernamePage() {
                 .filter(Boolean)
                 .join(", ") || latestUser.location,
           });
-        })
-        .catch(console.error);
-
-      getMyTracks({ page: 1, limit: 1 })
-        .then((res) => {
-          setStats((s) => ({
-            ...s,
-            tracks: res.pagination?.total ?? s.tracks,
-          }));
         })
         .catch(console.error);
 
@@ -188,30 +205,12 @@ export default function UsernamePage() {
   };
 
   const selectedTab = getActiveTab();
-  const [likedTracks, setLikedTracks] = useState<
-    { id: string; title: string; artist: string; coverUrl?: string }[]
-  >([]);
-
-  useEffect(() => {
-    if (!isOwner) return;
-    getMyLikedTracks({ limit: 3 })
-      .then((res) => {
-        setLikedTracks(
-          res.items.map((t) => ({
-            id: t.id,
-            title: t.title,
-            artist: t.artist_name,
-            coverUrl: t.cover_image ?? "",
-          })),
-        );
-      })
-      .catch(console.error);
-  }, [isOwner]);
-
-  const handleUnlike = (_id: string) => {
-    // optimistic removal from sidebar preview
-    setLikedTracks((prev) => prev.filter((t) => t.id !== _id));
-  };
+  const likedTracks: {
+    id: string;
+    title: string;
+    artist: string;
+    coverUrl?: string;
+  }[] = [];
 
   const handleTabChange = (tab: string) => {
     const targetUsername = isOwner
@@ -350,7 +349,6 @@ export default function UsernamePage() {
             following={followingMapped}
             stats={displayedStats}
             onTabChange={handleTabChange}
-            onUnlike={handleUnlike}
           />
         </div>
       </div>

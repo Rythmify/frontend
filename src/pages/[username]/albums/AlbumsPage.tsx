@@ -4,7 +4,6 @@ import { useAuthStore } from "@/stores/auth.store";
 import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
-import { mockLikedTracks } from "@/components/Profile/MockData/mock";
 import { getMyTracks } from "@/services/api/upload/track.service";
 import {
   getFollowers,
@@ -115,23 +114,6 @@ export default function AlbumsPage() {
     }
   }, [profileData?.id, isOwner]);
 
-  const storageKey = `likedTracks_${isOwner ? currentUser.username : username}`;
-
-  const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
-    const stored = localStorage.getItem(storageKey);
-    return stored ? JSON.parse(stored) : isOwner ? mockLikedTracks : [];
-  });
-
-  const handleUnlike = (id: string) => {
-    setLikedTracks((prev: typeof mockLikedTracks) => {
-      const updated = prev.filter(
-        (t: (typeof mockLikedTracks)[0]) => t.id !== id,
-      );
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      return updated;
-    });
-  };
-
   const handleTabChange = (tab: string) => {
     const targetUsername = isOwner ? currentUser.username : username || "";
     const tabRoutes: Record<string, string> = {
@@ -189,11 +171,9 @@ export default function AlbumsPage() {
         onTabChange={handleTabChange}
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
-        likedTracks={likedTracks}
         followers={followersMapped}
         following={followingMapped}
         stats={displayedStats}
-        onUnlike={handleUnlike}
       >
         <div className="flex flex-col items-center justify-center gap-4 py-16">
           <p
