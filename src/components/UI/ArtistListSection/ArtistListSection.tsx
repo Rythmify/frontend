@@ -23,7 +23,7 @@ interface ArtistListSectionProps {
 const styles = {
   container: `flex flex-col gap-4 w-full`,
   header: `flex items-center justify-between hover:opacity-70 transition-opacity`,
-  title: `text-xs font-semibold text-white cursor-pointer`,
+  title: `text-xs font-semibold text-text-hover cursor-pointer`,
   viewAll: `text-xs cursor-pointer hover:underline text-text-secondary hover:text-text`,
   refreshButton: `text-xs cursor-pointer hover:underline text-text-secondary hover:text-text flex items-center gap-1`,
   refreshIcon: `fa-solid fa-arrows-rotate text-[10px]`,
@@ -34,7 +34,7 @@ const styles = {
   avatarImg: `w-full h-full object-cover`,
   details: `flex flex-col`,
   nameRow: `flex items-center gap-1`,
-  username: `cursor-pointer text-sm font-bold text-white hover:opacity-70 transition-opacity`,
+  username: `cursor-pointer text-sm font-bold text-text-hover hover:opacity-70 transition-opacity`,
   verifiedIcon: `fa-solid fa-circle-check text-[#2196F3] text-xs`,
   stats: `flex items-center gap-2 text-xs text-text-secondary`,
   stat: `flex cursor-pointer items-center gap-0.5 hover:opacity-70 transition-opacity`,

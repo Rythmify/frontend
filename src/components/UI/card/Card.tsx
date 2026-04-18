@@ -70,11 +70,11 @@ const styles = {
     text-white text-lg pl-1
   `,
   title: `
-    text-white text-sm font-semibold
+    text-text-hover text-sm font-semibold
     truncate w-full
   `,
   artist: `
-    text-gray-400 text-xs
+    text-text-secondary text-xs
     truncate w-full
   `,
   actionButton: `

@@ -140,7 +140,7 @@ export default function MadeForYouCard({
 
       {/* Text */}
       <p
-        className="text-white text-xs sm:text-sm font-semibold truncate"
+        className="text-text-hover text-xs sm:text-sm font-semibold truncate"
         data-test="made-for-you-card-title"
       >
         {item.title}

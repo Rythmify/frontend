@@ -15,7 +15,7 @@ const styles = {
     w-full
   `,
   title: `
-    text-white font-semibold
+    text-text-hover font-semibold
     text-xl sm:text-2xl
     text-left
   `,
@@ -29,10 +29,10 @@ const styles = {
   z-10
   w-8 h-8 shrink-0
   rounded-full
-  bg-gray-800
+  bg-input-bg
   items-center justify-center
-  text-gray-200
-  hover:text-gray-500
+  text-text
+  hover:text-text-muted
   transition-colors duration-200
   disabled:opacity-0
   disabled:cursor-default

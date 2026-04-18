@@ -121,16 +121,16 @@ const styles = {
   `,
   header: `
     flex items-center justify-between
-    border-b border-zinc-700
+    border-b border-border
     pb-2
 
   `,
   title: `
-    text-white text-sm font-black
+    text-text-hover text-sm font-black
     tracking-normal uppercase
   `,
   collapseIcon: `
-    text-white text-sm
+    text-text-hover text-sm
     transition-transform duration-200
     cursor-pointer
   `,
@@ -141,7 +141,7 @@ const styles = {
   toolButton: `
    group
   flex flex-col justify-between
-  border border-white/15
+  border border-border
   rounded-md py-4
   h-24
   w-20
@@ -149,14 +149,14 @@ const styles = {
   relative
 `,
   toolIcon: `
-    text-white text-lg
+    text-text-hover text-lg
   `,
   toolLabel: `
-    text-white text-[12px]
+    text-text-hover text-[12px]
     text-center
     w-full
     transition-colors duration-200
-    
+
   `,
   plusBadge: `
     absolute top-1 right-1

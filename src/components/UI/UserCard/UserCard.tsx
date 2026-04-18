@@ -33,7 +33,7 @@ const styles = {
     text-white text-4xl font-bold
   `,
   displayName: `
-    text-white text-sm font-semibold text-center
+    text-text-hover text-sm font-semibold text-center
     truncate w-full
     flex items-center justify-center gap-1
   `,
@@ -42,7 +42,7 @@ const styles = {
     flex-shrink-0
   `,
   followers: `
-    text-gray-400 text-xs text-center
+    text-text-secondary text-xs text-center
     w-full
     flex items-center justify-center gap-1
   `,
