@@ -1,6 +1,7 @@
 import type React from "react";
 import { useLikesStore } from "@/stores/likes.store";
 import { usePlayerStore } from "@/stores/player.store";
+import { useHistoryStore } from "@/stores/history.store";
 import type { Track } from "@/types/track";
 
 // ─── Types ────────────────────────────────────────────────
@@ -32,6 +33,7 @@ export default function MadeForYouCard({
   const bg = item.badgeBg ?? "#1a237e";
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
+  const { addMadeForYou } = useHistoryStore();
   const liked = isPlaylistLiked(item.id);
   const isThisPlaying = isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
 
@@ -42,6 +44,7 @@ export default function MadeForYouCard({
       togglePlay();
     } else {
       setTrack(item.previewTrack);
+      addMadeForYou(item);
     }
   };
 

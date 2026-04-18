@@ -6,6 +6,7 @@ import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import { useHistoryStore } from "@/stores/history.store";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -43,6 +44,7 @@ export default function PlaylistCard({
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const { currentTrack, isPlaying, togglePlay, setTrack } = usePlayerStore();
   const { user } = useAuthStore();
+  const { addPlaylist } = useHistoryStore();
 
   // Local State
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -89,6 +91,7 @@ export default function PlaylistCard({
       waveformData: [],
       context: { type: "playlist", playlist_id: item.id },
     } as any);
+    addPlaylist(item);
   };
 
   const handleOpenMore = (e: React.MouseEvent) => {
