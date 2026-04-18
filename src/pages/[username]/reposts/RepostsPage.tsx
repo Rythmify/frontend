@@ -4,7 +4,6 @@ import { useAuthStore } from "@/stores/auth.store";
 import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
-import { mockLikedTracks } from "@/components/Profile/MockData/mock";
 import { getMyTracks } from "@/services/api/upload/track.service";
 import {
   getFollowers,
@@ -35,7 +34,7 @@ export default function RepostsPage() {
 
   const activeUser = currentUser;
   const isOwner = !username || username === currentUser.username;
-  const followingCount = currentUser.following_ids?.length ?? 0;
+  //const followingCount = currentUser.following_ids?.length ?? 0;
 
   useEffect(() => {
     if (isOwner) {
@@ -115,23 +114,6 @@ export default function RepostsPage() {
     }
   }, [profileData?.id, isOwner]);
 
-  const storageKey = `likedTracks_${isOwner ? currentUser.username : username}`;
-
-  const [likedTracks, setLikedTracks] = useState<typeof mockLikedTracks>(() => {
-    const stored = localStorage.getItem(storageKey);
-    return stored ? JSON.parse(stored) : isOwner ? mockLikedTracks : [];
-  });
-
-  const handleUnlike = (id: string) => {
-    setLikedTracks((prev: typeof mockLikedTracks) => {
-      const updated = prev.filter(
-        (t: (typeof mockLikedTracks)[0]) => t.id !== id,
-      );
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      return updated;
-    });
-  };
-
   const handleTabChange = (tab: string) => {
     const targetUsername = isOwner ? currentUser.username : username || "";
     const tabRoutes: Record<string, string> = {
@@ -158,12 +140,11 @@ export default function RepostsPage() {
         coverUrl: profileData?.cover_photo || "",
         location: (profileData as PublicUser | null)?.location || "",
       };
-  const displayedStats = isOwner
-    ? { ...stats, following: followingCount }
-    : stats;
+  const displayedStats = stats;
 
   const followersMapped = followers.map((u) => ({
-    username: u.user_id,
+    userId: u.id,
+    username: u.username || u.id,
     displayName: u.display_name,
     avatar: "",
     followers: 0,
@@ -172,7 +153,8 @@ export default function RepostsPage() {
   }));
 
   const followingMapped = following.map((u) => ({
-    username: u.user_id,
+    userId: u.id,
+    username: u.username || u.id,
     displayName: u.display_name,
     avatar: "",
     followers: 0,
@@ -189,11 +171,9 @@ export default function RepostsPage() {
         onTabChange={handleTabChange}
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
-        likedTracks={likedTracks}
         followers={followersMapped}
         following={followingMapped}
         stats={displayedStats}
-        onUnlike={handleUnlike}
       >
         <div className="flex flex-col items-center justify-center gap-4 py-16">
           <p

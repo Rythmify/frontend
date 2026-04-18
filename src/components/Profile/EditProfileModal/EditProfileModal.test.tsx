@@ -137,6 +137,64 @@ describe("EditProfileModal", () => {
     expect(mockOnSave).not.toHaveBeenCalled();
   });
 
+  it("shows validation error when display name is numbers only", () => {
+    render(
+      <EditProfileModal
+        user={{ ...defaultUser, displayName: "12345" }}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("edit-save-button"));
+    expect(
+      screen.getByText("Display name cannot be numbers only."),
+    ).toBeInTheDocument();
+    expect(mockOnSave).not.toHaveBeenCalled();
+  });
+
+  it("shows validation error when first name is numbers only", () => {
+    render(
+      <EditProfileModal
+        user={{ ...defaultUser, firstName: "12345" }}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("edit-save-button"));
+    expect(
+      screen.getByText("First name cannot be numbers only."),
+    ).toBeInTheDocument();
+    expect(mockOnSave).not.toHaveBeenCalled();
+  });
+
+  it("shows validation error when city is numbers only", () => {
+    render(
+      <EditProfileModal
+        user={{ ...defaultUser, city: "12345" }}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("edit-save-button"));
+    expect(screen.getByText("City cannot be numbers only.")).toBeInTheDocument();
+    expect(mockOnSave).not.toHaveBeenCalled();
+  });
+
+  it("shows validation error when country is numbers only", () => {
+    render(
+      <EditProfileModal
+        user={{ ...defaultUser, country: "12345" }}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("edit-save-button"));
+    expect(
+      screen.getByText("Country cannot be numbers only."),
+    ).toBeInTheDocument();
+    expect(mockOnSave).not.toHaveBeenCalled();
+  });
+
   it("clears validation error when display name is typed", () => {
     render(
       <EditProfileModal

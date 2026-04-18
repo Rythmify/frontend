@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import FollowerPage from "@/pages/you/follower/FollowerPage";
 
@@ -147,6 +147,11 @@ describe("FollowerPage", () => {
     );
   });
 
+  it("displays the username in the header", () => {
+    render(<FollowerPage />);
+    expect(screen.getByText("@me")).toBeInTheDocument();
+  });
+
   it("renders all three tabs", () => {
     render(<FollowerPage />);
     expect(screen.getByTestId("follower-tab-likes")).toBeInTheDocument();
@@ -164,13 +169,13 @@ describe("FollowerPage", () => {
   it("navigates to likes page on Likes tab click (owner)", () => {
     render(<FollowerPage />);
     fireEvent.click(screen.getByTestId("follower-tab-likes"));
-    expect(mockNavigate).toHaveBeenCalledWith("/you/likes");
+    expect(mockNavigate).toHaveBeenCalledWith("/me/likes");
   });
 
   it("navigates to following page on Following tab click (owner)", () => {
     render(<FollowerPage />);
     fireEvent.click(screen.getByTestId("follower-tab-following"));
-    expect(mockNavigate).toHaveBeenCalledWith("/you/following");
+    expect(mockNavigate).toHaveBeenCalledWith("/me/following");
   });
 
   it("navigates to likes page on Likes tab click (non-owner)", () => {
@@ -199,13 +204,15 @@ describe("FollowerPage", () => {
     expect(screen.getByTestId("follower-avatar-follower2")).toBeInTheDocument();
   });
 
-  it("renders non-owner follower list", () => {
+  it("renders non-owner follower list", async () => {
     (useParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       username: "travis-scott",
     });
     render(<FollowerPage />);
-    expect(screen.getByTestId("follower-avatar-fan1")).toBeInTheDocument();
-    expect(screen.getByTestId("follower-avatar-fan2")).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("follower-avatar-follower1"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("follower-avatar-follower2")).toBeInTheDocument();
   });
 
   it("navigates to follower profile on avatar click", async () => {
@@ -247,13 +254,15 @@ describe("FollowerPage", () => {
 
   it("renders verified badge for verified follower", async () => {
     render(<FollowerPage />);
-    expect(await screen.findByText(/follower2/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/follower2/)).toBeInTheDocument();
+    });
   });
 
   it("shows formatted follower count for large numbers", async () => {
     render(<FollowerPage />);
-    expect(await screen.findByTestId("follower-count-follower2")).toHaveTextContent(
-      "5000 followers",
-    );
+    expect(
+      await screen.findByTestId("follower-count-follower2"),
+    ).toHaveTextContent("5000 followers");
   });
 });

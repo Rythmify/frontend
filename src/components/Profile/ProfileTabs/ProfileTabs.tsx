@@ -45,9 +45,12 @@ interface ProfileTabsProps {
   selectedTab?: string;
   onShare?: () => void;
   onEdit?: () => void;
+  onBlock?: () => void;
+  blockDisabled?: boolean;
   username?: string;
   displayName?: string;
   tracks?: number;
+  extraActions?: React.ReactNode;
 }
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({
@@ -56,9 +59,12 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   selectedTab = "All",
   onShare,
   onEdit,
+  onBlock,
+  blockDisabled = false,
   username = "",
   displayName = "",
   tracks = 0,
+  extraActions,
 }) => {
   const [showMore, setShowMore] = useState(false);
   const navigate = useNavigate();
@@ -139,13 +145,19 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
 
             {showMore && (
               <div className="absolute right-0 top-11 z-50 bg-[#1a1a1a] border border-border rounded shadow-lg w-52 py-1">
-                <button
-                  data-test="block-button"
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
-                >
-                  <i className="fa-solid fa-ban text-xs w-4" />
-                  Block {displayName || username}
-                </button>
+                {extraActions ? (
+                  <div className="px-2 py-1">{extraActions}</div>
+                ) : (
+                  <button
+                    data-test="block-button"
+                    onClick={onBlock}
+                    disabled={blockDisabled}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
+                  >
+                    <i className="fa-solid fa-ban text-xs w-4" />
+                    Block {displayName || username}
+                  </button>
+                )}
                 <button
                   data-test="report-button"
                   className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
