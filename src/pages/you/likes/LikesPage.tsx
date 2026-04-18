@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth.store";
+import { useLikesStore } from "@/stores/likes.store";
 import { useNavigate, useParams } from "react-router-dom";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
@@ -37,6 +38,7 @@ export default function LikesPage() {
   const navigate = useNavigate();
   const { username } = useParams();
   const { user: currentUser } = useAuthStore();
+  const localLikedTracks = useLikesStore((state) => state.likedTracks);
   const [showShare, setShowShare] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +81,15 @@ export default function LikesPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [isOwner]);
+
+  const displayedTracks = isOwner
+    ? Array.from(
+        new Map(
+          [...localLikedTracks, ...tracks].map((track) => [track.id, track]),
+        ).values(),
+      )
+    : tracks;
+  const showLoading = loading && displayedTracks.length === 0;
 
   const handleTabChange = (tab: string) => {
     const base = profileUsername ? `/${profileUsername}` : "/you";
@@ -155,12 +166,12 @@ export default function LikesPage() {
       </div>
 
       {/* Content */}
-      {loading ? (
+      {showLoading ? (
         <div className="flex items-center justify-center py-24">
           <p className="text-text-secondary text-sm">Loading...</p>
         </div>
       ) : (
-        <LikesContent tracks={tracks} showControls={true} />
+        <LikesContent tracks={displayedTracks} showControls={true} />
       )}
 
       {/* Footer */}
