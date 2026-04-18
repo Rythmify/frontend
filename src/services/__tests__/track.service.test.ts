@@ -448,15 +448,23 @@ describe("setTrackVisibility()", () => {
 describe("getGenres()", () => {
   it("returns genres from the API", async () => {
     mockedAxios.get.mockResolvedValueOnce({
-      data: { data: { genres: ["rock", "pop"] } },
+      data: {
+        data: [
+          { id: "genre-rock", name: "rock" },
+          { id: "genre-pop", name: "pop" },
+        ],
+      },
     } as any);
 
-    await expect(getGenres()).resolves.toEqual(["rock", "pop"]);
+    await expect(getGenres()).resolves.toEqual([
+      { id: "genre-rock", name: "rock" },
+      { id: "genre-pop", name: "pop" },
+    ]);
   });
 
   it("returns an empty array when the API returns no genres", async () => {
     mockedAxios.get.mockResolvedValueOnce({
-      data: { data: { genres: [] } },
+      data: { data: [] },
     } as any);
 
     await expect(getGenres()).resolves.toEqual([]);

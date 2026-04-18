@@ -49,10 +49,10 @@ export default function AlbumOwnerInfo({
   return (
     <div
       data-test="album-owner-info"
-      className="flex flex-col items-center lg:items-start gap-3 px-2 py-2"
+      className="flex flex-col items-center gap-3 px-2 py-2 text-center"
     >
       <Link to={`/${username}`} className="shrink-0">
-        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden ">
+        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden mx-auto">
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -69,9 +69,9 @@ export default function AlbumOwnerInfo({
             </div>
           )}
         </div>
-      </Link>
+        </Link>
 
-      <div className="min-w-0 text-center lg:text-left flex flex-col gap-0.5 items-center lg:items-start">
+      <div className="min-w-0 flex flex-col gap-0.5 items-center">
         <Link
           to={`/${username}`}
           data-test="album-owner-name"
@@ -80,7 +80,7 @@ export default function AlbumOwnerInfo({
           {name}
         </Link>
 
-        <div className="flex items-center justify-center lg:justify-start gap-4 text-[12px] text-text-secondary">
+        <div className="flex items-center justify-center gap-4 text-[12px] text-text-secondary">
           {typeof followers === "number" && (
             <p className="flex items-center gap-1">
               <svg
@@ -121,7 +121,7 @@ export default function AlbumOwnerInfo({
             data-test="album-owner-follow-button"
             onClick={handleFollowClick}
             disabled={isLoading}
-            className={`mt-1 shrink-0 min-w-[96px] px-4 py-2 rounded-[var(--radius-sm)] text-sm font-bold transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`mt-1 shrink-0 min-w-[96px] px-4 py-2 rounded-[var(--radius-sm)] text-sm font-bold transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 mx-auto ${
               isFollowing
                 ? "bg-[#303030] text-white hover:bg-[#3a3a3a]"
                 : "bg-white text-bg hover:text-[#a0a0a0]"

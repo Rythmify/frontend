@@ -5,7 +5,10 @@ import {
   type PlaylistDetails,
   type PlaylistSubtype,
 } from "@/services/api/playlist/playlist.service";
-import { getGenres } from "@/services/api/upload/track.service";
+import {
+  getGenres,
+  type GenreOption,
+} from "@/services/api/upload/track.service";
 import { useEffect } from "react";
 import PrivacyToggle from "../Upload/PrivacyToggle";
 import TrackReorderList from "./TrackReorderList";
@@ -51,7 +54,7 @@ export default function EditPlaylistModal({
     playlist.cover_image ?? null,
   );
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [genres, setGenres] = useState<string[]>([]);
+  const [genres, setGenres] = useState<GenreOption[]>([]);
   const [currentTracks, setCurrentTracks] = useState(playlist.tracks || []);
   // ── UI state ───────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
@@ -74,10 +77,20 @@ export default function EditPlaylistModal({
   // Fetch genres on mount
   useEffect(() => {
     getGenres()
-      .then((res) => setGenres(res))
-      .catch(() => {});
+      .then((fetched) =>
+        setGenres(
+          Array.isArray(fetched)
+            ? fetched.map((g) =>
+                typeof g === "string" ? { id: g, name: g } : g,
+              )
+            : [],
+        ),
+      )
+      .catch((err) => {
+        console.error("Failed to fetch genres:", err);
+        setGenres([]);
+      });
   }, []);
-
   // Cover image
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -257,9 +270,10 @@ export default function EditPlaylistModal({
                     onChange={(e) => setGenreId(e.target.value)}
                     className="w-full bg-[#2a2a2a] text-white text-sm px-3 py-2.5 rounded-sm outline-none border border-transparent focus:border-[#555] transition-colors appearance-none cursor-pointer"
                   >
+                    <option value="">No genre</option>
                     {genres.map((g) => (
-                      <option key={g} value={g}>
-                        {g}
+                      <option key={g.id} value={g.id}>
+                        {g.name}
                       </option>
                     ))}
                   </select>

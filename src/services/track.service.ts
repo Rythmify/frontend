@@ -7,6 +7,26 @@ import { formatPostedAt } from "./Time";
  * The backend returns snake_case fields; this maps everything consistently.
  */
 function normalizeTrack(raw: any): Track {
+  if (!raw) {
+    return {
+      id: "",
+      title: "",
+      artistName: "",
+      artistUsername: "",
+      coverUrl: "",
+      genre: "",
+      likeCount: 0,
+      repostCount: 0,
+      playCount: 0,
+      commentCount: 0,
+      duration: "0:00",
+      postedAt: "",
+      waveformData: [],
+      audioUrl: "",
+      isPrivate: false,
+    };
+  }
+
   const durationRaw = raw.duration;
   let duration = "0:00";
   if (typeof durationRaw === "number") {
@@ -95,10 +115,43 @@ export async function getTrackBySlug(
 }
 
 /**
- * No related-tracks endpoint exists in the API spec.
+ * GET /tracks/{track_id}/related
+ * Returns tracks related to the given track.
  */
-export async function getRelatedTracks(_trackId: string): Promise<Track[]> {
-  return [];
+interface RelatedTrackResponse {
+  reference_track: any;
+  data: any[];
+  pagination: unknown;
+}
+
+export async function getRelatedTracks(
+  trackId: string,
+  limit = 20,
+  offset = 0,
+): Promise<{
+  referenceTrack: Track;
+  tracks: Track[];
+  }> {
+  const { data } = await axiosInstance.get<RelatedTrackResponse>(
+    `/tracks/${trackId}/related`,
+    { params: { limit, offset } },
+  );
+
+  const payload = (data as any)?.data ?? data;
+  const relatedItems = Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload?.items)
+      ? payload.items
+      : [];
+
+  return {
+    referenceTrack: normalizeTrack(
+      payload?.reference_track ?? payload?.referenceTrack,
+    ),
+    tracks: relatedItems
+      .map((item: any) => normalizeTrack(item))
+      .filter((track: Track) => track.id !== ""),
+  };
 }
 
 /**

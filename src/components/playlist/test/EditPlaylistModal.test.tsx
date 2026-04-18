@@ -24,7 +24,10 @@ function getTitleInput() {
 describe("EditPlaylistModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (trackService.getGenres as Mock).mockResolvedValue(["Pop", "Rock"]);
+    (trackService.getGenres as Mock).mockResolvedValue([
+      { id: "genre-pop", name: "Pop" },
+      { id: "genre-rock", name: "Rock" },
+    ]);
     (playlistService.updatePlaylist as Mock).mockResolvedValue({
       data: { ...mockPlaylist, name: "New Name" },
     });

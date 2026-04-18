@@ -12,7 +12,13 @@ const GenreDropdown = ({
   const [genres, setGenres] = useState<string[]>([]);
   useEffect(() => {
     getGenres()
-      .then((fetched) => setGenres(Array.isArray(fetched) ? fetched : []))
+      .then((fetched) =>
+        setGenres(
+          Array.isArray(fetched)
+            ? fetched.map((g) => (typeof g === "string" ? g : g.name))
+            : [],
+        ),
+      )
       .catch((err) => {
         console.error("Failed to fetch genres:", err);
         setGenres([]);
