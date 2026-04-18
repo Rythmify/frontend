@@ -1,8 +1,7 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { Tooltip } from "@heroui/react";
-import { getPlaylist } from "@/services/api/playlist/playlist.service";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
@@ -49,7 +48,6 @@ export default function PlaylistCard({
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
-  const [loadingPlay, setLoadingPlay] = useState(false);
 
   // Derived State
   const liked = isPlaylistLiked(item.id);
@@ -68,33 +66,29 @@ export default function PlaylistCard({
     ? `/${item.ownerUsername || item.owner}/album/${item.slug || item.id}`
     : `/${item.ownerUsername || item.owner}/sets/${item.slug || item.id}`;
 
-  const handlePlayClick = async (e: React.MouseEvent) => {
+  const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if ((currentTrack as any)?.context?.playlist_id === item.id) {
       togglePlay();
       return;
     }
-
-    try {
-      setLoadingPlay(true);
-      const res = await getPlaylist(item.id, { include_tracks: true });
-      const tracks = res.data.tracks;
-      if (!tracks || tracks.length === 0) return;
-
-      const sorted = [...tracks].sort((a, b) => a.position - b.position);
-      setTrack({
-        id: sorted[0].track_id,
-        context: {
-          type: "playlist",
-          playlist_id: item.id,
-          queue: sorted.map((t) => t.track_id),
-        },
-      } as any);
-    } catch (err) {
-      console.error("Failed to load playlist tracks:", err);
-    } finally {
-      setLoadingPlay(false);
-    }
+    setTrack({
+      id: item.id,
+      title: item.title,
+      artistName: ownerDisplay,
+      artistUsername: item.ownerUsername ?? "",
+      coverUrl: item.coverUrl ?? "",
+      genre: "",
+      likeCount: 0,
+      repostCount: 0,
+      playCount: 0,
+      commentCount: 0,
+      duration: "0:00",
+      postedAt: "",
+      audioUrl: "",
+      waveformData: [],
+      context: { type: "playlist", playlist_id: item.id },
+    } as any);
   };
 
   const handleOpenMore = (e: React.MouseEvent) => {
@@ -133,17 +127,12 @@ export default function PlaylistCard({
           {/* Play Button */}
           <div className="flex items-center justify-center flex-1">
             <button
-              className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
               onClick={handlePlayClick}
-              disabled={loadingPlay}
             >
-              {loadingPlay ? (
-                <i className="fa-solid fa-spinner animate-spin text-black text-lg" />
-              ) : (
-                <i
-                  className={`fa-solid ${isThisPlaylistPlaying ? "fa-pause" : "fa-play"} text-black text-base ${!isThisPlaylistPlaying && "ml-0.5"}`}
-                />
-              )}
+              <i
+                className={`fa-solid ${isThisPlaylistPlaying ? "fa-pause" : "fa-play"} text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ${!isThisPlaylistPlaying && "ml-0.5"}`}
+              />
             </button>
           </div>
 

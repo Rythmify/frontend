@@ -1,4 +1,5 @@
 import axiosInstance from "./axiosInstance";
+import type { Playlist } from "./playlist/playlist.service";
 
 // =============================================================================
 // TYPES — API response shapes (aligned to OpenAPI spec)
@@ -27,7 +28,7 @@ export interface PersonalMix {
   cover_image: string | null;
   track_count: number;
   generated_at: string;
-  preview_track: DiscoveryTrack | null; // new — one track embedded inside each mix
+  preview_track: DiscoveryTrack;
 }
 
 export interface CuratedMixSummary {
@@ -186,7 +187,7 @@ export const getListeningHistory = async (params?: {
   return res.data;
 };
 
-// New crew suggested for you, GET /users/suggested/artists
+// New crew suggested for you, GET /users/suggested
 export const getSuggestedUsers = async (params?: {
   limit?: number;
   offset?: number;
@@ -215,15 +216,15 @@ export const getAlbumsForYou = async (params?: {
   limit?: number;
   offset?: number;
 }): Promise<{
-  data: DiscoveryAlbum[];
+  data: Playlist[];
   source: "followed_artists" | "global_fallback";
   pagination: ListMeta;
 }> => {
   const res = await axiosInstance.get<{
-    data: DiscoveryAlbum[];
+    data: Playlist[];
     source: "followed_artists" | "global_fallback";
     pagination: ListMeta;
-  }>("/home/albums-for-you", { params });
+  }>("/home/albums-for-you", { params: { ...params, is_album_view: true } });
   return res.data;
 };
 
@@ -242,8 +243,12 @@ export const getMixTracks = async (
 // GET /home/trending-by-genre/{genre_id}
 export const getTrendingByGenre = async (
   genreId: string,
-  params?: { limit?: number; offset?: number }
-): Promise<{ genre_id: string; genre_name: string; tracks: DiscoveryTrack[] }> => {
+  params?: { limit?: number; offset?: number },
+): Promise<{
+  genre_id: string;
+  genre_name: string;
+  tracks: DiscoveryTrack[];
+}> => {
   const res = await axiosInstance.get<{
     data: { genre_id: string; genre_name: string; tracks: DiscoveryTrack[] };
     message: string;
