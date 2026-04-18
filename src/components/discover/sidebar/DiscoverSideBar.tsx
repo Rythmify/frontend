@@ -145,7 +145,10 @@ const DiscoverSidebar = () => {
   ).slice(0, 3);
 
   return (
-    <aside data-test="discover-sidebar" className={styles.sidebar}>
+    <aside
+      data-test="discover-sidebar"
+      className={`${styles.sidebar} sticky top-[50px]`}
+    >
       {/* Artist Tools Section */}
       <div data-test="discover-sidebar-artist-tools">
         <ArtistToolsCard />

@@ -28,6 +28,8 @@ import type { User } from "@/types/user";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { useAuthStore } from "@/stores/auth.store";
+import MixedForYou from "@/components/discover/MixedForYou";
+import MixCard from "@/components/UI/MixCard/MixCard";
 
 // ─── Constants ────────────────────────────────────────────
 
@@ -294,9 +296,9 @@ export default function LibraryPage() {
             );
           if (entry.type === "mix")
             return (
-              <MadeForYouCard
+              <MixCard
                 key={`mix-${entry.item.id}`}
-                item={mixToCard(entry.item)}
+                mix={entry.item}
                 widthClassName={CARD_WIDTH}
               />
             );
@@ -318,7 +320,11 @@ export default function LibraryPage() {
           </Link>
         }
       >
-        <LikesContent tracks={likesDisplay} showControls={false} widthClassName={CARD_WIDTH} />
+        <LikesContent
+          tracks={likesDisplay}
+          showControls={false}
+          widthClassName={CARD_WIDTH}
+        />
       </Section>
 
       {/* Playlists */}
@@ -326,10 +332,7 @@ export default function LibraryPage() {
         title="Playlists"
         data-test="library-playlists"
         action={
-          <FilterDropdown
-            value={playlistFilter}
-            onChange={setPlaylistFilter}
-          />
+          <FilterDropdown value={playlistFilter} onChange={setPlaylistFilter} />
         }
       >
         {visiblePlaylists.map((item) => (
@@ -347,7 +350,13 @@ export default function LibraryPage() {
               seen.add(p.playlist_id);
               return true;
             })
-            .map((p) => <AlbumCard key={p.playlist_id} playlist={p} widthClassName={CARD_WIDTH} />);
+            .map((p) => (
+              <AlbumCard
+                key={p.playlist_id}
+                playlist={p}
+                widthClassName={CARD_WIDTH}
+              />
+            ));
         })()}
       </Section>
 

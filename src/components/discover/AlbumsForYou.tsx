@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
-import AlbumCard from "@/components/playlist/PlaylistCard";
+import PlaylistCard from "../UI/PlaylistCard/PlaylistCard";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
 import { getAlbumsForYou } from "@/services/api/discover.service";
-import { mapDiscoveryAlbum } from "@/services/api/discover.mapper";
-import { mockAlbumPlaylists } from "@/services/mocks/discover";
+import { mockAlbumPlaylists } from "@/services/mocks/handlers/playlistHandlers";
 
 const AlbumsForYou = () => {
   const [albums, setAlbums] = useState<Playlist[]>([]);
@@ -12,8 +11,7 @@ const AlbumsForYou = () => {
   useEffect(() => {
     getAlbumsForYou()
       .then((res) => {
-        const cards = res.data.map(mapDiscoveryAlbum);
-        if (cards.length > 0) setAlbums(cards);
+        if (res.data.length > 0) setAlbums(res.data);
       })
       .catch(() => setAlbums(mockAlbumPlaylists));
   }, []);
@@ -22,10 +20,18 @@ const AlbumsForYou = () => {
     <div data-test="section-albums-for-you">
       <HorizontalCarousel title="Albums for you" data-section="albums-for-you">
         {albums.map((album) => (
-          <AlbumCard
+          <PlaylistCard
             key={album.playlist_id}
-            playlist={album}
             widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"
+            item={{
+              id: album.playlist_id,
+              title: album.name,
+              owner: album.owner_user_id,
+              slug: null,
+              coverUrl: album.cover_image ?? null,
+              isPrivate: !album.is_public,
+              isAlbumView: true,
+            }}
           />
         ))}
       </HorizontalCarousel>
