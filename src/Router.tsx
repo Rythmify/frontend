@@ -113,6 +113,9 @@ const PlaylistSlugPage = lazy(
   () => import("@/pages/you/sets/PlaylistSlugPage"),
 );
 const AlbumSlugPage = lazy(() => import("@/pages/you/albums/AlbumSlugPage"));
+const StationSlugPage = lazy(
+  () => import("@/pages/you/stations/StationSlugPage"),
+)
 
 // Settings
 const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage"));
@@ -202,6 +205,10 @@ export const router = createBrowserRouter([
       {
         path: "discover/sets/:mixSlug",
         element: <Lazy component={MixForYouSlugPage} />,
+      },
+      {
+        path: "discover/stations/:stationSlug",
+        element: <Lazy component={StationSlugPage} />,
       },
       { path: "people", element: <Lazy component={PeoplePage} /> },
       { path: "download", element: <Lazy component={DownloadPage} /> },
