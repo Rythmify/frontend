@@ -1,5 +1,6 @@
 import axiosInstance from "./api/axiosInstance";
-import type { Track } from "../../src/types/track";
+import type { Track } from "../types/track";
+import type { Comment } from "../types/comment";
 import { formatPostedAt } from "./Time";
 
 /**
@@ -54,6 +55,8 @@ function normalizeTrack(raw: any): Track {
     commentCount:    raw.comment_count ?? raw.commentCount ?? 0,
     genre:           raw.genre         ?? "",
     waveformData:    raw.waveformData  ?? undefined,
+    isLiked:         raw.is_liked_by_me ?? raw.is_liked ?? raw.isLiked ?? false,
+    isReposted:      raw.is_reposted_by_me ?? raw.is_reposted ?? raw.isReposted ?? false,
     duration,
   } as Track;
 }
@@ -161,7 +164,7 @@ export async function getTrackComments(
   trackId: string,
   limit = 20,
   offset = 0
-) {
+): Promise<Comment[]> {
   const { data } = await axiosInstance.get(
     `/tracks/${trackId}/comments`,
     { params: { limit, offset } }
@@ -172,16 +175,28 @@ export async function getTrackComments(
 /**
  * POST /tracks/{track_id}/comments
  */
-export async function postComment(
-  trackId: string,
-  text: string,
-  timestamp: number
-) {
+export async function postComment(trackId: string, content: string, timestampSec: number) {
   const { data } = await axiosInstance.post(`/tracks/${trackId}/comments`, {
-    content: text,
-    track_timestamp: Math.floor(timestamp),
+    content,
+    track_timestamp: Math.floor(timestampSec),
   });
-  return data;
+  return data.data; // The backend returns { status: 'success', data: { ... } }
+}
+
+export async function postReply(commentId: string, content: string) {
+  const { data } = await axiosInstance.post(`/comments/${commentId}/replies`, {
+    content,
+  });
+  return data.data;
+}
+
+export async function getReplies(commentId: string) {
+  const { data } = await axiosInstance.get(`/comments/${commentId}/replies`);
+  const result = data.data;
+  // Handle both direct array and { items: [] } formats
+  if (Array.isArray(result)) return result;
+  if (result && Array.isArray(result.items)) return result.items;
+  return [];
 }
 
 /**

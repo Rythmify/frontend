@@ -51,10 +51,28 @@ export async function getMyLikedTracks(params?: {
   offset?: number;
 }): Promise<{ data: TrackSummary[]; pagination: ListMeta }> {
   const res = await axiosInstance.get<{
-    data: TrackSummary[];
-    pagination: ListMeta;
+    data: { items: any[], pagination: any };
   }>("/me/liked-tracks", { params });
-  return res.data;
+  return {
+    data: res.data.data.items,
+    pagination: res.data.data.pagination
+  };
+}
+
+/**
+ * GET /me/reposted-tracks — paginated list of tracks the user has reposted
+ */
+export async function getMyRepostedTracks(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: any[]; pagination: any }> {
+  const res = await axiosInstance.get<{
+    data: { items: any[]; pagination: any };
+  }>("/me/reposted-tracks", { params });
+  return {
+    data: res.data.data.items,
+    pagination: res.data.data.pagination
+  };
 }
 
 /**
@@ -107,5 +125,31 @@ export async function removePlaylistRepost(playlistId: string | number) {
   const { data } = await axiosInstance.delete(
     `/playlists/${playlistId}/repost`
   );
+  return data;
+}
+
+// ─── Comment Engagement ───────────────────────────────────────────────────────
+
+/**
+ * POST /comments/{comment_id}/like
+ */
+export async function likeComment(commentId: string | number) {
+  const { data } = await axiosInstance.post(`/comments/${commentId}/like`);
+  return data;
+}
+
+/**
+ * DELETE /comments/{comment_id}/like
+ */
+export async function unlikeComment(commentId: string | number) {
+  const { data } = await axiosInstance.delete(`/comments/${commentId}/like`);
+  return data;
+}
+
+/**
+ * DELETE /comments/{comment_id}
+ */
+export async function deleteComment(commentId: string | number) {
+  const { data } = await axiosInstance.delete(`/comments/${commentId}`);
   return data;
 }
