@@ -12,7 +12,6 @@ import { HiDotsHorizontal } from "react-icons/hi";
 import { HiArrowUpOnSquare } from "react-icons/hi2";
 import {
   TbRadio,
-  TbArrowsExchange,
   TbChartBar,
   TbUpload,
 } from "react-icons/tb";
@@ -20,7 +19,8 @@ import { MdQueueMusic, MdPlaylistAdd, MdComment } from "react-icons/md";
 import { FaPlay as FaPlayCount } from "react-icons/fa6";
 import { IoSend } from "react-icons/io5";
 import type { Track } from "../../types/track";
-import type { TrackComment } from "./types";
+import type { Comment } from "../../types/comment";
+import type { TrackCardProps } from "./types";
 import { usePlayerStore } from "../../stores/player.store";
 import { useAuthStore } from "../../stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
@@ -32,7 +32,8 @@ import {
 } from "../../services/audioService";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import * as engagementService from "../../services/engagement.service";
-import { getTrackWaveform } from "../../services/track.service";
+import * as trackService from "../../services/track.service";
+import TrackCommentList from "../../pages/[username]/[trackSlug]/components/TrackCommentList";
 
 // helpers
 
@@ -48,6 +49,8 @@ function fmtN(n?: number) {
   return String(n);
 }
 function parseDur(s: string) {
+  if (!s) return 0;
+  if (typeof s === 'number') return s;
   const [m, sec] = s.split(":").map(Number);
   return (m || 0) * 60 + (sec || 0);
 }
@@ -75,7 +78,7 @@ function CommentMarker({
   comment: c,
   ratio,
 }: {
-  comment: TrackComment;
+  comment: Comment;
   ratio: number;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -87,14 +90,27 @@ function CommentMarker({
       style={{
         position: "absolute",
         left: `${ratio * 100}%`,
-        top: 0,
-        width: 2,
-        height: 24,
-        background: "#eb4926",
+        bottom: 0,
+        width: 14,
+        height: 14,
+        transform: "translateX(-50%)",
         cursor: "pointer",
         zIndex: 6,
       }}
     >
+        <img
+            src={c.author.avatar_url || "https://picsum.photos/seed/user/20/20"}
+            alt={c.author.display_name}
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: 2,
+              objectFit: "cover",
+              border: "1px solid rgba(255,255,255,0.2)",
+              opacity: hovered ? 1 : 0.7,
+              transition: "opacity 0.2s"
+            }}
+          />
       {hovered && (
         <div
           style={{
@@ -117,18 +133,8 @@ function CommentMarker({
             pointerEvents: "none",
           }}
         >
-          <img
-            src={c.avatarUrl}
-            alt={c.username}
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              flexShrink: 0,
-            }}
-          />
           <span style={{ fontWeight: 600, color: "#eb4926", marginRight: 2 }}>
-            {c.username}
+            {c.author.display_name}
           </span>
           <span
             style={{
@@ -138,7 +144,7 @@ function CommentMarker({
               maxWidth: 100,
             }}
           >
-            {c.text}
+            {c.content}
           </span>
           <span
             style={{
@@ -148,7 +154,7 @@ function CommentMarker({
               flexShrink: 0,
             }}
           >
-            {fmt(c.timestampSec)}
+            {fmt(c.track_timestamp)}
           </span>
         </div>
       )}
@@ -162,7 +168,7 @@ interface CardWaveformProps {
   track: Track;
   isActive: boolean;
   onWaveformClick: (ratio: number) => void;
-  comments: TrackComment[];
+  comments: Comment[];
   pendingRatio: number | null;
 }
 
@@ -179,25 +185,20 @@ function CardWaveform({
   const durRef = useRef<HTMLDivElement | null>(null);
   const [isHover, setIsHover] = useState(false);
 
-  const cachedPeaks = useRef<number[][] | null>(null);
   const [waveformDuration, setWaveformDuration] = useState(0);
-  usePlayerStore((s) => s.duration);
 
   useEffect(() => {
     if (!containerRef.current) return;
     if (wsRef.current) {
       try {
         wsRef.current.destroy();
-      } catch {
-        /* ok */
-      }
+      } catch { /* ok */ }
       wsRef.current = null;
     }
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     let ws: WaveSurfer | null = null;
-    let extraCleanup: (() => void) | undefined;
     let isMounted = true;
 
     const initWaveform = async () => {
@@ -208,7 +209,7 @@ function CardWaveform({
       const peaks =
         track.waveformData?.length > 0
           ? track.waveformData
-          : await getTrackWaveform(track.id);
+          : await trackService.getTrackWaveform(track.id);
       if (!isMounted) return;
 
       const hasPeaks = peaks && peaks.length > 0;
@@ -252,20 +253,20 @@ function CardWaveform({
           barWidth: 2,
           barGap: 0.5,
           barRadius: 2,
-          interact: false,
+          interact: true, // Enable interaction even if not active so user can click waveform to comment
           peaks: hasPeaks ? [peaks] : undefined,
           duration: durationFallback > 0 ? durationFallback : undefined,
           url: !hasPeaks ? track.audioUrl : undefined,
         });
 
+        ws.on("interaction", (newTime: number) => {
+          const dur = durationFallback;
+          onWaveformClick(dur > 0 ? newTime / dur : 0);
+        });
+
         ws.on("decode", (dur) => {
           if (durRef.current) durRef.current.textContent = fmt(dur);
           setWaveformDuration(dur);
-          try {
-            cachedPeaks.current = ws!.exportPeaks();
-          } catch {
-            /* ok */
-          }
         });
       }
 
@@ -275,19 +276,13 @@ function CardWaveform({
 
     initWaveform();
 
-    wsRef.current = ws;
-
     return () => {
       isMounted = false;
-      extraCleanup?.();
       try {
         if (ws) ws.destroy();
-      } catch {
-        /* ok */
-      }
+      } catch { /* ok */ }
       wsRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, track.id, track.audioUrl]);
 
   const durSec = waveformDuration || parseDur(track.duration);
@@ -297,7 +292,7 @@ function CardWaveform({
       <div
         style={{
           position: "relative",
-          cursor: isActive ? "pointer" : "default",
+          cursor: "pointer",
         }}
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
@@ -347,37 +342,42 @@ function CardWaveform({
         >
           0:00
         </div>
-      </div>
 
-      {/* COMMENTS on waveform */}
-      <div
-        data-test="waveform-comments-bar"
-        style={{ position: "relative", height: 24 }}
-      >
-        {comments.map((c) => {
-          const ratio = durSec > 0 ? c.timestampSec / durSec : 0;
-          return <CommentMarker key={c.id} comment={c} ratio={ratio} />;
-        })}
-        {pendingRatio !== null && (
-          <div
-            data-test="waveform-comment-pending-marker"
-            style={{
-              position: "absolute",
-              left: `${pendingRatio * 100}%`,
-              top: 0,
-              width: 2,
-              height: 24,
-              background: "rgba(235,73,38,0.45)",
-              zIndex: 5,
-            }}
-          />
-        )}
+        {/* Real User Avatars on Waveform */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 6,
+          }}
+        >
+          {comments.map((c) => {
+            const ratio = durSec > 0 ? c.track_timestamp / durSec : 0;
+            return <CommentMarker key={c.comment_id} comment={c} ratio={ratio} />;
+          })}
+          
+          {pendingRatio !== null && (
+            <div
+              style={{
+                position: "absolute",
+                left: `${pendingRatio * 100}%`,
+                top: 0,
+                width: 2,
+                height: "100%",
+                background: "rgba(235,73,38,0.6)",
+                zIndex: 7,
+                boxShadow: "0 0 8px rgba(235,73,38,0.4)"
+              }}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// SoundCloud button
+// SoundCloud button style component
 
 const SC_BTN: React.CSSProperties = {
   display: "flex",
@@ -446,794 +446,275 @@ function ScBtn({ icon, label, tooltip, onClick, active = false, "data-test": dat
   );
 }
 
-// More dropdown
+// Card Props
 
-function MoreDropdown({
-  isOwner,
-  liked,
-  onLike,
-  onAddToNext,
-  onAddToPlaylist,
-  onInsights,
-  onDistribute,
-  onDelete,
-}: {
-  isOwner: boolean;
-  liked?: boolean;
-  onLike?: () => void;
-  onAddToNext?: () => void;
-  onAddToPlaylist?: () => void;
-  onInsights?: () => void;
-  onDistribute?: () => void;
-  onDelete?: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  const ownerItems = [
-    {
-      label: liked ? "Unlike" : "Like",
-      icon: <FaHeart size={14} />,
-      action: onLike,
-      danger: false,
-    },
-    {
-      label: "Add to Next up",
-      icon: <MdQueueMusic size={17} />,
-      action: onAddToNext,
-      danger: false,
-    },
-    {
-      label: "Add to Playlist",
-      icon: <MdPlaylistAdd size={17} />,
-      action: onAddToPlaylist,
-      danger: false,
-    },
-    {
-      label: "Your Insights",
-      icon: <TbChartBar size={16} />,
-      action: onInsights,
-      danger: false,
-    },
-    {
-      label: "Station",
-      icon: <TbRadio size={17} />,
-      action: undefined,
-      danger: false,
-    },
-    {
-      label: "Distribute",
-      icon: <TbUpload size={15} />,
-      action: onDistribute,
-      danger: false,
-    },
-    {
-      label: "Delete Track",
-      icon: <LuTrash2 size={15} />,
-      action: onDelete,
-      danger: true,
-    },
-  ];
-  const visitorItems = [
-    {
-      label: "Add to Next up",
-      icon: <MdQueueMusic size={17} />,
-      action: onAddToNext,
-      danger: false,
-    },
-    {
-      label: "Add to Playlist",
-      icon: <MdPlaylistAdd size={17} />,
-      action: onAddToPlaylist,
-      danger: false,
-    },
-    {
-      label: "Station",
-      icon: <TbRadio size={17} />,
-      action: undefined,
-      danger: false,
-    },
-  ];
-  const items = isOwner ? ownerItems : visitorItems;
-
-  return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button
-        data-test="track-card-btn-more"
-        style={SC_BTN}
-        onClick={() => setOpen((p) => !p)}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.background = "#333";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.background = "#222";
-        }}
-      >
-        <HiDotsHorizontal size={16} />
-      </button>
-      {open && (
-        <div
-          data-test="track-card-more-dropdown"
-          style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            left: 0,
-            zIndex: 9999,
-            background: "#1e1e1e",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 6,
-            boxShadow: "0 6px 24px rgba(0,0,0,0.7)",
-            minWidth: 190,
-            overflow: "hidden",
-          }}
-        >
-          {items.map((item) => (
-            <button
-              key={item.label}
-              data-test={`track-card-more-item-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
-              onClick={() => {
-                item.action?.();
-                setOpen(false);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                width: "100%",
-                textAlign: "left",
-                padding: "11px 16px",
-                background: "transparent",
-                border: "none",
-                color: item.danger ? "#ff4444" : "#fff",
-                fontSize: 14,
-                cursor: "pointer",
-                transition: "background 0.1s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background =
-                  "rgba(255,255,255,0.06)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background =
-                  "transparent";
-              }}
-            >
-              <span
-                style={{
-                  color: item.danger ? "#ff4444" : "#aaa",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                {item.icon}
-              </span>
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// TrackCard
-
-const EMPTY_COMMENTS: TrackComment[] = [];
-
-export interface TrackCardProps {
-  track: Track;
-  comments?: TrackComment[];
-  onCommentSubmit?: (text: string, timestampSec: number) => void;
-  repostedBy?: string;
-  onCopyLink?: () => void;
-  onAddToPlaylist?: () => void;
-  onEdit?: () => void;
-  onReplaceFile?: () => void;
-  onDelete?: () => void;
-  onDistribute?: () => void;
-  disableComments?: boolean;
-}
+// Card Props (Moved to types.ts)
 
 export default function TrackCard({
   track,
-  comments = EMPTY_COMMENTS,
-  onCommentSubmit,
   repostedBy,
+  disableComments,
   onCopyLink,
   onAddToPlaylist,
   onEdit,
-  onReplaceFile,
   onDelete,
+  onReplaceFile,
   onDistribute,
-  disableComments = false,
 }: TrackCardProps) {
-  const { currentTrack, isPlaying, setTrack, togglePlay, duration } =
-    usePlayerStore();
+  const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore();
   const { user } = useAuthStore();
+  const loves = useLikesStore();
 
-  const isOwner = !!user && user.username === track.artistUsername;
-
+  const isOwner = !!user && (user.username === track.artistUsername || user.id === track.artistId);
   const isActive = currentTrack?.id === track.id;
-  const cardIsPlaying = isActive && isPlaying;
 
-  const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(track.repostCount ?? 0);
+  const [playCount, setPlayCount] = useState(track.playCount ?? 0);
+  const [isLiked, setIsLiked] = useState(false); // Initially from backend normalize
+  const [isReposted, setIsReposted] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
   const [commentText, setCommentText] = useState("");
-  const [commentRatio, setCommentRatio] = useState<number | null>(null);
-  const [localComments, setLocalComments] = useState<TrackComment[]>(comments);
-  const [scrollingComment, setScrollingComment] = useState<TrackComment | null>(
-    null,
-  );
+  const [showCommentBar, setShowCommentBar] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [showDiscussion, setShowDiscussion] = useState(false);
 
-  const currentTime = usePlayerStore((s) => s.currentTime ?? 0);
-
+  // Sync state with track props
   useEffect(() => {
-    setLikeCount(track.likeCount ?? 0);
-    setRepostCount(track.repostCount ?? 0);
-  }, [track.likeCount, track.repostCount]);
+    setIsLiked(track.isLiked || false);
+    setIsReposted(track.isReposted || false);
+    setLikeCount(track.likeCount || 0);
+    setRepostCount(track.repostCount || 0);
+    setPlayCount(track.playCount || 0);
+  }, [track]);
 
+  // Fetch comments for waveform avatars
   useEffect(() => {
-    setLocalComments(comments);
-  }, [comments]);
-
-  useEffect(() => {
-    if (!isActive || isOwner || !localComments.length) {
-      setScrollingComment(null);
-      return;
-    }
-    const match =
-      [...localComments]
-        .filter((c) => c.timestampSec <= currentTime + 0.5)
-        .sort((a, b) => b.timestampSec - a.timestampSec)[0] ?? null;
-    setScrollingComment(match);
-  }, [currentTime, isActive, isOwner, localComments]);
-
-  const handleCommentSubmit = () => {
-    if (!commentText.trim()) return;
-    const durSec =
-      isActive && duration > 0 ? duration : parseDur(track.duration);
-    const tsSec = (commentRatio ?? 0) * durSec;
-    const c: TrackComment = {
-      id: Date.now(),
-      userId: user?.id ?? "anon",
-      username: user?.displayName ?? user?.username ?? "You",
-      avatarUrl:
-        user?.avatar ??
-        `https://picsum.photos/seed/${user?.username ?? "u"}/40/40`,
-      text: commentText.trim(),
-      timestampSec: tsSec,
+    const fetchComments = async () => {
+      try {
+        const data = await trackService.getTrackComments(track.id);
+        setComments(data);
+      } catch (err) {
+        console.error("Failed to fetch track comments", err);
+      }
     };
-    setLocalComments((p) => [...p, c]);
-    onCommentSubmit?.(c.text, tsSec);
-    setCommentText("");
-    setCommentRatio(null);
-  };
+    fetchComments();
+  }, [track.id]);
 
   const handlePlayPause = () => {
-    if (isActive) togglePlay();
-    else setTrack(track);
+    if (isActive) {
+      togglePlay();
+    } else {
+      setTrack(track);
+      setPlayCount(prev => prev + 1); // Optimistic increment
+    }
   };
 
-  const handleWaveformClick = useCallback(
-    (ratio: number) => {
-      if (!disableComments) setCommentRatio(ratio);
-      if (!isActive) {
-        setTrack(track);
-      }
-    },
-    [isActive, track, setTrack],
-  );
+  const handleWaveformClick = (ratio: number) => {
+    if (!disableComments) {
+      setShowCommentBar(true);
+    }
+    if (!isActive) {
+      setTrack(track);
+      setPlayCount(prev => prev + 1); // Optimistic increment
+    }
+  };
 
   const handleLike = async () => {
-    const wasLiked = liked;
-    const newLiked = !wasLiked;
-    const likesStore = useLikesStore.getState();
+    const wasLiked = isLiked;
+    setIsLiked(!wasLiked);
+    setLikeCount(prev => wasLiked ? prev - 1 : prev + 1);
     
-    // Optimistic update
-    setLiked(newLiked);
-    setLikeCount((p) => (wasLiked ? p - 1 : p + 1));
-    likesStore.toggleTrack(track);
-
     try {
-      if (newLiked) {
-        await engagementService.likeTrack(track.id);
-      } else {
-        await engagementService.unlikeTrack(track.id);
-      }
-    } catch (err: any) {
-      // Revert on failure
-      setLiked(wasLiked);
-      setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
-      likesStore.toggleTrack(track);
-      if (err.response?.status === 401) {
-        alert("Session expired or unauthorized. Please log out and back in.");
-      }
-      console.error("Failed to update like status:", err);
+      if (wasLiked) await engagementService.unlikeTrack(track.id);
+      else await engagementService.likeTrack(track.id);
+    } catch (err) {
+      setIsLiked(wasLiked);
+      setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+      console.error("Like toggle failed", err);
     }
   };
 
   const handleRepost = async () => {
-    // Optimistic update
-    setRepostCount((p) => p + 1);
+    if (isOwner) {
+      alert("You cannot repost your own track!");
+      return;
+    }
+    const wasReposted = isReposted;
+    setIsReposted(!wasReposted);
+    setRepostCount(prev => wasReposted ? prev - 1 : prev + 1);
 
     try {
-      await engagementService.repostTrack(track.id);
-    } catch (err: any) {
-      // Revert on failure
-      setRepostCount((p) => p - 1);
-      if (err.response?.status === 404) {
-        alert("Reposting is not supported by the Rythmify backend API yet!");
-      } else if (err.response?.status === 401) {
-        alert("Session expired or unauthorized. Please log out and back in.");
-      }
-      console.error("Failed to repost track:", err);
+      if (wasReposted) await engagementService.removeRepost(track.id);
+      else await engagementService.repostTrack(track.id);
+    } catch (err) {
+      setIsReposted(wasReposted);
+      setRepostCount(prev => wasReposted ? prev - 1 : prev + 1);
+      console.error("Repost toggle failed", err);
+    }
+  };
+
+  const handleCommentSubmit = async () => {
+    if (!commentText.trim()) return;
+    
+    // Captured at the second of clicking Post
+    const tsSec = isActive ? Math.floor(usePlayerStore.getState().currentTime) : 0;
+    
+    try {
+      const newComment = await trackService.postComment(track.id, commentText, tsSec);
+      setComments(prev => [...prev, newComment]);
+      setCommentText("");
+      setShowCommentBar(false);
+    } catch (err) {
+      console.error("Failed to post comment", err);
     }
   };
 
   return (
-    <>
+    <div 
+      className="group relative flex gap-6 py-6 border-b border-white/5"
+      data-test="track-card"
+    >
       {showShare && (
         <SharePopup track={track} onClose={() => setShowShare(false)} />
       )}
 
-      <div
-        data-test="track-card"
-        style={{
-          display: "flex",
-          gap: 16,
-          padding: "20px 0",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        {/* Album art */}
-        <div
-          data-test="track-card-cover"
-          style={{
-            width: 130,
-            height: 130,
-            flexShrink: 0,
-            borderRadius: 2,
-            overflow: "hidden",
-            background: "#1a1a1a",
-          }}
+      {/* Cover Art */}
+      <div className="relative w-[160px] h-[160px] shrink-0 overflow-hidden rounded bg-black/40">
+        <img 
+          src={track.coverUrl || "https://picsum.photos/seed/rythmify/160/160"} 
+          alt={track.title}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+        <button 
+          onClick={handlePlayPause}
+          className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          {track.coverUrl ? (
-            <img
-              src={track.coverUrl}
-              alt={track.title}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                background: "linear-gradient(135deg,#2d2d2d,#111)",
-              }}
-            />
-          )}
-        </div>
+          <div className="w-12 h-12 flex items-center justify-center bg-[#f50] rounded-full text-white shadow-xl">
+            {isActive && isPlaying ? <FaPause size={18} /> : <FaPlay size={18} className="translate-x-0.5" />}
+          </div>
+        </button>
+      </div>
 
-        {/* Right column */}
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-          }}
-        >
-          {/* Row 1: play · artist / title · genre + timestamp */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-            <button
-              data-test="track-card-play-btn"
-              onClick={handlePlayPause}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                background: "#fff",
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                marginTop: 2,
-                transition: "background 0.15s",
-              }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.background = "#e0e0e0")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.background = "#fff")
-              }
-            >
-              {cardIsPlaying ? (
-                <FaPause style={{ color: "#111", fontSize: 12 }} />
-              ) : (
-                <FaPlay
-                  style={{ color: "#111", fontSize: 12, marginLeft: 2 }}
-                />
-              )}
-            </button>
-
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 13,
-                  color: "#999",
-                  marginBottom: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Link
-                  data-test="track-card-artist-link"
-                  to={`/${track.artistUsername}`}
-                  style={{
-                    color: "inherit",
-                    textDecoration: "none",
-                    fontWeight: 600,
-                  }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLElement).style.color = "#fff")
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLElement).style.color = "")
-                  }
-                >
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 flex flex-col gap-4">
+        
+        {/* Header: Artist & Title */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+             <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
+                <Link to={`/${track.artistUsername}`} className="hover:text-white transition-colors">
                   {track.artistName}
                 </Link>
                 {repostedBy && (
-                  <>
-                    <BiRepost style={{ fontSize: 14, opacity: 0.7 }} />
-                    <Link
-                      data-test="track-card-reposted-by-link"
-                      to={`/${repostedBy}`}
-                      style={{
-                        color: "inherit",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
-                      onMouseEnter={(e) =>
-                        ((e.currentTarget as HTMLElement).style.color = "#fff")
-                      }
-                      onMouseLeave={(e) =>
-                        ((e.currentTarget as HTMLElement).style.color = "")
-                      }
-                    >
-                      {repostedBy}
-                    </Link>
-                  </>
+                  <span className="flex items-center gap-1">
+                    <BiRepost size={14} className="text-[#f50]" />
+                    reposted by <span className="text-white/80">{repostedBy}</span>
+                  </span>
                 )}
-              </div>
-              <Link
-                data-test="track-card-title-link"
-                to={`/${track.artistUsername}/${track.id}`}
-                style={{
-                  color: "#fff",
-                  textDecoration: "none",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  display: "block",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.color =
-                    "var(--color-accent,#eb4926)")
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLElement).style.color = "#fff")
-                }
-              >
-                {track.title}
-              </Link>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-end",
-                gap: 6,
-                flexShrink: 0,
-              }}
-            >
-              <span
-                data-test="track-card-posted-at"
-                style={{ fontSize: 12, color: "#999", whiteSpace: "nowrap" }}
-              >
-                {track.postedAt}
-              </span>
-              {track.genre && (
-                <span
-                  data-test="track-card-genre"
-                  style={{
-                    background: "#1c1c1c",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    color: "#e5e7eb",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    padding: "3px 12px",
-                    borderRadius: 99,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  # {track.genre}
-                </span>
-              )}
-            </div>
+             </div>
+             <Link 
+              to={`/${track.artistUsername}/${track.trackSlug}`}
+              className="block text-lg font-bold text-white hover:text-[#f50] transition-colors overflow-hidden text-overflow-ellipsis whitespace-nowrap"
+             >
+               {track.title}
+             </Link>
           </div>
-
-          {/* Scrolling comment banner */}
-          {!isOwner && scrollingComment && cardIsPlaying && (
-            <div
-              data-test="track-card-scrolling-comment"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 12,
-                color: "#ccc",
-                overflow: "hidden",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <img
-                src={scrollingComment.avatarUrl}
-                alt={scrollingComment.username}
-                style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                }}
-              />
-              <span style={{ color: "#eb4926", fontWeight: 600 }}>
-                {scrollingComment.username}:
-              </span>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                {scrollingComment.text}
-              </span>
-            </div>
-          )}
-
-          {/* Waveform */}
-          <CardWaveform
-            track={track}
-            isActive={isActive}
-            onWaveformClick={handleWaveformClick}
-            comments={localComments}
-            pendingRatio={commentRatio}
-          />
-
-          {/* Comment bar — only visible after clicking the waveform */}
-          {!disableComments && commentRatio !== null && (
-            <div
-              data-test="track-card-comment-bar"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginTop: 2,
-              }}
-            >
-              <img
-                src={
-                  user?.avatar ??
-                  `https://picsum.photos/seed/${user?.username ?? "u"}/40/40`
-                }
-                alt="You"
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                }}
-              />
-              <input
-                data-test="track-card-comment-input"
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCommentSubmit();
-                  if (e.key === "Escape") {
-                    setCommentText("");
-                    setCommentRatio(null);
-                  }
-                }}
-                placeholder="Write a comment…"
-                autoFocus
-                style={{
-                  flex: 1,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  borderRadius: 4,
-                  color: "#fff",
-                  fontSize: 13,
-                  padding: "5px 10px",
-                  outline: "none",
-                }}
-              />
-              <button
-                data-test="track-card-comment-submit"
-                onClick={handleCommentSubmit}
-                style={{ ...SC_BTN, padding: "0 10px", background: "#222" }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "#333";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "#222";
-                }}
-              >
-                <IoSend size={15} />
-              </button>
-              <button
-                data-test="track-card-comment-cancel"
-                onClick={() => {
-                  setCommentText("");
-                  setCommentRatio(null);
-                }}
-                style={{
-                  ...SC_BTN,
-                  padding: "0 10px",
-                  background: "#222",
-                  color: "#999",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "#333";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "#222";
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {/* Action bar */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 4,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {isOwner ? (
-                <>
-                  <ScBtn
-                    icon={<HiArrowUpOnSquare size={17} />}
-                    tooltip="Share"
-                    onClick={() => setShowShare(true)}
-                    data-test="track-card-btn-share"
-                  />
-                  <ScBtn
-                    icon={<LuCopy size={14} />}
-                    tooltip="Copy Link"
-                    onClick={onCopyLink}
-                    data-test="track-card-btn-copy"
-                  />
-                  <ScBtn
-                    icon={<TbArrowsExchange size={17} />}
-                    tooltip="Replace File"
-                    onClick={onReplaceFile}
-                    data-test="track-card-btn-replace"
-                  />
-                  <ScBtn
-                    icon={<LuPencil size={13} />}
-                    tooltip="Edit"
-                    onClick={onEdit}
-                    data-test="track-card-btn-edit"
-                  />
-                  <MoreDropdown
-                    isOwner
-                    liked={liked}
-                    onLike={handleLike}
-                    onAddToNext={() => {}}
-                    onAddToPlaylist={onAddToPlaylist}
-                    onInsights={() => {}}
-                    onDistribute={onDistribute}
-                    onDelete={onDelete}
-                  />
-                </>
-              ) : (
-                <>
-                  <ScBtn
-                    icon={<FaHeart size={13} />}
-                    label={fmtN(likeCount)}
-                    active={liked}
-                    tooltip="Like"
-                    onClick={handleLike}
-                    data-test="track-card-btn-like"
-                  />
-                  <ScBtn
-                    icon={<BiRepost size={18} />}
-                    label={fmtN(repostCount)}
-                    tooltip="Repost"
-                    onClick={handleRepost}
-                    data-test="track-card-btn-repost"
-                  />
-                  <ScBtn
-                    icon={<HiArrowUpOnSquare size={17} />}
-                    tooltip="Share"
-                    onClick={() => setShowShare(true)}
-                    data-test="track-card-btn-share"
-                  />
-                  <ScBtn
-                    icon={<LuCopy size={14} />}
-                    tooltip="Copy Link"
-                    onClick={onCopyLink}
-                    data-test="track-card-btn-copy"
-                  />
-                  <MoreDropdown
-                    isOwner={false}
-                    onAddToNext={() => {}}
-                    onAddToPlaylist={onAddToPlaylist}
-                  />
-                </>
-              )}
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <span
-                data-test="track-card-play-count"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  color: "#999",
-                  fontSize: 13,
-                }}
-              >
-                <FaPlayCount size={10} />
-                {fmtN(track.playCount)}
-              </span>
-              <span
-                data-test="track-card-comment-count"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  color: "#999",
-                  fontSize: 13,
-                }}
-              >
-                <MdComment size={13} />
-                {fmtN(track.commentCount)}
-              </span>
-            </div>
+          <div className="text-xs text-white/40 whitespace-nowrap pt-1">
+            {track.postedAt}
           </div>
         </div>
+
+        {/* Waveform Area */}
+        <div className="relative">
+          <CardWaveform 
+            track={track}
+            isActive={isActive}
+            comments={comments}
+            pendingRatio={null}
+            onWaveformClick={handleWaveformClick}
+          />
+        </div>
+
+        {/* Comment Input Bar (Slides in on click) */}
+        {showCommentBar && (
+          <div className="flex items-center gap-3 bg-[#111] border border-white/10 rounded-sm p-1 animate-in slide-in-from-top-2 duration-300">
+             <img src={user?.avatar || "https://picsum.photos/seed/me/40/40"} className="w-8 h-8 rounded-sm object-cover" alt="Me" />
+             <input 
+               autoFocus
+               value={commentText}
+               onChange={(e) => setCommentText(e.target.value)}
+               placeholder={`Write a comment...`}
+               className="flex-1 bg-transparent border-none outline-none text-sm text-white py-1 px-2"
+               onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit()}
+             />
+             <div className="flex items-center gap-2 pr-2">
+                <button 
+                  onClick={() => setShowCommentBar(false)}
+                  className="text-xs text-white/40 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button 
+                   onClick={handleCommentSubmit}
+                   className="bg-[#f50] text-white text-[11px] font-bold uppercase rounded-sm px-4 py-1.5 hover:brightness-110"
+                >
+                  Post
+                </button>
+             </div>
+          </div>
+        )}
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between mt-auto">
+          <div className="flex items-center gap-2">
+            <ScBtn 
+              icon={<FaHeart size={14} />} 
+              label={fmtN(likeCount)} 
+              active={isLiked} 
+              onClick={handleLike} 
+              tooltip="Like"
+            />
+            <ScBtn 
+              icon={<BiRepost size={20} />} 
+              label={fmtN(repostCount)} 
+              active={isReposted} 
+              onClick={handleRepost} 
+              tooltip="Repost"
+            />
+            <ScBtn icon={<HiArrowUpOnSquare size={16} />} tooltip="Share" onClick={() => setShowShare(true)} />
+            <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} />
+            <button 
+               onClick={() => setShowDiscussion(!showDiscussion)}
+               className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${showDiscussion ? 'text-[#f50]' : 'text-white/60 hover:text-white'}`}
+            >
+              <MdComment size={16} />
+              {comments.length} Comments
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs text-white/40">
+            <span className="flex items-center gap-1">
+              <FaPlayCount size={10} />
+              {fmtN(playCount)}
+            </span>
+          </div>
+        </div>
+
+        {/* Expandable Discussion Section */}
+        {showDiscussion && (
+          <div className="mt-4 pt-4 border-t border-white/5 animate-in fade-in duration-500">
+            <TrackCommentList 
+              comments={comments} 
+              trackId={track.id} 
+              onCommentDeleted={(id) => {
+                setComments(prev => prev.filter(c => String(c.comment_id) !== String(id)));
+              }}
+            />
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }

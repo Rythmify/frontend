@@ -7,9 +7,10 @@ import { useAuthStore } from "../../../../stores/auth.store";
 interface TrackCommentListProps {
   comments: Comment[];
   trackId: string;
+  onCommentDeleted?: (commentId: string) => void;
 }
 
-export default function TrackCommentList({ comments, trackId }: TrackCommentListProps) {
+export default function TrackCommentList({ comments, trackId, onCommentDeleted }: TrackCommentListProps) {
   const { user: currentUser } = useAuthStore();
   const [commentList, setCommentList] = useState<Comment[]>(comments);
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
@@ -156,13 +157,17 @@ export default function TrackCommentList({ comments, trackId }: TrackCommentList
         return next;
       });
 
-      // Cleanup local cache if deleted
       if (likedComments.has(String(commentId))) {
         setLikedComments(prev => {
           const next = new Set(prev);
           next.delete(String(commentId));
           return next;
         });
+      }
+
+      // Notify parent to update count and waveform
+      if (onCommentDeleted) {
+        onCommentDeleted(commentId);
       }
     } catch (err) {
       console.error("Failed to delete", err);

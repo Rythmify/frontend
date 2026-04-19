@@ -92,6 +92,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       currentTime: nextTime,
       isLiked: false,
     });
+
+    // Notify backend of play event
+    import("../services/track.service").then((m) => {
+      m.incrementPlayCount(track.id);
+    });
   },
 
   play: () => set({ isPlaying: true }),
