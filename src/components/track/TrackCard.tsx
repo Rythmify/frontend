@@ -205,7 +205,10 @@ function CardWaveform({
       const { g, pg } = buildGradients(ctx);
       const durationFallback = parseDur(track.duration);
 
-      const peaks = track.waveformData || await getTrackWaveform(track.id);
+      const peaks =
+        track.waveformData?.length > 0
+          ? track.waveformData
+          : await getTrackWaveform(track.id);
       if (!isMounted) return;
 
       const hasPeaks = peaks && peaks.length > 0;
