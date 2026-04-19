@@ -91,8 +91,8 @@ function CommentMarker({
         position: "absolute",
         left: `${ratio * 100}%`,
         bottom: 0,
-        width: 14,
-        height: 14,
+        width: 22,
+        height: 22,
         transform: "translateX(-50%)",
         cursor: "pointer",
         zIndex: 6,
@@ -104,10 +104,10 @@ function CommentMarker({
             style={{
               width: "100%",
               height: "100%",
-              borderRadius: 2,
+              borderRadius: "50%",
               objectFit: "cover",
-              border: "1px solid rgba(255,255,255,0.2)",
-              opacity: hovered ? 1 : 0.7,
+              border: "1.5px solid rgba(255,255,255,0.5)",
+              opacity: hovered ? 1 : 0.8,
               transition: "opacity 0.2s"
             }}
           />

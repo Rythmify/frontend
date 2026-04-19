@@ -58,6 +58,7 @@ function normalizeTrack(raw: any): Track {
     isLiked:         raw.is_liked_by_me ?? raw.is_liked ?? raw.isLiked ?? false,
     isReposted:      raw.is_reposted_by_me ?? raw.is_reposted ?? raw.isReposted ?? false,
     artistId:        raw.user_id       || raw.artistId || "",
+    trackSlug:       raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
     duration,
   } as Track;
 }
