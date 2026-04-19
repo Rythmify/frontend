@@ -1,113 +1,116 @@
 import axiosInstance from "./api/axiosInstance";
 import type { FeedItem } from "../types/feedItem";
+import type { Track } from "../types/track";
+import type { Playlist } from "../types/playlist";
 
-export async function getHome() {
-  const { data } = await axiosInstance.get("/home");
-  return data.data;
+function durationToString(d: unknown): string {
+  if (typeof d === "number") {
+    return `${Math.floor(d / 60)}:${String(Math.round(d % 60)).padStart(2, "0")}`;
+  }
+  if (typeof d === "string" && d) return d;
+  return "0:00";
+}
+
+function mapTrack(t: any): Track {
+  return {
+    id: String(t.id ?? ""),
+    title: t.title ?? "Untitled",
+    artistName: t.user?.displayName ?? t.user?.username ?? "Unknown",
+    artistUsername: t.user?.username ?? "unknown",
+    coverUrl: t.coverUrl ?? t.cover_image ?? "",
+    audioUrl: t.audioUrl ?? t.stream_url ?? "",
+    genre: t.genre ?? t.genre_name ?? "",
+    likeCount: t.like_count ?? t.likeCount ?? 0,
+    repostCount: t.repost_count ?? t.repostCount ?? 0,
+    playCount: t.play_count ?? t.playCount ?? 0,
+    commentCount: t.comment_count ?? t.commentCount ?? 0,
+    duration: durationToString(t.duration),
+    postedAt: t.postedAt ?? t.created_at ?? "",
+    waveformData: [],
+    isPrivate: t.isPrivate ?? false,
+  };
+}
+
+function mapPlaylist(pl: any): Playlist {
+  return {
+    id: pl.id,
+    title: pl.title ?? "Untitled Playlist",
+    creatorName: pl.creatorName ?? "",
+    creatorUsername: pl.creatorUsername ?? "",
+    coverUrl: pl.coverUrl ?? "",
+    postedAt: pl.postedAt ?? "",
+    trackCount: pl.trackCount ?? 0,
+    likeCount: pl.likeCount ?? 0,
+    repostCount: pl.repostCount ?? 0,
+    playlistSlug: pl.playlistSlug ?? pl.id,
+    isPrivate: pl.isPrivate ?? false,
+    tracks: (pl.tracks ?? []).map(mapTrack),
+  };
+}
+
+function mapUser(u: any) {
+  return {
+    id: String(u?.id ?? "unknown"),
+    username: u?.username ?? "unknown",
+    displayName: u?.displayName ?? "Unknown",
+    avatar: u?.avatar ?? undefined,
+    followers: u?.followers ?? 0,
+    isVerified: u?.isVerified,
+  };
 }
 
 export async function getActivityFeed(
   limit: number = 20,
-  cursor: string | null = null
-): Promise<{ items: FeedItem[]; hasMore: boolean }> {
-  const params: any = { limit };
-  if (cursor) params.cursor = cursor;
+  offset: number = 0,
+): Promise<{ items: FeedItem[]; hasMore: boolean; total: number }> {
+  const { data } = await axiosInstance.get<{
+    data: any[];
+    pagination?: { limit: number; offset: number; total: number };
+    hasMore?: boolean;
+  }>("/feed", { params: { limit, offset } });
 
-  const { data } = await axiosInstance.get<{ data: any; hasMore: boolean }>(
-    "/feed",
-    { params }
-  );
+  const rows: any[] = data.data ?? [];
 
-  // Map backend rows to FeedItem
-  const items: FeedItem[] = (data.data || []).map((row: any) => {
-    const contentType = row.content_type || (row.playlist_id ? "playlist" : "track");
-    const itemType = row.type || row.reason_type || "post";
-    
-    // Mapping for Track
-    if (contentType === "track") {
+  const items: FeedItem[] = rows.map((row): FeedItem => {
+    const isRepost = row.type === "repost";
+
+    if (row.content_type === "playlist" && row.playlist) {
       return {
-        id: row.id || row.track_id || Math.random().toString(),
-        type: itemType.includes("repost") ? "repost" : "post",
-        content_type: "track",
-        created_at: row.created_at || new Date().toISOString(),
-        user: {
-          id: row.user_id || row.artist_id || "unknown",
-          username: row.username || row.artist_username || "Unknown",
-          displayName: row.display_name || row.artist_name || "Unknown User",
-          avatar: row.profile_picture || row.avatar || "https://picsum.photos/seed/user/100/100",
-          followers: row.followers_count || 0,
-        },
-        track: {
-          id: row.track_id || row.id,
-          title: row.title || row.track_title || "Untitled Track",
-          artistName: row.artist_name || row.display_name || "Unknown",
-          artistUsername: row.artist_username || row.username || "Unknown",
-          coverUrl: row.cover_image || row.coverUrl || "",
-          audioUrl: row.stream_url || row.audio_url || row.audioUrl || "",
-          duration: (() => {
-            const d = row.duration;
-            if (typeof d === "number") {
-              const m = Math.floor(d / 60);
-              const s = Math.round(d % 60);
-              return `${m}:${s.toString().padStart(2, "0")}`;
-            }
-            return typeof d === "string" && d ? d : "0:00";
-          })(),
-          genre: row.genre_name || "",
-          likeCount: row.like_count || 0,
-          repostCount: row.repost_count || 0,
-          playCount: row.play_count || 0,
-          commentCount: row.comment_count || 0,
-          postedAt: row.created_at || "",
-          trackSlug: row.track_slug || row.title?.toLowerCase().replace(/\s+/g, '-'),
-          isPrivate: row.is_private || false,
-        },
-      } as FeedItem;
+        id: row.id ?? String(Math.random()),
+        type: isRepost ? "repost" : "post",
+        content_type: "playlist",
+        created_at: row.created_at ?? new Date().toISOString(),
+        user: mapUser(row.user),
+        playlist: mapPlaylist(row.playlist),
+      };
     }
 
-    // Mapping for Playlist
     return {
-      id: row.id || row.playlist_id || Math.random().toString(),
-      type: itemType.includes("repost") ? "repost" : "post",
-      content_type: "playlist",
-      created_at: row.created_at || new Date().toISOString(),
-      user: {
-        id: row.user_id || row.creator_id || "unknown",
-        username: row.username || row.creator_username || "Unknown",
-        displayName: row.display_name || row.creator_name || "Unknown User",
-        avatar: row.profile_picture || row.avatar || "https://picsum.photos/seed/user/100/100",
-        followers: row.followers_count || 0,
-      },
-      playlist: {
-        id: row.playlist_id || row.id,
-        title: row.name || row.title || "Untitled Playlist",
-        creatorName: row.creator_name || row.display_name || "Unknown",
-        creatorUsername: row.creator_username || row.username || "Unknown",
-        coverUrl: row.cover_image || row.coverUrl || "",
-        postedAt: row.created_at || "",
-        trackCount: row.track_count || 0,
-        likeCount: row.like_count || 0,
-        repostCount: row.repost_count || 0,
-        playlistSlug: row.playlist_slug || row.slug || row.name?.toLowerCase().replace(/\s+/g, '-'),
-        isPrivate: row.is_private || false,
-        tracks: row.tracks || [],
-      },
-    } as FeedItem;
+      id: row.id ?? String(Math.random()),
+      type: isRepost ? "repost" : "post",
+      content_type: "track",
+      created_at: row.created_at ?? new Date().toISOString(),
+      user: mapUser(row.user),
+      track: mapTrack(row.track ?? {}),
+    };
   });
 
-  return {
-    items,
-    hasMore: data.hasMore || false,
-  };
+  const total = data.pagination?.total ?? items.length;
+  const hasMore = data.pagination
+    ? offset + limit < total
+    : (data.hasMore ?? false);
+
+  return { items, hasMore, total };
 }
 
-export async function getDiscoveryFeed(
-  limit: number = 20,
-  cursor: string | null = null
-) {
-  const params: any = { limit };
-  if (cursor) params.cursor = cursor;
-
-  const { data } = await axiosInstance.get("/feed/discovery", { params });
+export async function getDiscoverFeed(limit: number = 20, offset: number = 0) {
+  const { data } = await axiosInstance.get("/feed/discover", {
+    params: { limit, offset },
+  });
   return data;
+}
+
+export async function getHome() {
+  const { data } = await axiosInstance.get("/home");
+  return data.data;
 }
