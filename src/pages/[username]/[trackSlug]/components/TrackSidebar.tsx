@@ -8,9 +8,10 @@ import { followUser, unfollowUser } from "../../../../services/mocks/User.servic
 interface TrackSidebarProps {
   track: Track;
   featuredArtists: MockUser[];
+  relatedTracks?: Track[];
 }
 
-export default function TrackSidebar({ track, featuredArtists }: TrackSidebarProps) {
+export default function TrackSidebar({ track, featuredArtists, relatedTracks = [] }: TrackSidebarProps) {
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>
       <aside data-test="track-sidebar" className="flex flex-col w-full">
@@ -47,13 +48,54 @@ export default function TrackSidebar({ track, featuredArtists }: TrackSidebarPro
         <hr className="border-[var(--color-border)] mb-5" />
 
         {/* Artists Featured */}
-        <div data-test="sidebar-artists-featured">
+        <div data-test="sidebar-artists-featured" className="mb-8">
           <p className="text-[var(--color-text-hover)] text-[11px] font-bold uppercase tracking-widest mb-4">
             Artists Featured
           </p>
           <div className="flex flex-col gap-4">
             {(Array.isArray(featuredArtists) ? featuredArtists : []).map((artist) => (
               <ArtistCard key={artist.id} artist={artist} />
+            ))}
+          </div>
+        </div>
+
+        <hr className="border-[var(--color-border)] mb-5" />
+
+        {/* Related Tracks */}
+        <div data-test="sidebar-related-tracks">
+          <p className="text-[var(--color-text-muted)] text-[11px] font-bold uppercase tracking-widest mb-4 flex justify-between items-center">
+            Related Tracks
+            <button className="text-[10px] lowercase font-normal hover:text-[var(--color-text-hover)]">View all</button>
+          </p>
+          <div className="flex flex-col gap-4">
+            {relatedTracks.slice(0, 3).map((t) => (
+              <div key={t.id} className="flex gap-3 group cursor-pointer group">
+                <div className="relative w-12 h-12 shrink-0">
+                  <img
+                    src={t.coverUrl || `https://picsum.photos/seed/${t.id}/80/80`}
+                    alt={t.title}
+                    className="w-full h-full object-cover rounded shadow-sm group-hover:opacity-80 transition-opacity"
+                  />
+                </div>
+                <div className="min-w-0 flex flex-col justify-center">
+                  <p className="text-[var(--color-text-hover)] text-[13px] font-medium leading-tight truncate group-hover:text-[var(--color-text)]">
+                    {t.title}
+                  </p>
+                  <p className="text-[var(--color-text-muted)] text-[11px] truncate">
+                    {t.artistName}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5 opacity-60">
+                     <span className="text-[10px] flex items-center gap-1">
+                        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        {t.likeCount || 0}
+                     </span>
+                     <span className="text-[10px] flex items-center gap-1">
+                        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        {t.playCount || 0}
+                     </span>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>

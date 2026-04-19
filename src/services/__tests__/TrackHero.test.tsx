@@ -116,7 +116,22 @@ describe("TrackHero", () => {
   });
 
   it("renders comment avatars when provided", () => {
-    const comments = [{ id: 1, avatarUrl: "https://picsum.photos/30", timestamp: 30 }];
+    const comments = [{ 
+      comment_id: "1", 
+      track_id: baseTrack.id,
+      user_id: "user-1",
+      content: "Nice track!",
+      track_timestamp: 30,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      like_count: 0,
+      reply_count: 0,
+      author: {
+        display_name: "User 1",
+        avatar_url: "https://picsum.photos/30",
+        username: "user1"
+      }
+    }] as any;
     render(<TrackHero track={baseTrack} comments={comments} onPlayPause={onPlayPause} />);
     expect(screen.getByTestId("track-comment-avatars")).toBeInTheDocument();
   });

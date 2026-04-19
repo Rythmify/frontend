@@ -16,4 +16,6 @@ export interface Track {
   audioUrl: string;
   isPrivate?: boolean; // private tracks
   madeFor?: string; // made for [username]
+  isLiked?: boolean;
+  isReposted?: boolean;
 }
