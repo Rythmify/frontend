@@ -7,15 +7,15 @@ import {
   FaGlobe,
   FaLink,
 } from "react-icons/fa";
-import { BiRepost } from "react-icons/bi";
+import { IoSend, IoPlaySharp, IoShareOutline } from "react-icons/io5";
+import { AiOutlineRetweet } from "react-icons/ai";
 import { LuListEnd } from "react-icons/lu";
-import { HiUpload } from "react-icons/hi";
-import { IoSend } from "react-icons/io5";
 import SharePopup from "./SharePopup";
 import type { Track } from "../../../../types/track";
 import * as engagementService from "../../../../services/engagement.service";
 import { postComment } from "../../../../services/track.service";
 import { usePlayerStore } from "../../../../stores/player.store";
+import { useAuthStore } from "../../../../stores/auth.store";
 
 interface TrackActionsProps {
   track: Track;
@@ -28,11 +28,14 @@ interface TrackActionsProps {
 export default function TrackActions({
   track,
   isLiked = false,
-  currentUserAvatar = "https://picsum.photos/seed/shahd/100/100",
   onAddToNextUp,
   onComment,
 }: TrackActionsProps) {
+  const { user } = useAuthStore();
+  const currentUserAvatar = user?.avatar || "https://picsum.photos/seed/rythmify/100/100";
+  
   const [liked, setLiked] = useState(isLiked);
+  const [reposted, setReposted] = useState(track.isReposted || false);
   const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(track.repostCount ?? 0);
 
@@ -76,18 +79,26 @@ export default function TrackActions({
   }
 };
 
-  // Repost - calls MSW (/api/tracks/:id/repost) 
+  // Repost - calls /api/tracks/:id/repost
   const handleRepost = async () => {
-  try {
-    await engagementService.repostTrack(track.id);
-    setRepostCount((p) => p + 1);
-  } catch (err: any) {
-    if (err.response?.status === 404) {
-      alert("Reposting is not supported by the Rythmify backend API yet!");
+    const wasReposted = reposted;
+    // Optimistic update
+    setReposted(!wasReposted);
+    setRepostCount((p) => wasReposted ? Math.max(0, p - 1) : p + 1);
+
+    try {
+      if (wasReposted) {
+        await engagementService.removeRepost(track.id);
+      } else {
+        await engagementService.repostTrack(track.id);
+      }
+    } catch (err: any) {
+      console.error("Repost failed", err);
+      // Handle generic errors
+      setReposted(wasReposted);
+      setRepostCount((p) => wasReposted ? p + 1 : Math.max(0, p - 1));
     }
-    console.error("Repost failed");
-  }
-};
+  };
 
   // Comment - calls MSW (/api/tracks/:id/comments)
   const handleCommentSubmit = async () => {
@@ -128,11 +139,11 @@ export default function TrackActions({
                 onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
                 placeholder="Write a comment"
                 className="
-                  flex-1 bg-[var(--color-input-bg)] text-[var(--color-text-hover)]
-                  placeholder:text-[var(--color-text-muted)]
-                  text-sm px-4 py-2.5 rounded-[var(--radius-sm)]
-                  border border-transparent
-                  outline-none focus:border-[var(--color-border-light)]
+                  flex-1 bg-[#252525] text-[#ccc]
+                  placeholder:text-[#666]
+                  text-sm px-3 py-1.5 rounded-[3px]
+                  border border-[#333]
+                  outline-none focus:border-[#555]
                   transition-colors duration-150
                 "
               />
@@ -141,22 +152,23 @@ export default function TrackActions({
                 onClick={handleCommentSubmit}
                 disabled={!comment.trim()}
                 className="
-                  w-10 h-10 flex items-center justify-center shrink-0
-                  bg-[var(--color-input-bg)] rounded-[var(--radius-sm)]
-                  border border-transparent
+                  w-8 h-8 flex items-center justify-center shrink-0
+                  bg-[#252525] rounded-[3px]
+                  border border-[#333]
                   disabled:opacity-40 disabled:cursor-not-allowed
                   transition-all duration-150 cursor-pointer group
                 "
               >
-                <IoSend className="text-base text-[var(--color-text-muted)] group-hover:text-white transition-colors duration-150" />
+                <IoSend className="text-sm text-[#999] group-hover:text-white transition-colors duration-150" />
               </button>
+
             </div>
           </div>
 
           {/* Action Icons + Stats*/}
           <div
             data-test="track-action-bar"
-            className="flex flex-row items-center justify-between py-2 border-b border-[var(--color-border)]"
+            className="flex flex-row items-center justify-between py-2 mt-1"
           >
             <div className="flex items-center gap-3">
 
@@ -165,9 +177,26 @@ export default function TrackActions({
                 <FaHeart className="text-[15px]" />
               </IconButton>
 
+              {/* Repost */}
+              <IconButton data-test="button-repost" onClick={handleRepost} active={reposted} tooltip="Repost">
+                <AiOutlineRetweet className="text-[18px]" />
+              </IconButton>
+
               {/* Share */}
               <IconButton data-test="button-share" onClick={() => setShareOpen(true)} tooltip="Share">
-                <HiUpload className="text-[17px]" />
+                <IoShareOutline className="text-[18px]" />
+              </IconButton>
+
+              {/* Copy Link */}
+              <IconButton
+                data-test="button-copy-link"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  alert("Link copied!");
+                }}
+                tooltip="Copy Link"
+              >
+                <FaLink className="text-[14px]" />
               </IconButton>
 
               {/* Add to Next up */}
@@ -175,11 +204,11 @@ export default function TrackActions({
                 data-test="button-add-next-up"
                 onClick={() => {
                   onAddToNextUp?.();
-                  alert("Added to Next up list!");
+                  alert("Added to Next up!");
                 }}
                 tooltip="Add to Next up"
               >
-                <LuListEnd className="text-[17px]" />
+                <LuListEnd className="text-[18px]" />
               </IconButton>
 
               {/* More dropdown */}
@@ -210,24 +239,6 @@ export default function TrackActions({
                     {track.isPrivate && (
                       <DropdownItem icon={<FaGlobe />} label="Make public" data-test="dropdown-item-make-public" onClick={() => setMoreOpen(false)} />
                     )}
-                    <DropdownItem
-                      icon={<FaLink />}
-                      label="Copy link"
-                      data-test="dropdown-item-copy-link"
-                      onClick={() => {
-                        navigator.clipboard.writeText(window.location.href);
-                        setMoreOpen(false);
-                      }}
-                    />
-                    <DropdownItem
-                      icon={<BiRepost />}
-                      label="Repost"
-                      data-test="dropdown-item-repost"
-                      onClick={() => {
-                        handleRepost();
-                        setMoreOpen(false);
-                      }}
-                    />
                     <div className="my-1 border-t border-[var(--color-border)]" />
                   </div>
                 )}
@@ -235,14 +246,18 @@ export default function TrackActions({
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-4 text-[var(--color-text-muted)] text-xs">
+            <div className="flex items-center gap-4 text-[#999] text-[13px] font-medium">
+              <div className="flex items-center gap-1.5 cursor-default hover:text-white transition-colors">
+                <IoPlaySharp className="text-[14px]" />
+                <span>{formatCount(track.playCount ?? 749000)}</span>
+              </div>
               <StatWithTooltip data-test="stat-like-count" tooltip={`${formatExact(likeCount)} likes`}>
-                <FaHeart className="text-[11px]" />
-                {formatCount(likeCount)}
+                <FaHeart className="text-[12px]" />
+                <span>{formatCount(likeCount)}</span>
               </StatWithTooltip>
               <StatWithTooltip data-test="stat-repost-count" tooltip={`${formatExact(repostCount)} reposts`}>
-                <BiRepost className="text-[15px]" />
-                {repostCount}
+                <AiOutlineRetweet className="text-[16px]" />
+                <span>{formatCount(repostCount)}</span>
               </StatWithTooltip>
             </div>
           </div>
@@ -291,14 +306,15 @@ function IconButton({ children, onClick, active = false, tooltip, "data-test": d
         <button
           data-test={dataTest}
           onClick={onClick}
-          className="
-            w-10 h-10 flex items-center justify-center
-            rounded-[var(--radius-sm)] border
-            bg-[var(--color-input-bg)] border-[var(--color-border)]
-            transition-colors duration-150 cursor-pointer group
-          "
+          className={`
+            w-8 h-6 flex items-center justify-center
+            rounded-[3px] border transition-all duration-150 cursor-pointer group
+            ${active 
+              ? "bg-[#252525] border-[#f50] text-[#f50]" 
+              : "bg-[#252525] border-[#333] text-[#ccc] hover:border-[#555] hover:text-white"}
+          `}
         >
-          <span className={`transition-colors duration-150 ${active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)] group-hover:text-white"}`}>
+          <span className="shrink-0">
             {children}
           </span>
         </button>
