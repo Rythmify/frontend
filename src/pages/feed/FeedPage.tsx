@@ -16,7 +16,7 @@ const FeedPage = () => {
 
   const fetchFeed = useCallback(async (currentOffset: number, append: boolean) => {
     try {
-      append ? setIsLoadingMore(true) : setIsLoading(true);
+      if (append) setIsLoadingMore(true); else setIsLoading(true);
       const { items, hasMore: more } = await getActivityFeed(PAGE_SIZE, currentOffset);
       setFeedItems((prev) => (append ? [...prev, ...items] : items));
       setHasMore(more);
@@ -24,7 +24,7 @@ const FeedPage = () => {
     } catch (err) {
       console.error("Failed to load feed:", err);
     } finally {
-      append ? setIsLoadingMore(false) : setIsLoading(false);
+      if (append) setIsLoadingMore(false); else setIsLoading(false);
     }
   }, []);
 
