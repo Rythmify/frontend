@@ -46,9 +46,13 @@ export interface DiscoveryStation {
   name: string;
   artist_id: string;
   artist_name: string;
-  cover_image: string | null;
+  images: {
+    left: string | null;
+    center: string | null;
+    right: string | null;
+  };
+  preview_track?: DiscoveryTrack;
   track_count: number;
-  follower_count: number;
 }
 
 export interface EmergingArtist {
