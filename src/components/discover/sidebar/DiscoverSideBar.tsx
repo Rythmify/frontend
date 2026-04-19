@@ -76,14 +76,12 @@ const DiscoverSidebar = () => {
       </div>
 
       <div data-test="discover-sidebar-suggested-artists">
-        {!artistsError && (
-          <ArtistListSection
-            title="ARTISTS YOU SHOULD FOLLOW"
-            artists={artistsLoading ? [] : suggestedArtists}
-            onRefresh={handleRefreshArtists}
-            maxDisplay={3}
-          />
-        )}
+        <ArtistListSection
+          title="ARTISTS YOU SHOULD FOLLOW"
+          artists={artistsLoading || artistsError ? [] : suggestedArtists}
+          onRefresh={handleRefreshArtists}
+          maxDisplay={3}
+        />
       </div>
 
       {likedTracks.length > 0 && (
