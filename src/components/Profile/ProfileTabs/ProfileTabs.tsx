@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import FollowButton from "../FollowButton/FollowButton";
 import { useNavigate } from "react-router-dom";
+import ModalNewMessageBody from "@/pages/social/messages/ModalNewMessageBody";
+import { Modal } from "@/components/MessagingComponents/Modal";
+import type { RecipientResult } from "@/components/MessagingComponents/RecipientInputBox";
 
 interface TabButtonProps {
   children: React.ReactNode;
@@ -49,6 +52,8 @@ interface ProfileTabsProps {
   blockDisabled?: boolean;
   username?: string;
   displayName?: string;
+  userId?: string;      
+  profilePicture?: string | null; 
   tracks?: number;
   extraActions?: React.ReactNode;
 }
@@ -63,11 +68,22 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   blockDisabled = false,
   username = "",
   displayName = "",
+  userId = "",              
+  profilePicture = null,     
   tracks = 0,
   extraActions,
 }) => {
   const [showMore, setShowMore] = useState(false);
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Build the prefilled recipient from profile data
+  const prefilledRecipient: RecipientResult = {
+    id: userId,
+    username,
+    display_name: displayName,
+    profile_picture: profilePicture,
+  };
 
   return (
     <div className="flex justify-between px-0.5 relative">
@@ -130,9 +146,18 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           <button
             data-test="message-button"
             className="cursor-pointer flex items-center justify-center w-9 h-9 bg-[#313030] rounded text-white hover:text-[#737272] transition-colors"
+            onClick={() => setIsOpen(true)}
           >
             <i className="fa-solid fa-envelope" />
           </button>
+
+          {/* Modal with prefilled recipient */}
+          <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+            <ModalNewMessageBody
+              onClose={() => setIsOpen(false)}
+              prefilledRecipient={prefilledRecipient}  
+            />
+          </Modal>
 
           <div className="relative">
             <button
