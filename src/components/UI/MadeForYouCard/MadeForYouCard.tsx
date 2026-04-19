@@ -73,18 +73,18 @@ export default function MadeForYouCard({
         />
 
         {/* SoundCloud logo — top-right */}
-        <div className="absolute top-2 right-2 opacity-70 z-10">
-          <i className="fa-brands fa-soundcloud text-white text-base" />
+        <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 opacity-70 z-10">
+          <i className="fa-brands fa-soundcloud text-white text-xs sm:text-base" />
         </div>
 
         {/* Badge — bottom */}
         <div
-          className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm flex items-baseline gap-1.5"
+          className="w-[90%] absolute left-2 bottom-2 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-sm flex items-baseline gap-1"
           style={{ backgroundColor: bg }}
           data-test="made-for-you-card-badge"
         >
           <span
-            className="text-2xl uppercase leading-none text-white"
+            className="text-sm sm:text-lg md:text-xl lg:text-2xl uppercase leading-none text-white"
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 900,
@@ -94,7 +94,7 @@ export default function MadeForYouCard({
             {item.badgeWords[0]}
           </span>
           <span
-            className="text-2xl uppercase leading-none text-white"
+            className="text-sm sm:text-lg md:text-xl lg:text-2xl uppercase leading-none text-white"
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 900,
@@ -140,7 +140,7 @@ export default function MadeForYouCard({
 
       {/* Text */}
       <p
-        className="text-white text-sm font-semibold truncate"
+        className="text-text-hover text-xs sm:text-sm font-semibold truncate"
         data-test="made-for-you-card-title"
       >
         {item.title}

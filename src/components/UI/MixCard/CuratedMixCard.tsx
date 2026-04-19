@@ -81,7 +81,7 @@ export default function CuratedMixCard({
 
       {/* Subtitle */}
       <p
-        className="text-text-secondary text-xs truncate"
+        className="text-text-secondary text-[10px] sm:text-xs truncate"
         data-test="curated-mix-card-subtitle"
       >
         {mix.preview_track?.artist_name ?? mix.preview_track?.genre_name ?? ""}

@@ -14,7 +14,7 @@ interface TrackListSectionProps {
 const styles = {
   container: `flex flex-col gap-3 w-full`,
   header: `flex items-center justify-between w-full hover:opacity-70 transition-opacity`,
-  title: `text-xs font-bold text-white cursor-pointer hover:text-text-secondary`,
+  title: `text-xs font-bold text-text-hover cursor-pointer hover:text-text-secondary`,
   viewAll: `text-xs cursor-pointer hover:underline text-text-secondary hover:text-text`,
   trackList: `flex flex-col gap-4`,
 };

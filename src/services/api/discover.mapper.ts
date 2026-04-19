@@ -125,7 +125,12 @@ export function mapDiscoveryStation(api: DiscoveryStation): Station {
       id: api.artist_id,
       displayName: api.artist_name,
     },
-    coverUrl: api.cover_image,
+    artists: [
+      { avatarUrl: api.images?.left ?? undefined, displayName: "" },
+      { avatarUrl: api.images?.center ?? undefined, displayName: api.artist_name },
+      { avatarUrl: api.images?.right ?? undefined, displayName: "" },
+    ],
+    coverUrl: null,
     trackCount: api.track_count,
   };
 }

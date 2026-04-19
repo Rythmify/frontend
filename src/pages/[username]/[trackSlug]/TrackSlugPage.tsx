@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TrackHero from "./components/TrackHero";
 import TrackActions from "./components/TrackActions";
-import TrackList from "./components/TrackList";
 import TrackSidebar from "./components/TrackSidebar";
+import TrackCommentList from "./components/TrackCommentList";
 import type { Track } from "../../../types/track";
 import {
   getTrackBySlug,
@@ -12,6 +12,7 @@ import {
   postComment,
 } from "../../../services/track.service";
 import { usePlayerStore } from "../../../stores/player.store";
+import type { Comment } from "../../../types/comment";
 
 export default function TrackSlugPage() {
   const { username, trackId } = useParams<{
@@ -22,7 +23,7 @@ export default function TrackSlugPage() {
 
   const [track, setTrack] = useState<Track | null>(null);
   const [relatedTracks, setRelatedTracks] = useState<Track[]>([]);
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,7 +105,10 @@ export default function TrackSlugPage() {
   const handleComment = async (text: string, timestampSec: number) => {
     if (!track) return;
     try {
-      await postComment(String(track.id), text, timestampSec);
+      const newComment = await postComment(String(track.id), text, timestampSec);
+      if (newComment) {
+        setComments(prev => [...prev, newComment]);
+      }
     } catch (err) {
       console.error("Failed to post comment:", err);
     }
@@ -172,24 +176,19 @@ export default function TrackSlugPage() {
 
       {/* Body — two columns */}
       <div className="flex flex-col lg:flex-row gap-8 py-2 w-full">
-        {/* Left: actions + track list */}
+        {/* Left: actions + Track discussion */}
         <div data-test="track-main-content" className="flex-1 min-w-0">
           <TrackActions
             track={heroTrack ?? track}
             onAddToNextUp={() => usePlayerStore.getState().addToQueue(track)}
             onComment={handleComment}
           />
-          <div className="mt-6">
-            <h2 className="text-[var(--color-text-muted)] text-xs uppercase tracking-widest font-semibold mb-2">
-              Related Tracks
-            </h2>
-            <TrackList
-              tracks={relatedTracks}
-              currentTrackId={currentTrack?.id}
-              isPlaying={isPlaying}
-              onTrackPlay={handleTrackPlay}
-            />
-          </div>
+          
+          {/* Comments Section - Moved below actions like SoundCloud */}
+          <TrackCommentList 
+            comments={comments} 
+            trackId={String(track.id)} 
+          />
         </div>
 
         {/* Right: sidebar */}
@@ -197,7 +196,11 @@ export default function TrackSlugPage() {
           data-test="track-sidebar-col"
           className="w-full lg:w-[280px] shrink-0 lg:pt-[12px]"
         >
-          <TrackSidebar track={heroTrack ?? track} featuredArtists={[]} />
+          <TrackSidebar 
+            track={heroTrack ?? track} 
+            featuredArtists={[]} 
+            relatedTracks={relatedTracks}
+          />
         </div>
       </div>
     </div>

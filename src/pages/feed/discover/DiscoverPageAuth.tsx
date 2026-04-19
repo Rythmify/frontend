@@ -26,10 +26,10 @@ const DiscoverPageAuth = () => {
       className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg"
       data-test="discover-page"
     >
-      <div className="flex gap-11 p-0">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-11 p-0">
         {/* Main Content */}
         <div
-          className="flex flex-col gap-20 flex-8 min-w-0 pt-10"
+          className="flex flex-col gap-10 sm:gap-14 lg:gap-20 w-full lg:flex-8 min-w-0 pt-6 sm:pt-10"
           data-test="discover-main-content"
         >
           {homeError && (
@@ -56,9 +56,9 @@ const DiscoverPageAuth = () => {
           <NewCrewForYou />
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar — hidden below lg */}
         <div
-          className="flex-2 ps-2 pt-8"
+          className="hidden lg:block lg:flex-2 ps-2 pt-8"
           data-test="discover-sidebar-container"
         >
           <DiscoverSideBar />

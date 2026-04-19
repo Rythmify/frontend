@@ -1,14 +1,11 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
+import { usePlayerStore } from "../../../../stores/player.store";
 import { Link } from "react-router-dom";
 import { FaPlay, FaPause, FaLock } from "react-icons/fa";
 import TrackWaveform, { type TrackWaveformHandle } from "./TrackWaveform";
 import type { Track } from "../../../../types/track";
 
-interface Comment {
-  id: number;
-  avatarUrl: string;
-  timestamp: number; 
-}
+import type { Comment } from "../../../../types/comment";
 
 interface TrackHeroProps {
   track: Track;
@@ -26,10 +23,32 @@ export default function TrackHero({
   const heroRef = useRef<HTMLDivElement>(null);
   const waveformRef = useRef<TrackWaveformHandle>(null);
 
+  // Floating comment state
+  const { currentTime } = usePlayerStore();
+  const [activeComment, setActiveComment] = useState<Comment | null>(null);
+  const [showFloating, setShowFloating] = useState(false);
+  const lastSecondRef = useRef<number>(-1);
+
   const handlePlayPause = () => {
     waveformRef.current?.playPause();
     onPlayPause?.();
   };
+
+  // Logic to trigger floating comments when playback reaches their time
+  useEffect(() => {
+    const currentSec = Math.floor(currentTime);
+    if (currentSec !== lastSecondRef.current) {
+      lastSecondRef.current = currentSec;
+
+      const commentAtThisTime = comments.find(c => Math.floor(c.track_timestamp) === currentSec);
+      if (commentAtThisTime) {
+        setActiveComment(commentAtThisTime);
+        setShowFloating(true);
+        const timer = setTimeout(() => setShowFloating(false), 3000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentTime, comments]);
 
   return (
     <div
@@ -39,7 +58,7 @@ export default function TrackHero({
       style={{
         background:
           "linear-gradient(135deg, #6b7280 0%, #9ca3af 50%, #6b7280 100%)",
-          minHeight: "380px",
+        minHeight: "380px",
       }}
     >
       {/* Left / Main Section */}
@@ -66,37 +85,37 @@ export default function TrackHero({
 
             {/* Title — wraps naturally */}
             <div className="bg-black px-3 pt-2">
-                <h1
-              data-test="track-title"
-              className="text-white text-base md:text-[22px] font-bold m-0 leading-[1.3] shrinkwrap"
-              style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}
-            >
-              {track.title}
-            </h1>
-
-
-            {/* Private Badge */}
-            {track.isPrivate && (
-              <div
-                data-test="badge-private"
-                className="inline-flex items-center gap-[5px] mt-2 bg-white/[0.18] rounded px-[2px] py-[2.5px] text-[10px] text-[#ccc] tracking-[0.06em] uppercase"
+              <h1
+                data-test="track-title"
+                className="text-white text-base md:text-[22px] font-bold m-0 leading-[1.3] shrinkwrap"
+                style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}
               >
-                <FaLock className="text-[8px]" />
-                Private
-              </div>
-            )}
+                {track.title}
+              </h1>
+
+
+              {/* Private Badge */}
+              {track.isPrivate && (
+                <div
+                  data-test="badge-private"
+                  className="inline-flex items-center gap-[5px] mt-2 bg-white/[0.18] rounded px-[2px] py-[2.5px] text-[10px] text-[#ccc] tracking-[0.06em] uppercase"
+                >
+                  <FaLock className="text-[8px]" />
+                  Private
+                </div>
+              )}
             </div>
-             <div className="bg-black px-3 inline-block">
-            <Link
-              data-test="track-artist-link"
-              to={`/${track.artistUsername}`}
-              className="text-[#837979] text-sm font-bold no-underline inline-block my-0 transition-colors duration-150 hover:text-white pb-2"
-            >
-              {track.artistName}
-            </Link>
+            <div className="bg-black px-3 inline-block">
+              <Link
+                data-test="track-artist-link"
+                to={`/${track.artistUsername}`}
+                className="text-[#837979] text-sm font-bold no-underline inline-block my-0 transition-colors duration-150 hover:text-white pb-2"
+              >
+                {track.artistName}
+              </Link>
+            </div>
           </div>
-             </div>
-            
+
           {/* Meta: Posted At + Genre Tag — hidden on very small screens */}
           <div className="hidden sm:flex flex-col items-start justify-end gap-2 ml-auto shrink-0 pt-1.5">
             <span
@@ -147,27 +166,63 @@ export default function TrackHero({
           {comments.length > 0 && (
             <div
               data-test="track-comment-avatars"
-              className="relative h-7 mt-1"
+              className="absolute top-[35px] left-0 w-full h-8 pointer-events-none"
             >
               {comments.map((c) => {
                 const [m, s] = track.duration.split(":").map(Number);
                 const totalSec = (m || 0) * 60 + (s || 0) || 191;
-                const leftPct = Math.min((c.timestamp / totalSec) * 100, 100);
+                const leftPct = Math.min((c.track_timestamp / totalSec) * 100, 100);
                 return (
-                  <img
-                    key={c.id}
-                    src={c.avatarUrl}
-                    alt="commenter"
-                    title={`${Math.floor(c.timestamp / 60)}:${String(
-                      c.timestamp % 60
-                    ).padStart(2, "0")}`}
-                    className="absolute top-0 w-6 h-6 rounded-full border border-white/40 object-cover cursor-pointer -translate-x-1/2"
-                    style={{ left: `${leftPct}%` }}
-                  />
+                  <div
+                    key={c.comment_id}
+                    className="absolute top-0 group pointer-events-auto"
+                    style={{ left: `${leftPct}%`, transform: "translateX(-50%)" }}
+                  >
+                    <img
+                      src={c.author?.avatar_url || "https://picsum.photos/seed/rythmify/100/100"}
+                      alt={c.author?.username}
+                      title={`${Math.floor(c.track_timestamp / 60)}:${String(
+                        Math.floor(c.track_timestamp % 60)
+                      ).padStart(2, "0")}`}
+                      className="w-8 h-8 rounded-full border border-white/40 object-cover cursor-pointer hover:scale-125 hover:z-20 transition-all duration-150"
+                    />
+
+                    {/* Hover bubble (Mini version of cross floating comment) */}
+                    <div className="absolute bottom-full left-1/2 -translateX-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-30">
+                      <div className="bg-black/90 text-white text-[15px] px-2 py-1 rounded whitespace-nowrap border border-white/10 shadow-xl">
+                        <span className="font-bold mr-1">{c.author?.display_name}:</span>
+                        {c.content}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           )}
+
+          {/* Floating Comment Popover (The "Cross" feature) */}
+          <div
+            className={`
+              absolute -top-12 left-1/2 -translate-x-1/2 z-40 transition-all duration-500 transform
+              ${showFloating ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90 pointer-events-none'}
+            `}
+          >
+            {activeComment && (
+              <div className="flex items-center gap-2 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-2xl">
+                <img
+                  src={activeComment.author?.avatar_url}
+                  className="w-6 h-6 rounded-full border border-white/40"
+                  alt=""
+                />
+                <div className="text-white text-xs font-medium max-w-[200px] truncate">
+                  <span className="text-[var(--color-accent)] font-bold mr-1">
+                    {activeComment.author?.display_name}
+                  </span>
+                  {activeComment.content}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

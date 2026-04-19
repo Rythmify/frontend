@@ -1,28 +1,36 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DiscoverSideBar from "@/components/discover/sidebar/DiscoverSideBar";
 import FeedItemCard from "@/components/feed/FeedItemCard";
 import { getActivityFeed } from "@/services/feed.service";
 import type { FeedItem } from "@/types/feedItem";
 
+const PAGE_SIZE = 20;
+
 const FeedPage = () => {
   const [showReposts, setShowReposts] = useState(true);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+
+  const fetchFeed = useCallback(async (currentOffset: number, append: boolean) => {
+    try {
+      if (append) setIsLoadingMore(true); else setIsLoading(true);
+      const { items, hasMore: more } = await getActivityFeed(PAGE_SIZE, currentOffset);
+      setFeedItems((prev) => (append ? [...prev, ...items] : items));
+      setHasMore(more);
+      setOffset(currentOffset + items.length);
+    } catch (err) {
+      console.error("Failed to load feed:", err);
+    } finally {
+      if (append) setIsLoadingMore(false); else setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchFeed = async () => {
-      try {
-        setIsLoading(true);
-        const { items } = await getActivityFeed(20);
-        setFeedItems(items);
-      } catch (err) {
-        console.error("Failed to load feed:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchFeed();
-  }, []);
+    fetchFeed(0, false);
+  }, [fetchFeed]);
 
   const displayItems = showReposts
     ? feedItems
@@ -34,7 +42,7 @@ const FeedPage = () => {
       className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg"
     >
       <div className="flex gap-11 p-0">
-        {/* Main Content — 70% */}
+        {/* Main Content */}
         <div
           data-test="feed-main"
           className="flex flex-col flex-[8] min-w-0 pt-10"
@@ -70,22 +78,35 @@ const FeedPage = () => {
           {/* Feed list */}
           <div data-test="feed-list" className="flex flex-col">
             {isLoading ? (
-              <p className="text-text-secondary text-center mt-10">Loading feed...</p>
+              <p className="text-text-secondary text-center mt-10">
+                Loading feed...
+              </p>
             ) : displayItems.length > 0 ? (
-              displayItems.map((item) => (
-                <FeedItemCard key={item.id} item={item} />
-              ))
+              <>
+                {displayItems.map((item) => (
+                  <FeedItemCard key={item.id} item={item} />
+                ))}
+                {hasMore && (
+                  <button
+                    data-test="feed-load-more"
+                    onClick={() => fetchFeed(offset, true)}
+                    disabled={isLoadingMore}
+                    className="mt-6 mx-auto px-6 py-2 text-sm text-white bg-zinc-700 hover:bg-zinc-600 rounded disabled:opacity-50 transition-colors"
+                  >
+                    {isLoadingMore ? "Loading..." : "Load more"}
+                  </button>
+                )}
+              </>
             ) : (
-              <p className="text-text-secondary text-center mt-10">Your feed is empty. Follow some artists!</p>
+              <p className="text-text-secondary text-center mt-10">
+                Your feed is empty. Follow some artists!
+              </p>
             )}
           </div>
         </div>
 
-        {/* Sidebar — 30% */}
-        <div
-          data-test="feed-sidebar"
-          className="flex-[2] ps-2 pt-8"
-        >
+        {/* Sidebar */}
+        <div data-test="feed-sidebar" className="flex-[2] ps-2 pt-8">
           <DiscoverSideBar />
         </div>
       </div>
