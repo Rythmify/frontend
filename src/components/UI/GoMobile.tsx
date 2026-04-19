@@ -3,17 +3,17 @@ const styles = {
   wrapper: `flex flex-col gap-6`,
   // Go Mobile Section
   goMobileContainer: `flex flex-col gap-3 w-full`,
-  title: `text-xs font-semibold text-left text-white`,
+  title: `text-xs font-semibold text-left text-text-hover`,
   buttonRow: `flex gap-3`,
   storeButton: `
     flex items-center gap-2 px-1 py-1
-    border border-white rounded-lg
+    border border-border rounded-lg
     hover:opacity-70
   `,
-  icon: `text-white text-xl`,
+  icon: `text-text-hover text-xl`,
   textContainer: `flex flex-col items-start`,
-  subtitle: `text-[8px] text-white`,
-  storeName: `text-xs font-bold text-white`,
+  subtitle: `text-[8px] text-text-secondary`,
+  storeName: `text-xs font-bold text-text-hover`,
   // Footer Section
   footerContainer: `flex flex-col gap-2 w-full`,
   footerLinks: `flex flex-wrap gap-x-1 gap-y-1 text-xs text-text-secondary`,
