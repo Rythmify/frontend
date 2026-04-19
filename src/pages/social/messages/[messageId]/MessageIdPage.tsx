@@ -12,6 +12,7 @@ import {
 import ConversationHeader from "@/components/MessagingComponents/ConversationHeader";
 import SendMessageForm from "@/components/MessagingComponents/SendMessageForm";
 import { joinConversation, leaveConversation, getSocket } from '@/services/api/messaging/socketService';
+import { useMessagingStore } from '@/stores/messaging.store';
 export default function MessageIdPage() {
   const navigate = useNavigate();
 
@@ -23,6 +24,7 @@ export default function MessageIdPage() {
   const [error, setError] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
+  const { refreshUnreadCount } = useMessagingStore();
   const activeConv = conversations.find((c) => c.id === activeConvId) ?? null;
 
   // last message received from the participant (not sent by current user)
@@ -53,10 +55,11 @@ export default function MessageIdPage() {
           markMessageReadState(conv.id, msg.id, true).catch(() => {});
         });
 
-        // reflect the cleared unread state locally
+        // reflect the cleared unread state locally and update navbar badge
         setConversations((prev) =>
           prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
         );
+        refreshUnreadCount();
       })
       .catch(() => setError("Could not load messages."))
       .finally(() => setLoadingMsgs(false));
@@ -91,8 +94,7 @@ useEffect(() => {
   const socket = getSocket();
   if (!socket) return;
 
-  // Other person sent a message → append to thread + update sidebar
-  socket.on('message:received', ({ conversationId, message }: { conversationId: string; message: Message }) => {
+  const onReceived = ({ conversationId, message }: { conversationId: string; message: Message }) => {
     if (conversationId === activeConvId) {
       setActiveMessages((prev) => [...prev, message]);
     }
@@ -103,17 +105,15 @@ useEffect(() => {
           : c,
       ),
     );
-  });
+  };
 
-  // Other person deleted a message → remove from thread
-  socket.on('message:removed', ({ conversationId, messageId }: { conversationId: string; messageId: string }) => {
+  const onRemoved = ({ conversationId, messageId }: { conversationId: string; messageId: string }) => {
     if (conversationId === activeConvId) {
       setActiveMessages((prev) => prev.filter((m) => m.id !== messageId));
     }
-  });
+  };
 
-  // Other person read your message → update unread count in sidebar
-  socket.on('message:read_updated', ({ conversationId, conversationUnreadCount }: { conversationId: string; conversationUnreadCount: number }) => {
+  const onReadUpdated = ({ conversationId, conversationUnreadCount }: { conversationId: string; conversationUnreadCount: number }) => {
     setConversations((prev) =>
       prev.map((c) =>
         c.id === conversationId
@@ -121,28 +121,28 @@ useEffect(() => {
           : c,
       ),
     );
-  });
+  };
 
-  // Other person is typing → show indicator
-  socket.on('message:typing', ({ conversationId }: { conversationId: string }) => {
-    if (conversationId === activeConvId) {
-      setIsTyping(true);
-    }
-  });
+  const onTyping = ({ conversationId }: { conversationId: string }) => {
+    if (conversationId === activeConvId) setIsTyping(true);
+  };
 
-  // Other person stopped typing → hide indicator
-  socket.on('message:stop_typing', ({ conversationId }: { conversationId: string }) => {
-    if (conversationId === activeConvId) {
-      setIsTyping(false);
-    }
-  });
+  const onStopTyping = ({ conversationId }: { conversationId: string }) => {
+    if (conversationId === activeConvId) setIsTyping(false);
+  };
+
+  socket.on('message:received', onReceived);
+  socket.on('message:removed', onRemoved);
+  socket.on('message:read_updated', onReadUpdated);
+  socket.on('message:typing', onTyping);
+  socket.on('message:stop_typing', onStopTyping);
 
   return () => {
-    socket.off('message:received');
-    socket.off('message:removed');
-    socket.off('message:read_updated');
-    socket.off('message:typing');
-    socket.off('message:stop_typing');
+    socket.off('message:received', onReceived);
+    socket.off('message:removed', onRemoved);
+    socket.off('message:read_updated', onReadUpdated);
+    socket.off('message:typing', onTyping);
+    socket.off('message:stop_typing', onStopTyping);
   };
 }, [activeConvId]);
 
