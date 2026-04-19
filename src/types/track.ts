@@ -18,4 +18,6 @@ export interface Track {
   madeFor?: string; // made for [username]
   isLiked?: boolean;
   isReposted?: boolean;
+  artistId?: string;
+  isRepostedByMe?: boolean;
 }

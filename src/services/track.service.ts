@@ -57,6 +57,8 @@ function normalizeTrack(raw: any): Track {
     waveformData:    raw.waveformData  ?? undefined,
     isLiked:         raw.is_liked_by_me ?? raw.is_liked ?? raw.isLiked ?? false,
     isReposted:      raw.is_reposted_by_me ?? raw.is_reposted ?? raw.isReposted ?? false,
+    artistId:        raw.user_id       || raw.artistId || "",
+    trackSlug:       raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
     duration,
   } as Track;
 }
@@ -226,5 +228,19 @@ export async function getTrackWaveform(trackId: string): Promise<number[]> {
     return peaksArray;
   } catch {
     return [];
+  }
+}
+
+/**
+ * POST /api/v1/tracks/{track_id}/play
+ * Increments the play count for a track.
+ */
+export async function incrementPlayCount(trackId: string | number) {
+  try {
+    const { data } = await axiosInstance.post(`/tracks/${trackId}/play`);
+    return data;
+  } catch (err) {
+    console.error("Failed to increment play count", err);
+    return null;
   }
 }
