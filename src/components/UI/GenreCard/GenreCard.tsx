@@ -66,12 +66,12 @@ export default function GenreCard({
 
         {/* Genre badge — bottom-left */}
         <div
-          className="w-[90%] absolute left-2 bottom-2 px-2 py-1 rounded-sm"
+          className="w-[90%] absolute left-2 bottom-2 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-sm"
           style={{ backgroundColor: badge.bg }}
           data-test="genre-card-badge"
         >
           <span
-            className="text-base tracking-widest uppercase leading-none"
+            className="text-xs sm:text-sm md:text-base lg:text-lg tracking-widest uppercase leading-none"
             style={{
               color: badge.text,
               fontFamily: "'Barlow Condensed', sans-serif",
