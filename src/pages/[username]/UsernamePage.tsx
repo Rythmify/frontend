@@ -265,27 +265,27 @@ export default function UsernamePage() {
     tracks: 0,
     isVerified: u.is_verified,
   }));
-console.log('profileData:', profileData?.id)
+
+  console.log('profileData:', profileData?.id)
   return (
     <div className="container px-4 md:px-8 lg:px-20">
       <ProfileHeader user={user} isOwner={isOwner} />
-<ProfileTabs
-  isOwner={isOwner}
-  selectedTab={selectedTab}
-  onTabChange={handleTabChange}
-  onShare={() => setShowShare(true)}
-  onEdit={() => setShowEdit(true)}
-  username={user.username}
-  displayName={user.displayName}
-  tracks={displayedStats.tracks ?? 0}
-  onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
-  blockDisabled={!profileData}
-  userId={isOwner ? currentUser.id : profileData?.id ?? ''}  
-  profilePicture={isOwner ? currentUser.avatar ?? null : profileData?.profile_picture ?? null} 
-  
-/>
+      <ProfileTabs
+        isOwner={isOwner}
+        selectedTab={selectedTab}
+        onTabChange={handleTabChange}
+        onShare={() => setShowShare(true)}
+        onEdit={() => setShowEdit(true)}
+        username={user.username}
+        displayName={user.displayName}
+        tracks={displayedStats.tracks ?? 0}
+        onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
+        blockDisabled={!profileData}
+        userId={isOwner ? currentUser.id : profileData?.id ?? ''}  
+        profilePicture={isOwner ? currentUser.avatar ?? null : profileData?.profile_picture ?? null} 
+      />
 
-      <div className="flex gap-6 py-6 items-start">
+      <div className="flex gap-10 py-6 items-start">
         <div className="flex-1 min-w-0">
           {profileTracks.length > 0 ? (
             <>
@@ -344,7 +344,7 @@ console.log('profileData:', profileData?.id)
             </div>
           )}
         </div>
-        <div className="sticky top-24 self-start">
+        <div className="sticky top-24 self-start w-[320px] shrink-0">
           <ProfileSidebar
             user={user}
             isOwner={isOwner}
@@ -412,6 +412,3 @@ console.log('profileData:', profileData?.id)
     </div>
   );
 }
-
-
-

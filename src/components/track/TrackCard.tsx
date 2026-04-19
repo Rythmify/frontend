@@ -222,6 +222,7 @@ function CardWaveform({
           barWidth: 2,
           barGap: 0.5,
           barRadius: 2,
+          height: 80,
           backend: "MediaElement",
           media: audio,
           peaks: hasPeaks ? [peaks] : undefined,
@@ -253,6 +254,7 @@ function CardWaveform({
           barWidth: 2,
           barGap: 0.5,
           barRadius: 2,
+          height: 80,
           interact: true, // Enable interaction even if not active so user can click waveform to comment
           peaks: hasPeaks ? [peaks] : undefined,
           duration: durationFallback > 0 ? durationFallback : undefined,
