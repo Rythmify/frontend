@@ -15,7 +15,7 @@ function mapTrack(t: any): Track {
   return {
     id: String(t.id ?? ""),
     title: t.title ?? "Untitled",
-    artistName: t.user?.displayName ?? t.user?.username ?? "Unknown",
+    artistName: t.user?.display_name ?? t.user?.displayName ?? t.user?.username ?? "Unknown",
     artistUsername: t.user?.username ?? "unknown",
     coverUrl: t.coverUrl ?? t.cover_image ?? "",
     audioUrl: t.audioUrl ?? t.stream_url ?? "",
@@ -28,6 +28,7 @@ function mapTrack(t: any): Track {
     postedAt: t.postedAt ?? t.created_at ?? "",
     waveformData: [],
     isPrivate: t.isPrivate ?? false,
+    trackSlug: t.slug ?? t.track_slug ?? t.trackSlug ?? String(t.id ?? ""),
   };
 }
 
