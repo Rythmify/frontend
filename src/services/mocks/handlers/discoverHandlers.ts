@@ -215,18 +215,16 @@ const mockStations: DiscoveryStation[] = [
     name: "Based on Drake",
     artist_id: ARTIST_IDS.drake,
     artist_name: "Drake",
-    cover_image: "https://picsum.photos/seed/501/200/200",
+    images: { left: "https://picsum.photos/seed/501/200/200", center: null, right: null },
     track_count: 50,
-    follower_count: 5000000,
   },
   {
     id: "bbbb1111-2222-4333-8444-555566667777",
     name: "Based on SZA",
     artist_id: ARTIST_IDS.sza,
     artist_name: "SZA",
-    cover_image: "https://picsum.photos/seed/502/200/200",
+    images: { left: "https://picsum.photos/seed/502/200/200", center: null, right: null },
     track_count: 50,
-    follower_count: 3200000,
   },
 ];
 
