@@ -42,7 +42,7 @@ function toStationPlaylist(station: DiscoveryStation): Playlist {
     name: station.name,
     description: null,
     is_public: true,
-    cover_image: station.cover_image,
+    cover_image: station.images?.center ?? station.images?.left ?? null,
     subtype: "playlist",
     created_at: "",
     updated_at: null,
@@ -105,9 +105,8 @@ export default function StationSlugPage() {
             name: s.name,
             artist_id: s.seedArtist.id,
             artist_name: s.seedArtist.displayName,
-            cover_image: s.coverUrl,
+            images: { left: s.coverUrl ?? null, center: null, right: null },
             track_count: s.trackCount,
-            follower_count: 0,
           } satisfies DiscoveryStation))[0] ??
           null;
 
@@ -171,7 +170,7 @@ export default function StationSlugPage() {
           seedArtist?.profile_picture ??
           "https://picsum.photos/seed/station-artist/100/100",
       },
-      coverUrl: station.cover_image,
+      coverUrl: station.images?.center ?? station.images?.left ?? null,
       trackCount: station.track_count,
     });
   };
