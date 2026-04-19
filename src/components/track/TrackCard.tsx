@@ -20,6 +20,7 @@ import { FaPlay as FaPlayCount } from "react-icons/fa6";
 import { IoSend } from "react-icons/io5";
 import type { Track } from "../../types/track";
 import type { Comment } from "../../types/comment";
+import type { TrackCardProps } from "./types";
 import { usePlayerStore } from "../../stores/player.store";
 import { useAuthStore } from "../../stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
@@ -447,22 +448,18 @@ function ScBtn({ icon, label, tooltip, onClick, active = false, "data-test": dat
 
 // Card Props
 
-export interface TrackCardProps {
-  track: Track;
-  repostedBy?: string;
-  onCopyLink?: () => void;
-  onAddToPlaylist?: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
-}
+// Card Props (Moved to types.ts)
 
 export default function TrackCard({
   track,
   repostedBy,
+  disableComments,
   onCopyLink,
   onAddToPlaylist,
   onEdit,
   onDelete,
+  onReplaceFile,
+  onDistribute,
 }: TrackCardProps) {
   const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore();
   const { user } = useAuthStore();
@@ -515,7 +512,9 @@ export default function TrackCard({
   };
 
   const handleWaveformClick = (ratio: number) => {
-    setShowCommentBar(true);
+    if (!disableComments) {
+      setShowCommentBar(true);
+    }
     if (!isActive) {
       setTrack(track);
       setPlayCount(prev => prev + 1); // Optimistic increment
