@@ -237,7 +237,7 @@ useEffect(() => {
             isTyping={isTyping}
             ParticipantInfo={{
               display_name: activeConv.participant.display_name,
-              profile_picture: activeConv.participant.profile_picture,
+              profile_picture: activeConv.participant.avatar,
             }}
           />
         </div>
