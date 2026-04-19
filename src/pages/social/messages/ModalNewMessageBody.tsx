@@ -7,12 +7,15 @@ import type { ResolvedEmbed } from '@/components/MessagingComponents/MessageBox'
 
 interface ModalNewMessageBodyProps {
   onClose: () => void
+   prefilledRecipient?: RecipientResult // optional prop to prefill the recipient (e.g. when clicking "Message" from a profile) 
 }
 
-const ModalNewMessageBody = ({ onClose }: ModalNewMessageBodyProps) => {
+const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBodyProps) => {
   const navigate = useNavigate()
 
-  const [selected, setSelected]     = useState<RecipientResult | null>(null)
+  const [selected, setSelected] = useState<RecipientResult | null>(
+    prefilledRecipient ?? null  
+  )
   const [message, setMessage]       = useState('')
   const [embed, setEmbed]           = useState<ResolvedEmbed | null>(null)
   const [isSending, setIsSending]   = useState(false)
@@ -61,12 +64,20 @@ const ModalNewMessageBody = ({ onClose }: ModalNewMessageBodyProps) => {
         To <span className="text-red-500">*</span>
       </label>
 
-      <div className="mb-4">
-        <RecipientInputBox
-          onSelect={(user) => { setSelected(user); setRecipientError(null) }}
-          onClear={() => setSelected(null)}
-          error={recipientError}
-        />
+         <div className="mb-4">
+        {prefilledRecipient ? (
+          <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] border border-border rounded">
+            <span className="text-white text-sm font-semibold">
+              {prefilledRecipient.display_name || prefilledRecipient.username}
+            </span>
+          </div>
+        ) : (
+          <RecipientInputBox
+            onSelect={(user) => { setSelected(user); setRecipientError(null) }}
+            onClear={() => setSelected(null)}
+            error={recipientError}
+          />
+        )}
       </div>
 
       {/* ── Message field ── */}

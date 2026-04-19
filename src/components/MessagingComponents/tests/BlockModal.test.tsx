@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, configure } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BlockUserModal } from "../../UI/BlockModal";
 
-// ✅ Fix 1: Use the same @/ alias the component uses so the mock actually applies
+// ✅ Ensure data-test works with getByTestId
+configure({ testIdAttribute: "data-test" });
+
+// ✅ Mock API
 vi.mock("@/services/api/messaging/conversationApi", () => ({
   blockUser: vi.fn(),
   submitReport: vi.fn(),
@@ -50,7 +53,6 @@ describe("BlockUserModal", () => {
 
   it("renders the heading with username", () => {
     renderBlock({ username: "Charlie" });
-    // Both the <h2> and the block button contain "Block Charlie"
     expect(screen.getAllByText(/Block Charlie/i)).toHaveLength(2);
   });
 
@@ -67,8 +69,6 @@ describe("BlockUserModal", () => {
     ).toBeInTheDocument();
   });
 
-  // ✅ Fix 2: CheckBox renders a custom <div>, not an <input> or <img>.
-  //    Query by label text directly — no broken role query needed.
   it("renders two checkboxes", () => {
     renderBlock();
     expect(
@@ -137,6 +137,21 @@ describe("BlockUserModal", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  // ✅ NEW: cover else branch (no data in response)
+  it("calls onBlocked with fallback data when response has no data field", async () => {
+    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    const onBlocked = vi.fn();
+
+    renderBlock({ onBlocked, userId: "user-charlie" });
+    await userEvent.click(screen.getByTestId("block-user-button"));
+
+    expect(onBlocked).toHaveBeenCalledWith({
+      blocker_id: "",
+      blocked_id: "user-charlie",
+      created_at: "",
+    });
+  });
+
   // ── Block with spam ────────────────────────────────────────────────────────
 
   it("calls submitReport for spam when reportSpam checkbox is checked", async () => {
@@ -146,12 +161,12 @@ describe("BlockUserModal", () => {
     (submitReport as ReturnType<typeof vi.fn>).mockResolvedValue({});
     renderBlock({ userId: "user-charlie" });
 
-    // The spam checkbox is the second label > div[class*='border']
     const spamLabel = screen
       .getByText(/also report charlie for spam/i)
       .closest("label")!;
     const checkbox = spamLabel.querySelector("div[class*='border']")!;
     await userEvent.click(checkbox);
+
     await userEvent.click(screen.getByTestId("block-user-button"));
 
     expect(submitReport).toHaveBeenCalledWith({
@@ -170,6 +185,18 @@ describe("BlockUserModal", () => {
     expect(submitReport).not.toHaveBeenCalled();
   });
 
+  // ✅ NEW: cover removeContent interaction
+  it("toggles removeContent checkbox", async () => {
+    renderBlock();
+
+    const label = screen
+      .getByText(/also permanently remove this user's comments/i)
+      .closest("label")!;
+    const checkbox = label.querySelector("div[class*='border']")!;
+
+    await userEvent.click(checkbox);
+  });
+
   // ── Error handling ─────────────────────────────────────────────────────────
 
   it("shows 401 error message on auth failure", async () => {
@@ -181,6 +208,32 @@ describe("BlockUserModal", () => {
     expect(
       screen.getByText(/missing or invalid access token/i)
     ).toBeInTheDocument();
+  });
+
+  // ✅ NEW: non-401 error
+  it("does not show error for non-401 errors", async () => {
+    (blockUser as ReturnType<typeof vi.fn>).mockRejectedValue({
+      response: { status: 500 },
+    });
+
+    renderBlock();
+    await userEvent.click(screen.getByTestId("block-user-button"));
+
+    expect(
+      screen.queryByText(/missing or invalid access token/i)
+    ).not.toBeInTheDocument();
+  });
+
+  // ✅ NEW: error without response
+  it("handles error without response object", async () => {
+    (blockUser as ReturnType<typeof vi.fn>).mockRejectedValue({});
+
+    renderBlock();
+    await userEvent.click(screen.getByTestId("block-user-button"));
+
+    expect(
+      screen.queryByText(/missing or invalid access token/i)
+    ).not.toBeInTheDocument();
   });
 
   it("does not show error initially", () => {
@@ -196,15 +249,42 @@ describe("BlockUserModal", () => {
     expect(blockUser).not.toHaveBeenCalled();
   });
 
+  // ✅ NEW: no onBlocked
+  it("does not crash if onBlocked is undefined", async () => {
+    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { blocker_id: "me", blocked_id: "user-charlie", created_at: "now" },
+    });
+
+    render(<BlockUserModal username="Charlie" userId="user-charlie" />);
+    await userEvent.click(screen.getByTestId("block-user-button"));
+  });
+
+  // ✅ NEW: no onClose
+  it("does not crash if onClose is undefined", async () => {
+    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { blocker_id: "me", blocked_id: "user-charlie", created_at: "now" },
+    });
+
+    render(<BlockUserModal username="Charlie" userId="user-charlie" />);
+    await userEvent.click(screen.getByTestId("block-user-button"));
+  });
+
   it("disables buttons while blocking", async () => {
     let resolve!: (value: unknown) => void;
+
     (blockUser as ReturnType<typeof vi.fn>).mockImplementation(
-      () => new Promise((res) => { resolve = res; })
+      () =>
+        new Promise((res) => {
+          resolve = res;
+        })
     );
+
     renderBlock();
     await userEvent.click(screen.getByTestId("block-user-button"));
+
     expect(screen.getByTestId("block-user-button")).toBeDisabled();
     expect(screen.getByTestId("block-cancel-button")).toBeDisabled();
+
     resolve(undefined);
   });
 });

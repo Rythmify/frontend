@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { fetchUnreadCount } from '@/services/api/messaging/conversationApi'
-import { getSocket } from '@/services/api/messaging/socketService'
+import { getSocket, connectSocket } from '@/services/api/messaging/socketService'
 
 interface MessagingStore {
   unreadCount: number
@@ -44,8 +44,16 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
   },
 
   setupSocketListeners: () => {
+    // Reconnect socket if the page was refreshed (connectSocket only called on login)
+    if (!getSocket()) {
+      const token = localStorage.getItem('auth_token')
+      if (token) connectSocket(token)
+    }
+
     const socket = getSocket()
     if (!socket) return
+
+    if (onMessageReceived) socket.off('message:received', onMessageReceived)
 
     onMessageReceived = () => {
       set(state => ({ unreadCount: state.unreadCount + 1 }))

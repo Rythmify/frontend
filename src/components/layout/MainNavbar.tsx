@@ -13,7 +13,7 @@ import { useMessagingStore } from '@/stores/messaging.store';
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
-  const { unreadCount: unreadMessages, fetchUnreadCount: fetchUnreadMessages, setupSocketListeners, teardownSocketListeners } = useMessagingStore();
+  const { unreadCount: unreadMessages, fetchUnreadCount: fetchUnreadMessages, refreshUnreadCount: refreshUnreadMessages, setupSocketListeners, teardownSocketListeners } = useMessagingStore();
   const navigate = useNavigate();
 
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
@@ -94,6 +94,18 @@ const MainNavbar = () => {
     setupSocketListeners();
     return () => teardownSocketListeners();
   }, [setupSocketListeners, teardownSocketListeners]);
+
+  // Poll every 30s + refresh on tab focus as fallback for missed socket events
+  useEffect(() => {
+    const poll = () => refreshUnreadMessages();
+    const interval = setInterval(poll, 30_000);
+    const onVisible = () => { if (document.visibilityState === 'visible') poll(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [refreshUnreadMessages]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

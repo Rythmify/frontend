@@ -10,7 +10,7 @@ export interface Participant {
   location: string;
   gender: string;
   role: string;
-  profile_picture: string;
+  avatar: string | null;   
   cover_photo: string;
   is_private: boolean;
   is_verified: boolean;
@@ -444,3 +444,132 @@ export const submitReport = async (
   );
   return response.data;
 };
+
+// GET /tracks/me
+export type TrackStatus = 'public' | 'private' | 'draft'
+
+export interface MyTrack {
+  id: string
+  title: string
+  genre: string
+  duration: number
+  cover_image: string | null
+  user_id: string
+  artist_name: string
+  play_count: number
+  like_count: number
+  stream_url: string
+}
+
+export interface MyTracksPagination {
+  limit: number
+  offset: number
+  total: number
+}
+
+export interface MyTracksResponse {
+  data: MyTrack[]
+  pagination: MyTracksPagination
+  message: string
+}
+
+export const fetchMyTracks = async (
+  limit: number = 20,
+  offset: number = 0,
+  status?: TrackStatus
+): Promise<MyTracksResponse> => {
+  const response = await axiosInstance.get<MyTracksResponse>('/tracks/me', {
+    params: { limit, offset, ...(status ? { status } : {}) },
+    headers: { 'Cache-Control': 'no-cache' },
+  })
+  return response.data
+}
+
+// ─── Repost Types ─────────────────────────────────────────────────────────────
+
+export interface RepostedTrack {
+  id: string
+  title: string
+  genre: string
+  duration: number
+  cover_image: string | null
+  user_id: string
+  artist_name: string
+  play_count: number
+  like_count: number
+  stream_url: string
+}
+
+export interface RepostedPlaylist {
+  id: string
+  title: string
+  description: string | null
+  cover_image: string | null
+  user_id: string
+  track_count: number
+}
+
+export interface RepostPagination {
+  limit: number
+  offset: number
+  total: number
+}
+
+export interface RepostedTracksResponse {
+  data: RepostedTrack[]
+  pagination: RepostPagination
+  message: string
+}
+
+export interface RepostedPlaylistsResponse {
+  data: RepostedPlaylist[]
+  pagination: RepostPagination
+  message: string
+}
+
+// ─── Repost API Functions ─────────────────────────────────────────────────────
+
+// GET /me/reposted-tracks
+export const fetchMyRepostedTracks = async (
+  limit: number = 20,
+  offset: number = 0
+): Promise<RepostedTracksResponse> => {
+  const response = await axiosInstance.get<RepostedTracksResponse>(
+    '/me/reposted-tracks',
+    {
+      params: { limit, offset },
+      headers: { 'Cache-Control': 'no-cache' },
+    }
+  )
+  return response.data
+}
+
+// GET /me/reposted-playlists
+export const fetchMyRepostedPlaylists = async (
+  limit: number = 20,
+  offset: number = 0
+): Promise<RepostedPlaylistsResponse> => {
+  const response = await axiosInstance.get<RepostedPlaylistsResponse>(
+    '/me/reposted-playlists',
+    {
+      params: { limit, offset },
+      headers: { 'Cache-Control': 'no-cache' },
+    }
+  )
+  return response.data
+}
+
+// GET /me/reposted-albums
+export const fetchMyRepostedAlbums = async (
+  limit: number = 20,
+  offset: number = 0
+): Promise<RepostedPlaylistsResponse> => {
+  const response = await axiosInstance.get<RepostedPlaylistsResponse>(
+    '/me/reposted-albums',
+    {
+      params: { limit, offset },
+      headers: { 'Cache-Control': 'no-cache' },
+    }
+  )
+  return response.data
+}
