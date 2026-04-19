@@ -184,12 +184,12 @@ export default function TrackHero({
                       title={`${Math.floor(c.track_timestamp / 60)}:${String(
                         Math.floor(c.track_timestamp % 60)
                       ).padStart(2, "0")}`}
-                      className="w-5 h-5 rounded-full border border-white/40 object-cover cursor-pointer hover:scale-125 hover:z-20 transition-all duration-150"
+                      className="w-8 h-8 rounded-full border border-white/40 object-cover cursor-pointer hover:scale-125 hover:z-20 transition-all duration-150"
                     />
 
                     {/* Hover bubble (Mini version of cross floating comment) */}
                     <div className="absolute bottom-full left-1/2 -translateX-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-30">
-                      <div className="bg-black/90 text-white text-[11px] px-2 py-1 rounded whitespace-nowrap border border-white/10 shadow-xl">
+                      <div className="bg-black/90 text-white text-[15px] px-2 py-1 rounded whitespace-nowrap border border-white/10 shadow-xl">
                         <span className="font-bold mr-1">{c.author?.display_name}:</span>
                         {c.content}
                       </div>
