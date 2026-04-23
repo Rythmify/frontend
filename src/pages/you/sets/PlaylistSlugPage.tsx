@@ -16,6 +16,8 @@ import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import AlbumOwnerInfo from "@/components/playlist/Album/AlbumOwnerInfo";
 import { useAuthStore } from "../../../stores/auth.store";
+import PlaylistActionsForYou from "@/components/playlist/Made for you/PlaylistActionsForYou";
+import { useLikesStore } from "@/stores/likes.store";
 
 function PlaylistSlugPage() {
   const { username, playlistSlug } = useParams<{
@@ -35,6 +37,7 @@ function PlaylistSlugPage() {
     isPlaying,
     currentTrack,
   } = usePlayerStore();
+  const likedPlaylists = useLikesStore((state) => state.likedPlaylists);
 
   useEffect(() => {
     let cancelled = false;
@@ -161,6 +164,9 @@ function PlaylistSlugPage() {
     isPlaying &&
     !!playlist &&
     playlist.tracks.some((track) => track.track_id === currentTrack?.id);
+  const isLikedPlaylist =
+    !!playlist &&
+    likedPlaylists.some((p) => p.id === playlist.playlist_id);
 
   const handleCoverUpload = async (file: File) => {
     if (!playlist) return;
@@ -214,12 +220,16 @@ function PlaylistSlugPage() {
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           {/* Left Column: Actions and Track List */}
           <div className="flex-1 min-w-0">
-            <PlaylistActions
-              playlist={playlist}
-              onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
-                setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
-              }
-            />
+            {isLikedPlaylist ? (
+              <PlaylistActionsForYou playlist={playlist} />
+            ) : (
+              <PlaylistActions
+                playlist={playlist}
+                onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
+                  setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
+                }
+              />
+            )}
 
             <div className="flex flex-col lg:flex-row gap-6 mt-8">
               <AlbumOwnerInfo

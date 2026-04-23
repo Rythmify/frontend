@@ -218,6 +218,12 @@ const AddToPlaylistModal = ({
   return (
     <Modal isOpen={true} onClose={onClose}>
       <div className="w-[550px] bg-bg">
+        {!loading && !hasPlaylists && (
+          <div className="flex items-center px-2 py-2 text-[22px] font-bold text-text-upload">
+            Create a playlist
+          </div>
+        )}
+
         {!loading && hasPlaylists && (
           <div className="flex text-[22px] font-bold items-center">
             <button
