@@ -14,6 +14,8 @@ interface CreatePlaylistTabProps {
   privacy: "public" | "private";
   setPrivacy: (val: "public" | "private") => void;
   creating: boolean;
+  success: boolean;
+  error: string | null;
   tracksToAdd: DisplayTrack[];
   setTracksToAdd: React.Dispatch<React.SetStateAction<DisplayTrack[]>>;
   isPlaylist: boolean;
@@ -34,6 +36,8 @@ const CreatePlaylistTab = ({
   privacy,
   setPrivacy,
   creating,
+  success,
+  error,
   tracksToAdd,
   setTracksToAdd,
   isPlaylist,
@@ -45,6 +49,7 @@ const CreatePlaylistTab = ({
   const handleRemove = (id: string) => {
     setTracksToAdd((prev) => prev.filter((x) => x.id !== id));
   };
+
   const visibleLikedTracks = likedTracks.slice(0, 3);
 
   return (
@@ -68,6 +73,7 @@ const CreatePlaylistTab = ({
           </label>
           <PrivacyToggle value={privacy} onChange={setPrivacy} />
         </div>
+        
         <button
           type="button"
           data-test="button-save-playlist"
@@ -77,11 +83,19 @@ const CreatePlaylistTab = ({
           }
           className="bg-bg-inverted text-bg text-sm font-bold px-3 py-1.5 rounded-sm hover:text-[#a0a0a0] transition-colors disabled:opacity-40 cursor-pointer"
         >
-          {creating ? "Saving..." : "Save"}
+          {creating ? "Saving..." : success ? "Saved!" : "Save"}
         </button>
       </div>
 
-      {/* Tracks to be added — scrollable list for playlist, single row for single track */}
+      {error && (
+        <p
+          data-test="create-playlist-error"
+          className="text-[#FB2C36] text-sm font-semibold"
+        >
+          {error}
+        </p>
+      )}
+
       {tracksToAdd.length > 0 && (
         <TracksToAddList
           tracks={tracksToAdd}
