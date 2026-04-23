@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
+import { useProfileSidebarLikes } from "../useProfileSidebarLikes";
 import { getMyTracks } from "@/services/api/upload/track.service";
 import {
   getFollowers,
@@ -35,6 +36,7 @@ export default function PopularTracksPage() {
   const activeUser = currentUser;
   const isOwner = !username || username === currentUser.username;
   //const followingCount = currentUser.following_ids?.length ?? 0;
+  const { likedTracks, likedTracksCount } = useProfileSidebarLikes(username, isOwner);
 
   useEffect(() => {
     if (isOwner) {
@@ -171,6 +173,8 @@ export default function PopularTracksPage() {
         onTabChange={handleTabChange}
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
+        likedTracks={likedTracks}
+        likedTracksCount={likedTracksCount}
         followers={followersMapped}
         following={followingMapped}
         stats={displayedStats}

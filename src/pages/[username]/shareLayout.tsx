@@ -21,6 +21,7 @@ interface ShareLayoutProps {
     reposts?: number;
     comments?: number;
   }>;
+  likedTracksCount?: number;
   followers?: Array<{
     username: string;
     avatar?: string;
@@ -52,6 +53,7 @@ export default function ShareLayout({
   onShare,
   onEdit,
   likedTracks = [],
+  likedTracksCount = 0,
   followers = [],
   following = [],
   stats = { followers: 0, following: 0, tracks: 0 },
@@ -77,6 +79,7 @@ export default function ShareLayout({
             user={user}
             isOwner={isOwner}
             likedTracks={likedTracks}
+            likedTracksCount={likedTracksCount}
             followers={followers}
             following={following}
             stats={stats}

@@ -3,7 +3,6 @@ import ProfileHeader from "../../components/Profile/ProfileHeader/ProfileHeader"
 import ProfileTabs from "../../components/Profile/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
-import { useLikesStore } from "@/stores/likes.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
 import { Modal } from "@/components/UI/Modal";
@@ -11,6 +10,7 @@ import { BlockUserModal } from "@/components/UI/BlockModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
+import { useProfileSidebarLikes } from "./useProfileSidebarLikes";
 import type { Track } from "../../types/track";
 import {
   getMyProfile,
@@ -47,9 +47,6 @@ export default function UsernamePage() {
   const [following, setFollowing] = useState<EnrichedUserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
-  const [likedTracks, setLikedTracks] = useState<TrackSummary[]>([]);
-  const [likedTracksCount, setLikedTracksCount] = useState(0);
-  const likedTracksStoreCount = useLikesStore((s) => s.likedTracks.length);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const initiallyFollowing = useRef<boolean | null>(null);
@@ -57,6 +54,7 @@ export default function UsernamePage() {
   const currentUsername = currentUser?.username;
   const isOwner =
     !!currentUser && (!username || username === currentUser.username);
+  const { likedTracks, likedTracksCount } = useProfileSidebarLikes(username, isOwner);
 
   const loadFollowingWithCounts = async (userId: string): Promise<void> => {
     const res = await getFollowing(userId, { limit: 100 });
@@ -72,57 +70,6 @@ export default function UsernamePage() {
     });
     setFollowing(enriched);
   };
-
-  // Fetch liked tracks scoped to the profile being viewed — not the global store
-  useEffect(() => {
-    let cancelled = false;
-    const loadLikedTracks = async () => {
-      try {
-        if (isOwner) {
-          const data = await getMyLikedTracks({ limit: 3 });
-          const items = Array.isArray(data?.items)
-            ? data.items
-            : Array.isArray(data)
-              ? data
-              : [];
-          const total =
-            typeof data?.meta?.total === "number" && data.meta.total > 0
-              ? data.meta.total
-              : items.length;
-          if (!cancelled) {
-            setLikedTracks(items);
-            setLikedTracksCount(total);
-          }
-        } else {
-          if (!username) return;
-          const userId = await resolveUsername(username);
-          const data = await getUserLikedTracks(userId, { limit: 3 });
-          const items = Array.isArray(data?.items)
-            ? data.items
-            : Array.isArray(data)
-              ? data
-              : [];
-          const total =
-            typeof data?.meta?.total === "number" && data.meta.total > 0
-              ? data.meta.total
-              : items.length;
-          if (!cancelled) {
-            setLikedTracks(items);
-            setLikedTracksCount(total);
-          }
-        }
-      } catch {
-        if (!cancelled) {
-          setLikedTracks([]);
-          setLikedTracksCount(0);
-        }
-      }
-    };
-    loadLikedTracks();
-    return () => {
-      cancelled = true;
-    };
-  }, [isOwner, username]);
 
   useEffect(() => {
     let cancelled = false;
@@ -293,19 +240,6 @@ export default function UsernamePage() {
         location: (profileData as PublicUser | null)?.location || "",
       };
 
-  // Map API TrackSummary to the shape ProfileSidebar/TrackItem expects
-  const likedTracksMapped = (Array.isArray(likedTracks) ? likedTracks : []).map(
-    (t) => ({
-      id: t.id,
-      title: t.title,
-      artist: t.artist_name,
-      coverUrl: t.cover_image ?? undefined,
-      plays: t.play_count,
-      likes: t.like_count,
-      // reposts & comments omitted until backend adds them to TrackSummary
-    }),
-  );
-
   const followingMapped = following.map((u) => ({
     userId: u.id,
     username: u.username ?? u.id,
@@ -411,12 +345,8 @@ export default function UsernamePage() {
           <ProfileSidebar
             user={user}
             isOwner={isOwner}
-            likedTracks={likedTracksMapped}
-            likedTracksCount={
-              isOwner
-                ? Math.max(likedTracksCount, likedTracksStoreCount)
-                : likedTracksCount
-            }
+            likedTracks={likedTracks}
+            likedTracksCount={likedTracksCount}
             followers={followersMapped}
             following={followingMapped}
             stats={stats}
