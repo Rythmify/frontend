@@ -138,7 +138,7 @@ export default function SendMessageForm({
           key={boxKey}
           onValueChange={setValue}
           onIsEmptyChange={(empty) => { if (empty) setError(null); }}
-          onEmbedsResolved={setEmbeds}   // ← plural now
+          onEmbedsResolved={setEmbeds}  
         />
         {error && <p className="text-xs text-red-400">{error}</p>}
         <div className="flex justify-end">
