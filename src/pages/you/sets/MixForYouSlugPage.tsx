@@ -249,6 +249,7 @@ function MixForYouSlugPage() {
         activeTrackId={currentTrack?.id}
         onPlayPause={handleHeroPlayPause}
         showUploadButton={false}
+        isMix={true}
       />
 
       <div className="container mx-auto">

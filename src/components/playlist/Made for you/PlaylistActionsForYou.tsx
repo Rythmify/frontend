@@ -230,11 +230,11 @@ function ActionButton({
       className={`
         flex items-center gap-2 px-3 py-1.5 h-[32px]
         rounded-[4px] transition-colors duration-150 cursor-pointer
-        bg-[#303030] font-bold text-[14px] 
+        bg-bg-actionbutton font-bold text-[14px] 
         ${
           active
             ? "text-accent"
-            : "text-white border-transparent hover:text-[#717171]"
+            : "text-text-upload border-transparent hover:text-[#717171]"
         }
         ${className}
       `}

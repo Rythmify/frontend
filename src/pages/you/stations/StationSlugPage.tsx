@@ -134,7 +134,10 @@ export default function StationSlugPage() {
 
   if (loading) {
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div
+        data-test="station-slug-loading"
+        className="animate-pulse p-20 text-center text-white"
+      >
         Loading station...
       </div>
     );
@@ -142,7 +145,10 @@ export default function StationSlugPage() {
 
   if (error || !station) {
     return (
-      <div className="p-20 text-center text-red-500">
+      <div
+        data-test="station-slug-error"
+        className="p-20 text-center text-red-500"
+      >
         {error || "Station not found."}
       </div>
     );
@@ -173,38 +179,44 @@ export default function StationSlugPage() {
       data-test="station-slug-page"
       className="flex-1 w-full bg-bg min-h-screen"
     >
-      <PlaylistHero
-        playlist={stationPlaylistDetails}
-        isPlaying={false}
-        activeTrackId={undefined}
-        onPlayPause={handlePlayStation}
-        showUploadButton={false}
-        ownerUsername={seedArtist?.display_name ?? station.artist_name}
-        isStation
-        backgroundImage={station.images?.center ?? station.images?.left ?? null}
-        coverImages={[
-          station.images?.left ?? null,
-          station.images?.center ?? null,
-          station.images?.right ?? null,
-        ]}
-      />
+      <div data-test="station-slug-hero">
+        <PlaylistHero
+          playlist={stationPlaylistDetails}
+          isPlaying={false}
+          activeTrackId={undefined}
+          onPlayPause={handlePlayStation}
+          showUploadButton={false}
+          ownerUsername={seedArtist?.display_name ?? station.artist_name}
+          isStation
+          coverImages={[
+            station.images?.left ?? null,
+            station.images?.center ?? null,
+            station.images?.right ?? null,
+          ]}
+        />
+      </div>
 
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div className="flex-1 min-w-0">
-            <PlaylistActionsForYou
-              playlist={stationPlaylistDetails}
-              initialTracks={stationTracks}
-              onAddToNextUp={handlePlayStation}
-              isStation={true}
-            />
+          <div className="flex-1 min-w-0" data-test="station-slug-main">
+            <div data-test="station-slug-actions">
+              <PlaylistActionsForYou
+                playlist={stationPlaylistDetails}
+                initialTracks={stationTracks}
+                onAddToNextUp={handlePlayStation}
+                isStation={true}
+              />
+            </div>
 
-            <div className="mt-8">
+            <div className="mt-8" data-test="station-slug-tracklist">
               <TrackList tracks={stationTracks} showMockTracks={false} />
             </div>
           </div>
 
-          <div className="w-full lg:w-70 shrink-0">
+          <div
+            className="w-full lg:w-70 shrink-0"
+            data-test="station-slug-sidebar"
+          >
             <PlaylistSidebarForYou
               playlist={stationPlaylistDetails}
               featuredArtists={featuredArtists}

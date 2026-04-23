@@ -12,6 +12,14 @@ const COLOR_SCHEMES = [
   { a: "#d500f9", b: "#00bfa5" },
 ];
 
+const BADGE_COLORS: { bg: string; text: string }[] = [
+  { bg: "#333333", text: "#000000" }, // MIX 1 — dark gray
+  { bg: "#1a6de0", text: "#000000" }, // MIX 2 — blue
+  { bg: "#e8e8e8", text: "#000000" }, // MIX 3 — light
+  { bg: "#ff6600", text: "#000000" }, // MIX 4 — orange
+  { bg: "#ff0000", text: "#000000" }, // MIX 5 — red
+];
+
 const RADII = [18, 36, 54, 72, 90, 108, 126, 144];
 
 function StationRings({ colorIndex = 0 }: { colorIndex?: number }) {
@@ -63,9 +71,9 @@ interface PlaylistHeroProps {
   ownerUsername?: string | null;
   moreOfLike?: boolean;
   coverImages?: Array<string | null | undefined>;
-  backgroundImage?: string | null;
   isStation?: boolean;
   colorIndex?: number;
+  isMix?: boolean;
 }
 
 export default function PlaylistHero({
@@ -78,13 +86,14 @@ export default function PlaylistHero({
   ownerUsername,
   moreOfLike = false,
   coverImages,
-  backgroundImage,
   isStation = false,
   colorIndex = 0,
+  isMix = false,
 }: PlaylistHeroProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const badge = BADGE_COLORS[colorIndex % BADGE_COLORS.length];
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -153,8 +162,8 @@ export default function PlaylistHero({
 
           {/* Title Block */}
           <div className="flex flex-col items-start">
-            <div className="bg-bg px-4 py-3">
-              <h1 className="text-2xl md:text-3xl text-text-upload font-bold tracking-tight leading-tight">
+            <div className="bg-[#121212] px-4 py-3">
+              <h1 className="text-2xl md:text-3xl text-white font-bold tracking-tight leading-tight">
                 {heroTitle}
               </h1>
 
@@ -171,8 +180,8 @@ export default function PlaylistHero({
             </div>
 
             {/* "Playlist owner" */}
-            <div className="bg-bg px-4 py-1.5">
-              <p className="text-[17px] text-text-upload hover:text-[#484848] font-bold cursor-pointer transition-colors">
+            <div className="bg-[#121212] px-4 py-1.5">
+              <p className="text-[17px] text-white hover:text-[#484848] font-bold cursor-pointer transition-colors">
                 {ownerLabel}
               </p>
             </div>
@@ -210,6 +219,24 @@ export default function PlaylistHero({
                     </p>
                   </div>
                 </>
+              )}
+              {isMix && (
+                <div
+                  className="absolute left-3 bottom-3 px-2 py-1 rounded-sm flex items-center gap-2 shadow-lg"
+                  style={{ backgroundColor: badge.bg }}
+                  data-test="mix-card-badge"
+                >
+                  <span
+                    className="text-sm sm:text-lg md:text-xl lg:text-2xl tracking-widest uppercase leading-none"
+                    style={{
+                      color: badge.text,
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 900,
+                    }}
+                  >
+                    MIX
+                  </span>
+                </div>
               )}
               {!isStation && (
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.06),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.05),transparent_28%)]" />

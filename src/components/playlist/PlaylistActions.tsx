@@ -203,13 +203,13 @@ function ActionButton({
       <button
         data-test={dataTest}
         onClick={onClick}
-        className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-[#303030] transition-all duration-150 cursor-pointer group"
+        className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-bg-actionbutton transition-all duration-150 cursor-pointer group"
       >
         <span
           className={`transition-colors duration-150 ${
             active
               ? "text-[var(--color-accent)]"
-              : "text-white group-hover:text-[#717171]"
+              : "text-text-upload group-hover:text-[#717171]"
           }`}
         >
           {children}

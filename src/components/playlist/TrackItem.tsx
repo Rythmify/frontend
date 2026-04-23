@@ -120,11 +120,11 @@ function TrackItem({
         className={`
           flex items-center gap-0 py-2 rounded min-w-0 w-full
           transition-colors duration-100 cursor-pointer relative group
-          border-b border-[var(--color-border)] last:border-b-0
-          ${isCurrent ? "bg-[#303030]" : "hover:bg-[#303030]"}
+           last:border-b-0
+          ${isCurrent ? "bg-bg" : "hover:bg-[#303030]/50"}
         `}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => {
+        onMouseLeave={() => { 
           setHovered(false);
           setMoreOpen(false);
         }}
@@ -336,7 +336,7 @@ function TipBtn({
             ${
               active
                 ? "text-[var(--color-accent)]"
-                : "text-white hover:text-[var(--color-text-muted)]"
+                : "text-text-upload hover:text-[var(--color-text-muted)]"
             }
           `}
         >

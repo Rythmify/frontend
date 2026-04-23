@@ -25,7 +25,7 @@ export default function PlaylistSidebar({
 
   const artistsToShow = useMemo(() => {
     if (Array.isArray(featuredArtists) && featuredArtists.length > 0) {
-      return featuredArtists;
+      return featuredArtists.slice(0, 3);
     }
 
     const artists = new Map<
@@ -75,7 +75,7 @@ export default function PlaylistSidebar({
       });
     }
 
-    return Array.from(artists.values());
+    return Array.from(artists.values()).slice(0, 3);
   }, [featuredArtists, playlist.tracks]);
 
   return (
