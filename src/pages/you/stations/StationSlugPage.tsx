@@ -148,7 +148,6 @@ export default function StationSlugPage() {
     );
   }
 
-  const stationPlaylist = toStationPlaylist(station);
   const stationPlaylistDetails = toStationPlaylistDetails(station, stationTracks);
   const featuredArtists = seedArtist ? [toFeaturedArtist(seedArtist, station)] : [];
 
@@ -194,8 +193,10 @@ export default function StationSlugPage() {
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           <div className="flex-1 min-w-0">
             <PlaylistActionsForYou
-              playlist={stationPlaylist}
+              playlist={stationPlaylistDetails}
+              initialTracks={stationTracks}
               onAddToNextUp={handlePlayStation}
+              isStation={true}
             />
 
             <div className="mt-8">

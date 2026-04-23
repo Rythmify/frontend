@@ -21,6 +21,7 @@ interface PlaylistActionsProps {
   isGeneratedPlaylist?: boolean;
   onAddToNextUp?: () => void;
   onPlaylistUpdated?: (updated: Playlist) => void;
+  isStation?: boolean;
 }
 
 export default function PlaylistActions({
@@ -29,6 +30,7 @@ export default function PlaylistActions({
   isGeneratedPlaylist = false,
   onAddToNextUp,
   onPlaylistUpdated,
+  isStation = false,
 }: PlaylistActionsProps) {
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const { addToQueue, queue } = usePlayerStore();
@@ -136,37 +138,49 @@ export default function PlaylistActions({
 
         {/* More Dropdown */}
         <div ref={moreRef} className="relative">
-          <ActionButton
-            onClick={() => setMoreOpen((p) => !p)}
-            active={moreOpen}
-          >
-            <FaEllipsisH className="text-[14px]" />
-            More
-          </ActionButton>
-
-          {moreOpen && (
-            <div
-              className="fixed z-[2000] bg-bg w-44 border font-bold border-[#353535] rounded shadow-xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+          {isStation ? (
+            <ActionButton
+              onClick={() => setShowPlaylistModal(true)}
+              active={showPlaylistModal}
             >
-              <DropdownItem
-                icon={<FaAddToPlaylist />}
-                label="Add to playlist"
-                onClick={() => {
-                  setMoreOpen(false);
-                  setShowPlaylistModal(true);
-                }}
-              />
+              <FaAddToPlaylist className="text-[14px]" />
+              Add to playlist
+            </ActionButton>
+          ) : (
+            <>
+              <ActionButton
+                onClick={() => setMoreOpen((p) => !p)}
+                active={moreOpen}
+              >
+                <FaEllipsisH className="text-[14px]" />
+                More
+              </ActionButton>
 
-              {/* Only show "Make public" if the playlist is currently private */}
-              {!playlist.is_public && (
-                <DropdownItem
-                  icon={<FaGlobe />}
-                  label="Make public"
-                  onClick={handleMakePublic}
-                />
+              {moreOpen && (
+                <div
+                  className="fixed z-[2000] bg-bg w-44 border font-bold border-[#353535] rounded shadow-xl overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DropdownItem
+                    icon={<FaAddToPlaylist />}
+                    label="Add to playlist"
+                    onClick={() => {
+                      setMoreOpen(false);
+                      setShowPlaylistModal(true);
+                    }}
+                  />
+
+                  {/* Only show "Make public" if the playlist is currently private */}
+                  {!playlist.is_public && (
+                    <DropdownItem
+                      icon={<FaGlobe />}
+                      label="Make public"
+                      onClick={handleMakePublic}
+                    />
+                  )}
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
 
@@ -176,16 +190,18 @@ export default function PlaylistActions({
 
         {showPlaylistModal && (
           <AddToPlaylistModal
-            playlistId={isGeneratedPlaylist ? undefined : playlist.playlist_id}
-            trackTitle={isGeneratedPlaylist ? "More of what you like" : playlist.name}
-            initialTracks={
-              initialTracks?.map((track) => ({
-                id: track.track_id,
-                title: track.title ?? "Untitled track",
-                artistName: track.artist_name ?? undefined,
-                coverUrl: track.cover_image ?? undefined,
-              }))
+            playlistId={
+              isStation || isGeneratedPlaylist ? undefined : playlist.playlist_id
             }
+            trackTitle={
+              isGeneratedPlaylist ? "More of what you like" : playlist.name
+            }
+            initialTracks={initialTracks?.map((track) => ({
+              id: track.track_id,
+              title: track.title ?? "Untitled track",
+              artistName: track.artist_name ?? undefined,
+              coverUrl: track.cover_image ?? undefined,
+            }))}
             moreOfLike={isGeneratedPlaylist}
             onClose={() => setShowPlaylistModal(false)}
           />
