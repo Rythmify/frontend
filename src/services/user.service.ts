@@ -223,32 +223,16 @@ export async function getMyLikedTracks(params?: {
     pagination?: ListMeta;
   }>("/me/liked-tracks", { params });
 
-  const pagination = res.data.pagination;
   const raw = res.data.data;
-
   if (Array.isArray(raw)) {
     return {
       items: raw,
-      meta: pagination ?? { limit: 0, offset: 0, total: raw.length },
+      meta: res.data.pagination ?? { limit: 0, offset: 0, total: 0 },
     };
   }
-
-  const items = raw.items ?? [];
-  const rawMeta = raw.meta ?? {};
-  const total =
-    typeof rawMeta.total === "number" && rawMeta.total > 0
-      ? rawMeta.total
-      : typeof pagination?.total === "number" && pagination.total > 0
-        ? pagination.total
-        : items.length;
-
   return {
-    items,
-    meta: {
-      limit: rawMeta.limit ?? pagination?.limit ?? 0,
-      offset: rawMeta.offset ?? pagination?.offset ?? 0,
-      total,
-    },
+    items: raw.items ?? [],
+    meta: raw.meta ?? res.data.pagination ?? { limit: 0, offset: 0, total: 0 },
   };
 }
 
@@ -261,31 +245,15 @@ export async function getUserLikedTracks(
     pagination?: ListMeta;
   }>(`/users/${userId}/liked-tracks`, { params });
 
-  const pagination = res.data.pagination;
   const raw = res.data.data;
-
   if (Array.isArray(raw)) {
     return {
       items: raw,
-      meta: pagination ?? { limit: 0, offset: 0, total: raw.length },
+      meta: res.data.pagination ?? { limit: 0, offset: 0, total: 0 },
     };
   }
-
-  const items = raw.items ?? [];
-  const rawMeta = raw.meta ?? {};
-  const total =
-    typeof rawMeta.total === "number" && rawMeta.total > 0
-      ? rawMeta.total
-      : typeof pagination?.total === "number" && pagination.total > 0
-        ? pagination.total
-        : items.length;
-
   return {
-    items,
-    meta: {
-      limit: rawMeta.limit ?? pagination?.limit ?? 0,
-      offset: rawMeta.offset ?? pagination?.offset ?? 0,
-      total,
-    },
+    items: raw.items ?? [],
+    meta: raw.meta ?? res.data.pagination ?? { limit: 0, offset: 0, total: 0 },
   };
 }
