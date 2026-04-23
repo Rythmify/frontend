@@ -261,6 +261,9 @@ const mockTrack = {
   geo_regions: [],
   created_at: '2025-01-01T00:00:00Z',
   updated_at: '2025-01-01T00:00:00Z',
+  artist_name: 'DJ Karim',
+cover_image: null,        // or a CDN URL string
+
 };
 
 const mockPlaylist = {
@@ -273,6 +276,10 @@ const mockPlaylist = {
   like_count: 0,
   tracks: [],
   created_at: '2025-01-01T00:00:00Z',
+  slug: null,
+cover_image: null,
+repost_count: 0,
+updated_at: new Date().toISOString(),
 };
 
 const mockConversations: ConversationListResponse = {
