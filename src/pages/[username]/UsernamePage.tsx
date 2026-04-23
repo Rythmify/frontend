@@ -26,6 +26,9 @@ import {
   type UserSummary,
 } from "@/services/user.service";
 
+// Extends UserSummary with followers_count resolved from PublicUser
+type EnrichedUserSummary = UserSummary & { followers_count: number };
+
 export default function UsernamePage() {
   const { username } = useParams();
   const { user: currentUser, setUser } = useAuthStore();
@@ -39,7 +42,7 @@ export default function UsernamePage() {
     null,
   );
   const [followers, setFollowers] = useState<UserSummary[]>([]);
-  const [following, setFollowing] = useState<UserSummary[]>([]);
+  const [following, setFollowing] = useState<EnrichedUserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -49,6 +52,26 @@ export default function UsernamePage() {
   const currentUsername = currentUser?.username;
   const isOwner =
     !!currentUser && (!username || username === currentUser.username);
+
+  // Fetches following list and enriches each user with their followers_count
+  // by calling getUserById in parallel. Only shows 3 in the sidebar so N+1 is fine.
+  const loadFollowingWithCounts = async (userId: string): Promise<void> => {
+    const res = await getFollowing(userId, { limit: 100 });
+    setStats((s) => ({ ...s, following: res.meta.total }));
+
+    const profileResults = await Promise.allSettled(
+      res.items.map((u) => getUserById(u.id)),
+    );
+
+    const enriched: EnrichedUserSummary[] = res.items.map((u, i) => {
+      const result = profileResults[i];
+      const followers_count =
+        result.status === "fulfilled" ? result.value.followers_count : 0;
+      return { ...u, followers_count };
+    });
+
+    setFollowing(enriched);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -115,31 +138,28 @@ export default function UsernamePage() {
             setStats((s) => ({ ...s, followers: res.meta.total }));
           })
           .catch(console.error);
-        getFollowing(currentUserId, { limit: 100 })
-          .then((res) => {
-            setFollowing(res.items);
-            setStats((s) => ({ ...s, following: res.meta.total }));
-          })
-          .catch(console.error);
-        getFollowing(currentUserId, { limit: 100 })
-          .then((res) => {
-            setFollowing(res.items);
-            setStats((s) => ({ ...s, following: res.meta.total }));
 
+        // Load following with enriched follower counts
+        loadFollowingWithCounts(currentUserId)
+          .then(() => {
             // Seed store so FollowButton knows who is already followed
             const { user: storeUser, setUser: storeSetUser } =
               useAuthStore.getState();
             if (storeUser) {
-              const existingIds = new Set(storeUser.following_ids);
-              const newIds = res.items
-                .map((u) => u.id)
-                .filter((id) => !existingIds.has(id));
-              if (newIds.length > 0) {
-                storeSetUser({
-                  ...storeUser,
-                  following_ids: [...storeUser.following_ids, ...newIds],
-                });
-              }
+              getFollowing(currentUserId, { limit: 100 })
+                .then((res) => {
+                  const existingIds = new Set(storeUser.following_ids);
+                  const newIds = res.items
+                    .map((u) => u.id)
+                    .filter((id) => !existingIds.has(id));
+                  if (newIds.length > 0) {
+                    storeSetUser({
+                      ...storeUser,
+                      following_ids: [...storeUser.following_ids, ...newIds],
+                    });
+                  }
+                })
+                .catch(console.error);
             }
           })
           .catch(console.error);
@@ -153,7 +173,7 @@ export default function UsernamePage() {
         .then((userId) => getUserById(userId))
         .then((profile) => {
           setProfileData(profile);
-          console.log('profile id:', profile.id)
+          console.log("profile id:", profile.id);
           setStats({
             followers: profile.followers_count,
             following: profile.following_count,
@@ -170,12 +190,8 @@ export default function UsernamePage() {
         .then((res) => setFollowers(res.items))
         .catch(console.error);
 
-      getFollowing(profileData.id, { limit: 100 })
-        .then((res) => {
-          setFollowing(res.items);
-          setStats((s) => ({ ...s, following: res.meta.total }));
-        })
-        .catch(console.error);
+      // Load following with enriched follower counts
+      loadFollowingWithCounts(profileData.id).catch(console.error);
 
       getFollowStatus(profileData.id)
         .then((status) => {
@@ -251,7 +267,8 @@ export default function UsernamePage() {
     username: u.username ?? u.id,
     displayName: u.display_name,
     avatar: u.profile_picture ?? "",
-    followers: 0,
+    // Now using the real followers_count fetched from PublicUser
+    followers: u.followers_count,
     tracks: 0,
     isVerified: u.is_verified,
   }));
@@ -265,25 +282,28 @@ export default function UsernamePage() {
     tracks: 0,
     isVerified: u.is_verified,
   }));
-console.log('profileData:', profileData?.id)
+  console.log("profileData:", profileData?.id);
   return (
     <div className="container px-4 md:px-8 lg:px-20">
       <ProfileHeader user={user} isOwner={isOwner} />
-<ProfileTabs
-  isOwner={isOwner}
-  selectedTab={selectedTab}
-  onTabChange={handleTabChange}
-  onShare={() => setShowShare(true)}
-  onEdit={() => setShowEdit(true)}
-  username={user.username}
-  displayName={user.displayName}
-  tracks={displayedStats.tracks ?? 0}
-  onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
-  blockDisabled={!profileData}
-  userId={isOwner ? currentUser.id : profileData?.id ?? ''}  
-  profilePicture={isOwner ? currentUser.avatar ?? null : profileData?.profile_picture ?? null} 
-  
-/>
+      <ProfileTabs
+        isOwner={isOwner}
+        selectedTab={selectedTab}
+        onTabChange={handleTabChange}
+        onShare={() => setShowShare(true)}
+        onEdit={() => setShowEdit(true)}
+        username={user.username}
+        displayName={user.displayName}
+        tracks={displayedStats.tracks ?? 0}
+        onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
+        blockDisabled={!profileData}
+        userId={isOwner ? currentUser.id : (profileData?.id ?? "")}
+        profilePicture={
+          isOwner
+            ? (currentUser.avatar ?? null)
+            : (profileData?.profile_picture ?? null)
+        }
+      />
 
       <div className="flex gap-6 py-6 items-start">
         <div className="flex-1 min-w-0">
@@ -392,13 +412,15 @@ console.log('profileData:', profileData?.id)
             });
             setShowEdit(false);
           }}
-          />
-        )}
+        />
+      )}
       {showBlock && profileData && (
         <Modal isOpen={showBlock} onClose={() => setShowBlock(false)}>
           <BlockUserModal
             username={
-              profileData.display_name ?? profileData.username ?? user.displayName
+              profileData.display_name ??
+              profileData.username ??
+              user.displayName
             }
             userId={profileData.id}
             onClose={() => setShowBlock(false)}
@@ -412,6 +434,3 @@ console.log('profileData:', profileData?.id)
     </div>
   );
 }
-
-
-
