@@ -1,6 +1,8 @@
+import type React from "react";
 import type { Station } from "@/types/station";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
+import { usePlayerStore } from "@/stores/player.store";
 import { useNavigate } from "react-router-dom";
 // ─── Color Schemes ────────────────────────────────────────
 
@@ -72,8 +74,23 @@ export default function StationCard({
 }: StationCardProps) {
   const { isStationLiked, toggleStation } = useLikesStore();
   const { addStation } = useHistoryStore();
+  const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const liked = isStationLiked(station.id);
   const navigate = useNavigate();
+
+  const isThisStationPlaying =
+    isPlaying && !!station.previewTrack && currentTrack?.id === station.previewTrack.id;
+
+  const handlePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!station.previewTrack) return;
+    if (currentTrack?.id === station.previewTrack.id) {
+      togglePlay();
+    } else {
+      setTrack(station.previewTrack);
+      addStation(station);
+    }
+  };
   // Use the artists array if available, otherwise fall back to seedArtist for all 3
   const artists = station.artists?.length
     ? station.artists
@@ -168,12 +185,11 @@ export default function StationCard({
             <button
               data-test={`station-card-play-${station.id}`}
               className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
-              onClick={(e) => {
-                e.stopPropagation();
-                addStation(station);
-              }}
+              onClick={handlePlay}
             >
-              <i className="fa-solid fa-play text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ml-0.5" />
+              <i
+                className={`fa-solid ${isThisStationPlaying ? "fa-pause" : "fa-play"} text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ${!isThisStationPlaying ? "ml-0.5" : ""}`}
+              />
             </button>
           </div>
           <div className="flex items-center justify-end gap-2 px-2 pb-2">

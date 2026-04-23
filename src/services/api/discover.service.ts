@@ -43,7 +43,6 @@ export interface CuratedMixSummary {
 
 export interface DiscoveryStation {
   id: string;
-  name: string;
   artist_id: string;
   artist_name: string;
   images: {
@@ -51,7 +50,7 @@ export interface DiscoveryStation {
     center: string | null;
     right: string | null;
   };
-  preview_track?: DiscoveryTrack;
+  preview_track: DiscoveryTrack;
   track_count: number;
 }
 
