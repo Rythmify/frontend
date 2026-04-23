@@ -12,19 +12,32 @@ interface ProfileData {
 interface Props {
   email: string;
   defaultDisplayName?: string;
+  errorMessage?: string;
   onBack: () => void;
   onContinue: (data: ProfileData) => Promise<void> | void;
 }
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
 
 const currentYear = new Date().getFullYear();
-const YEARS = Array.from({ length: 100 }, (_, i) => String(currentYear - 13 - i));
+const YEARS = Array.from({ length: 100 }, (_, i) =>
+  String(currentYear - 13 - i),
+);
 
 function FloatingSelect({
   label,
@@ -45,10 +58,14 @@ function FloatingSelect({
   const floated = focused || value !== "";
 
   return (
-    <div className={`relative bg-input-bg rounded-sm border transition-colors ${error ? "border-red-500" : focused ? "border-text-secondary" : "border-transparent"}`}>
+    <div
+      className={`relative bg-input-bg rounded-sm border transition-colors ${error ? "border-red-500" : focused ? "border-text-secondary" : "border-transparent"}`}
+    >
       <label
         className={`absolute left-4 pointer-events-none transition-all duration-150 ${
-          floated ? "top-1.5 text-xs text-text-secondary" : "top-1/2 -translate-y-1/2 text-md text-text-muted"
+          floated
+            ? "top-1.5 text-xs text-text-secondary"
+            : "top-1/2 -translate-y-1/2 text-md text-text-muted"
         }`}
       >
         {label}
@@ -69,16 +86,27 @@ function FloatingSelect({
             </option>
           ))}
         </select>
-        <ChevronDown size={18} className="absolute right-3 top-1/4 translate-y-1 text-bg pointer-events-none" />
+        <ChevronDown
+          size={18}
+          className="absolute right-3 top-1/4 translate-y-1 text-bg pointer-events-none"
+        />
       </div>
     </div>
   );
 }
 
-export default function Profile({ email, defaultDisplayName, onBack, onContinue }: Props) {
+export default function Profile({
+  email,
+  defaultDisplayName,
+  errorMessage,
+  onBack,
+  onContinue,
+}: Props) {
   const { executeRecaptcha } = useGoogleReCaptcha();
 
-  const [displayName, setDisplayName] = useState(defaultDisplayName ?? email.split("@")[0]);
+  const [displayName, setDisplayName] = useState(
+    defaultDisplayName ?? email.split("@")[0],
+  );
   const [displayNameFocused, setDisplayNameFocused] = useState(false);
 
   const [month, setMonth] = useState("");
@@ -103,18 +131,24 @@ export default function Profile({ email, defaultDisplayName, onBack, onContinue 
 
   async function handleContinue() {
     const e = validate();
-    if (Object.keys(e).length > 0) { setErrors(e); return; }
-    if (!executeRecaptcha) { setErrors({ form: "reCAPTCHA not ready. Please try again." }); return; }
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      return;
+    }
+    if (!executeRecaptcha) {
+      setErrors({ form: "reCAPTCHA not ready. Please try again." });
+      return;
+    }
 
     setLoading(true);
     try {
-       const captchaToken = await executeRecaptcha("register");
-    
+      const captchaToken = await executeRecaptcha("register");
+
       await onContinue({
         displayName: displayName.trim(),
         dateOfBirth: { month, day, year },
         gender,
-        captchaToken, 
+        captchaToken,
       });
     } catch {
       setErrors({ form: "Something went wrong. Please try again." });
@@ -133,17 +167,22 @@ export default function Profile({ email, defaultDisplayName, onBack, onContinue 
         >
           <ChevronLeft size={25} />
         </button>
-        <h4 className="text-text-hover text-center ms-10">Tell us more about you</h4>
+        <h4 className="text-text-hover text-center ms-10">
+          Tell us more about you
+        </h4>
       </div>
 
       <div className="grid gap-5">
-
         {/* Display name */}
         <div className="grid gap-1.5">
-          <div className={`relative bg-input-bg rounded-sm border transition-colors ${errors.displayName ? "border-red-500" : displayNameFocused ? "border-text-secondary" : "border-transparent"}`}>
+          <div
+            className={`relative bg-input-bg rounded-sm border transition-colors ${errors.displayName ? "border-red-500" : displayNameFocused ? "border-text-secondary" : "border-transparent"}`}
+          >
             <label
               className={`absolute left-4 pointer-events-none transition-all duration-150 ${
-                displayNameFloated ? "top-1.5 text-sm text-text-secondary" : "top-1/2 -translate-y-1/2 text-md text-text-muted"
+                displayNameFloated
+                  ? "top-1.5 text-sm text-text-secondary"
+                  : "top-1/2 -translate-y-1/2 text-md text-text-muted"
               }`}
             >
               Display name
@@ -152,32 +191,79 @@ export default function Profile({ email, defaultDisplayName, onBack, onContinue 
               data-test="input-display-name"
               type="text"
               value={displayName}
-              onChange={(e) => { setDisplayName(e.target.value); setErrors((prev) => ({ ...prev, displayName: "" })); }}
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                setErrors((prev) => ({ ...prev, displayName: "" }));
+              }}
               onFocus={() => setDisplayNameFocused(true)}
               onBlur={() => setDisplayNameFocused(false)}
               className="w-full bg-transparent text-text-hover text-md px-4 pt-6 pb-2 outline-none"
             />
           </div>
-          {errors.displayName && <p className="text-red-500 text-sm">{errors.displayName}</p>}
-          <p className="text-text-secondary text-sm">Your display name can be anything you like. Your name or artist name are good choices.</p>
+          {errors.displayName && (
+            <p className="text-red-500 text-sm">{errors.displayName}</p>
+          )}
+          <p className="text-text-secondary text-sm">
+            Your display name can be anything you like. Your name or artist name
+            are good choices.
+          </p>
         </div>
 
         {/* Date of birth */}
         <div className="grid gap-2">
-          <p className="text-text-hover text-md font-bold">Date of birth (required)</p>
+          <p className="text-text-hover text-md font-bold">
+            Date of birth (required)
+          </p>
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <FloatingSelect label="Month" data-test="select-dob-month" value={month} onChange={(v) => { setMonth(v); setErrors((p) => ({ ...p, month: "" })); }} options={MONTHS} error={!!errors.month} />
+              <FloatingSelect
+                label="Month"
+                data-test="select-dob-month"
+                value={month}
+                onChange={(v) => {
+                  setMonth(v);
+                  setErrors((p) => ({ ...p, month: "" }));
+                }}
+                options={MONTHS}
+                error={!!errors.month}
+              />
             </div>
             <div>
-              <FloatingSelect label="Day" data-test="select-dob-day" value={day} onChange={(v) => { setDay(v); setErrors((p) => ({ ...p, day: "" })); }} options={DAYS} error={!!errors.day} />
+              <FloatingSelect
+                label="Day"
+                data-test="select-dob-day"
+                value={day}
+                onChange={(v) => {
+                  setDay(v);
+                  setErrors((p) => ({ ...p, day: "" }));
+                }}
+                options={DAYS}
+                error={!!errors.day}
+              />
             </div>
             <div>
-              <FloatingSelect label="Year" data-test="select-dob-year" value={year} onChange={(v) => { setYear(v); setErrors((p) => ({ ...p, year: "" })); }} options={YEARS} error={!!errors.year} />
+              <FloatingSelect
+                label="Year"
+                data-test="select-dob-year"
+                value={year}
+                onChange={(v) => {
+                  setYear(v);
+                  setErrors((p) => ({ ...p, year: "" }));
+                }}
+                options={YEARS}
+                error={!!errors.year}
+              />
             </div>
           </div>
-          {(errors.month || errors.day || errors.year) && <p className="text-red-500 text-sm">Please complete your date of birth.</p>}
-          <p className="text-text-secondary text-sm">Your date of birth is used to verify your age and is not shared publicly.</p>
+          {(errors.month || errors.day || errors.year) && (
+            <p className="text-red-500 text-sm">
+              Please complete your date of birth.
+            </p>
+          )}
+          <p className="text-text-secondary text-sm">
+            Your date of birth is used to verify your age and is not shared
+            publicly.
+          </p>
         </div>
 
         {/* Gender */}
@@ -186,11 +272,16 @@ export default function Profile({ email, defaultDisplayName, onBack, onContinue 
             label="Gender (required)"
             data-test="select-gender"
             value={gender}
-            onChange={(v) => { setGender(v); setErrors((p) => ({ ...p, gender: "" })); }}
+            onChange={(v) => {
+              setGender(v);
+              setErrors((p) => ({ ...p, gender: "" }));
+            }}
             options={["Male", "Female", "Custom", "Prefer not to say"]}
             error={!!errors.gender}
           />
-          {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
+          {errors.gender && (
+            <p className="text-red-500 text-sm">{errors.gender}</p>
+          )}
         </div>
 
         {errors.form && <p className="text-red-500 text-sm">{errors.form}</p>}
