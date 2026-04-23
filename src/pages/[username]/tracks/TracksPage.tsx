@@ -47,20 +47,16 @@ export default function TracksPage() {
     const load = async () => {
       try {
         if (isOwner) {
-          const [profile, ownedTracks] = await Promise.all([
-            getMyProfile(),
-            getMyTracks(1, 100),
-          ]);
-
-          if (cancelled) return;
-
-          setProfileData(profile);
+          const [profile, { tracks: ownedTracks, total: tracksTotal }] =
+            await Promise.all([getMyProfile(), getMyTracks(1, 100)]);
           setTracks(ownedTracks);
           setStats({
             followers: profile.followers_count,
             following: profile.following_count,
-            tracks: ownedTracks.length,
+            tracks: tracksTotal,
           });
+
+          setProfileData(profile);
 
           const latestUser = useAuthStore.getState().user ?? activeUser;
           setUser({
@@ -100,23 +96,20 @@ export default function TracksPage() {
         const profile = await getUserByUsername(username);
         if (cancelled) return;
 
-        const [userTracks, followersRes, followingRes] = await Promise.all([
-          getUserTracks(profile.id, 1, 100),
-          getFollowers(profile.id, { limit: 100 }),
-          getFollowing(profile.id, { limit: 100 }),
-        ]);
-
-        if (cancelled) return;
-
-        setProfileData(profile);
-        setTracks(userTracks);
-        setFollowers(followersRes.items);
-        setFollowing(followingRes.items);
+        const [userTracksResult, followersRes, followingRes] =
+          await Promise.all([
+            getUserTracks(profile.id, 1, 100),
+            getFollowers(profile.id, { limit: 100 }),
+            getFollowing(profile.id, { limit: 100 }),
+          ]);
+        setTracks(userTracksResult.tracks);
         setStats({
           followers: followersRes.meta.total,
           following: followingRes.meta.total,
-          tracks: userTracks.length,
+          tracks: userTracksResult.total,
         });
+
+        setProfileData(profile);
       } catch (error) {
         console.error(error);
       } finally {

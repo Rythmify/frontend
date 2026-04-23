@@ -138,17 +138,20 @@ export default function UsernamePage() {
     const loadTracks = async () => {
       try {
         if (isOwner) {
-          const ownedTracks = await getMyTracks(1, 100);
-          if (cancelled) return;
+          const { tracks: ownedTracks, total: tracksTotal } = await getMyTracks(
+            1,
+            100,
+          );
           setProfileTracks(ownedTracks);
-          setStats((prev) => ({ ...prev, tracks: ownedTracks.length }));
+          setStats((prev) => ({ ...prev, tracks: tracksTotal }));
           return;
         }
         if (!profileData) return;
-        const publicTracks = await getUserTracks(profileData.id, 1, 3);
+        const { tracks: publicTracks, total: publicTotal } =
+          await getUserTracks(profileData.id, 1, 3);
         if (cancelled) return;
         setProfileTracks(publicTracks);
-        setStats((prev) => ({ ...prev, tracks: publicTracks.length }));
+        setStats((prev) => ({ ...prev, tracks: publicTotal }));
       } catch (error) {
         console.error(error);
         if (!cancelled) setProfileTracks([]);
