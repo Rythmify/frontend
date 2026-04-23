@@ -219,10 +219,21 @@ export async function getMyLikedTracks(params?: {
   offset?: number;
 }): Promise<TrackListData> {
   const res = await axiosInstance.get<{
-    data: TrackSummary[];
-    pagination: ListMeta;
+    data: TrackSummary[] | { items: TrackSummary[]; meta: ListMeta };
+    pagination?: ListMeta;
   }>("/me/liked-tracks", { params });
-  return { items: res.data.data, meta: res.data.pagination };
+
+  const raw = res.data.data;
+  if (Array.isArray(raw)) {
+    return {
+      items: raw,
+      meta: res.data.pagination ?? { limit: 0, offset: 0, total: 0 },
+    };
+  }
+  return {
+    items: raw.items ?? [],
+    meta: raw.meta ?? res.data.pagination ?? { limit: 0, offset: 0, total: 0 },
+  };
 }
 
 export async function getUserLikedTracks(
@@ -230,8 +241,19 @@ export async function getUserLikedTracks(
   params?: { limit?: number; offset?: number },
 ): Promise<TrackListData> {
   const res = await axiosInstance.get<{
-    data: TrackSummary[];
-    pagination: ListMeta;
+    data: TrackSummary[] | { items: TrackSummary[]; meta: ListMeta };
+    pagination?: ListMeta;
   }>(`/users/${userId}/liked-tracks`, { params });
-  return { items: res.data.data, meta: res.data.pagination };
+
+  const raw = res.data.data;
+  if (Array.isArray(raw)) {
+    return {
+      items: raw,
+      meta: res.data.pagination ?? { limit: 0, offset: 0, total: 0 },
+    };
+  }
+  return {
+    items: raw.items ?? [],
+    meta: raw.meta ?? res.data.pagination ?? { limit: 0, offset: 0, total: 0 },
+  };
 }

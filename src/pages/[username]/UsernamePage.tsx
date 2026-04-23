@@ -11,8 +11,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
 import type { Track } from "../../types/track";
-import { getMyLikedTracks } from "@/services/user.service";
-import { getMyTracks, getUserTracks } from "@/services/track.service";
 import {
   getMyProfile,
   getUserById,
@@ -21,12 +19,15 @@ import {
   getFollowStatus,
   resolveUsername,
   updateMyProfile,
+  getMyLikedTracks,
+  getUserLikedTracks,
   type OwnUser,
   type PublicUser,
   type UserSummary,
+  type TrackSummary,
 } from "@/services/user.service";
+import { getMyTracks, getUserTracks } from "@/services/track.service";
 
-// Extends UserSummary with followers_count resolved from PublicUser
 type EnrichedUserSummary = UserSummary & { followers_count: number };
 
 export default function UsernamePage() {
@@ -45,6 +46,7 @@ export default function UsernamePage() {
   const [following, setFollowing] = useState<EnrichedUserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
+  const [likedTracks, setLikedTracks] = useState<TrackSummary[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const initiallyFollowing = useRef<boolean | null>(null);
@@ -53,29 +55,57 @@ export default function UsernamePage() {
   const isOwner =
     !!currentUser && (!username || username === currentUser.username);
 
-  // Fetches following list and enriches each user with their followers_count
-  // by calling getUserById in parallel. Only shows 3 in the sidebar so N+1 is fine.
   const loadFollowingWithCounts = async (userId: string): Promise<void> => {
     const res = await getFollowing(userId, { limit: 100 });
     setStats((s) => ({ ...s, following: res.meta.total }));
-
     const profileResults = await Promise.allSettled(
       res.items.map((u) => getUserById(u.id)),
     );
-
     const enriched: EnrichedUserSummary[] = res.items.map((u, i) => {
       const result = profileResults[i];
       const followers_count =
         result.status === "fulfilled" ? result.value.followers_count : 0;
       return { ...u, followers_count };
     });
-
     setFollowing(enriched);
   };
 
+  // Fetch liked tracks scoped to the profile being viewed — not the global store
   useEffect(() => {
     let cancelled = false;
+    const loadLikedTracks = async () => {
+      try {
+        if (isOwner) {
+          const data = await getMyLikedTracks({ limit: 3 });
+          const items = Array.isArray(data?.items)
+            ? data.items
+            : Array.isArray(data)
+              ? data
+              : [];
+          if (!cancelled) setLikedTracks(items);
+        } else {
+          if (!username) return;
+          const userId = await resolveUsername(username);
+          const data = await getUserLikedTracks(userId, { limit: 3 });
+          const items = Array.isArray(data?.items)
+            ? data.items
+            : Array.isArray(data)
+              ? data
+              : [];
+          if (!cancelled) setLikedTracks(items);
+        }
+      } catch {
+        if (!cancelled) setLikedTracks([]);
+      }
+    };
+    loadLikedTracks();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner, username]);
 
+  useEffect(() => {
+    let cancelled = false;
     const loadTracks = async () => {
       try {
         if (isOwner) {
@@ -85,7 +115,6 @@ export default function UsernamePage() {
           setStats((prev) => ({ ...prev, tracks: ownedTracks.length }));
           return;
         }
-
         if (!username) return;
         const userId = await resolveUsername(username);
         const publicTracks = await getUserTracks(userId, 1, 3);
@@ -97,9 +126,7 @@ export default function UsernamePage() {
         if (!cancelled) setProfileTracks([]);
       }
     };
-
     loadTracks();
-
     return () => {
       cancelled = true;
     };
@@ -107,7 +134,6 @@ export default function UsernamePage() {
 
   useEffect(() => {
     if (!currentUser) return;
-
     if (isOwner) {
       getMyProfile()
         .then((profile) => {
@@ -139,10 +165,8 @@ export default function UsernamePage() {
           })
           .catch(console.error);
 
-        // Load following with enriched follower counts
         loadFollowingWithCounts(currentUserId)
           .then(() => {
-            // Seed store so FollowButton knows who is already followed
             const { user: storeUser, setUser: storeSetUser } =
               useAuthStore.getState();
             if (storeUser) {
@@ -165,15 +189,11 @@ export default function UsernamePage() {
           .catch(console.error);
       }
     } else {
-      if (!username) {
-        return;
-      }
-
+      if (!username) return;
       resolveUsername(username)
         .then((userId) => getUserById(userId))
         .then((profile) => {
           setProfileData(profile);
-          console.log("profile id:", profile.id);
           setStats({
             followers: profile.followers_count,
             following: profile.following_count,
@@ -190,7 +210,6 @@ export default function UsernamePage() {
         .then((res) => setFollowers(res.items))
         .catch(console.error);
 
-      // Load following with enriched follower counts
       loadFollowingWithCounts(profileData.id).catch(console.error);
 
       getFollowStatus(profileData.id)
@@ -222,12 +241,6 @@ export default function UsernamePage() {
   };
 
   const selectedTab = getActiveTab();
-  const likedTracks: {
-    id: string;
-    title: string;
-    artist: string;
-    coverUrl?: string;
-  }[] = [];
 
   const handleTabChange = (tab: string) => {
     const targetUsername = isOwner
@@ -247,8 +260,6 @@ export default function UsernamePage() {
 
   if (!currentUser) return null;
 
-  const displayedStats = stats;
-
   const user = isOwner
     ? currentUser
     : {
@@ -262,12 +273,24 @@ export default function UsernamePage() {
         location: (profileData as PublicUser | null)?.location || "",
       };
 
+  // Map API TrackSummary to the shape ProfileSidebar/TrackItem expects
+  const likedTracksMapped = (Array.isArray(likedTracks) ? likedTracks : []).map(
+    (t) => ({
+      id: t.id,
+      title: t.title,
+      artist: t.artist_name,
+      coverUrl: t.cover_image ?? undefined,
+      plays: t.play_count,
+      likes: t.like_count,
+      // reposts & comments omitted until backend adds them to TrackSummary
+    }),
+  );
+
   const followingMapped = following.map((u) => ({
     userId: u.id,
     username: u.username ?? u.id,
     displayName: u.display_name,
     avatar: u.profile_picture ?? "",
-    // Now using the real followers_count fetched from PublicUser
     followers: u.followers_count,
     tracks: 0,
     isVerified: u.is_verified,
@@ -282,7 +305,7 @@ export default function UsernamePage() {
     tracks: 0,
     isVerified: u.is_verified,
   }));
-  console.log("profileData:", profileData?.id);
+
   return (
     <div className="container px-4 md:px-8 lg:px-20">
       <ProfileHeader user={user} isOwner={isOwner} />
@@ -294,7 +317,7 @@ export default function UsernamePage() {
         onEdit={() => setShowEdit(true)}
         username={user.username}
         displayName={user.displayName}
-        tracks={displayedStats.tracks ?? 0}
+        tracks={stats.tracks ?? 0}
         onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
         blockDisabled={!profileData}
         userId={isOwner ? currentUser.id : (profileData?.id ?? "")}
@@ -368,10 +391,10 @@ export default function UsernamePage() {
           <ProfileSidebar
             user={user}
             isOwner={isOwner}
-            likedTracks={likedTracks}
+            likedTracks={likedTracksMapped}
             followers={followersMapped}
             following={followingMapped}
-            stats={displayedStats}
+            stats={stats}
             onTabChange={handleTabChange}
           />
         </div>
@@ -396,7 +419,6 @@ export default function UsernamePage() {
               city: data.city,
               country: data.country,
             }).catch(console.error);
-
             setUser({
               ...currentUser,
               displayName: data.displayName,
