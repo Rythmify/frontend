@@ -15,10 +15,10 @@ import type { Track } from "../../types/track";
 import {
   getMyProfile,
   getUserById,
+  getUserByUsername,
   getFollowers,
   getFollowing,
   getFollowStatus,
-  resolveUsername,
   updateMyProfile,
   getMyLikedTracks,
   getUserLikedTracks,
@@ -44,6 +44,7 @@ export default function UsernamePage() {
   const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
     null,
   );
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [followers, setFollowers] = useState<UserSummary[]>([]);
   const [following, setFollowing] = useState<EnrichedUserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
@@ -59,6 +60,7 @@ export default function UsernamePage() {
   const isOwner =
     !!currentUser && (!username || username === currentUser.username);
 
+  // ── Helper: enrich following list with per-user follower counts ──
   const loadFollowingWithCounts = async (userId: string): Promise<void> => {
     const res = await getFollowing(userId, { limit: 100 });
     setStats((s) => ({ ...s, following: res.meta.total }));
@@ -74,9 +76,10 @@ export default function UsernamePage() {
     setFollowing(enriched);
   };
 
-  // Fetch liked tracks scoped to the profile being viewed
+  // ── Liked tracks ──────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
+
     const loadLikedTracks = async () => {
       try {
         if (isOwner) {
@@ -96,8 +99,10 @@ export default function UsernamePage() {
           }
         } else {
           if (!username) return;
-          const userId = await resolveUsername(username);
-          const data = await getUserLikedTracks(userId, { limit: 3 });
+          // profileData is guaranteed to be set before this runs (see non-owner
+          // effect below), but we guard anyway.
+          if (!profileData) return;
+          const data = await getUserLikedTracks(profileData.id, { limit: 3 });
           const items = Array.isArray(data?.items)
             ? data.items
             : Array.isArray(data)
@@ -119,14 +124,17 @@ export default function UsernamePage() {
         }
       }
     };
+
     loadLikedTracks();
     return () => {
       cancelled = true;
     };
-  }, [isOwner, username]);
+  }, [isOwner, username, profileData?.id]);
 
+  // ── Tracks ────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
+
     const loadTracks = async () => {
       try {
         if (isOwner) {
@@ -136,9 +144,8 @@ export default function UsernamePage() {
           setStats((prev) => ({ ...prev, tracks: ownedTracks.length }));
           return;
         }
-        if (!username) return;
-        const userId = await resolveUsername(username);
-        const publicTracks = await getUserTracks(userId, 1, 3);
+        if (!profileData) return;
+        const publicTracks = await getUserTracks(profileData.id, 1, 3);
         if (cancelled) return;
         setProfileTracks(publicTracks);
         setStats((prev) => ({ ...prev, tracks: publicTracks.length }));
@@ -147,11 +154,12 @@ export default function UsernamePage() {
         if (!cancelled) setProfileTracks([]);
       }
     };
+
     loadTracks();
     return () => {
       cancelled = true;
     };
-  }, [isOwner, username]);
+  }, [isOwner, profileData?.id]);
 
   // ── Owner profile load ────────────────────────────────────
   useEffect(() => {
@@ -213,20 +221,19 @@ export default function UsernamePage() {
   }, [isOwner, currentUserId, currentUsername]);
 
   // ── Non-owner profile load ────────────────────────────────
-  // Single effect: resolve username → fetch profile + followers + follow status
+  // Uses getUserByUsername (search → getUserById) — no /resolve needed.
   useEffect(() => {
     if (isOwner || !username) return;
 
     let cancelled = false;
+    setIsLoadingProfile(true);
 
     const load = async () => {
       try {
-        // 1. Resolve username → userId
-        const userId = await resolveUsername(username);
-        if (cancelled) return;
-
-        // 2. Fetch profile
-        const profile = await getUserById(userId);
+        // 1. Resolve username → full PublicUser in one logical step.
+        //    getUserByUsername does: GET /search?type=users&q=:username
+        //    then GET /users/:id for the matched user.
+        const profile = await getUserByUsername(username);
         if (cancelled) return;
 
         setProfileData(profile);
@@ -236,7 +243,9 @@ export default function UsernamePage() {
           tracks: 0,
         });
 
-        // 3. Fetch followers, following, follow-status in parallel
+        const userId = profile.id;
+
+        // 2. Fetch followers + follow-status in parallel (non-blocking for following).
         const [followersRes, followStatus] = await Promise.allSettled([
           getFollowers(userId, { limit: 100 }),
           getFollowStatus(userId),
@@ -253,10 +262,12 @@ export default function UsernamePage() {
           initiallyFollowing.current = followStatus.value.is_following;
         }
 
-        // 4. Load following with follower counts (can be slow, non-blocking)
+        // 3. Enrich following with follower counts (slow — fire and forget).
         loadFollowingWithCounts(userId).catch(console.error);
       } catch (err) {
         console.error("[UsernamePage] failed to load non-owner profile:", err);
+      } finally {
+        if (!cancelled) setIsLoadingProfile(false);
       }
     };
 
@@ -266,7 +277,7 @@ export default function UsernamePage() {
     };
   }, [isOwner, username]);
 
-  // Keep local isFollowing in sync with the auth store's following_ids
+  // ── Keep local isFollowing in sync with the auth store ───
   useEffect(() => {
     if (!isOwner && profileData) {
       const nowFollowing =
@@ -275,6 +286,7 @@ export default function UsernamePage() {
     }
   }, [currentUser?.following_ids, profileData?.id, isOwner]);
 
+  // ── Tab routing ───────────────────────────────────────────
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.endsWith("/tracks")) return "Tracks";
@@ -303,19 +315,30 @@ export default function UsernamePage() {
     if (route) navigate(route);
   };
 
+  // ── Guards ────────────────────────────────────────────────
   if (!currentUser) return null;
 
-  // ── Build the display user object ─────────────────────────
-  // For the owner we use currentUser (already kept in sync by the effect above).
-  // For non-owners we build purely from profileData — never spread currentUser.
+  // Show a loading state while the non-owner profile is being fetched so
+  // child components never render with an empty user object.
+  if (!isOwner && isLoadingProfile && !profileData) {
+    return (
+      <div className="container px-4 md:px-8 lg:px-20 flex items-center justify-center py-32">
+        <p className="text-white text-sm">Loading profile…</p>
+      </div>
+    );
+  }
+
+  // ── Build display user object ─────────────────────────────
+  // Owner  → use the auth-store user (kept in sync by the owner effect).
+  // Others → build purely from profileData; never spread currentUser.
   const user: User = isOwner
     ? currentUser
     : {
-        // Required User fields — pulled directly from the API response
         id: profileData?.id ?? "",
         username: profileData?.username ?? username ?? "",
-        displayName: profileData?.display_name ?? username ?? "",
-        email: "", // not exposed on PublicUser
+        displayName:
+          profileData?.display_name ?? profileData?.username ?? username ?? "",
+        email: "",
         firstName: "",
         lastName: "",
         bio: profileData?.bio ?? "",
@@ -324,7 +347,7 @@ export default function UsernamePage() {
         location: (profileData as PublicUser | null)?.location ?? "",
         role: profileData?.role ?? "listener",
         isPro: false,
-        following_ids: currentUser.following_ids, // keep auth store for follow logic
+        following_ids: currentUser.following_ids,
         followers_ids: [],
       };
 
@@ -440,6 +463,7 @@ export default function UsernamePage() {
             </div>
           )}
         </div>
+
         <div
           className="sticky top-24 self-start min-w-0 overflow-hidden"
           style={{ maxWidth: "min-content" }}
@@ -467,6 +491,7 @@ export default function UsernamePage() {
           onClose={() => setShowShare(false)}
         />
       )}
+
       {showEdit && (
         <EditProfileModal
           user={user}
@@ -497,6 +522,7 @@ export default function UsernamePage() {
           }}
         />
       )}
+
       {showBlock && profileData && (
         <Modal isOpen={showBlock} onClose={() => setShowBlock(false)}>
           <BlockUserModal

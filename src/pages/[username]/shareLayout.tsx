@@ -4,11 +4,10 @@ import ProfileTabs from "@/components/Profile/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "@/components/Profile/ProfileSideBar/ProfileSideBar";
 import type { User } from "@/stores/auth.store";
 import { useState, useEffect } from "react";
-import { useAuthStore } from "@/stores/auth.store";
 import {
   getMyLikedTracks,
   getUserLikedTracks,
-  resolveUsername,
+  getUserByUsername,
 } from "@/services/user.service";
 
 interface ShareLayoutProps {
@@ -65,11 +64,12 @@ export default function ShareLayout({
   onUnlike,
   children,
 }: ShareLayoutProps) {
-  const { user: currentUser } = useAuthStore();
   const [fetchedLikedTracks, setFetchedLikedTracks] = useState(likedTracks);
   const [likedTracksCount, setLikedTracksCount] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
       try {
         if (isOwner) {
@@ -77,6 +77,7 @@ export default function ShareLayout({
             getMyLikedTracks({ limit: 100 }),
             getMyLikedTracks({ limit: 3 }),
           ]);
+          if (cancelled) return;
           const items = Array.isArray(data?.items) ? data.items : [];
           setFetchedLikedTracks(
             items.map((t) => ({
@@ -90,11 +91,17 @@ export default function ShareLayout({
           );
           setLikedTracksCount(countData?.meta?.total ?? items.length);
         } else {
-          const userId = await resolveUsername(user.username);
+          // getUserByUsername: GET /search?type=users&q=:username → GET /users/:id
+          // We only need the id, so we resolve once then fetch liked tracks.
+          const profile = await getUserByUsername(user.username);
+          if (cancelled) return;
+
           const [countData, data] = await Promise.all([
-            getUserLikedTracks(userId, { limit: 1 }),
-            getUserLikedTracks(userId, { limit: 3 }),
+            getUserLikedTracks(profile.id, { limit: 1 }),
+            getUserLikedTracks(profile.id, { limit: 3 }),
           ]);
+          if (cancelled) return;
+
           const items = Array.isArray(data?.items) ? data.items : [];
           setFetchedLikedTracks(
             items.map((t) => ({
@@ -109,11 +116,17 @@ export default function ShareLayout({
           setLikedTracksCount(countData?.meta?.total ?? items.length);
         }
       } catch {
-        setFetchedLikedTracks([]);
-        setLikedTracksCount(0);
+        if (!cancelled) {
+          setFetchedLikedTracks([]);
+          setLikedTracksCount(0);
+        }
       }
     };
+
     load();
+    return () => {
+      cancelled = true;
+    };
   }, [isOwner, user.username]);
 
   return (

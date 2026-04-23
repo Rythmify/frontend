@@ -6,8 +6,7 @@ import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import {
   getMyLikedTracks,
-  resolveUsername,
-  getUserById,
+  getUserByUsername,
   type TrackSummary,
 } from "@/services/user.service";
 import type { Track } from "@/types/track";
@@ -47,6 +46,7 @@ export default function LikesPage() {
 
   const isOwner = !username || username === currentUser?.username;
 
+  // Resolve non-owner profile info
   useEffect(() => {
     if (isOwner) {
       setProfileDisplayName(
@@ -55,8 +55,7 @@ export default function LikesPage() {
       setProfileAvatar(currentUser?.avatar ?? "");
       setProfileUsername(currentUser?.username ?? "");
     } else if (username) {
-      resolveUsername(username)
-        .then((id) => getUserById(id))
+      getUserByUsername(username)
         .then((profile) => {
           setProfileDisplayName(profile.display_name);
           setProfileAvatar(profile.profile_picture ?? "");
@@ -66,9 +65,9 @@ export default function LikesPage() {
     }
   }, [username, isOwner, currentUser]);
 
+  // Fetch liked tracks (owner only — public liked tracks not in API spec)
   useEffect(() => {
     if (!isOwner) {
-      // Public liked tracks per user not in API spec, show empty
       setLoading(false);
       return;
     }

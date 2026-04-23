@@ -10,6 +10,7 @@ import {
   getFollowing,
   getMyProfile,
   getUserById,
+  getUserByUsername,
   updateMyProfile,
   type OwnUser,
   type PublicUser,
@@ -84,7 +85,8 @@ export default function PopularTracksPage() {
           .catch(console.error);
       }
     } else {
-      getUserById(username!)
+      if (!username) return;
+      getUserByUsername(username)
         .then((profile) => {
           setProfileData(profile);
           setStats({

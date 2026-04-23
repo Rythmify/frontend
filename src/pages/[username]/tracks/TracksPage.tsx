@@ -6,13 +6,12 @@ import TrackCard from "@/components/track/TrackCard";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
-import { resolveUsername } from "@/services/user.service";
 
 import {
   getFollowers,
   getFollowing,
   getMyProfile,
-  getUserById,
+  getUserByUsername,
   updateMyProfile,
   type OwnUser,
   type PublicUser,
@@ -40,7 +39,6 @@ export default function TracksPage() {
 
   const activeUser = currentUser;
   const isOwner = !username || username === currentUser.username;
-  //const followingCount = currentUser.following_ids?.length ?? 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -97,14 +95,16 @@ export default function TracksPage() {
 
         if (!username) return;
 
-        const userId = await resolveUsername(username);
-        const [profile, userTracks, followersRes, followingRes] =
-          await Promise.all([
-            getUserById(userId),
-            getUserTracks(userId, 1, 100),
-            getFollowers(userId, { limit: 100 }),
-            getFollowing(userId, { limit: 100 }),
-          ]);
+        // getUserByUsername does: GET /search?type=users&q=:username → GET /users/:id
+        // No /resolve needed.
+        const profile = await getUserByUsername(username);
+        if (cancelled) return;
+
+        const [userTracks, followersRes, followingRes] = await Promise.all([
+          getUserTracks(profile.id, 1, 100),
+          getFollowers(profile.id, { limit: 100 }),
+          getFollowing(profile.id, { limit: 100 }),
+        ]);
 
         if (cancelled) return;
 
@@ -120,9 +120,7 @@ export default function TracksPage() {
       } catch (error) {
         console.error(error);
       } finally {
-        if (!cancelled) {
-          setLoadingTracks(false);
-        }
+        if (!cancelled) setLoadingTracks(false);
       }
     };
 
@@ -131,23 +129,6 @@ export default function TracksPage() {
       cancelled = true;
     };
   }, [username, isOwner]);
-
-  useEffect(() => {
-    if (!isOwner && profileData) {
-      getFollowers(profileData.id, { limit: 100 })
-        .then((res) => {
-          setFollowers(res.items);
-          setStats((s) => ({ ...s, followers: res.meta.total }));
-        })
-        .catch(console.error);
-      getFollowing(profileData.id, { limit: 100 })
-        .then((res) => {
-          setFollowing(res.items);
-          setStats((s) => ({ ...s, following: res.meta.total }));
-        })
-        .catch(console.error);
-    }
-  }, [profileData?.id, isOwner]);
 
   const handleTabChange = (tab: string) => {
     const targetUsername = isOwner ? currentUser.username : username || "";
@@ -169,19 +150,21 @@ export default function TracksPage() {
         ...currentUser,
         username: profileData?.username || username || currentUser.username,
         displayName:
-          profileData?.display_name || username || currentUser.username,
+          profileData?.display_name ||
+          profileData?.username ||
+          username ||
+          currentUser.username,
         bio: profileData?.bio || "",
-        avatar: profileData?.profile_picture || "",
-        coverUrl: profileData?.cover_photo || "",
+        avatar: profileData?.profile_picture ?? undefined,
+        coverUrl: profileData?.cover_photo ?? undefined,
         location: (profileData as PublicUser | null)?.location || "",
       };
-  const displayedStats = stats;
 
   const followersMapped = followers.map((u) => ({
     userId: u.id,
     username: u.username || u.id,
     displayName: u.display_name,
-    avatar: "",
+    avatar: u.profile_picture ?? "",
     followers: 0,
     tracks: 0,
     isVerified: u.is_verified,
@@ -191,7 +174,7 @@ export default function TracksPage() {
     userId: u.id,
     username: u.username || u.id,
     displayName: u.display_name,
-    avatar: "",
+    avatar: u.profile_picture ?? "",
     followers: 0,
     tracks: 0,
     isVerified: u.is_verified,
@@ -208,7 +191,7 @@ export default function TracksPage() {
         onEdit={() => setShowEdit(true)}
         followers={followersMapped}
         following={followingMapped}
-        stats={displayedStats}
+        stats={stats}
       >
         <div className="flex flex-col gap-4">
           {tracks.length > 0 ? (
@@ -238,7 +221,7 @@ export default function TracksPage() {
                 data-test="empty-state-message"
                 className="text-white font-bold text-17px"
               >
-                {loadingTracks ? "Loading tracks..." : "No tracks yet."}
+                {loadingTracks ? "Loading tracks…" : "No tracks yet."}
               </p>
             </div>
           )}
@@ -251,6 +234,7 @@ export default function TracksPage() {
           onClose={() => setShowShare(false)}
         />
       )}
+
       {showEdit && (
         <EditProfileModal
           user={user}

@@ -5,7 +5,7 @@ import FollowButton from "@/components/UI/FollowButton";
 import {
   getFollowers,
   getUserById,
-  resolveUsername,
+  getUserByUsername,
   type UserSummary,
 } from "@/services/user.service";
 
@@ -92,7 +92,8 @@ export default function FollowerPage() {
         if (isOwner) {
           userId = currentUser?.id;
         } else if (username) {
-          userId = await resolveUsername(username);
+          const profile = await getUserByUsername(username);
+          userId = profile.id;
         }
         if (!userId) return;
 

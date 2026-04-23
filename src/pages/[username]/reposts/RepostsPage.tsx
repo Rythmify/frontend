@@ -10,6 +10,7 @@ import {
   getFollowing,
   getMyProfile,
   getUserById,
+  getUserByUsername,
   updateMyProfile,
   type OwnUser,
   type PublicUser,
@@ -99,7 +100,8 @@ export default function RepostsPage() {
           .catch(console.error);
       }
     } else {
-      getUserById(username!)
+      if (!username) return;
+      getUserByUsername(username)
         .then((profile) => {
           setProfileData(profile);
           setStats({
@@ -198,31 +200,72 @@ export default function RepostsPage() {
           ) : repostedTracks.length > 0 ? (
             <div className="flex flex-col gap-4">
               {repostedTracks.map((track: any) => (
-                <div key={track.id} className="p-4 bg-[#111111] rounded-lg border border-[#222222] hover:border-orange-500/30 transition-all">
-                   <div className="flex gap-4">
-                      <img src={track.cover_image || "https://picsum.photos/seed/rythmify/200/200"} alt={track.title} className="w-24 h-24 rounded object-cover shadow-lg" />
-                      <div className="flex flex-col justify-center">
-                        <h3 className="text-white font-bold text-lg">{track.title}</h3>
-                        <p className="text-gray-400 text-sm">{track.artist_name || track.user?.display_name}</p>
-                        <div className="flex gap-4 mt-2">
-                          <span className="text-xs text-gray-500 flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                             {track.like_count || 0}
-                          </span>
-                          <span className="text-xs text-orange-500 flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-                            Reposted
-                          </span>
-                        </div>
+                <div
+                  key={track.id}
+                  className="p-4 bg-[#111111] rounded-lg border border-[#222222] hover:border-orange-500/30 transition-all"
+                >
+                  <div className="flex gap-4">
+                    <img
+                      src={
+                        track.cover_image ||
+                        "https://picsum.photos/seed/rythmify/200/200"
+                      }
+                      alt={track.title}
+                      className="w-24 h-24 rounded object-cover shadow-lg"
+                    />
+                    <div className="flex flex-col justify-center">
+                      <h3 className="text-white font-bold text-lg">
+                        {track.title}
+                      </h3>
+                      <p className="text-gray-400 text-sm">
+                        {track.artist_name || track.user?.display_name}
+                      </p>
+                      <div className="flex gap-4 mt-2">
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <svg
+                            className="w-3 h-3"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                          </svg>
+                          {track.like_count || 0}
+                        </span>
+                        <span className="text-xs text-orange-500 flex items-center gap-1">
+                          <svg
+                            className="w-3 h-3"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+                          </svg>
+                          Reposted
+                        </span>
                       </div>
-                   </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 py-16 opacity-50">
-              <svg className="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-              <p data-test="empty-state-message" className="text-white text-17px">
+              <svg
+                className="w-16 h-16 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1"
+                  d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"
+                />
+              </svg>
+              <p
+                data-test="empty-state-message"
+                className="text-white text-17px"
+              >
                 No reposts yet
               </p>
             </div>

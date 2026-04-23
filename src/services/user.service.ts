@@ -80,6 +80,20 @@ export interface TrackListData {
   meta: ListMeta;
 }
 
+// ── Search result shape returned by GET /search?type=users ──
+interface UserSearchResult {
+  id: string;
+  display_name: string;
+  username?: string | null;
+  profile_picture: string | null;
+  follower_count: number;
+  score?: number;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Core profile fetches
+// ─────────────────────────────────────────────────────────────
+
 export async function getMyProfile(): Promise<OwnUser> {
   const res = await axiosInstance.get<{ data: OwnUser }>("/users/me");
   return res.data.data;
@@ -90,13 +104,45 @@ export async function getUserById(userId: string): Promise<PublicUser> {
   return res.data.data;
 }
 
-export async function resolveUsername(username: string): Promise<string> {
-  const url = `${import.meta.env.VITE_APP_URL}/${username}`;
+/**
+ * Resolves a username to a full PublicUser profile without using /resolve.
+ * Uses GET /search?type=users to find an exact username match, then fetches
+ * the full profile via GET /users/:id.
+ *
+ * Throws if no exact match is found.
+ */
+export async function getUserByUsername(username: string): Promise<PublicUser> {
   const res = await axiosInstance.get<{
-    data: { type: string; id: string; permalink: string };
-  }>("/resolve", { params: { url } });
-  return res.data.data.id;
+    data: {
+      tracks: unknown[];
+      users: UserSearchResult[];
+      playlists: unknown[];
+    };
+    pagination: ListMeta;
+  }>("/search", {
+    params: { q: username, type: "users", limit: 10 },
+  });
+
+  const users = res.data.data.users ?? [];
+
+  // Prefer an exact username match; fall back to the first result as a
+  // best-effort when the search engine returns close-but-not-exact results.
+  const exactMatch = users.find(
+    (u) => u.username?.toLowerCase() === username.toLowerCase(),
+  );
+  const candidate = exactMatch ?? users[0];
+
+  if (!candidate) {
+    throw new Error(`User not found: ${username}`);
+  }
+
+  // Fetch the full PublicUser profile (search only returns a slim summary).
+  return getUserById(candidate.id);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Profile mutations
+// ─────────────────────────────────────────────────────────────
 
 export async function updateMyProfile(payload: {
   display_name?: string;
@@ -113,6 +159,10 @@ export async function updateMyProfile(payload: {
   );
   return res.data.data;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Avatar & cover photo
+// ─────────────────────────────────────────────────────────────
 
 export async function uploadAvatar(
   file: File,
@@ -147,6 +197,10 @@ export async function uploadCover(
 export async function deleteCover(): Promise<void> {
   await axiosInstance.delete("/users/me/cover");
 }
+
+// ─────────────────────────────────────────────────────────────
+// Followers / following
+// ─────────────────────────────────────────────────────────────
 
 export async function getFollowers(
   userId: string,
@@ -195,6 +249,10 @@ export async function unfollowUser(userId: string): Promise<void> {
   await axiosInstance.delete(`/users/${userId}/follow`);
 }
 
+// ─────────────────────────────────────────────────────────────
+// Block / unblock
+// ─────────────────────────────────────────────────────────────
+
 export async function blockUser(userId: string): Promise<void> {
   await axiosInstance.post(`/users/${userId}/block`);
 }
@@ -213,6 +271,10 @@ export async function getBlockedUsers(params?: {
   );
   return res.data.data;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Liked tracks
+// ─────────────────────────────────────────────────────────────
 
 export async function getMyLikedTracks(params?: {
   limit?: number;
