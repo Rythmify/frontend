@@ -101,6 +101,41 @@ export interface PlaylistTracksPage {
   };
 }
 
+export interface StationTracksResponse {
+  station: {
+    id: string;
+    name: string;
+    artist_id: string;
+    artist_name: string;
+    images: {
+      left: string | null;
+      center: string | null;
+      right: string | null;
+    };
+    preview_track: {
+      id: string;
+      title: string;
+      cover_image: string | null;
+      duration: number | null;
+      genre_name: string | null;
+      play_count: number;
+      like_count: number;
+      repost_count: number;
+      user_id: string;
+      artist_name: string;
+      stream_url: string | null;
+      created_at: string;
+    } | null;
+    track_count: number;
+  };
+  tracks: PlaylistTrackItem[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+  };
+}
+
 export function formatDuration(totalSeconds: number) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds));
   const hours = Math.floor(safeSeconds / 3600);
@@ -242,6 +277,54 @@ export async function getPlaylistTracks(
     message: string;
   }>(`/playlists/${playlistId}/tracks`, { params });
   return res.data;
+}
+
+/** GET /home/stations/:artist_id/tracks ” station tracks for a given artist */
+export async function getStationTracks(
+  artistId: string,
+): Promise<StationTracksResponse> {
+  const res = await axiosInstance.get<{
+    station: Omit<StationTracksResponse["station"], "name">;
+    data: Array<{
+      id: string;
+      title: string;
+      cover_image: string | null;
+      duration: number | null;
+      genre_name: string | null;
+      play_count: number;
+      like_count: number;
+      repost_count: number;
+      user_id: string;
+      artist_name: string;
+      stream_url: string | null;
+      created_at: string;
+    }>;
+    pagination: StationTracksResponse["pagination"];
+  }>(`/home/stations/${artistId}/tracks`);
+
+  const tracks: PlaylistTrackItem[] = res.data.data.map((track, index) => ({
+    track_id: track.id,
+    position: index + 1,
+    added_at: track.created_at,
+    title: track.title,
+    duration: track.duration,
+    cover_image: track.cover_image,
+    is_public: true,
+    deleted_at: null,
+    artist_name: track.artist_name,
+    artist_id: track.user_id,
+    play_count: track.play_count,
+    audio_url: track.stream_url,
+  }));
+
+  return {
+    station: {
+      ...res.data.station,
+      name: `${res.data.station.artist_name}'s Station`,
+    },
+    tracks,
+    pagination: res.data.pagination,
+  };
 }
 
 /** DELETE /playlists/:id/tracks/:trackId — remove a track from a playlist */

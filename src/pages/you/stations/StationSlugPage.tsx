@@ -5,18 +5,16 @@ import PlaylistActionsForYou from "@/components/playlist/Made for you/PlaylistAc
 import PlaylistHero from "@/components/playlist/PlaylistHero";
 import TrackList from "@/components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
-import { getHome, type DiscoveryStation } from "@/services/api/discover.service";
+import { getHome } from "@/services/api/discover.service";
 import {
-  type Playlist,
-  type PlaylistDetails,
+  getStationTracks,
+  type PlaylistTrackItem,
+  type StationTracksResponse,
 } from "@/services/api/playlist/playlist.service";
+import { type Playlist, type PlaylistDetails } from "@/services/api/playlist/playlist.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
 import { useHistoryStore } from "@/stores/history.store";
-import { mockRecentlyPlayedStations } from "@/services/mocks/discover";
 import type { MockUser } from "@/services/mocks/users";
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function slugify(value: string) {
   return value
@@ -26,16 +24,9 @@ function slugify(value: string) {
     .replace(/-+/g, "-");
 }
 
-function parseStationParam(value: string) {
-  const idx = value.lastIndexOf(":");
-  if (idx === -1) return { slug: value, id: value };
-  return {
-    slug: value.slice(0, idx),
-    id: value.slice(idx + 1),
-  };
-}
+type StationView = StationTracksResponse["station"];
 
-function toStationPlaylist(station: DiscoveryStation): Playlist {
+function toStationPlaylist(station: StationView): Playlist {
   return {
     playlist_id: station.id,
     owner_user_id: station.artist_id,
@@ -52,14 +43,17 @@ function toStationPlaylist(station: DiscoveryStation): Playlist {
   };
 }
 
-function toStationPlaylistDetails(station: DiscoveryStation): PlaylistDetails {
+function toStationPlaylistDetails(
+  station: StationView,
+  tracks: PlaylistTrackItem[],
+): PlaylistDetails {
   return {
     ...toStationPlaylist(station),
-    tracks: [],
+    tracks,
   };
 }
 
-function toFeaturedArtist(user: PublicUser, station: DiscoveryStation): MockUser {
+function toFeaturedArtist(user: PublicUser, station: StationView): MockUser {
   return {
     id: 0,
     username: user.username ?? slugify(user.display_name),
@@ -76,7 +70,8 @@ export default function StationSlugPage() {
   const { stationSlug } = useParams<{ stationSlug: string }>();
   const addStation = useHistoryStore((state) => state.addStation);
 
-  const [station, setStation] = useState<DiscoveryStation | null>(null);
+  const [station, setStation] = useState<StationView | null>(null);
+  const [stationTracks, setStationTracks] = useState<PlaylistTrackItem[]>([]);
   const [seedArtist, setSeedArtist] = useState<PublicUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,28 +86,27 @@ export default function StationSlugPage() {
       setError(null);
 
       try {
-        const { slug, id } = parseStationParam(stationSlug);
         const home = await getHome();
         if (cancelled) return;
 
         const stations = home.discover_with_stations ?? [];
-        const found =
-          stations.find((s) => s.id === id) ??
-          stations.find((s) => slugify(s.name) === slug) ??
-          stations.find((s) => UUID_RE.test(s.id) && s.id === stationSlug) ??
-          mockRecentlyPlayedStations.map((s) => ({
-            id: s.id,
-            name: s.name,
-            artist_id: s.seedArtist.id,
-            artist_name: s.seedArtist.displayName,
-            images: { left: s.coverUrl ?? null, center: null, right: null },
-            track_count: s.trackCount,
-          } satisfies DiscoveryStation))[0] ??
-          null;
+        const stationId = stationSlug.split(":").at(-1) ?? stationSlug;
+        const stationSlugPart = stationSlug.split(":")[0] ?? stationSlug;
+        const found = stations.find(
+          (s) =>
+            s.id === stationId ||
+            s.artist_id === stationId ||
+            slugify(s.name) === stationSlugPart ||
+            slugify(s.artist_name) === stationSlugPart,
+        );
 
         if (!found) throw new Error("Station not found");
 
-        setStation(found);
+        const stationRes = await getStationTracks(found.artist_id);
+        if (cancelled) return;
+
+        setStation(stationRes.station);
+        setStationTracks(stationRes.tracks);
 
         try {
           const artist = await getUserById(found.artist_id);
@@ -155,7 +149,7 @@ export default function StationSlugPage() {
   }
 
   const stationPlaylist = toStationPlaylist(station);
-  const stationPlaylistDetails = toStationPlaylistDetails(station);
+  const stationPlaylistDetails = toStationPlaylistDetails(station, stationTracks);
   const featuredArtists = seedArtist ? [toFeaturedArtist(seedArtist, station)] : [];
 
   const handlePlayStation = () => {
@@ -205,7 +199,7 @@ export default function StationSlugPage() {
             />
 
             <div className="mt-8">
-              <TrackList tracks={[]} showMockTracks />
+              <TrackList tracks={stationTracks} showMockTracks={false} />
             </div>
           </div>
 
