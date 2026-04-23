@@ -28,6 +28,7 @@ import {
   type TrackSummary,
 } from "@/services/user.service";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
+import type { User } from "@/stores/auth.store";
 
 type EnrichedUserSummary = UserSummary & { followers_count: number };
 
@@ -73,7 +74,7 @@ export default function UsernamePage() {
     setFollowing(enriched);
   };
 
-  // Fetch liked tracks scoped to the profile being viewed — not the global store
+  // Fetch liked tracks scoped to the profile being viewed
   useEffect(() => {
     let cancelled = false;
     const loadLikedTracks = async () => {
@@ -152,96 +153,120 @@ export default function UsernamePage() {
     };
   }, [isOwner, username]);
 
+  // ── Owner profile load ────────────────────────────────────
   useEffect(() => {
-    if (!currentUser) return;
-    if (isOwner) {
-      getMyProfile()
-        .then((profile) => {
-          setProfileData(profile);
-          setStats((prev) => ({
-            ...prev,
-            followers: profile.followers_count,
-            following: profile.following_count,
-          }));
-          const latestUser = useAuthStore.getState().user ?? currentUser;
-          setUser({
-            ...latestUser,
-            bio: profile.bio || "",
-            avatar: profile.profile_picture ?? latestUser.avatar,
-            coverUrl: profile.cover_photo ?? latestUser.coverUrl,
-            location:
-              [(profile as OwnUser).city, (profile as OwnUser).country]
-                .filter(Boolean)
-                .join(", ") || latestUser.location,
-          });
+    if (!isOwner || !currentUser) return;
+
+    getMyProfile()
+      .then((profile) => {
+        setProfileData(profile);
+        setStats((prev) => ({
+          ...prev,
+          followers: profile.followers_count,
+          following: profile.following_count,
+        }));
+        const latestUser = useAuthStore.getState().user ?? currentUser;
+        setUser({
+          ...latestUser,
+          bio: profile.bio || "",
+          avatar: profile.profile_picture ?? latestUser.avatar,
+          coverUrl: profile.cover_photo ?? latestUser.coverUrl,
+          location:
+            [(profile as OwnUser).city, (profile as OwnUser).country]
+              .filter(Boolean)
+              .join(", ") || latestUser.location,
+        });
+      })
+      .catch(console.error);
+
+    if (currentUserId) {
+      getFollowers(currentUserId, { limit: 100 })
+        .then((res) => {
+          setFollowers(res.items);
+          setStats((s) => ({ ...s, followers: res.meta.total }));
         })
         .catch(console.error);
 
-      if (currentUserId) {
-        getFollowers(currentUserId, { limit: 100 })
-          .then((res) => {
-            setFollowers(res.items);
-            setStats((s) => ({ ...s, followers: res.meta.total }));
-          })
-          .catch(console.error);
+      loadFollowingWithCounts(currentUserId)
+        .then(() => {
+          const { user: storeUser, setUser: storeSetUser } =
+            useAuthStore.getState();
+          if (storeUser) {
+            getFollowing(currentUserId, { limit: 100 })
+              .then((res) => {
+                const existingIds = new Set(storeUser.following_ids);
+                const newIds = res.items
+                  .map((u) => u.id)
+                  .filter((id) => !existingIds.has(id));
+                if (newIds.length > 0) {
+                  storeSetUser({
+                    ...storeUser,
+                    following_ids: [...storeUser.following_ids, ...newIds],
+                  });
+                }
+              })
+              .catch(console.error);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isOwner, currentUserId, currentUsername]);
 
-        loadFollowingWithCounts(currentUserId)
-          .then(() => {
-            const { user: storeUser, setUser: storeSetUser } =
-              useAuthStore.getState();
-            if (storeUser) {
-              getFollowing(currentUserId, { limit: 100 })
-                .then((res) => {
-                  const existingIds = new Set(storeUser.following_ids);
-                  const newIds = res.items
-                    .map((u) => u.id)
-                    .filter((id) => !existingIds.has(id));
-                  if (newIds.length > 0) {
-                    storeSetUser({
-                      ...storeUser,
-                      following_ids: [...storeUser.following_ids, ...newIds],
-                    });
-                  }
-                })
-                .catch(console.error);
-            }
-          })
-          .catch(console.error);
+  // ── Non-owner profile load ────────────────────────────────
+  // Single effect: resolve username → fetch profile + followers + follow status
+  useEffect(() => {
+    if (isOwner || !username) return;
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        // 1. Resolve username → userId
+        const userId = await resolveUsername(username);
+        if (cancelled) return;
+
+        // 2. Fetch profile
+        const profile = await getUserById(userId);
+        if (cancelled) return;
+
+        setProfileData(profile);
+        setStats({
+          followers: profile.followers_count,
+          following: profile.following_count,
+          tracks: 0,
+        });
+
+        // 3. Fetch followers, following, follow-status in parallel
+        const [followersRes, followStatus] = await Promise.allSettled([
+          getFollowers(userId, { limit: 100 }),
+          getFollowStatus(userId),
+        ]);
+        if (cancelled) return;
+
+        if (followersRes.status === "fulfilled") {
+          setFollowers(followersRes.value.items);
+        }
+
+        if (followStatus.status === "fulfilled") {
+          setIsFollowing(followStatus.value.is_following);
+          setIsBlocked(followStatus.value.is_blocking ?? false);
+          initiallyFollowing.current = followStatus.value.is_following;
+        }
+
+        // 4. Load following with follower counts (can be slow, non-blocking)
+        loadFollowingWithCounts(userId).catch(console.error);
+      } catch (err) {
+        console.error("[UsernamePage] failed to load non-owner profile:", err);
       }
-    } else {
-      if (!username) return;
-      resolveUsername(username)
-        .then((userId) => getUserById(userId))
-        .then((profile) => {
-          setProfileData(profile);
-          setStats({
-            followers: profile.followers_count,
-            following: profile.following_count,
-            tracks: 0,
-          });
-        })
-        .catch(console.error);
-    }
-  }, [username, isOwner, currentUserId, currentUsername, setUser]);
+    };
 
-  useEffect(() => {
-    if (!isOwner && profileData) {
-      getFollowers(profileData.id, { limit: 100 })
-        .then((res) => setFollowers(res.items))
-        .catch(console.error);
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner, username]);
 
-      loadFollowingWithCounts(profileData.id).catch(console.error);
-
-      getFollowStatus(profileData.id)
-        .then((status) => {
-          setIsFollowing(status.is_following);
-          setIsBlocked(status.is_blocking ?? false);
-          initiallyFollowing.current = status.is_following;
-        })
-        .catch(console.error);
-    }
-  }, [profileData?.id, isOwner]);
-
+  // Keep local isFollowing in sync with the auth store's following_ids
   useEffect(() => {
     if (!isOwner && profileData) {
       const nowFollowing =
@@ -280,20 +305,29 @@ export default function UsernamePage() {
 
   if (!currentUser) return null;
 
-  const user = isOwner
+  // ── Build the display user object ─────────────────────────
+  // For the owner we use currentUser (already kept in sync by the effect above).
+  // For non-owners we build purely from profileData — never spread currentUser.
+  const user: User = isOwner
     ? currentUser
     : {
-        ...currentUser,
-        username: profileData?.username || username || currentUser.username,
-        displayName:
-          profileData?.display_name || username || currentUser.username,
-        bio: profileData?.bio || "",
-        avatar: profileData?.profile_picture || "",
-        coverUrl: profileData?.cover_photo || "",
-        location: (profileData as PublicUser | null)?.location || "",
+        // Required User fields — pulled directly from the API response
+        id: profileData?.id ?? "",
+        username: profileData?.username ?? username ?? "",
+        displayName: profileData?.display_name ?? username ?? "",
+        email: "", // not exposed on PublicUser
+        firstName: "",
+        lastName: "",
+        bio: profileData?.bio ?? "",
+        avatar: profileData?.profile_picture ?? undefined,
+        coverUrl: profileData?.cover_photo ?? undefined,
+        location: (profileData as PublicUser | null)?.location ?? "",
+        role: profileData?.role ?? "listener",
+        isPro: false,
+        following_ids: currentUser.following_ids, // keep auth store for follow logic
+        followers_ids: [],
       };
 
-  // Map API TrackSummary to the shape ProfileSidebar/TrackItem expects
   const likedTracksMapped = (Array.isArray(likedTracks) ? likedTracks : []).map(
     (t) => ({
       id: t.id,
@@ -302,7 +336,6 @@ export default function UsernamePage() {
       coverUrl: t.cover_image ?? undefined,
       plays: t.play_count,
       likes: t.like_count,
-      // reposts & comments omitted until backend adds them to TrackSummary
     }),
   );
 
@@ -407,7 +440,10 @@ export default function UsernamePage() {
             </div>
           )}
         </div>
-        <div className="sticky top-24 self-start">
+        <div
+          className="sticky top-24 self-start min-w-0 overflow-hidden"
+          style={{ maxWidth: "min-content" }}
+        >
           <ProfileSidebar
             user={user}
             isOwner={isOwner}

@@ -75,7 +75,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
     isBioLong && !bioExpanded ? bio.slice(0, BIO_CHAR_LIMIT) + "…" : bio;
 
   return (
-    <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1">
+    <div className="  flex-shrink-0 flex flex-col gap-9 pt-1 overflow-hidden min-w-0">
       {/* Stats */}
       <div className="flex gap-13">
         <button
@@ -161,7 +161,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 w-[320px] overflow-hidden">
         {likedTracks.slice(0, 3).map((track) => (
           <TrackItem
             key={track.id}

@@ -62,7 +62,8 @@ const TrackItem: React.FC<TrackItemProps> = ({
       id,
       title,
       artistName: artist,
-      artistUsername: artistUsername || artist.toLowerCase().replace(/\s+/g, "-"),
+      artistUsername:
+        artistUsername || artist.toLowerCase().replace(/\s+/g, "-"),
       coverUrl: coverUrl || "",
       audioUrl: audioUrl || "",
       genre: genre || "",
