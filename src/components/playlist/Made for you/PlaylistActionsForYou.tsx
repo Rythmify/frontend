@@ -17,12 +17,16 @@ import type { Track } from "@/types/track";
 
 interface PlaylistActionsProps {
   playlist: Playlist & Partial<Pick<PlaylistDetails, "tracks">>;
+  initialTracks?: PlaylistTrackItem[];
+  isGeneratedPlaylist?: boolean;
   onAddToNextUp?: () => void;
   onPlaylistUpdated?: (updated: Playlist) => void;
 }
 
 export default function PlaylistActions({
   playlist,
+  initialTracks,
+  isGeneratedPlaylist = false,
   onAddToNextUp,
   onPlaylistUpdated,
 }: PlaylistActionsProps) {
@@ -172,8 +176,17 @@ export default function PlaylistActions({
 
         {showPlaylistModal && (
           <AddToPlaylistModal
-            playlistId={playlist.playlist_id}
-            trackTitle={playlist.name}
+            playlistId={isGeneratedPlaylist ? undefined : playlist.playlist_id}
+            trackTitle={isGeneratedPlaylist ? "More of what you like" : playlist.name}
+            initialTracks={
+              initialTracks?.map((track) => ({
+                id: track.track_id,
+                title: track.title ?? "Untitled track",
+                artistName: track.artist_name ?? undefined,
+                coverUrl: track.cover_image ?? undefined,
+              }))
+            }
+            moreOfLike={isGeneratedPlaylist}
             onClose={() => setShowPlaylistModal(false)}
           />
         )}
