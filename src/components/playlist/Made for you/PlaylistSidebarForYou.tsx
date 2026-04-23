@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { FaMusic, FaUserFriends } from "react-icons/fa";
 import type { PlaylistDetails } from "../../../services/api/playlist/playlist.service";
 import type { MockUser } from "../../../services/mocks/users";
-import { followUser, unfollowUser } from "../../../services/mocks/User.service";
 import GoMobileSection from "@/components/UI/GoMobile";
+import FollowButton from "@/components/UI/FollowButton";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
@@ -69,25 +68,6 @@ export default function PlaylistSidebar({
 }
 
 function ArtistCard({ artist }: { artist: MockUser }) {
-  const [following, setFollowing] = useState(artist.isFollowing);
-  const [followerCount, setFollowerCount] = useState(artist.followerCount);
-
-  const handleFollow = async () => {
-    try {
-      if (following) {
-        await unfollowUser(artist.username);
-        setFollowing(false);
-        setFollowerCount((c: number) => Math.max(0, c - 1));
-      } else {
-        await followUser(artist.username);
-        setFollowing(true);
-        setFollowerCount((c: number) => c + 1);
-      }
-    } catch {
-      setFollowing((p: boolean) => !p);
-    }
-  };
-
   return (
     <div
       data-test={`artist-card-${artist.username}`}
@@ -112,7 +92,7 @@ function ArtistCard({ artist }: { artist: MockUser }) {
         <div className="flex items-center gap-2 mt-0.5 text-[var(--color-text-muted)] text-[11px]">
           <span className="flex items-center gap-1">
             <FaUserFriends className="w-2.5 h-2.5" />
-            {followerCount.toLocaleString()}
+            {artist.followerCount.toLocaleString()}
           </span>
           <span className="flex items-center gap-1">
             <FaMusic className="w-2.5 h-2.5" />
@@ -121,21 +101,12 @@ function ArtistCard({ artist }: { artist: MockUser }) {
         </div>
       </div>
 
-      <button
-        onClick={handleFollow}
-        className={`
-          shrink-0 min-w-[70px] px-3 py-1
-          rounded-[var(--radius-sm)] text-sm font-bold
-          transition-colors duration-150 cursor-pointer
-          ${
-            following
-              ? "bg-[#303030] text-white "
-              : "bg-white text-bg hover:text-[#a0a0a0]"
-          }
-        `}
-      >
-        {following ? "Following" : "Follow"}
-      </button>
+      <FollowButton
+        username={artist.username}
+        userId={String(artist.id)}
+        isFollowingOverride={artist.isFollowing}
+        className="shrink-0 min-w-[70px] px-3 py-1 rounded-[var(--radius-sm)] text-sm font-bold"
+      />
     </div>
   );
 }

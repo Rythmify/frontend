@@ -24,6 +24,10 @@ export default function OwnerInfo({
   const { user } = useAuthStore();
   const isOwner =
     (!!ownerUserId && user?.id === ownerUserId) || user?.username === username;
+  const isFollowing = !!user
+    ? user.following_ids.includes(ownerUserId ?? "") ||
+      user.following_ids.includes(username)
+    : false;
 
   return (
     <div
@@ -98,6 +102,7 @@ export default function OwnerInfo({
           <FollowButton
             username={username}
             userId={ownerUserId}
+            initialIsFollowing={isFollowing}
             className="mt-1 mx-auto min-w-[96px]"
           />
         )}
