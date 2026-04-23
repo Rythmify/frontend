@@ -49,7 +49,7 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
             Playlists from this user
           </p>
           <Link
-            to={`/${playlist.owner_user_id}/playlists`}
+            to={`/${playlist.owner_user_id}/sets`}
             className="text-[12px] text-[#757575] hover:underline transition-colors"
           >
             View all
