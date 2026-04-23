@@ -169,7 +169,7 @@ function TrackItem({
           <Link
             to={`/${artistSlug}`}
             onClick={(e) => e.stopPropagation()}
-            className={`text-sm shrink-0 max-w-[30%] truncate font-bold transition-colors ${playbackTextClass}`}
+            className={`text-sm shrink-0 max-w-[30%] truncate font-bold transition-colors ${playbackTextClass} hover:text-text-muted/60`}
           >
             {artistName}
           </Link>
@@ -179,7 +179,7 @@ function TrackItem({
           <Link
             to={`/${artistSlug}/${track.trackSlug ?? track.track_id}`}
             onClick={(e) => e.stopPropagation()}
-            className={`text-sm font-bold truncate transition-colors ${playbackTitleClass}`}
+            className={`text-sm font-bold truncate transition-colors ${playbackTitleClass} hover:text-text-muted/60`}
             data-test={`link-track-title-${track.track_id}`}
           >
             {track.title ?? "Untitled track"}
