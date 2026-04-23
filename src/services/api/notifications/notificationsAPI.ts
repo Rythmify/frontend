@@ -8,21 +8,21 @@ export interface NotificationActor {
   id: string;
   username: string;
   display_name: string;
-  profile_picture: string | null;
+  avatar: string | null;
 }
 
-export interface NotificationResource {
-  type: 'track' | 'user' | 'playlist' | 'comment';
-  id: string;
+export interface NotificationResourceDetails {
   title?: string;
-  body?: string;
+  content?: string;
 }
 
 export interface Notification {
   id: string;
   type: NotificationType;
   actor: NotificationActor;
-  resource: NotificationResource | null;
+  resource_type: 'track' | 'user' | 'playlist' | 'comment' | null  
+  resource_id: string | null;
+  resource_details: NotificationResourceDetails | null;
   is_read: boolean;
   created_at: string;
 }
@@ -150,13 +150,14 @@ export interface ReportCreatedResponse {
 // GET /notifications
 export const fetchNotifications = async (
   page: number = 1,
-  limit: number = 20,
-  unread_only: boolean = false,
+  limit: number = 50,
   type?: NotificationType
 ): Promise<NotificationListResponse> => {
   const response = await axiosInstance.get<NotificationListResponse>(
     '/notifications',
-    { params: { page, limit, unread_only, ...(type ? { type } : {}) } }
+    { params: { page, limit, ...(type ? { type } : {}) },
+  headers: { 'Cache-Control': 'no-cache' },
+ }
   );
   return response.data;
 };

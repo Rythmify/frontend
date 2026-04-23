@@ -12,6 +12,7 @@ import Profile from "./Profile";
 import VerifyEmail from "./VerifyEmail";
 import { useNavigate } from "react-router-dom";
 import {
+  checkEmail,
   login,
   register,
   resendVerification,
@@ -40,6 +41,7 @@ function SigninFlow() {
   const [step, setStep] = useState<Step>("main");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [registerError, setRegisterError] = useState("");
   const navigate = useNavigate();
   const { login: storeLogin } = useAuthStore();
   const { executeRecaptcha } = useGoogleReCaptcha();
@@ -89,9 +91,17 @@ function SigninFlow() {
     }
   };
 
-  function handleEmailContinue(resolvedEmail: string, exists: boolean) {
-    setEmail(resolvedEmail);
-    setStep(exists ? "login" : "register");
+  async function handleEmailContinue(emailParam: string, _exists: boolean) {
+    setRegisterError("");
+    try {
+      const { exists } = await checkEmail(emailParam);
+      setEmail(emailParam);
+      setStep(exists ? "login" : "register");
+    } catch (err: any) {
+      // Fallback if check fails
+      setEmail(emailParam);
+      setStep("login");
+    }
   }
 
   const card =
@@ -212,11 +222,16 @@ function SigninFlow() {
   if (step === "profile") {
     return (
       <div className={card}>
+        {registerError && (
+          <p className="text-red-500 text-sm -mb-4">{registerError}</p>
+        )}
         <Profile
           email={email}
+          errorMessage={registerError}
           onBack={() => setStep("register")}
           onContinue={async (data) => {
             try {
+              setRegisterError("");
               await register({
                 email,
                 password,
@@ -227,7 +242,7 @@ function SigninFlow() {
               });
               setStep("verify-email");
             } catch (err: any) {
-              alert(
+              setRegisterError(
                 err?.response?.data?.error?.message ?? "Registration failed.",
               );
             }

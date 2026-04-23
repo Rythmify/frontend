@@ -7,7 +7,7 @@ function normalizeApiBaseUrl(rawBaseUrl?: string) {
     return '/api/v1';
   }
 
-  const trimmedBaseUrl = rawBaseUrl.replace(/\/+$/, '');
+  const trimmedBaseUrl = rawBaseUrl.trim().replace(/\/+$/, '');
   return /\/api\/v1$/i.test(trimmedBaseUrl)
     ? trimmedBaseUrl
     : `${trimmedBaseUrl}/api/v1`;
@@ -22,6 +22,7 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
+  if (config.url?.includes('/auth/refresh')) return config;
   const token = localStorage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -35,6 +36,25 @@ let lastRefreshFailureAt = 0;
 function clearAuthSession() {
   localStorage.removeItem('auth_token');
   window.dispatchEvent(new CustomEvent('auth:session-expired'));
+}
+
+// Shared refresh function — both the proactive timer and the 401 interceptor
+// use this so at most one /auth/refresh request is in-flight at any time.
+// This prevents refresh-token rotation failures when two code paths race.
+export function performRefresh(): Promise<string | null> {
+  refreshRequest ??= axiosInstance
+    .post('/auth/refresh')
+    .then((response) => {
+      const refreshedToken = response.data?.data?.access_token ?? null;
+      if (refreshedToken) {
+        localStorage.setItem('auth_token', refreshedToken);
+      }
+      return refreshedToken;
+    })
+    .finally(() => {
+      refreshRequest = null;
+    });
+  return refreshRequest;
 }
 
 axiosInstance.interceptors.response.use(
@@ -66,29 +86,7 @@ axiosInstance.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      refreshRequest ??= axios
-        .post(
-          `${normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL)}/auth/refresh`,
-          undefined,
-          {
-            withCredentials: true,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
-        )
-        .then((response) => {
-          const refreshedToken = response.data?.data?.access_token ?? null;
-          if (refreshedToken) {
-            localStorage.setItem('auth_token', refreshedToken);
-          }
-          return refreshedToken;
-        })
-        .finally(() => {
-          refreshRequest = null;
-        });
-
-      const refreshedToken = await refreshRequest;
+      const refreshedToken = await performRefresh();
 
       if (!refreshedToken) {
         lastRefreshFailureAt = Date.now();
