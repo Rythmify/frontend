@@ -1,5 +1,5 @@
 // NotificationsPage.tsx
-import { useState, useEffect, useCallback,useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { fetchNotifications, type Notification, type NotificationType } from '@/services/api/notifications/notificationsAPI'
 import { fetchMyFollowing } from '@/services/api/notifications/notificationsAPI'
 import ArtistListSection, { type Artist } from '@/components/UI/ArtistListSection'
@@ -8,6 +8,8 @@ import Spinner from '@/components/UI/Spinner'
 import GoMobileSection from '@/components/UI/GoMobile'
 import NotificationCard from '@/components/notificationsComponents/notificationCard'
 import { useNotificationStore } from '@/stores/notification.store'
+import { useNotificationSocket } from '@/services/api/notifications/useNotificationSocket' // custom hook to manage socket connection and events
+import { useAuthStore } from '@/stores/auth.store' // adjust path to wherever your auth token lives
 
 type Status = 'loading' | 'success' | 'empty' | 'error'
 
@@ -21,7 +23,38 @@ const NotificationsPage = () => {
   const [loadingMore, setLoadingMore]     = useState(false)
   const { fetchUnreadCount, unreadCount } = useNotificationStore()
   const sentinelRef = useRef<HTMLDivElement>(null)
- const PAGE_SIZE = 20
+  const PAGE_SIZE = 20
+
+  // ── Auth token (adjust selector to match your auth store shape) ─────────────
+  const token = useAuthStore(state => state.accessToken)
+
+  // ── Socket callbacks ─────────────────────────────────────────────────────────
+  // Stable references via useCallback so the socket hook's useEffect
+  // doesn't re-subscribe on every render.
+
+  const handleNewNotification = useCallback((n: Notification) => {
+    // Only prepend if it matches the active type filter (or filter is 'all')
+    if (selectedType === 'all' || n.type === selectedType) {
+      setNotifications(prev => [n, ...prev])
+      // If the list was empty, move to 'success' status
+      setStatus('success')
+    }
+  }, [selectedType])
+
+  const handleReadNotification = useCallback((id: string) => {
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, is_read: true } : n)
+    )
+  }, [])
+
+  // ── Connect socket ───────────────────────────────────────────────────────────
+  useNotificationSocket({
+    token,
+    onNewNotification:  handleNewNotification,
+    onReadNotification: handleReadNotification,
+  })
+
+  // ── REST fetch (initial load + filter changes) ───────────────────────────────
   const loadNotifications = useCallback(async (type: FilterType) => {
     setStatus('loading')
     setPage(1)
@@ -38,28 +71,28 @@ const NotificationsPage = () => {
   }, [])
 
   const loadMore = useCallback(async () => {
-  if (loadingMore || !hasNext) return
-  setLoadingMore(true)
-  try {
-    const nextPage = page + 1
-    const typeParam = selectedType === 'all' ? undefined : selectedType as NotificationType
-    const res = await fetchNotifications(nextPage, PAGE_SIZE, typeParam)
-    const { items, pagination } = res.data
-    setNotifications(prev => [...prev, ...items])
-    setHasNext(pagination.has_next)
-    setPage(nextPage)
-  } catch {
-    // silently fail
-  } finally {
-    setLoadingMore(false)
-  }
-}, [loadingMore, hasNext, page, selectedType])
+    if (loadingMore || !hasNext) return
+    setLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const typeParam = selectedType === 'all' ? undefined : selectedType as NotificationType
+      const res = await fetchNotifications(nextPage, PAGE_SIZE, typeParam)
+      const { items, pagination } = res.data
+      setNotifications(prev => [...prev, ...items])
+      setHasNext(pagination.has_next)
+      setPage(nextPage)
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasNext, page, selectedType])
 
-    const handleMarkRead = (id: string) => {
+  const handleMarkRead = (id: string) => {
     setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, is_read: true } : n)
     )
-    fetchUnreadCount()  // keep the badge in sync
+    fetchUnreadCount()
   }
 
   const loadRecentFollowers = useCallback(async () => {
@@ -93,7 +126,7 @@ const NotificationsPage = () => {
     fetchUnreadCount()
   }, [loadRecentFollowers, fetchUnreadCount])
 
-    useEffect(() => {
+  useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
     const observer = new IntersectionObserver(
@@ -118,20 +151,26 @@ const NotificationsPage = () => {
 
           {status === 'loading' && <Spinner data-test="notifications-loading" />}
 
-{status === 'success' && (
-  <div data-test="notifications-list" className="flex flex-col gap-2">
-    {notifications.map(n => (
-      <NotificationCard key={n.id} notification={n} showActions={true} onMarkRead={handleMarkRead} data-test={`notification-card-${n.id}`} />
-    ))}
-  </div>
-)}
+          {status === 'success' && (
+            <div data-test="notifications-list" className="flex flex-col gap-2">
+              {notifications.map(n => (
+                <NotificationCard
+                  key={n.id}
+                  notification={n}
+                  showActions={true}
+                  onMarkRead={handleMarkRead}
+                  data-test={`notification-card-${n.id}`}
+                />
+              ))}
+            </div>
+          )}
 
-{/* sentinel: observed by IntersectionObserver to trigger loadMore */}
-<div ref={sentinelRef} className="h-4" />
-{loadingMore && <Spinner />}
+          {/* sentinel: observed by IntersectionObserver to trigger loadMore */}
+          <div ref={sentinelRef} className="h-4" />
+          {loadingMore && <Spinner />}
 
-{status === 'empty' && <p data-test="notifications-empty">You don't have any notifications</p>}
-{status === 'error'  && <p data-test="notifications-error">Something went wrong.</p>}
+          {status === 'empty' && <p data-test="notifications-empty">You don't have any notifications</p>}
+          {status === 'error'  && <p data-test="notifications-error">Something went wrong.</p>}
         </div>
 
         {/* Sidebar — hidden on mobile, visible on lg+ */}
