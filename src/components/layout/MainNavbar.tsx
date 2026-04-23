@@ -61,7 +61,7 @@ const MainNavbar = () => {
     setNotificationsLoading(true);
 
     try {
-      const res = await fetchNotifications(1, 9, false);
+      const res = await fetchNotifications(1, 9);
       setNotifications(res.data.items ?? []);
     } catch {
       setNotifications([]);
@@ -230,7 +230,7 @@ const MainNavbar = () => {
             )}
           </div>
 
-          {/* Notifications */}
+       {/* Notifications */}
           <div ref={notifRef} className="relative">
             <button
               data-test="btn-notifications"
@@ -279,7 +279,7 @@ const MainNavbar = () => {
                         <NotificationCard
                           key={notification.id}
                           notification={notification}
-                          showActions={false}
+                          showActions={false as unknown as undefined}
                           data-test={`navbar-notification-card-${notification.id}`}
                         />
                       ))}
