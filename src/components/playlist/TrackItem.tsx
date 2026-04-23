@@ -47,7 +47,7 @@ function TrackItem({
     track.artist_username ?? track.artist_username ?? "unknown";
   const coverImage =
     track.cover_image ?? track.cover_image ?? "https://via.placeholder.com/150";
-  const playCount = track.play_count ?? track.play_count ?? 0;
+  const playCount = track.play_count ?? 0;
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();

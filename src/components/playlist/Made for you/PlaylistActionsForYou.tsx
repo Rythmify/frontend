@@ -7,12 +7,16 @@ import SharePopup from "../../../pages/[username]/[trackSlug]/components/SharePo
 import {
   updatePlaylist,
   type Playlist,
+  type PlaylistDetails,
+  type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { useLikesStore } from "@/stores/likes.store";
+import { usePlayerStore } from "@/stores/player.store";
 import AddToPlaylistModal from "../AddToPlaylistModal";
+import type { Track } from "@/types/track";
 
 interface PlaylistActionsProps {
-  playlist: Playlist;
+  playlist: Playlist & Partial<Pick<PlaylistDetails, "tracks">>;
   onAddToNextUp?: () => void;
   onPlaylistUpdated?: (updated: Playlist) => void;
 }
@@ -23,7 +27,13 @@ export default function PlaylistActions({
   onPlaylistUpdated,
 }: PlaylistActionsProps) {
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const { addToQueue, queue } = usePlayerStore();
   const liked = isPlaylistLiked(playlist.playlist_id);
+  const isQueued =
+    (playlist.tracks ?? []).length > 0 &&
+    (playlist.tracks ?? []).some((track) =>
+      queue.some((queuedTrack) => queuedTrack.id === track.track_id),
+    );
 
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -40,12 +50,6 @@ export default function PlaylistActions({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleCopyLink = () => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url);
-    setMoreOpen(false);
-  };
-
   const handleMakePublic = async () => {
     try {
       const res = await updatePlaylist(playlist.playlist_id, {
@@ -56,6 +60,38 @@ export default function PlaylistActions({
     } catch (err) {
       console.error("Failed to make playlist public:", err);
     }
+  };
+
+  const parseDuration = (duration?: number | null): string => {
+    if (typeof duration !== "number" || Number.isNaN(duration)) return "0:00";
+    const minutes = Math.floor(duration / 60);
+    const seconds = Math.floor(duration % 60);
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  };
+
+  const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
+    id: track.track_id,
+    title: track.title ?? "Untitled track",
+    artistName: track.artist_name ?? "Unknown Artist",
+    artistUsername: track.artist_username ?? "",
+    coverUrl: track.cover_image ?? "",
+    genre: "",
+    likeCount: 0,
+    repostCount: 0,
+    playCount: track.play_count ?? 0,
+    commentCount: 0,
+    duration: parseDuration(track.duration),
+    postedAt: track.added_at ?? "",
+    waveformData: [],
+    audioUrl: track.audio_url ?? "",
+    isPrivate: !track.is_public,
+  });
+
+  const handleAddToNextUp = () => {
+    const tracks = (playlist.tracks ?? []).map(toPlayerTrack);
+    if (!tracks.length) return;
+    tracks.forEach((track) => addToQueue(track));
+    onAddToNextUp?.();
   };
 
   return (
@@ -89,7 +125,7 @@ export default function PlaylistActions({
         </ActionButton>
 
         {/* Add to Next up Button */}
-        <ActionButton onClick={onAddToNextUp}>
+        <ActionButton onClick={handleAddToNextUp} active={isQueued}>
           <LuListEnd className="text-[18px]" />
           Add to Next up
         </ActionButton>

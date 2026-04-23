@@ -1,12 +1,9 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
-import {
-  followUser,
-  unfollowUser,
-} from "@/services/mocks/User.service";
+import FollowButton from "@/components/UI/FollowButton";
 
 interface AlbumOwnerInfoProps {
+  ownerUserId?: string;
   username: string;
   displayName?: string;
   avatarUrl?: string | null;
@@ -14,7 +11,8 @@ interface AlbumOwnerInfoProps {
   trackNum?: number;
 }
 
-export default function AlbumOwnerInfo({
+export default function OwnerInfo({
+  ownerUserId,
   username,
   displayName,
   avatarUrl,
@@ -23,28 +21,9 @@ export default function AlbumOwnerInfo({
 }: AlbumOwnerInfoProps) {
   const name = displayName || username;
   const fallbackLetter = name?.trim().charAt(0).toUpperCase() || "U";
-  const { user, toggleFollow } = useAuthStore();
-  const isFollowing = user?.following_ids?.includes(username) ?? false;
-  const isOwner = user?.username === username;
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleFollowClick = async () => {
-    if (!user || isOwner) return;
-
-    setIsLoading(true);
-    try {
-      if (isFollowing) {
-        await unfollowUser(username);
-      } else {
-        await followUser(username);
-      }
-      toggleFollow(username);
-    } catch (error) {
-      console.error("Failed to update follow status:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { user } = useAuthStore();
+  const isOwner =
+    (!!ownerUserId && user?.id === ownerUserId) || user?.username === username;
 
   return (
     <div
@@ -69,7 +48,7 @@ export default function AlbumOwnerInfo({
             </div>
           )}
         </div>
-        </Link>
+      </Link>
 
       <div className="min-w-0 flex flex-col gap-0.5 items-center">
         <Link
@@ -115,20 +94,12 @@ export default function AlbumOwnerInfo({
           )}
         </div>
 
-        {!isOwner && user && (
-          <button
-            type="button"
-            data-test="album-owner-follow-button"
-            onClick={handleFollowClick}
-            disabled={isLoading}
-            className={`mt-1 shrink-0 min-w-[96px] px-4 py-2 rounded-[var(--radius-sm)] text-sm font-bold transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 mx-auto ${
-              isFollowing
-                ? "bg-[#303030] text-white hover:bg-[#3a3a3a]"
-                : "bg-white text-bg hover:text-[#a0a0a0]"
-            }`}
-          >
-            {isLoading ? "..." : isFollowing ? "Following" : "Follow"}
-          </button>
+        {!isOwner && user && ownerUserId && (
+          <FollowButton
+            username={username}
+            userId={ownerUserId}
+            className="mt-1 mx-auto min-w-[96px]"
+          />
         )}
       </div>
     </div>

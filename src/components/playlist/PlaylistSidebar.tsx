@@ -44,7 +44,7 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
         data-test="playlist-sidebar"
         className="flex flex-col w-full gap-3"
       >
-        <div className="px-4 flex items-center justify-between">
+        <div className=" flex items-center justify-between">
           <p className="text-white text-[12px] font-bold uppercase  flex items-center gap-2">
             Playlists from this user
           </p>
@@ -62,7 +62,7 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
               <div className="w-4 h-4 rounded-full border-2 border-[#555] border-t-white animate-spin" />
             </div>
           ) : userPlaylists.length === 0 ? (
-            <p className="text-[var(--color-text-muted)] text-xs px-4">
+            <p className="text-[var(--color-text-muted)] text-xs ">
               No other playlists.
             </p>
           ) : (
@@ -71,7 +71,7 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
                 <Link
                   key={p.playlist_id}
                   to={`/${user?.username}/sets`}
-                  className="flex items-center gap-3 px-4 py-2 rounded-md transition-colors group"
+                  className="flex items-center gap-3 py-2 rounded-md transition-colors group"
                 >
                   <img
                     src={p.cover_image || "https://via.placeholder.com/40"}

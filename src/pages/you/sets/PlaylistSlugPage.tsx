@@ -14,7 +14,7 @@ import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
-import AlbumOwnerInfo from "@/components/playlist/Album/AlbumOwnerInfo";
+import OwnerInfo from "@/components/playlist/OwnerInfo";
 import { useAuthStore } from "../../../stores/auth.store";
 import PlaylistActionsForYou from "@/components/playlist/Made for you/PlaylistActionsForYou";
 import { useLikesStore } from "@/stores/likes.store";
@@ -165,8 +165,7 @@ function PlaylistSlugPage() {
     !!playlist &&
     playlist.tracks.some((track) => track.track_id === currentTrack?.id);
   const isLikedPlaylist =
-    !!playlist &&
-    likedPlaylists.some((p) => p.id === playlist.playlist_id);
+    !!playlist && likedPlaylists.some((p) => p.id === playlist.playlist_id);
 
   const handleCoverUpload = async (file: File) => {
     if (!playlist) return;
@@ -232,7 +231,8 @@ function PlaylistSlugPage() {
             )}
 
             <div className="flex flex-col lg:flex-row gap-6 mt-8">
-              <AlbumOwnerInfo
+              <OwnerInfo
+                ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}
                 followers={albumOwner?.followers_count ?? 0}
                 username={
