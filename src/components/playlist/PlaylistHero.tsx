@@ -4,6 +4,55 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useRef, useState, useEffect } from "react";
 import PlaylistStatsWaveform from "./PlaylistStatsWaveform";
 
+const COLOR_SCHEMES = [
+  { a: "#e91e8c", b: "#00bcd4" },
+  { a: "#ff6d00", b: "#7c4dff" },
+  { a: "#00e676", b: "#2979ff" },
+  { a: "#ff1744", b: "#ffea00" },
+  { a: "#d500f9", b: "#00bfa5" },
+];
+
+const RADII = [18, 36, 54, 72, 90, 108, 126, 144];
+
+function StationRings({ colorIndex = 0 }: { colorIndex?: number }) {
+  const { a, b } = COLOR_SCHEMES[colorIndex % COLOR_SCHEMES.length];
+
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      data-test="playlist-hero-station-rings"
+      className="absolute inset-0 w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      {RADII.map((r, i) => (
+        <circle
+          key={`a${i}`}
+          cx="55"
+          cy="155"
+          r={r}
+          fill="none"
+          stroke={a}
+          strokeWidth="1.2"
+          opacity={Math.max(0.04, 0.45 - i * 0.055)}
+        />
+      ))}
+      {RADII.map((r, i) => (
+        <circle
+          key={`b${i}`}
+          cx="155"
+          cy="55"
+          r={r}
+          fill="none"
+          stroke={b}
+          strokeWidth="1.2"
+          opacity={Math.max(0.04, 0.45 - i * 0.055)}
+        />
+      ))}
+    </svg>
+  );
+}
+
 interface PlaylistHeroProps {
   playlist: PlaylistDetails;
   isPlaying?: boolean;
@@ -13,6 +62,10 @@ interface PlaylistHeroProps {
   showUploadButton?: boolean;
   ownerUsername?: string | null;
   moreOfLike?: boolean;
+  coverImages?: Array<string | null | undefined>;
+  backgroundImage?: string | null;
+  isStation?: boolean;
+  colorIndex?: number;
 }
 
 export default function PlaylistHero({
@@ -24,6 +77,10 @@ export default function PlaylistHero({
   showUploadButton = true,
   ownerUsername,
   moreOfLike = false,
+  coverImages,
+  backgroundImage,
+  isStation = false,
+  colorIndex = 0,
 }: PlaylistHeroProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
@@ -37,6 +94,22 @@ export default function PlaylistHero({
   useEffect(() => {
     setPreviewUrl(null);
   }, [playlist.playlist_id]);
+
+  const heroTitle = moreOfLike
+    ? `Related Tracks: ${playlist.tracks[0]?.title ?? "Related Tracks"}`
+    : isStation
+      ? ownerUsername
+        ? `${ownerUsername}'s Station`
+        : "Station"
+      : playlist.name;
+
+  const ownerLabel = moreOfLike
+    ? `Made for ${user?.displayName ?? "you"}`
+    : isStation
+      ? "Artist Station"
+      : user?.username === ownerUsername || user?.id === playlist.owner_user_id
+        ? user?.displayName
+        : ownerUsername || playlist.owner_user_id;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,15 +154,9 @@ export default function PlaylistHero({
           {/* Title Block */}
           <div className="flex flex-col items-start">
             <div className="bg-bg px-4 py-3">
-              {moreOfLike ? (
-  <h1 className="text-2xl md:text-3xl text-text-upload font-bold tracking-tight leading-tight">
-    Related Tracks: {playlist.tracks[0]?.title}
-  </h1>
-) : (
-  <h1 className="text-2xl md:text-3xl text-text-upload font-bold tracking-tight leading-tight">
-    {playlist.name}
-  </h1>
-)}
+              <h1 className="text-2xl md:text-3xl text-text-upload font-bold tracking-tight leading-tight">
+                {heroTitle}
+              </h1>
 
               {/* Privacy Badge inside Title Block */}
               <div className="mt-2">
@@ -106,12 +173,7 @@ export default function PlaylistHero({
             {/* "Playlist owner" */}
             <div className="bg-bg px-4 py-1.5">
               <p className="text-[17px] text-text-upload hover:text-[#484848] font-bold cursor-pointer transition-colors">
-                {moreOfLike
-                  ? `Made for ${user?.displayName ?? "you"}`
-                  : user?.username === ownerUsername ||
-                      user?.id === playlist.owner_user_id
-                    ? user?.displayName
-                    : ownerUsername || playlist.owner_user_id}
+                {ownerLabel}
               </p>
             </div>
           </div>
@@ -128,17 +190,80 @@ export default function PlaylistHero({
       </div>
 
       {/* Right Content Section: Cover Art */}
-      <div className="hidden md:flex shrink-0 items-center justify-center py-4">
+      <div className="hidden md:flex shrink-0 items-center justify-center py-4 z-10">
         <div className="relative group">
-          <img
-            src={
-              previewUrl ||
-              playlist.cover_image ||
-              "https://picsum.photos/seed/playlist/600/600"
-            }
-            alt={playlist.name}
-            className="w-64 h-64 lg:w-80 lg:h-80 object-cover shadow-2xl rounded-md border border-white/5"
-          />
+          {coverImages?.some(Boolean) ? (
+            <div className="relative w-64 h-64 lg:w-80 lg:h-80 rounded-md overflow-hidden shadow-2xl border border-white/5 bg-[#0d0d1a]">
+              {isStation && (
+                <>
+                  <StationRings colorIndex={colorIndex} />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.06),transparent_28%)]" />
+                  <div className="absolute top-2 right-2 opacity-60 z-30">
+                    <i className="fa-brands fa-soundcloud text-text-hover" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3 z-30">
+                    <p className="text-[9px] font-bold tracking-widest text-white/80 uppercase leading-none mb-0.5">
+                      STATION
+                    </p>
+                    <p className="text-white text-sm font-semibold truncate leading-tight drop-shadow">
+                      {heroTitle}
+                    </p>
+                  </div>
+                </>
+              )}
+              {!isStation && (
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.06),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.05),transparent_28%)]" />
+              )}
+              <div className="absolute top-[6%] left-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20">
+                <img
+                  src={
+                    previewUrl ||
+                    coverImages?.[0] ||
+                    playlist.cover_image ||
+                    "https://picsum.photos/seed/playlist-1/600/600"
+                  }
+                  alt={playlist.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute top-[22%] left-[24%] w-[50%] aspect-square rounded-full overflow-hidden border-[2px] border-white/25">
+                <img
+                  src={
+                    previewUrl ||
+                    coverImages?.[1] ||
+                    coverImages?.[0] ||
+                    playlist.cover_image ||
+                    "https://picsum.photos/seed/playlist-2/600/600"
+                  }
+                  alt={playlist.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute bottom-[14%] right-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20">
+                <img
+                  src={
+                    previewUrl ||
+                    coverImages?.[2] ||
+                    coverImages?.[1] ||
+                    playlist.cover_image ||
+                    "https://picsum.photos/seed/playlist-3/600/600"
+                  }
+                  alt={playlist.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          ) : (
+            <img
+              src={
+                previewUrl ||
+                playlist.cover_image ||
+                "https://picsum.photos/seed/playlist/600/600"
+              }
+              alt={playlist.name}
+              className="w-64 h-64 lg:w-80 lg:h-80 object-cover shadow-2xl rounded-md border border-white/5"
+            />
+          )}
           {/*Show Upload Button*/}
           {showUploadButton ? (
             <div className="absolute inset-0 transition-all flex flex-col justify-end items-center pb-4">

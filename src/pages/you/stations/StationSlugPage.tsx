@@ -186,7 +186,14 @@ export default function StationSlugPage() {
         activeTrackId={undefined}
         onPlayPause={handlePlayStation}
         showUploadButton={false}
-        ownerUsername={seedArtist?.username ?? station.artist_name}
+        ownerUsername={seedArtist?.display_name ?? station.artist_name}
+        isStation
+        backgroundImage={station.images?.center ?? station.images?.left ?? null}
+        coverImages={[
+          station.images?.left ?? null,
+          station.images?.center ?? null,
+          station.images?.right ?? null,
+        ]}
       />
 
       <div className="container mx-auto">
