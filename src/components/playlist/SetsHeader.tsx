@@ -20,7 +20,7 @@ function SetsHeader({
   title,
 }: SetsHeaderProps) {
   return (
-    <div className="flex justify-between items-center py-2 px-4">
+    <div className="flex justify-between items-center py-2 px-4 ">
       <div className=" text-white text-[17px] font-bold ">{title}</div>
 
       <div className="flex-1" />
