@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, configure } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import NotificationCard from '../notificationCard'
-import type { Notification, NotificationResource } from '@/services/api/notifications/notificationsAPI'
+import type { Notification, NotificationResourceDetails } from '@/services/api/notifications/notificationsAPI'
 
 // Match the project-wide convention: all elements use data-test, not data-testid
 configure({ testIdAttribute: 'data-test' })
@@ -67,28 +67,31 @@ vi.mock('@/components/UI/ReportModal', () => ({
 
 const NOW = new Date().toISOString()
 
-// NotificationActor has no is_verified — match the exact interface
+// NotificationActor uses `avatar`, not `profile_picture`
 const defaultActor = {
   id: 'user-1',
   username: 'johndoe',
   display_name: 'John Doe',
-  profile_picture: null as string | null,
+  avatar: null as string | null,
 }
 
-// Helper to build a typed NotificationResource — 'type' is required
-const makeResource = (overrides: Partial<NotificationResource> = {}): NotificationResource => ({
-  type: 'track',
-  id: 'track-1',
+// Helper to build a typed NotificationResourceDetails
+const makeResource = (overrides: Partial<NotificationResourceDetails> = {}): NotificationResourceDetails => ({
+  title: undefined,
+  content: undefined,
   ...overrides,
 })
 
+// Notification uses resource_type, resource_id, resource_details — not `resource`
 const makeNotification = (overrides: Partial<Notification> = {}): Notification => ({
   id: 'notif-1',
   type: 'follow',
   is_read: false,
   created_at: NOW,
   actor: defaultActor,
-  resource: null,
+  resource_type: null,
+  resource_id: null,
+  resource_details: null,
   ...overrides,
 })
 
@@ -139,9 +142,9 @@ describe('NotificationCard', () => {
   // ── Avatar ────────────────────────────────────────────────────────────────
 
   describe('avatar', () => {
-    it('renders avatar image when profile_picture is provided', () => {
+    it('renders avatar image when avatar is provided', () => {
       const n = makeNotification({
-        actor: { ...defaultActor, profile_picture: 'https://example.com/pic.jpg' },
+        actor: { ...defaultActor, avatar: 'https://example.com/pic.jpg' },
       })
       renderCard(n)
       expect(screen.getByTestId('notification-avatar-img-notif-1')).toHaveAttribute(
@@ -150,7 +153,7 @@ describe('NotificationCard', () => {
       )
     })
 
-    it('renders fallback icon when profile_picture is null', () => {
+    it('renders fallback icon when avatar is null', () => {
       renderCard(makeNotification())
       expect(screen.getByTestId('notification-avatar-fallback-notif-1')).toBeInTheDocument()
     })
@@ -180,7 +183,7 @@ describe('NotificationCard', () => {
 
     it('renders liked text with track title for like type', () => {
       renderCard(
-        makeNotification({ type: 'like', resource: makeResource({ title: 'My Song' }) }),
+        makeNotification({ type: 'like', resource_details: makeResource({ title: 'My Song' }) }),
       )
       expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
         'liked your track "My Song"',
@@ -189,7 +192,7 @@ describe('NotificationCard', () => {
 
     it('falls back to resource id when title is undefined for like type', () => {
       renderCard(
-        makeNotification({ type: 'like', resource: makeResource({ id: 'track-42', title: undefined }) }),
+        makeNotification({ type: 'like', resource_id: 'track-42', resource_details: makeResource({ title: undefined }) }),
       )
       expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
         'liked your track "track-42"',
@@ -198,7 +201,7 @@ describe('NotificationCard', () => {
 
     it('renders reposted text with track title for repost type', () => {
       renderCard(
-        makeNotification({ type: 'repost', resource: makeResource({ title: 'My Song' }) }),
+        makeNotification({ type: 'repost', resource_details: makeResource({ title: 'My Song' }) }),
       )
       expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
         'reposted your track "My Song"',
@@ -207,7 +210,7 @@ describe('NotificationCard', () => {
 
     it('falls back to resource id when title is undefined for repost type', () => {
       renderCard(
-        makeNotification({ type: 'repost', resource: makeResource({ id: 'track-7', title: undefined }) }),
+        makeNotification({ type: 'repost', resource_id: 'track-7', resource_details: makeResource({ title: undefined }) }),
       )
       expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
         'reposted your track "track-7"',
@@ -216,7 +219,7 @@ describe('NotificationCard', () => {
 
     it('renders comment text with body for comment type', () => {
       renderCard(
-        makeNotification({ type: 'comment', resource: makeResource({ body: 'Great track!' }) }),
+        makeNotification({ type: 'comment', resource_details: makeResource({ content: 'Great track!' }) }),
       )
       expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
         'commented "Great track!" on your track',
@@ -225,31 +228,31 @@ describe('NotificationCard', () => {
 
     // ── ?? '' fallback branches ───────────────────────────────────────────
 
-    it('falls back to empty string when resource is null for like type', () => {
-      renderCard(makeNotification({ type: 'like', resource: null }))
+    it('falls back to empty string when resource_details is null for like type', () => {
+      renderCard(makeNotification({ type: 'like', resource_details: null }))
       expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
         'liked your track ""',
       )
     })
 
-    it('falls back to empty string when resource is null for repost type', () => {
-      renderCard(makeNotification({ type: 'repost', resource: null }))
+    it('falls back to empty string when resource_details is null for repost type', () => {
+      renderCard(makeNotification({ type: 'repost', resource_details: null }))
       expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
         'reposted your track ""',
       )
     })
 
-    it('falls back to empty string when body is undefined for comment type', () => {
+    it('falls back to empty string when content is undefined for comment type', () => {
       renderCard(
-        makeNotification({ type: 'comment', resource: makeResource({ body: undefined }) }),
+        makeNotification({ type: 'comment', resource_details: makeResource({ content: undefined }) }),
       )
       expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
         'commented "" on your track',
       )
     })
 
-    it('falls back to empty string when resource is null for comment type', () => {
-      renderCard(makeNotification({ type: 'comment', resource: null }))
+    it('falls back to empty string when resource_details is null for comment type', () => {
+      renderCard(makeNotification({ type: 'comment', resource_details: null }))
       expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
         'commented "" on your track',
       )
@@ -305,19 +308,19 @@ describe('NotificationCard', () => {
     })
 
     it('navigates to track page on click for like notifications', () => {
-      renderCard(makeNotification({ type: 'like', resource: makeResource({ id: 'track-99' }) }))
+      renderCard(makeNotification({ type: 'like', resource_id: 'track-99' }))
       fireEvent.click(screen.getByTestId('notification-card-notif-1'))
       expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-99')
     })
 
     it('navigates to track page on click for comment notifications', () => {
-      renderCard(makeNotification({ type: 'comment', resource: makeResource({ id: 'track-5' }) }))
+      renderCard(makeNotification({ type: 'comment', resource_id: 'track-5' }))
       fireEvent.click(screen.getByTestId('notification-card-notif-1'))
       expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-5')
     })
 
     it('navigates to track page on click for repost notifications', () => {
-      renderCard(makeNotification({ type: 'repost', resource: makeResource({ id: 'track-8', title: 'Remix' }) }))
+      renderCard(makeNotification({ type: 'repost', resource_id: 'track-8', resource_details: makeResource({ title: 'Remix' }) }))
       fireEvent.click(screen.getByTestId('notification-card-notif-1'))
       expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-8')
     })
@@ -332,7 +335,7 @@ describe('NotificationCard', () => {
     })
 
     it('does NOT render FollowButton for like type', () => {
-      renderCard(makeNotification({ type: 'like', resource: makeResource({ title: 'S' }) }))
+      renderCard(makeNotification({ type: 'like', resource_details: makeResource({ title: 'S' }) }))
       expect(screen.queryByTestId('follow-btn-johndoe')).not.toBeInTheDocument()
     })
   })
