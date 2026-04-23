@@ -49,6 +49,7 @@ const defaultProps = {
   creating: false,
   success: false,
   error: null,
+  moreOfLike: false,
   tracksToAdd,
   setTracksToAdd: vi.fn(),
   isPlaylist: false,

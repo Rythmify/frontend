@@ -16,6 +16,7 @@ interface CreatePlaylistTabProps {
   creating: boolean;
   success: boolean;
   error: string | null;
+  moreOfLike: boolean;
   tracksToAdd: DisplayTrack[];
   setTracksToAdd: React.Dispatch<React.SetStateAction<DisplayTrack[]>>;
   isPlaylist: boolean;
@@ -27,7 +28,7 @@ interface CreatePlaylistTabProps {
     artistName?: string;
     coverUrl?: string;
   }[];
-  onCreate: () => void;
+  onCreate: (moreOfLike: boolean) => void;
 }
 
 const CreatePlaylistTab = ({
@@ -38,6 +39,7 @@ const CreatePlaylistTab = ({
   creating,
   success,
   error,
+  moreOfLike,
   tracksToAdd,
   setTracksToAdd,
   isPlaylist,
@@ -77,7 +79,7 @@ const CreatePlaylistTab = ({
         <button
           type="button"
           data-test="button-save-playlist"
-          onClick={onCreate}
+          onClick={() => onCreate(moreOfLike)}
           disabled={
             creating || !playlistTitle.trim() || tracksToAdd.length === 0
           }

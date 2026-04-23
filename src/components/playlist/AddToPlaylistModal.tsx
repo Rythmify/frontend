@@ -48,6 +48,8 @@ interface AddToPlaylistModalProps {
   trackTitle: string;
   trackCoverUrl?: string;
   playlistId?: string; // if adding whole playlist
+  initialTracks?: DisplayTrack[];
+  moreOfLike?: boolean;
   artistName?: string;
   onClose: () => void;
 }
@@ -58,6 +60,8 @@ const AddToPlaylistModal = ({
   trackCoverUrl,
   onClose,
   playlistId,
+  initialTracks,
+  moreOfLike = false,
   artistName,
 }: AddToPlaylistModalProps) => {
   const [activeTab, setActiveTab] = useState<"add" | "create">("add");
@@ -104,7 +108,9 @@ const AddToPlaylistModal = ({
         setPlaylists(items);
         if (items.length === 0) setActiveTab("create");
 
-        if (playlistId) {
+        if (initialTracks?.length) {
+          setTracksToAdd(initialTracks);
+        } else if (playlistId) {
           const playlistRes = await getPlaylist(playlistId);
           const tracks: DisplayTrack[] = (playlistRes.data.tracks || []).map(
             (t) => ({
@@ -133,7 +139,14 @@ const AddToPlaylistModal = ({
     };
 
     initializeData();
-  }, [trackId, playlistId, trackTitle, artistName, trackCoverUrl]);
+  }, [
+    initialTracks,
+    trackId,
+    playlistId,
+    trackTitle,
+    artistName,
+    trackCoverUrl,
+  ]);
 
   // Update track count helper
   const updateLocalPlaylistCount = (pid: string, countToAdd: number) => {
@@ -166,7 +179,7 @@ const AddToPlaylistModal = ({
     }
   };
 
-  const handleCreate = async () => {
+  const handleCreate = async (isMoreOfLike: boolean) => {
     if (!playlistTitle.trim()) return;
     setCreating(true);
     setCreateError(null);
@@ -181,19 +194,35 @@ const AddToPlaylistModal = ({
 
       const res = await createPlaylist({
         name: playlistTitle.trim(),
-        slug, 
+        slug,
         is_public: privacy === "public",
       });
 
       const newPlaylistId = res.data.playlist_id;
 
-      for (const t of tracksToAdd) {
+      const tracksForNewPlaylist =
+        isMoreOfLike
+          ? initialTracks ?? tracksToAdd
+          : playlistId
+            ? tracksToAdd
+            : trackId
+              ? [
+                  {
+                    id: trackId,
+                    title: trackTitle,
+                    artistName,
+                    coverUrl: trackCoverUrl,
+                  },
+                ]
+              : tracksToAdd.slice(0, 1);
+
+      for (const t of tracksForNewPlaylist) {
         await addTrackToPlaylist(newPlaylistId, String(t.id));
       }
 
       const newPlaylist: Playlist = {
         ...res.data,
-        track_count: tracksToAdd.length,
+        track_count: tracksForNewPlaylist.length,
       };
 
       setPlaylists((prev) => [...prev, newPlaylist]);
@@ -278,6 +307,7 @@ const AddToPlaylistModal = ({
             creating={creating}
             success={createSuccess}
             error={createError}
+            moreOfLike={moreOfLike}
             tracksToAdd={tracksToAdd}
             setTracksToAdd={setTracksToAdd}
             isPlaylist={isPlaylist}

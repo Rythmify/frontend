@@ -56,7 +56,7 @@ function buildPlaylist(
       seedTrack.artistUsername || seedTrack.artistName || seedTrack.id,
     name: "More of what you like",
     description: seedTrack.title
-      ? `Related tracks inspired by ${seedTrack.title}`
+      ? `Related tracks: ${seedTrack.title}`
       : "Related tracks picked for you",
     is_public: true,
     cover_image: seedTrack.coverUrl || null,
