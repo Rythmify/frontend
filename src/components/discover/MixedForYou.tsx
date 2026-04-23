@@ -2,7 +2,6 @@ import HorizontalCarousel from "./HorizontalCarousel";
 import MixCard from "@/components/UI/MixCard/MixCard";
 import { useAuthStore } from "@/stores/auth.store";
 import type { PersonalMix } from "@/services/api/discover.service";
-import { mockMixes } from "@/services/mocks/discover";
 
 interface Props {
   mixes: PersonalMix[];
@@ -10,7 +9,7 @@ interface Props {
 
 const MixedForYou = ({ mixes }: Props) => {
   const { user } = useAuthStore();
-  const items = mixes.length ? mixes : mockMixes;
+  const items = mixes;
 
   return (
     <div data-test="section-mixed-for-you">
