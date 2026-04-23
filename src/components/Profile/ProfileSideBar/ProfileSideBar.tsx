@@ -40,6 +40,7 @@ interface ProfileSideBarProps {
     playlists?: number;
   };
   likedTracks?: LikedTrack[];
+  likedTracksCount?: number;
   following?: FollowingUser[];
   followers?: FollowerUser[];
   onTabChange?: (tab: string) => void;
@@ -59,6 +60,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   isOwner = false,
   stats = { followers: 0, following: 0, tracks: 0 },
   likedTracks = [],
+  likedTracksCount = 0,
   following = [],
   followers = [],
   onTabChange,
@@ -138,7 +140,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       )}
 
       {/* Liked tracks — sourced from the profile being viewed, passed in as props */}
-      {likedTracks.length > 0 && (
+      {likedTracksCount > 0 && (
         <div>
           <div className="flex items-center justify-between w-full hover:opacity-70 transition-opacity">
             <button
@@ -146,7 +148,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               onClick={() => navigate(`/${user.username}/likes`)}
               className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
             >
-              {likedTracks.length} LIKES
+              {likedTracksCount} LIKES
             </button>
             <button
               data-test="likes-view-all"

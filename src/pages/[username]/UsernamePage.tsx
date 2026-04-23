@@ -3,6 +3,7 @@ import ProfileHeader from "../../components/Profile/ProfileHeader/ProfileHeader"
 import ProfileTabs from "../../components/Profile/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideBar";
 import { useAuthStore } from "@/stores/auth.store";
+import { useLikesStore } from "@/stores/likes.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
 import { Modal } from "@/components/UI/Modal";
@@ -47,6 +48,8 @@ export default function UsernamePage() {
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
   const [likedTracks, setLikedTracks] = useState<TrackSummary[]>([]);
+  const [likedTracksCount, setLikedTracksCount] = useState(0);
+  const likedTracksStoreCount = useLikesStore((s) => s.likedTracks.length);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const initiallyFollowing = useRef<boolean | null>(null);
@@ -82,7 +85,14 @@ export default function UsernamePage() {
             : Array.isArray(data)
               ? data
               : [];
-          if (!cancelled) setLikedTracks(items);
+          const total =
+            typeof data?.meta?.total === "number" && data.meta.total > 0
+              ? data.meta.total
+              : items.length;
+          if (!cancelled) {
+            setLikedTracks(items);
+            setLikedTracksCount(total);
+          }
         } else {
           if (!username) return;
           const userId = await resolveUsername(username);
@@ -92,10 +102,20 @@ export default function UsernamePage() {
             : Array.isArray(data)
               ? data
               : [];
-          if (!cancelled) setLikedTracks(items);
+          const total =
+            typeof data?.meta?.total === "number" && data.meta.total > 0
+              ? data.meta.total
+              : items.length;
+          if (!cancelled) {
+            setLikedTracks(items);
+            setLikedTracksCount(total);
+          }
         }
       } catch {
-        if (!cancelled) setLikedTracks([]);
+        if (!cancelled) {
+          setLikedTracks([]);
+          setLikedTracksCount(0);
+        }
       }
     };
     loadLikedTracks();
@@ -392,6 +412,11 @@ export default function UsernamePage() {
             user={user}
             isOwner={isOwner}
             likedTracks={likedTracksMapped}
+            likedTracksCount={
+              isOwner
+                ? Math.max(likedTracksCount, likedTracksStoreCount)
+                : likedTracksCount
+            }
             followers={followersMapped}
             following={followingMapped}
             stats={stats}
