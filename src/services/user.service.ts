@@ -90,12 +90,27 @@ export async function getUserById(userId: string): Promise<PublicUser> {
   return res.data.data;
 }
 
+// export async function resolveUsername(username: string): Promise<string> {
+//   const url = `https://rythmify.com/${username}`;
+//   const res = await axiosInstance.get<{
+//     data: { type: string; id: string; permalink: string };
+//   }>("/resolve", { params: { url } });
+//   return res.data.data.id;
+// }
+
 export async function resolveUsername(username: string): Promise<string> {
-  const url = `${import.meta.env.VITE_APP_URL}/${username}`;
-  const res = await axiosInstance.get<{
-    data: { type: string; id: string; permalink: string };
-  }>("/resolve", { params: { url } });
-  return res.data.data.id;
+  const res = await axiosInstance.get("/search", {
+    params: { q: username, type: "users", limit: 10 },
+  });
+
+  console.log("Search response:", JSON.stringify(res.data, null, 2));
+
+  const users = res.data.data.users;
+  const exact = users?.find(
+    (u: any) => u.username?.toLowerCase() === username.toLowerCase(),
+  );
+  if (!exact) throw new Error("User not found");
+  return exact.id;
 }
 
 export async function updateMyProfile(payload: {
@@ -203,15 +218,27 @@ export async function unblockUser(userId: string): Promise<void> {
   await axiosInstance.delete(`/users/${userId}/block`);
 }
 
+// export async function getBlockedUsers(params?: {
+//   limit?: number;
+//   offset?: number;
+// }): Promise<UserListData> {
+//   const res = await axiosInstance.get<{ data: UserListData }>(
+//     "/users/me/blocked",
+//     { params },
+//   );
+//   return res.data.data;
+// }
+
 export async function getBlockedUsers(params?: {
   limit?: number;
   offset?: number;
 }): Promise<UserListData> {
-  const res = await axiosInstance.get<{ data: UserListData }>(
-    "/users/me/blocked",
-    { params },
-  );
-  return res.data.data;
+  const res = await axiosInstance.get<{
+    data: UserSummary[];
+    pagination: ListMeta;
+  }>("/users/me/blocked", { params });
+
+  return { items: res.data.data, meta: res.data.pagination };
 }
 
 export async function getMyLikedTracks(params?: {

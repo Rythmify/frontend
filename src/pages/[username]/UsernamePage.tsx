@@ -11,7 +11,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
 import type { Track } from "../../types/track";
-import { getMyLikedTracks } from "@/services/user.service";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
 import {
   getMyProfile,
@@ -38,6 +37,7 @@ export default function UsernamePage() {
   const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
     null,
   );
+  const [profileError, setProfileError] = useState(false);
   const [followers, setFollowers] = useState<UserSummary[]>([]);
   const [following, setFollowing] = useState<UserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
@@ -83,9 +83,9 @@ export default function UsernamePage() {
   }, [isOwner, username]);
 
   useEffect(() => {
-    if (!currentUser) return;
-
     if (isOwner) {
+      if (!currentUser) return;
+
       getMyProfile()
         .then((profile) => {
           setProfileData(profile);
@@ -115,18 +115,12 @@ export default function UsernamePage() {
             setStats((s) => ({ ...s, followers: res.meta.total }));
           })
           .catch(console.error);
-        getFollowing(currentUserId, { limit: 100 })
-          .then((res) => {
-            setFollowing(res.items);
-            setStats((s) => ({ ...s, following: res.meta.total }));
-          })
-          .catch(console.error);
+
         getFollowing(currentUserId, { limit: 100 })
           .then((res) => {
             setFollowing(res.items);
             setStats((s) => ({ ...s, following: res.meta.total }));
 
-            // Seed store so FollowButton knows who is already followed
             const { user: storeUser, setUser: storeSetUser } =
               useAuthStore.getState();
             if (storeUser) {
@@ -145,9 +139,10 @@ export default function UsernamePage() {
           .catch(console.error);
       }
     } else {
-      if (!username) {
-        return;
-      }
+      if (!username) return;
+
+      setProfileData(null);
+      setProfileError(false);
 
       resolveUsername(username)
         .then((userId) => getUserById(userId))
@@ -159,7 +154,10 @@ export default function UsernamePage() {
             tracks: 0,
           });
         })
-        .catch(console.error);
+        .catch((err) => {
+          console.error("Failed to load profile:", err);
+          setProfileError(true);
+        });
     }
   }, [username, isOwner, currentUserId, currentUsername, setUser]);
 
@@ -228,6 +226,26 @@ export default function UsernamePage() {
     if (route) navigate(route);
   };
 
+  if (!isOwner && profileError) {
+    return (
+      <div className="container px-4 md:px-8 lg:px-20">
+        <div className="flex items-center justify-center py-32">
+          <p className="text-white opacity-50">User not found.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isOwner && !profileData) {
+    return (
+      <div className="container px-4 md:px-8 lg:px-20">
+        <div className="flex items-center justify-center py-32">
+          <p className="text-white opacity-50">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) return null;
 
   const displayedStats = stats;
@@ -235,14 +253,22 @@ export default function UsernamePage() {
   const user = isOwner
     ? currentUser
     : {
-        ...currentUser,
-        username: profileData?.username || username || currentUser.username,
-        displayName:
-          profileData?.display_name || username || currentUser.username,
-        bio: profileData?.bio || "",
-        avatar: profileData?.profile_picture || "",
-        coverUrl: profileData?.cover_photo || "",
-        location: (profileData as PublicUser | null)?.location || "",
+        id: profileData?.id ?? "",
+        username: profileData?.username ?? username ?? "",
+        displayName: profileData?.display_name ?? username ?? "",
+        bio: profileData?.bio ?? "",
+        avatar: profileData?.profile_picture ?? "",
+        coverUrl: profileData?.cover_photo ?? "",
+        location: (profileData as PublicUser | null)?.location ?? "",
+        followers_count: profileData?.followers_count ?? 0,
+        following_count: profileData?.following_count ?? 0,
+        following_ids: [] as string[],
+        isVerified: (profileData as PublicUser | null)?.is_verified ?? false,
+        firstName: profileData?.display_name?.split(" ")[0] ?? "",
+        lastName: profileData?.display_name?.split(" ")[1] ?? "",
+        email: "",
+        role: "listener" as const,
+        isPro: false,
       };
 
   const followingMapped = following.map((u) => ({
@@ -257,7 +283,6 @@ export default function UsernamePage() {
 
   const followersMapped = followers.map((u) => ({
     userId: u.id,
-
     username: u.username ?? u.id,
     avatar: u.profile_picture ?? "",
     displayName: u.display_name,

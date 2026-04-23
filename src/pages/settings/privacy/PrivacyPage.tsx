@@ -152,8 +152,11 @@ export default function PrivacyPage() {
       .catch(() => {});
 
     getBlockedUsers({ limit: 100 })
-      .then((data) => setBlockedUsers(data.items))
-      .catch(() => {});
+      .then((data) => {
+        console.log("Blocked users response:", data);
+        setBlockedUsers(data.items);
+      })
+      .catch((err) => console.error("getBlockedUsers failed:", err));
   }, []);
 
   const toggle = useCallback(
