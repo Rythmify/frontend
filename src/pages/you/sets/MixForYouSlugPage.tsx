@@ -59,6 +59,28 @@ function mixToPlaylistDetails(
   };
 }
 
+function buildFeaturedArtists(
+  tracks: DiscoveryTrack[],
+  users: MockUser[],
+): MockUser[] {
+  const userById = new Map(users.map((user) => [String(user.id), user]));
+  const seen = new Set<string>();
+  const result: MockUser[] = [];
+
+  for (const track of tracks) {
+    const ownerId = track.user_id;
+    if (!ownerId || seen.has(ownerId)) continue;
+
+    const user = userById.get(ownerId);
+    if (!user) continue;
+
+    seen.add(ownerId);
+    result.push(user);
+  }
+
+  return result;
+}
+
 // ─── Page ─────────────────────────────────────────────────
 
 function MixForYouSlugPage() {
@@ -100,7 +122,7 @@ function MixForYouSlugPage() {
         setPlaylist(mixToPlaylistDetails(mix, tracks, currentUserId));
         setFeaturedArtists(
           Array.isArray(fetchedUsers)
-            ? (fetchedUsers as MockUser[]).slice(0, 3)
+            ? buildFeaturedArtists(tracks, fetchedUsers as MockUser[])
             : [],
         );
       } catch (err) {

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { FaMusic, FaUserFriends } from "react-icons/fa";
@@ -8,7 +9,7 @@ import FollowButton from "@/components/UI/FollowButton";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
-  featuredArtists: MockUser[];
+  featuredArtists?: MockUser[];
   showLikes?: boolean;
   showReposts?: boolean;
 }
@@ -22,6 +23,61 @@ export default function PlaylistSidebar({
   const formatCount = (n: number | undefined) =>
     !n ? "0" : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 
+  const artistsToShow = useMemo(() => {
+    if (Array.isArray(featuredArtists) && featuredArtists.length > 0) {
+      return featuredArtists;
+    }
+
+    const artists = new Map<
+      string,
+      {
+        id: string | number;
+        username: string;
+        displayName: string;
+        avatarUrl: string;
+        followerCount: number;
+        trackCount: number;
+        isFollowing: boolean;
+      }
+    >();
+
+    for (const track of playlist.tracks ?? []) {
+      const rawKey =
+        track.artist_id?.trim() ||
+        track.artist_username?.trim() ||
+        track.artist_name?.trim();
+      if (!rawKey) continue;
+
+      const key = rawKey.toLowerCase();
+      const displayName =
+        track.artist_name?.trim() ||
+        track.artist_username?.trim() ||
+        "Unknown Artist";
+      const username =
+        track.artist_username?.trim() ||
+        track.artist_name?.trim().toLowerCase().replace(/\s+/g, "-") ||
+        rawKey;
+
+      const existing = artists.get(key);
+      if (existing) {
+        existing.trackCount += 1;
+        continue;
+      }
+
+      artists.set(key, {
+        id: track.artist_id ?? track.artist_username ?? rawKey,
+        username,
+        displayName,
+        avatarUrl: `https://picsum.photos/seed/${encodeURIComponent(key)}/100/100`,
+        followerCount: 0,
+        trackCount: 1,
+        isFollowing: false,
+      });
+    }
+
+    return Array.from(artists.values());
+  }, [featuredArtists, playlist.tracks]);
+
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>
       <aside data-test="playlist-sidebar" className="flex flex-col w-full">
@@ -31,7 +87,7 @@ export default function PlaylistSidebar({
             Artists Featured
           </p>
           <div className="flex flex-col gap-4">
-            {(Array.isArray(featuredArtists) ? featuredArtists : []).map(
+            {artistsToShow.map(
               (artist) => (
                 <ArtistCard key={artist.id} artist={artist} />
               ),
@@ -67,7 +123,19 @@ export default function PlaylistSidebar({
   );
 }
 
-function ArtistCard({ artist }: { artist: MockUser }) {
+function ArtistCard({
+  artist,
+}: {
+  artist: {
+    id: string | number;
+    username: string;
+    displayName: string;
+    avatarUrl: string;
+    followerCount: number;
+    trackCount: number;
+    isFollowing?: boolean;
+  };
+}) {
   return (
     <div
       data-test={`artist-card-${artist.username}`}
@@ -104,7 +172,7 @@ function ArtistCard({ artist }: { artist: MockUser }) {
       <FollowButton
         username={artist.username}
         userId={String(artist.id)}
-        isFollowingOverride={artist.isFollowing}
+        initialIsFollowing={artist.isFollowing}
         className="shrink-0 min-w-[70px] px-3 py-1 rounded-[var(--radius-sm)] text-sm font-bold"
       />
     </div>

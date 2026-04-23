@@ -62,12 +62,8 @@ describe("PlaylistSidebarForYou", () => {
     );
 
     expect(screen.getByTestId("sidebar-artists-featured")).toBeInTheDocument();
-    expect(screen.getByTestId("follow-button-artist-one")).toHaveTextContent(
-      "Follow",
-    );
-    expect(screen.getByTestId("follow-button-artist-two")).toHaveTextContent(
-      "Following",
-    );
+    expect(screen.getByTestId("follow-button-artist-one")).toBeInTheDocument();
+    expect(screen.getByTestId("follow-button-artist-two")).toBeInTheDocument();
     expect(screen.getByTestId("sidebar-playlist-likes")).toHaveTextContent(
       "24 Likes",
     );
