@@ -4,6 +4,31 @@ import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileM
 
 const mockOnClose = vi.fn();
 const mockOnSave = vi.fn();
+const mockSetUser = vi.fn();
+const mockUploadAvatar = vi.fn();
+
+vi.mock("@/stores/auth.store", () => ({
+  useAuthStore: () => ({
+    user: {
+      id: "1",
+      username: "testuser",
+      displayName: "Test User",
+      firstName: "Test",
+      lastName: "User",
+      bio: "My bio",
+      email: "test@test.com",
+      role: "listener",
+      isPro: false,
+      following_ids: [],
+      avatar: "",
+    },
+    setUser: mockSetUser,
+  }),
+}));
+
+vi.mock("@/services/user.service", () => ({
+  uploadAvatar: (...args: unknown[]) => mockUploadAvatar(...args),
+}));
 
 const defaultUser = {
   username: "testuser",
@@ -19,6 +44,9 @@ const defaultUser = {
 describe("EditProfileModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUploadAvatar.mockResolvedValue({ profile_picture: "https://example.com/new-avatar.jpg" });
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test-avatar");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
   });
 
   it("renders the modal", () => {
@@ -264,6 +292,33 @@ describe("EditProfileModal", () => {
       />,
     );
     expect(screen.getByTestId("edit-avatar-input")).toBeInTheDocument();
+  });
+
+  it("uploads avatar image when a file is selected", async () => {
+    render(
+      <EditProfileModal
+        user={defaultUser}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+
+    const input = screen.getByTestId("edit-avatar-input") as HTMLInputElement;
+    const file = new File(["avatar"], "avatar.png", { type: "image/png" });
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(mockUploadAvatar).toHaveBeenCalledWith(file);
+
+    expect(await screen.findByTestId("edit-avatar-preview")).toHaveAttribute(
+      "src",
+      "https://example.com/new-avatar.jpg",
+    );
+    expect(mockSetUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        avatar: "https://example.com/new-avatar.jpg",
+      }),
+    );
   });
 
   it("location is only city when country is empty", () => {
