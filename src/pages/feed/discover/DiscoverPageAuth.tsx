@@ -10,16 +10,20 @@ import MadeForYou from "@/components/discover/MadeForYou/MadeForYou";
 import MoreOfWhatYouLike from "@/components/discover/MoreOfWhatYouLike";
 import { getHome } from "@/services/api/discover.service";
 import type { HomeData } from "@/services/api/discover.service";
+import Spinner from "@/components/UI/Spinner";
 
 const DiscoverPageAuth = () => {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [homeError, setHomeError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     getHome()
-      .then(setHomeData)
-      .catch((err: Error) => setHomeError(err.message));
+      .then((data) => { setHomeData(data); setIsLoading(false); })
+      .catch((err: Error) => { setHomeError(err.message); setIsLoading(false); });
   }, []);
+
+  if (isLoading) return <Spinner />;
 
   return (
     <div
