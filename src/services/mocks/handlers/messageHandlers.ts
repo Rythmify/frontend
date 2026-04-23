@@ -17,6 +17,7 @@ import type {
   ReportRequest,
   PlaylistResponse,
 } from '../../api/messaging/conversationApi';
+import type { avatar } from "@heroui/react";
 
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
@@ -29,7 +30,7 @@ const mockParticipant = {
   location: "Cairo, EG",
   gender: "male",
   role: "artist",
-  profile_picture: "https://i.pravatar.cc/150?img=1",
+  avatar: "https://i.pravatar.cc/150?img=1",
   cover_photo: "",
   is_private: false,
   is_verified: false,
@@ -46,7 +47,7 @@ const mockParticipant2 = {
   location: "Cairo, EG",
   gender: "female",
   role: "listener",
-  profile_picture: "https://i.pravatar.cc/150?img=5",
+  avatar: "https://i.pravatar.cc/150?img=5",
   cover_photo: "",
   is_private: false,
   is_verified: false,
@@ -63,7 +64,7 @@ const mockParticipant3 = {
   location: 'Cairo, EG',
   gender: 'female',
   role: 'listener',
-  profile_picture: 'https://i.pravatar.cc/150?img=2',
+  avatar: 'https://i.pravatar.cc/150?img=2',
   cover_photo: '',
   is_private: false,
   is_verified: false,
@@ -80,7 +81,7 @@ const mockParticipant4 = {
   location: 'Cairo, EG',
   gender: 'male',
   role: 'artist',
-  profile_picture: 'https://i.pravatar.cc/150?img=3',
+  avatar: 'https://i.pravatar.cc/150?img=3',
   cover_photo: '',
   is_private: false,
   is_verified: true,
@@ -97,7 +98,7 @@ const mockParticipant5 = {
   location: 'Alex, EG',
   gender: 'female',
   role: 'artist',
-  profile_picture: 'https://i.pravatar.cc/150?img=6',
+  avatar: 'https://i.pravatar.cc/150?img=6',
   cover_photo: '',
   is_private: false,
   is_verified: false,
@@ -114,7 +115,7 @@ const mockParticipant6 = {
   location: 'Giza, EG',
   gender: 'male',
   role: 'artist',
-  profile_picture: '',
+  avatar: '',
   cover_photo: '',
   is_private: false,
   is_verified: false,
@@ -131,7 +132,7 @@ const mockParticipant7 = {
   location: 'Cairo, EG',
   gender: 'female',
   role: 'artist',
-  profile_picture: 'https://i.pravatar.cc/150?img=9',
+  avatar: 'https://i.pravatar.cc/150?img=9',
   cover_photo: '',
   is_private: false,
   is_verified: false,
@@ -148,7 +149,7 @@ const mockParticipant8 = {
   location: 'Cairo, EG',
   gender: 'male',
   role: 'artist',
-  profile_picture: 'https://i.pravatar.cc/150?img=12',
+  avatar: 'https://i.pravatar.cc/150?img=12',
   cover_photo: '',
   is_private: false,
   is_verified: true,
@@ -165,7 +166,7 @@ const mockParticipant9 = {
   location: 'Cairo, EG',
   gender: 'female',
   role: 'artist',
-  profile_picture: '',
+  avatar: '',
   cover_photo: '',
   is_private: false,
   is_verified: false,
@@ -401,14 +402,14 @@ const mockFollowingPool = [
     id: mockParticipant.id,
     username: mockParticipant.username,
     display_name: mockParticipant.display_name,
-    profile_picture: mockParticipant.profile_picture,
+    avatar: mockParticipant.avatar,
     is_verified: mockParticipant.is_verified,
   },
   {
     id: mockParticipant2.id,
     username: mockParticipant2.username,
     display_name: mockParticipant2.display_name,
-    profile_picture: mockParticipant2.profile_picture,
+    avatar: mockParticipant2.avatar,
     is_verified: mockParticipant2.is_verified,
   },
 ];
@@ -418,21 +419,21 @@ const mockGlobalUserPool = [
     id: mockParticipant.id,
     username: mockParticipant.username,
     display_name: mockParticipant.display_name,
-    profile_picture: mockParticipant.profile_picture,
+    avatar: mockParticipant.avatar,
     score: 0.95,
   },
   {
     id: mockParticipant2.id,
     username: mockParticipant2.username,
     display_name: mockParticipant2.display_name,
-    profile_picture: mockParticipant2.profile_picture,
+    avatar: mockParticipant2.avatar,
     score: 0.90,
   },
   {
     id: mockParticipant3.id,
     username: mockParticipant3.username,
     display_name: mockParticipant3.display_name,
-    profile_picture: mockParticipant3.profile_picture,
+    avatar: mockParticipant3.avatar,
     score: 0.80,
   },
 ];
@@ -650,76 +651,76 @@ http.get('*/resolve', ({ request }) => {
   } satisfies ResolvedResource);
 }),
 
-  // GET /users/me/following/search
-  http.get('*/users/me/following/search', ({ request }) => {
-    const url = new URL(request.url);
-    const q = url.searchParams.get('q') ?? '';
+  // // GET /users/me/following/search
+  // http.get('*/users/me/following/search', ({ request }) => {
+  //   const url = new URL(request.url);
+  //   const q = url.searchParams.get('q') ?? '';
 
-    const filtered = q.trim()
-      ? mockFollowingPool.filter(
-          u =>
-            u.display_name.toLowerCase().includes(q.toLowerCase()) ||
-            u.username.toLowerCase().includes(q.toLowerCase())
-        )
-      : mockFollowingPool;
+  //   const filtered = q.trim()
+  //     ? mockFollowingPool.filter(
+  //         u =>
+  //           u.display_name.toLowerCase().includes(q.toLowerCase()) ||
+  //           u.username.toLowerCase().includes(q.toLowerCase())
+  //       )
+  //     : mockFollowingPool;
 
-    return HttpResponse.json({
-      success: true,
-      data: {
-        items: filtered,
-        pagination: {
-          page: 1,
-          per_page: 10,
-          total_items: filtered.length,
-          total_pages: 1,
-          has_next: false,
-          has_prev: false,
-        },
-      },
-    } satisfies FollowingSearchResponse);
-  }),
+  //   return HttpResponse.json({
+  //     success: true,
+  //     data: {
+  //       items: filtered,
+  //       pagination: {
+  //         page: 1,
+  //         per_page: 10,
+  //         total_items: filtered.length,
+  //         total_pages: 1,
+  //         has_next: false,
+  //         has_prev: false,
+  //       },
+  //     },
+  //   } satisfies FollowingSearchResponse);
+  // }),
 
-  // GET /search
-  http.get('*/search', ({ request }) => {
-    const url  = new URL(request.url);
-    const q    = url.searchParams.get('q') ?? '';
-    const type = url.searchParams.get('type');
+  // // GET /search
+  // http.get('*/search', ({ request }) => {
+  //   const url  = new URL(request.url);
+  //   const q    = url.searchParams.get('q') ?? '';
+  //   const type = url.searchParams.get('type');
 
-    if (q.trim().length < 2) {
-      return HttpResponse.json({
-        data: { tracks: [], users: [], playlists: [] },
-        pagination: {
-          page: 1, per_page: 20,
-          total_items: 0, total_pages: 0,
-          has_next: false, has_prev: false,
-        },
-      } satisfies GlobalSearchResponse);
-    }
+  //   if (q.trim().length < 2) {
+  //     return HttpResponse.json({
+  //       data: { tracks: [], users: [], playlists: [] },
+  //       pagination: {
+  //         page: 1, per_page: 20,
+  //         total_items: 0, total_pages: 0,
+  //         has_next: false, has_prev: false,
+  //       },
+  //     } satisfies GlobalSearchResponse);
+  //   }
 
-    const matchedUsers = (!type || type === 'users')
-      ? mockGlobalUserPool.filter(
-          u =>
-            u.display_name.toLowerCase().includes(q.toLowerCase()) ||
-            u.username.toLowerCase().includes(q.toLowerCase())
-        )
-      : [];
+  //   const matchedUsers = (!type || type === 'users')
+  //     ? mockGlobalUserPool.filter(
+  //         u =>
+  //           u.display_name.toLowerCase().includes(q.toLowerCase()) ||
+  //           u.username.toLowerCase().includes(q.toLowerCase())
+  //       )
+  //     : [];
 
-    return HttpResponse.json({
-      data: {
-        tracks:    [],
-        users:     matchedUsers,
-        playlists: [],
-      },
-      pagination: {
-        page: 1,
-        per_page: 20,
-        total_items: matchedUsers.length,
-        total_pages: 1,
-        has_next: false,
-        has_prev: false,
-      },
-    } satisfies GlobalSearchResponse);
-  }),
+  //   return HttpResponse.json({
+  //     data: {
+  //       tracks:    [],
+  //       users:     matchedUsers,
+  //       playlists: [],
+  //     },
+  //     pagination: {
+  //       page: 1,
+  //       per_page: 20,
+  //       total_items: matchedUsers.length,
+  //       total_pages: 1,
+  //       has_next: false,
+  //       has_prev: false,
+  //     },
+  //   } satisfies GlobalSearchResponse);
+  // }),
 
   // GET /tracks/:trackId
   http.get('*/tracks/:trackId', ({ params }) => {

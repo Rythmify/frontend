@@ -87,6 +87,8 @@ export default function TrackSlugPage() {
       usePlayerStore.getState().togglePlay();
     } else {
       setPlayerTrack(track, [track, ...relatedTracks]);
+      // Optimistic increment
+      setTrack(prev => prev ? { ...prev, playCount: (prev.playCount || 0) + 1 } : null);
     }
   };
 
@@ -188,6 +190,9 @@ export default function TrackSlugPage() {
           <TrackCommentList 
             comments={comments} 
             trackId={String(track.id)} 
+            onCommentDeleted={(id) => {
+              setComments(prev => prev.filter(c => String(c.comment_id) !== String(id)));
+            }}
           />
         </div>
 

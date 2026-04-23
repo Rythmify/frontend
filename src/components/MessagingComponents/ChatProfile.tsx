@@ -33,9 +33,9 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
     <span className="w-2.5 h-2.5 rounded-full bg-[#f50] block" />
   )}
 </div>
-       {participant.profile_picture ? (
+       {participant.avatar ? (
   <img
-    src={participant.profile_picture}
+    src={participant.avatar}
     alt={participant.display_name}
     className="object-cover rounded-full w-11 h-11"
   />

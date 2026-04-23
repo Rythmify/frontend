@@ -1,3 +1,2 @@
 export { default as TrackCard } from "./TrackCard";
-export type { TrackCardProps } from "./TrackCard";
-export type { TrackComment } from "./types";
+export type { TrackCardProps, TrackComment } from "./types";

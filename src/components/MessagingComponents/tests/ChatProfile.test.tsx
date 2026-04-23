@@ -9,7 +9,7 @@ const baseConversation = {
   participant: {
     id: "user-1",
     display_name: "Alice",
-    profile_picture: "https://example.com/alice.jpg",
+    avatar: "https://example.com/alice.jpg",
     username: "alice",
   },
   last_message: {

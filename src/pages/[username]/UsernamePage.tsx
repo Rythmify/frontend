@@ -11,6 +11,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
 import type { Track } from "../../types/track";
+import { getMyLikedTracks } from "@/services/user.service";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
 import {
   getMyProfile,
@@ -37,7 +38,6 @@ export default function UsernamePage() {
   const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
     null,
   );
-  const [profileError, setProfileError] = useState(false);
   const [followers, setFollowers] = useState<UserSummary[]>([]);
   const [following, setFollowing] = useState<UserSummary[]>([]);
   const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
@@ -83,9 +83,9 @@ export default function UsernamePage() {
   }, [isOwner, username]);
 
   useEffect(() => {
-    if (isOwner) {
-      if (!currentUser) return;
+    if (!currentUser) return;
 
+    if (isOwner) {
       getMyProfile()
         .then((profile) => {
           setProfileData(profile);
@@ -115,12 +115,18 @@ export default function UsernamePage() {
             setStats((s) => ({ ...s, followers: res.meta.total }));
           })
           .catch(console.error);
-
+        getFollowing(currentUserId, { limit: 100 })
+          .then((res) => {
+            setFollowing(res.items);
+            setStats((s) => ({ ...s, following: res.meta.total }));
+          })
+          .catch(console.error);
         getFollowing(currentUserId, { limit: 100 })
           .then((res) => {
             setFollowing(res.items);
             setStats((s) => ({ ...s, following: res.meta.total }));
 
+            // Seed store so FollowButton knows who is already followed
             const { user: storeUser, setUser: storeSetUser } =
               useAuthStore.getState();
             if (storeUser) {
@@ -139,25 +145,22 @@ export default function UsernamePage() {
           .catch(console.error);
       }
     } else {
-      if (!username) return;
-
-      setProfileData(null);
-      setProfileError(false);
+      if (!username) {
+        return;
+      }
 
       resolveUsername(username)
         .then((userId) => getUserById(userId))
         .then((profile) => {
           setProfileData(profile);
+          console.log('profile id:', profile.id)
           setStats({
             followers: profile.followers_count,
             following: profile.following_count,
             tracks: 0,
           });
         })
-        .catch((err) => {
-          console.error("Failed to load profile:", err);
-          setProfileError(true);
-        });
+        .catch(console.error);
     }
   }, [username, isOwner, currentUserId, currentUsername, setUser]);
 
@@ -226,26 +229,6 @@ export default function UsernamePage() {
     if (route) navigate(route);
   };
 
-  if (!isOwner && profileError) {
-    return (
-      <div className="container px-4 md:px-8 lg:px-20">
-        <div className="flex items-center justify-center py-32">
-          <p className="text-white opacity-50">User not found.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isOwner && !profileData) {
-    return (
-      <div className="container px-4 md:px-8 lg:px-20">
-        <div className="flex items-center justify-center py-32">
-          <p className="text-white opacity-50">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!currentUser) return null;
 
   const displayedStats = stats;
@@ -253,22 +236,14 @@ export default function UsernamePage() {
   const user = isOwner
     ? currentUser
     : {
-        id: profileData?.id ?? "",
-        username: profileData?.username ?? username ?? "",
-        displayName: profileData?.display_name ?? username ?? "",
-        bio: profileData?.bio ?? "",
-        avatar: profileData?.profile_picture ?? "",
-        coverUrl: profileData?.cover_photo ?? "",
-        location: (profileData as PublicUser | null)?.location ?? "",
-        followers_count: profileData?.followers_count ?? 0,
-        following_count: profileData?.following_count ?? 0,
-        following_ids: [] as string[],
-        isVerified: (profileData as PublicUser | null)?.is_verified ?? false,
-        firstName: profileData?.display_name?.split(" ")[0] ?? "",
-        lastName: profileData?.display_name?.split(" ")[1] ?? "",
-        email: "",
-        role: "listener" as const,
-        isPro: false,
+        ...currentUser,
+        username: profileData?.username || username || currentUser.username,
+        displayName:
+          profileData?.display_name || username || currentUser.username,
+        bio: profileData?.bio || "",
+        avatar: profileData?.profile_picture || "",
+        coverUrl: profileData?.cover_photo || "",
+        location: (profileData as PublicUser | null)?.location || "",
       };
 
   const followingMapped = following.map((u) => ({
@@ -290,22 +265,25 @@ export default function UsernamePage() {
     tracks: 0,
     isVerified: u.is_verified,
   }));
-
+console.log('profileData:', profileData?.id)
   return (
     <div className="container px-4 md:px-8 lg:px-20">
       <ProfileHeader user={user} isOwner={isOwner} />
-
-      <ProfileTabs
-        isOwner={isOwner}
-        userId={profileData?.id}
-        selectedTab={selectedTab}
-        onTabChange={handleTabChange}
-        onShare={() => setShowShare(true)}
-        onEdit={() => setShowEdit(true)}
-        username={user.username}
-        displayName={user.displayName}
-        tracks={displayedStats.tracks ?? 0}
-      />
+<ProfileTabs
+  isOwner={isOwner}
+  selectedTab={selectedTab}
+  onTabChange={handleTabChange}
+  onShare={() => setShowShare(true)}
+  onEdit={() => setShowEdit(true)}
+  username={user.username}
+  displayName={user.displayName}
+  tracks={displayedStats.tracks ?? 0}
+  onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
+  blockDisabled={!profileData}
+  userId={isOwner ? currentUser.id : profileData?.id ?? ''}  
+  profilePicture={isOwner ? currentUser.avatar ?? null : profileData?.profile_picture ?? null} 
+  
+/>
 
       <div className="flex gap-6 py-6 items-start">
         <div className="flex-1 min-w-0">
@@ -414,15 +392,13 @@ export default function UsernamePage() {
             });
             setShowEdit(false);
           }}
-        />
-      )}
+          />
+        )}
       {showBlock && profileData && (
         <Modal isOpen={showBlock} onClose={() => setShowBlock(false)}>
           <BlockUserModal
             username={
-              profileData.display_name ??
-              profileData.username ??
-              user.displayName
+              profileData.display_name ?? profileData.username ?? user.displayName
             }
             userId={profileData.id}
             onClose={() => setShowBlock(false)}
@@ -436,3 +412,6 @@ export default function UsernamePage() {
     </div>
   );
 }
+
+
+

@@ -38,12 +38,17 @@ export default function TrackActions({
   const [reposted, setReposted] = useState(track.isReposted || false);
   const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(track.repostCount ?? 0);
+  const [playCount, setPlayCount] = useState(track.playCount ?? 0);
 
   // Sync counts when track data changes from MSW
   useEffect(() => {
     setLikeCount(track.likeCount ?? 0);
     setRepostCount(track.repostCount ?? 0);
-  }, [track.likeCount, track.repostCount]);
+    setPlayCount(track.playCount ?? 0);
+    setLiked(track.isLiked || false);
+    setReposted(track.isReposted || false);
+  }, [track]);
+
   const [shareOpen, setShareOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [comment, setComment] = useState("");
@@ -61,26 +66,32 @@ export default function TrackActions({
 
   // Like - calls MSW ( /api/tracks/:id/like )
   const handleLike = async () => {
-  try {
-    if (liked) {
-      await engagementService.unlikeTrack(track.id);
-      setLiked(false);
-      setLikeCount((p) => p - 1);
-    } else {
-      await engagementService.likeTrack(track.id);
-      setLiked(true);
-      setLikeCount((p) => p + 1);
+    try {
+      if (liked) {
+        await engagementService.unlikeTrack(track.id);
+        setLiked(false);
+        setLikeCount((p) => p - 1);
+      } else {
+        await engagementService.likeTrack(track.id);
+        setLiked(true);
+        setLikeCount((p) => p + 1);
+      }
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        alert("Session expired or unauthorized. Please log out and back in.");
+      }
+      setLiked((p) => !p);
     }
-  } catch (err: any) {
-    if (err.response?.status === 401) {
-      alert("Session expired or unauthorized. Please log out and back in.");
-    }
-    setLiked((p) => !p);
-  }
-};
+  };
+
+  const isOwner = !!user && (user.username === track.artistUsername || user.id === track.artistId);
 
   // Repost - calls /api/tracks/:id/repost
   const handleRepost = async () => {
+    if (isOwner) {
+      alert("You cannot repost your own track!");
+      return;
+    }
     const wasReposted = reposted;
     // Optimistic update
     setReposted(!wasReposted);
@@ -247,9 +258,9 @@ export default function TrackActions({
 
             {/* Stats */}
             <div className="flex items-center gap-4 text-[#999] text-[13px] font-medium">
-              <div className="flex items-center gap-1.5 cursor-default hover:text-white transition-colors">
+              <div className="flex items-center gap-1.5 cursor-default hover:text-white transition-colors" title={`${formatExact(playCount)} plays`}>
                 <IoPlaySharp className="text-[14px]" />
-                <span>{formatCount(track.playCount ?? 749000)}</span>
+                <span>{formatCount(playCount)}</span>
               </div>
               <StatWithTooltip data-test="stat-like-count" tooltip={`${formatExact(likeCount)} likes`}>
                 <FaHeart className="text-[12px]" />
