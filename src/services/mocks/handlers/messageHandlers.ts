@@ -262,11 +262,7 @@ const mockTrack = {
   created_at: '2025-01-01T00:00:00Z',
   updated_at: '2025-01-01T00:00:00Z',
   artist_name: 'DJ Karim',
-  artist_username: 'djkarim',
-  is_liked: false,
-  is_reposted: false,
-  slug: 'mock-track-title',
-  cover_image: null,        // or a CDN URL string
+cover_image: null,        // or a CDN URL string
 
 };
 
@@ -276,17 +272,14 @@ const mockPlaylist = {
   name: 'Mock Playlist Title',          
   description: 'A mock playlist for testing.',
   is_public: true,
-  is_private: false,
   track_count: 5,
   like_count: 0,
-  repost_count: 0,
   tracks: [],
   created_at: '2025-01-01T00:00:00Z',
-  updated_at: new Date().toISOString(),
   slug: null,
-  cover_image: null,
-  creator_name: 'Mock Creator',
-  creator_username: 'mockcreator',
+cover_image: null,
+repost_count: 0,
+updated_at: new Date().toISOString(),
 };
 
 const mockConversations: ConversationListResponse = {
@@ -368,9 +361,7 @@ const mockConversations: ConversationListResponse = {
     ],
     pagination: {
       page: 1,
-      limit: 20,
       per_page: 20,
-      total: 9,
       total_items: 9,
       total_pages: 1,
       has_next: false,
@@ -380,41 +371,37 @@ const mockConversations: ConversationListResponse = {
 }
 
 const mockConversationDetail: ConversationDetailResponse = {
+  success: true,
   data: {
     conversation: mockConversations.data.items[0],
     messages: [mockMessage1, mockMessage2, mockMessage3],
     pagination: {
       page: 1,
-      limit: 50,
       per_page: 50,
-      total: 3,
       total_items: 3,
       total_pages: 1,
       has_next: false,
       has_prev: false,
     },
   },
-  message: 'Conversation retrieved successfully',
 };
 
 // ─── Block-specific conversation detail ───────────────────────────────────────
 // uses mockMessageUnread (is_read: false) so mark-as-read flow works in block tests
 const mockConversationDetailForBlock: ConversationDetailResponse = {
+  success: true,
   data: {
     conversation: mockConversations.data.items[0],
     messages: [mockMessageUnread, mockMessage2, mockMessage3],
     pagination: {
       page: 1,
-      limit: 50,
       per_page: 50,
-      total: 3,
       total_items: 3,
       total_pages: 1,
       has_next: false,
       has_prev: false,
     },
   },
-  message: 'Conversation retrieved successfully',
 };
 
 const mockFollowingPool = [
@@ -504,9 +491,7 @@ export const messageHandlers = [
             items: [],
             pagination: {
               page: 1,
-              limit: 20,
               per_page: 20,
-              total: 0,
               total_items: 0,
               total_pages: 0,
               has_next: false,
