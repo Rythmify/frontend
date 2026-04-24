@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import FollowButton from "@/components/Profile/FollowButton/FollowButton";
+import UserAvatar from "@/components/UI/UserAvatar";
 import { getFollowing, getUserById, type UserSummary } from "@/services/user.service";
 
 interface EnrichedUser {
@@ -88,19 +89,15 @@ export default function YouFollowingPage() {
         <div className="grid grid-cols-6 gap-6">
           {displayed.map((u) => (
             <div key={u.id} className="flex flex-col items-center gap-2 group">
-              <div
-                data-test={`you-following-avatar-${u.username}`}
-                className="w-full cursor-pointer aspect-square rounded-full overflow-hidden bg-text-muted"
+              <UserAvatar
+                dataTest={`you-following-avatar-${u.username}`}
+                src={u.avatar}
+                name={u.displayName}
+                alt={u.displayName}
+                wrapperClassName="w-full cursor-pointer aspect-square rounded-full overflow-hidden"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
                 onClick={() => navigate(`/${u.username}`)}
-              >
-                {u.avatar ? (
-                  <img src={u.avatar} alt={u.displayName} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-white text-4xl font-bold">
-                    {u.displayName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
+              />
               <span className="text-white cursor-pointer text-sm font-bold text-center truncate w-full px-1">
                 {u.displayName}{" "}
                 {u.isVerified && (

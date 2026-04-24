@@ -1,5 +1,6 @@
 import type { Message } from '../../services/api/messaging/conversationApi';
 import type { Track, Playlist } from '../../services/api/messaging/conversationApi';
+import UserAvatar from '@/components/UI/UserAvatar';
 
 // Extended Message type that may carry a pre-fetched resource (optimistic UI)
 interface MessageWithEmbed extends Message {
@@ -104,17 +105,13 @@ export default function MessageCell({ message, displayName, profilePicture }: Me
 
   return (
     <div className="flex items-start gap-3 py-3">
-      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-[#2a2a2a]">
-        {profilePicture ? (
-          <img
-            src={profilePicture}
-            alt={displayName}
-            className="object-cover rounded-full w-9 h-9"
-          />
-        ) : (
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b] flex-shrink-0" />
-        )}
-      </div>
+      <UserAvatar
+        src={profilePicture}
+        name={displayName}
+        alt={displayName}
+        wrapperClassName="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-[#2a2a2a]"
+        initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
+      />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">

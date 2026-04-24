@@ -5,6 +5,7 @@ import {
   type PrivacySettings,
 } from "@/services/settings.service";
 import { unblockUser, type UserSummary } from "@/services/user.service";
+import { getBlockedUsers } from "@/services/user.service";
 
 function Toggle({
   checked,
@@ -147,6 +148,11 @@ export default function PrivacyPage() {
         if (data) {
           setSettings(data);
         }
+      })
+      .catch(() => {});
+    getBlockedUsers()
+      .then((res) => {
+        setBlockedUsers(res.items);
       })
       .catch(() => {});
   }, []);

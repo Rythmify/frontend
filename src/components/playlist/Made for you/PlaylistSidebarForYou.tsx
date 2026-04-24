@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { FaMusic, FaUserFriends } from "react-icons/fa";
 import type { PlaylistDetails } from "../../../services/api/playlist/playlist.service";
 import type { MockUser } from "../../../services/mocks/users";
-import { followUser, unfollowUser } from "../../../services/mocks/User.service";
 import GoMobileSection from "@/components/UI/GoMobile";
+import FollowButton from "@/components/UI/FollowButton";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
-  featuredArtists: MockUser[];
+  featuredArtists?: MockUser[];
   showLikes?: boolean;
   showReposts?: boolean;
 }
@@ -23,6 +23,61 @@ export default function PlaylistSidebar({
   const formatCount = (n: number | undefined) =>
     !n ? "0" : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 
+  const artistsToShow = useMemo(() => {
+    if (Array.isArray(featuredArtists) && featuredArtists.length > 0) {
+      return featuredArtists.slice(0, 3);
+    }
+
+    const artists = new Map<
+      string,
+      {
+        id: string | number;
+        username: string;
+        displayName: string;
+        avatarUrl: string;
+        followerCount: number;
+        trackCount: number;
+        isFollowing: boolean;
+      }
+    >();
+
+    for (const track of playlist.tracks ?? []) {
+      const rawKey =
+        track.artist_id?.trim() ||
+        track.artist_username?.trim() ||
+        track.artist_name?.trim();
+      if (!rawKey) continue;
+
+      const key = rawKey.toLowerCase();
+      const displayName =
+        track.artist_name?.trim() ||
+        track.artist_username?.trim() ||
+        "Unknown Artist";
+      const username =
+        track.artist_username?.trim() ||
+        track.artist_name?.trim().toLowerCase().replace(/\s+/g, "-") ||
+        rawKey;
+
+      const existing = artists.get(key);
+      if (existing) {
+        existing.trackCount += 1;
+        continue;
+      }
+
+      artists.set(key, {
+        id: track.artist_id ?? track.artist_username ?? rawKey,
+        username,
+        displayName,
+        avatarUrl: `https://picsum.photos/seed/${encodeURIComponent(key)}/100/100`,
+        followerCount: 0,
+        trackCount: 1,
+        isFollowing: false,
+      });
+    }
+
+    return Array.from(artists.values()).slice(0, 3);
+  }, [featuredArtists, playlist.tracks]);
+
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>
       <aside data-test="playlist-sidebar" className="flex flex-col w-full">
@@ -32,7 +87,7 @@ export default function PlaylistSidebar({
             Artists Featured
           </p>
           <div className="flex flex-col gap-4">
-            {(Array.isArray(featuredArtists) ? featuredArtists : []).map(
+            {artistsToShow.map(
               (artist) => (
                 <ArtistCard key={artist.id} artist={artist} />
               ),
@@ -68,26 +123,19 @@ export default function PlaylistSidebar({
   );
 }
 
-function ArtistCard({ artist }: { artist: MockUser }) {
-  const [following, setFollowing] = useState(artist.isFollowing);
-  const [followerCount, setFollowerCount] = useState(artist.followerCount);
-
-  const handleFollow = async () => {
-    try {
-      if (following) {
-        await unfollowUser(artist.username);
-        setFollowing(false);
-        setFollowerCount((c: number) => Math.max(0, c - 1));
-      } else {
-        await followUser(artist.username);
-        setFollowing(true);
-        setFollowerCount((c: number) => c + 1);
-      }
-    } catch {
-      setFollowing((p: boolean) => !p);
-    }
+function ArtistCard({
+  artist,
+}: {
+  artist: {
+    id: string | number;
+    username: string;
+    displayName: string;
+    avatarUrl: string;
+    followerCount: number;
+    trackCount: number;
+    isFollowing?: boolean;
   };
-
+}) {
   return (
     <div
       data-test={`artist-card-${artist.username}`}
@@ -112,7 +160,7 @@ function ArtistCard({ artist }: { artist: MockUser }) {
         <div className="flex items-center gap-2 mt-0.5 text-[var(--color-text-muted)] text-[11px]">
           <span className="flex items-center gap-1">
             <FaUserFriends className="w-2.5 h-2.5" />
-            {followerCount.toLocaleString()}
+            {artist.followerCount.toLocaleString()}
           </span>
           <span className="flex items-center gap-1">
             <FaMusic className="w-2.5 h-2.5" />
@@ -121,21 +169,12 @@ function ArtistCard({ artist }: { artist: MockUser }) {
         </div>
       </div>
 
-      <button
-        onClick={handleFollow}
-        className={`
-          shrink-0 min-w-[70px] px-3 py-1
-          rounded-[var(--radius-sm)] text-sm font-bold
-          transition-colors duration-150 cursor-pointer
-          ${
-            following
-              ? "bg-[#303030] text-white "
-              : "bg-white text-bg hover:text-[#a0a0a0]"
-          }
-        `}
-      >
-        {following ? "Following" : "Follow"}
-      </button>
+      <FollowButton
+        username={artist.username}
+        userId={String(artist.id)}
+        initialIsFollowing={artist.isFollowing}
+        className="shrink-0 min-w-[70px] px-3 py-1 rounded-[var(--radius-sm)] text-sm font-bold"
+      />
     </div>
   );
 }
