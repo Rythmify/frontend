@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import FollowButton from "../FollowButton/FollowButton";
 import { useNavigate } from "react-router-dom";
 import ModalNewMessageBody from "@/pages/social/messages/ModalNewMessageBody";
 import { Modal } from "@/components/MessagingComponents/Modal";
 import type { RecipientResult } from "@/components/MessagingComponents/RecipientInputBox";
+import FollowButton from "@/components/UI/FollowButton";
 
 interface TabButtonProps {
   children: React.ReactNode;
@@ -132,7 +132,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             </button>
           )}
 
-          <FollowButton username={username} />
+          <FollowButton username={username} userId={userId} />
 
           <button
             data-test="share-button"

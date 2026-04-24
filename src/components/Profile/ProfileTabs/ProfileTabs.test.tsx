@@ -13,7 +13,7 @@ vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock("@/components/Profile/FollowButton", () => ({
+vi.mock("@/components/UI/FollowButton", () => ({
   default: ({ username }: { username: string }) => (
     <button data-test={`follow-button-${username}`}>Follow</button>
   ),
