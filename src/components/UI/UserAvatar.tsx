@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 interface UserAvatarProps {
   src?: string | null;
   name: string;
@@ -9,6 +11,7 @@ interface UserAvatarProps {
   imageClassName?: string;
   initialsClassName?: string;
   onClick?: () => void;
+  style?: CSSProperties;
 }
 
 const getInitial = (value: string) => value.trim().charAt(0).toUpperCase() || "?";
@@ -24,11 +27,12 @@ export default function UserAvatar({
   imageClassName = "h-full w-full object-cover",
   initialsClassName = "flex h-full w-full items-center justify-center bg-zinc-800 text-white font-bold",
   onClick,
+  style,
 }: UserAvatarProps) {
   const label = alt ?? name;
 
   return (
-    <div data-test={dataTest} className={wrapperClassName} onClick={onClick}>
+    <div data-test={dataTest} className={wrapperClassName} onClick={onClick} style={style}>
       {src ? (
         <img data-test={imageDataTest} src={src} alt={label} className={imageClassName} />
       ) : (

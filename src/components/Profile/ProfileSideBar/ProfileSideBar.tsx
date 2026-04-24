@@ -217,7 +217,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               View all
             </button>
           </div>
-          <div className="flex items-center flex-nowrap overflow-visible pl-1 pr-1">
+          <div className="flex max-w-full items-center flex-nowrap overflow-hidden pl-1 pr-1">
             {followers.slice(0, 9).map((follower, index) => (
               <UserAvatar
                 key={follower.username}
@@ -225,9 +225,13 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                 src={follower.avatar}
                 name={follower.username}
                 alt={follower.username}
-                wrapperClassName="w-11 h-11 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
+                wrapperClassName="w-10 h-10 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
                 initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
                 onClick={() => navigate(`/${follower.username}`)}
+                style={{
+                  marginLeft: index === 0 ? 0 : -8,
+                  zIndex: 9 - index,
+                }}
               />
             ))}
           </div>
