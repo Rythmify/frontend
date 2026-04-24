@@ -38,6 +38,7 @@ interface ShareLayoutProps {
     tracks?: number;
     avatar?: string;
     isVerified?: boolean;
+    isFollowing?: boolean;
   }>;
   stats?: {
     followers: number;

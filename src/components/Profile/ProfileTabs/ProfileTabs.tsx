@@ -46,6 +46,7 @@ const tabs = [
 
 interface ProfileTabsProps {
   isOwner?: boolean;
+  isFollowing?: boolean;
   onTabChange?: (tab: string) => void;
   selectedTab?: string;
   onShare?: () => void;
@@ -62,6 +63,7 @@ interface ProfileTabsProps {
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({
   isOwner = false,
+  isFollowing,
   onTabChange,
   selectedTab = "All",
   onShare,
@@ -143,7 +145,11 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             </button>
           )}
 
-          <FollowButton username={username} userId={userId} />
+          <FollowButton
+            username={username}
+            userId={userId}
+            initialIsFollowing={isFollowing}
+          />
 
           <button
             data-test="share-button"
