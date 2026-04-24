@@ -30,92 +30,119 @@ export default function StickyPlayer() {
     ? (user?.following_ids ?? []).includes(currentTrack.artistUsername)
     : false;
 
+  const formatTime = (sec: number) => {
+    if (!sec || isNaN(sec) || !isFinite(sec)) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   if (!currentTrack) return null;
 
   return (
     <div
       data-test="sticky-player"
-      className="fixed z-999 h-14 bg-input-bg bottom-0 left-0 right-0"
+      className="fixed z-999 h-[50px] sm:h-[60px] bg-[#1a1a1a] border-t border-white/5 bottom-0 left-0 right-0"
     >
-      <div className="container  flex items-center h-full px-4 md:px-12 lg:px-12 el:px-20 gap-3">
-      {/* 1. Controls — far left */}
-      <PlayerControls />
-
-      {/* 2. Progress bar with time — takes remaining space */}
-      <div className="flex-1 min-w-0">
-        <ProgressBar
-          currentTime={currentTime}
-          duration={duration}
-          onSeek={seekAudio}
-        />
-      </div>
-
-      {/* 3. Volume */}
-      <VolumeSlider
-        volume={volume}
-        isMuted={isMuted}
-        onVolumeChange={setVolume}
-        onToggleMute={toggleMute}
-      />
-      {/* 7. Artwork + Track Info — far right */}
-      <div className="flex items-center gap-2 shrink-0 w-40">
-        {currentTrack.coverUrl && (
-          <img
-            data-test="player-track-artwork"
-            src={currentTrack.coverUrl}
-            alt={currentTrack.title}
-            className="w-10 h-10 rounded object-cover shrink-0"
-          />
-        )}
-        <div className="flex flex-col min-w-0">
-          <span
-            data-test="player-track-title"
-            className="text-white text-md font-semibold truncate leading-tight"
-          >
-            {currentTrack.title}
-          </span>
-          <Link
-            to={`/${currentTrack.artistUsername}`}
-            data-test="player-artist-name"
-            className="text-text-muted text-[14px] truncate hover:text-white transition-colors leading-tight"
-          >
-            {currentTrack.artistName}
-          </Link>
+      <div className="container mx-auto h-full px-4 flex items-center gap-4 lg:gap-8">
+        
+        {/* 1. Left: Playback Controls */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <PlayerControls />
         </div>
-      </div>
 
-      
+        {/* 2. Middle: Progress Bar (Desktop only, for mobile we show a thin bar at the top) */}
+        <div className="hidden md:flex flex-1 items-center gap-3 min-w-0">
+          <span className="text-[11px] text-white font-mono w-8 text-right tabular-nums">
+            {formatTime(currentTime)}
+          </span>
+          <div className="flex-1 h-full flex items-center">
+            <ProgressBar
+              currentTime={currentTime}
+              duration={duration}
+              onSeek={seekAudio}
+            />
+          </div>
+          <span className="text-[11px] text-white font-mono w-8 tabular-nums">
+            {formatTime(duration)}
+          </span>
+        </div>
 
-      {/* 4. Like */}
-      <button
-        data-test="player-button-like"
-        onClick={() => currentTrack && toggleTrack(currentTrack)}
-        className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer text-base
-          ${isLiked ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
-      >
-        <FaHeart />
-      </button>
+        {/* Mobile Progress Bar Overlay */}
+        <div className="md:hidden absolute top-0 left-0 right-0 h-[2px]">
+          <ProgressBar
+            currentTime={currentTime}
+            duration={duration}
+            onSeek={seekAudio}
+          />
+        </div>
 
-      {/* 5. Follow */}
-      <button
-        data-test="player-button-follow"
-        onClick={() => currentTrack && toggleFollow(currentTrack.artistUsername)}
-        className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer text-base
-          ${isFollowing ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
-      >
-        {isFollowing ? <FaUserCheck /> : <FaUserPlus />}
-      </button>
+        {/* 3. Right: Volume + Track Info + Secondary Actions */}
+        <div className="flex items-center gap-3 sm:gap-4 ml-auto md:ml-0 shrink-0">
+          
+          {/* Volume */}
+          <div className="hidden lg:block">
+            <VolumeSlider
+              volume={volume}
+              isMuted={isMuted}
+              onVolumeChange={setVolume}
+              onToggleMute={toggleMute}
+            />
+          </div>
 
-      {/* 6. Queue */}
-      <button
-        data-test="player-button-queue"
-        className="w-10 h-10 flex items-center justify-center shrink-0 text-white hover:text-text-muted transition-colors duration-150 cursor-pointer text-xl"
-      >
-        <MdQueueMusic />
-      </button>
+          {/* Track Info */}
+          <div className="flex items-center gap-2 max-w-[140px] sm:max-w-[200px] lg:max-w-[240px]">
+            {currentTrack.coverUrl && (
+              <img
+                data-test="player-track-artwork"
+                src={currentTrack.coverUrl}
+                alt={currentTrack.title}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-sm object-cover shrink-0"
+              />
+            )}
+            <div className="flex flex-col min-w-0">
+              <span
+                data-test="player-track-title"
+                className="text-white text-[11px] sm:text-xs font-bold truncate leading-tight"
+              >
+                {currentTrack.title}
+              </span>
+              <Link
+                to={`/${currentTrack.artistUsername}`}
+                data-test="player-artist-name"
+                className="text-white/50 text-[10px] sm:text-[11px] truncate hover:text-white transition-colors"
+              >
+                {currentTrack.artistName}
+              </Link>
+            </div>
+          </div>
 
-      
+          {/* Secondary Actions */}
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            <button
+              data-test="player-button-like"
+              onClick={() => currentTrack && toggleTrack(currentTrack)}
+              className={`w-8 h-8 flex items-center justify-center transition-colors ${isLiked ? "text-[#f50]" : "text-white hover:text-white/70"}`}
+            >
+              <FaHeart size={14} />
+            </button>
 
+            <button
+              data-test="player-button-follow"
+              onClick={() => currentTrack && toggleFollow(currentTrack.artistUsername)}
+              className={`hidden sm:flex w-8 h-8 items-center justify-center transition-colors ${isFollowing ? "text-[#f50]" : "text-white hover:text-white/70"}`}
+            >
+              {isFollowing ? <FaUserCheck size={15} /> : <FaUserPlus size={15} />}
+            </button>
+
+            <button
+              data-test="player-button-queue"
+              className="hidden sm:flex w-8 h-8 items-center justify-center text-white hover:text-white/70 transition-colors"
+            >
+              <MdQueueMusic size={18} />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

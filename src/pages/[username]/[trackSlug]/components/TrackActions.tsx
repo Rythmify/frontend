@@ -39,12 +39,14 @@ export default function TrackActions({
   const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(track.repostCount ?? 0);
   const [playCount, setPlayCount] = useState(track.playCount ?? 0);
+  const [commentCount, setCommentCount] = useState(track.commentCount ?? 0);
 
   // Sync counts when track data changes from MSW
   useEffect(() => {
     setLikeCount(track.likeCount ?? 0);
     setRepostCount(track.repostCount ?? 0);
     setPlayCount(track.playCount ?? 0);
+    setCommentCount(track.commentCount ?? 0);
     setLiked(track.isLiked || false);
     setReposted(track.isReposted || false);
   }, [track]);
@@ -269,6 +271,12 @@ export default function TrackActions({
               <StatWithTooltip data-test="stat-repost-count" tooltip={`${formatExact(repostCount)} reposts`}>
                 <AiOutlineRetweet className="text-[16px]" />
                 <span>{formatCount(repostCount)}</span>
+              </StatWithTooltip>
+              <StatWithTooltip data-test="stat-comment-count" tooltip={`${formatExact(commentCount)} comments`}>
+                <svg className="w-[14px] h-[14px]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                </svg>
+                <span>{formatCount(commentCount)}</span>
               </StatWithTooltip>
             </div>
           </div>
