@@ -10,6 +10,7 @@ import {
   getRelatedTracks,
   getTrackComments,
   postComment,
+  incrementPlayCount,
 } from "../../../services/track.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Comment } from "../../../types/comment";
@@ -92,8 +93,6 @@ export default function TrackSlugPage() {
       }
     } else {
       setPlayerTrack(track, [track, ...relatedTracks], startTime);
-      // Optimistic increment
-      setTrack(prev => prev ? { ...prev, playCount: (prev.playCount || 0) + 1 } : null);
     }
   };
 
@@ -108,6 +107,22 @@ export default function TrackSlugPage() {
       navigate(`/${t.artistUsername}/${t.id}`);
     }
   };
+
+  // View counting logic: Count only if user listens to at least 30 seconds
+  useEffect(() => {
+    let hasCounted = false;
+    if (!track || currentTrack?.id !== track.id) return;
+
+    const unsubscribe = usePlayerStore.subscribe((state) => {
+      if (!hasCounted && state.currentTime >= 30 && state.currentTrack?.id === track.id) {
+        hasCounted = true;
+        incrementPlayCount(track.id);
+        setTrack(prev => prev ? { ...prev, playCount: (prev.playCount || 0) + 1 } : null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [track?.id, currentTrack?.id]);
 
   const handleComment = async (text: string, timestampSec: number) => {
     if (!track) return;
