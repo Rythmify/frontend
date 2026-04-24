@@ -5,6 +5,7 @@ import FollowButton from "@/components/UI/FollowButton";
 import UserAvatar from "@/components/UI/UserAvatar";
 import {
   getFollowing,
+  getFollowStatus,
   getUserById,
   getUserByUsername,
   type UserSummary,
@@ -19,11 +20,13 @@ interface EnrichedUser {
   avatar: string;
   isVerified: boolean;
   followers: number;
+  isFollowing: boolean;
   profilePath: string;
 }
 
 async function enrich(u: UserSummary): Promise<EnrichedUser> {
-  if (!u.id) {
+  const resolvedId = u.id || (u as UserSummary & { user_id?: string }).user_id || "";
+  if (!resolvedId) {
     console.warn("enrich: received item with no id", u);
     return {
       userId: "",
@@ -32,31 +35,35 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
       avatar: u.profile_picture ?? "",
       followers: 0,
       isVerified: u.is_verified,
+      isFollowing: false,
       profilePath: "/",
     };
   }
 
   try {
-    const profile = await getUserById(u.id);
+    const profile = await getUserById(resolvedId);
+    const followStatus = await getFollowStatus(resolvedId);
     const uname = profile.username ?? u.id;
     return {
-      userId: u.id,
+      userId: resolvedId,
       username: uname,
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
       followers: profile.followers_count ?? 0,
       isVerified: profile.is_verified ?? u.is_verified,
+      isFollowing: followStatus.is_following,
       profilePath: `/${uname}`,
     };
   } catch {
     return {
-      userId: u.id,
-      username: u.id,
+      userId: resolvedId,
+      username: resolvedId,
       displayName: u.display_name,
       avatar: u.profile_picture ?? "",
       followers: 0,
       isVerified: u.is_verified,
-      profilePath: `/${u.id}`,
+      isFollowing: false,
+      profilePath: `/${resolvedId}`,
     };
   }
 }
@@ -249,12 +256,13 @@ export default function FollowingPage() {
 
               <div className="flex h-8 items-center justify-center">
                 <div className="hidden group-hover:block">
-                  <FollowButton
-                    username={u.username}
-                    userId={u.userId}
-                    onFollowChange={(next) => {
-                      if (isOwner && !next) {
-                        setFollowing((prev) =>
+              <FollowButton
+                username={u.username}
+                userId={u.userId}
+                initialIsFollowing={u.isFollowing}
+                onFollowChange={(next) => {
+                  if (isOwner && !next) {
+                    setFollowing((prev) =>
                           prev.filter((f) => f.userId !== u.userId),
                         );
                       }

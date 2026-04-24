@@ -209,6 +209,7 @@ export default function UsernamePage() {
     followers: u.followers_count,
     tracks: 0,
     isVerified: u.is_verified,
+    isFollowing: u.isFollowing,
   }));
 
   const followersMapped = followers.map((u) => ({

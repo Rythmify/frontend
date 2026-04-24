@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 import TrackItem from "@/components/UI/TrackItem";
 import UserAvatar from "@/components/UI/UserAvatar";
-import { useAuthStore } from "@/stores/auth.store";
 
 interface FollowingUser {
   userId?: string;
@@ -14,6 +13,7 @@ interface FollowingUser {
   tracks?: number;
   avatar?: string;
   isVerified?: boolean;
+  isFollowing?: boolean;
 }
 
 interface FollowerUser {
@@ -71,7 +71,6 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   onUnlike,
 }) => {
   const navigate = useNavigate();
-  const { user: currentUser } = useAuthStore();
   const [bioExpanded, setBioExpanded] = useState(false);
   const displayedLikedTracksCount =
     likedTracksCount > 0 ? likedTracksCount : likedTracks.length;
@@ -262,8 +261,6 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           </div>
 
           {following.slice(0, 3).map((u) => (
-            // The button reflects whether the logged-in viewer follows this person.
-            // The profile owner's own follow graph should not affect this label.
             <div
               key={u.userId ?? u.username}
               data-test="following-item"
@@ -321,11 +318,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               <FollowButton
                 username={u.username}
                 userId={u.userId}
-                initialIsFollowing={
-                  !!u.userId &&
-                  ((currentUser?.following_ids?.includes(u.userId) ?? false) ||
-                    (currentUser?.following_ids?.includes(u.username) ?? false))
-                }
+                initialIsFollowing={u.isFollowing}
               />
             </div>
           ))}
