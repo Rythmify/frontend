@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Chats } from "@/components/MessagingComponents/Chats";
 import MessagingHeader from "@/components/MessagingComponents/MessagingHeader";
@@ -14,65 +14,162 @@ import SendMessageForm from "@/components/MessagingComponents/SendMessageForm";
 import { joinConversation, leaveConversation, getSocket } from '@/services/api/messaging/socketService';
 import { useMessagingStore } from '@/stores/messaging.store';
 
+const PAGE_SIZE = 50;
+
 export default function MessageIdPage() {
   const navigate = useNavigate();
-  const { conversationId } = useParams()  
+  const { conversationId } = useParams();
 
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [conversations, setConversations]   = useState<Conversation[]>([]);
+  const [activeConvId, setActiveConvId]     = useState<string | null>(null);
   const [activeMessages, setActiveMessages] = useState<Message[]>([]);
-  const [loadingConvs, setLoadingConvs] = useState(true);
-  const [loadingMsgs, setLoadingMsgs] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
-  const [showMobileChat, setShowMobileChat] = useState(false);
-  const { refreshUnreadCount } = useMessagingStore();
-  const activeConv = conversations.find((c) => c.id === activeConvId) ?? null;
+  const [loadingConvs, setLoadingConvs]     = useState(true);
+  const [loadingMsgs, setLoadingMsgs]       = useState(false);
+  const [loadingMore, setLoadingMore]       = useState(false);
+  // oldest page we've fetched so far — we go downward (last page → page 1)
+  const [oldestPageFetched, setOldestPageFetched] = useState(1);
+  const [hasMorePages, setHasMorePages]           = useState(false);
+  const [error, setError]                         = useState<string | null>(null);
+  const [isTyping, setIsTyping]                   = useState(false);
+  const [showMobileChat, setShowMobileChat]       = useState(false);
 
+  const { refreshUnreadCount } = useMessagingStore();
+
+  // Ref to the scrollable message container
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const activeConv = conversations.find((c) => c.id === activeConvId) ?? null;
   const lastReceivedMessage = activeConv
-    ? (activeMessages
-        .filter((msg) => msg.sender_id === activeConv.participant.id)
-        .at(-1) ?? null)
+    ? (activeMessages.filter((m) => m.sender_id === activeConv.participant.id).at(-1) ?? null)
     : null;
+
+  // ── Scroll helpers ──────────────────────────────────────────────────────────
+
+  const scrollToBottom = () => {
+    const el = scrollContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  };
+
+  // Preserve scroll position when prepending older messages at the top
+  const preserveScrollAfter = (fn: () => void) => {
+    const el = scrollContainerRef.current;
+    if (!el) { fn(); return; }
+    const prevScrollHeight = el.scrollHeight;
+    fn();
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight - prevScrollHeight;
+    });
+  };
+
+  // ── Mark unread messages as read ────────────────────────────────────────────
+
+  const markConversationRead = (conv: Conversation, messages: Message[]) => {
+    if (conv.unread_count === 0) return;
+
+    const unread = messages.filter(
+      (m) => m.sender_id === conv.participant.id && !m.is_read,
+    );
+    unread.forEach((m) => {
+      markMessageReadState(conv.id, m.id, true).catch(() => {});
+    });
+
+    setConversations((prev) =>
+      prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
+    );
+    refreshUnreadCount();
+  };
+
+  // ── Load a conversation: fetch the LAST page first so user sees newest ──────
+  // The API is oldest-to-newest, so:
+  //   - Step 1: fetch page 1 just to discover total_pages
+  //   - Step 2: if total_pages > 1, fetch the last page for display
+  //   - Scrolling UP loads progressively older pages (last-1, last-2, …)
 
   const loadConversation = (conv: Conversation) => {
     setActiveConvId(conv.id);
     setActiveMessages([]);
+    setOldestPageFetched(1);
+    setHasMorePages(false);
     setLoadingMsgs(true);
 
-    fetchConversation(conv.id)
-      .then((res) => {
-        const messages = res.data.messages;
-        setActiveMessages(messages);
+    // Fetch page 1 to get total_pages, then jump to last page if needed
+    fetchConversation(conv.id, 1, PAGE_SIZE)
+      .then(async (res) => {
+        const { messages, pagination } = res.data;
+        const { total_pages } = pagination;
 
-        const unreadMessages = messages.filter(
-          (msg) =>
-            msg.sender_id === conv.participant.id && msg.is_read === false,
-        );
-        unreadMessages.forEach((msg) => {
-          markMessageReadState(conv.id, msg.id, true).catch(() => {});
-        });
-
-        setConversations((prev) =>
-          prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
-        );
-        refreshUnreadCount();
+        if (total_pages <= 1) {
+          // Everything fits on one page — we're done
+          setActiveMessages(messages);
+          setOldestPageFetched(1);
+          setHasMorePages(false);
+          requestAnimationFrame(scrollToBottom);
+          markConversationRead(conv, messages);
+        } else {
+          // Fetch the last page so the user sees the most recent messages
+          const lastRes = await fetchConversation(conv.id, total_pages, PAGE_SIZE);
+          setActiveMessages(lastRes.data.messages);
+          setOldestPageFetched(total_pages);
+          // There are pages before the last one still to load upward
+          setHasMorePages(total_pages > 1);
+          requestAnimationFrame(scrollToBottom);
+          markConversationRead(conv, lastRes.data.messages);
+        }
       })
       .catch(() => setError("Could not load messages."))
       .finally(() => setLoadingMsgs(false));
   };
 
-  // 1. Fetch all conversations, open the one from URL param or fallback to first
+  // ── Load an older page when the user scrolls to the top ────────────────────
+
+  const loadOlderMessages = useCallback(() => {
+    if (!activeConvId || loadingMore || !hasMorePages) return;
+
+    const pageToFetch = oldestPageFetched - 1;
+    if (pageToFetch < 1) { setHasMorePages(false); return; }
+
+    setLoadingMore(true);
+
+    fetchConversation(activeConvId, pageToFetch, PAGE_SIZE)
+      .then((res) => {
+        const { messages: olderMessages } = res.data;
+        setOldestPageFetched(pageToFetch);
+        setHasMorePages(pageToFetch > 1);
+        // Prepend and keep viewport anchored
+        preserveScrollAfter(() => {
+          setActiveMessages((prev) => [...olderMessages, ...prev]);
+        });
+      })
+      .catch(() => {/* silently ignore — user can scroll again */})
+      .finally(() => setLoadingMore(false));
+  }, [activeConvId, loadingMore, hasMorePages, oldestPageFetched]);
+
+  // ── Scroll-to-top detection ─────────────────────────────────────────────────
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      if (el.scrollTop <= 80 && !loadingMore && hasMorePages) {
+        loadOlderMessages();
+      }
+    };
+
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [loadOlderMessages, loadingMore, hasMorePages]);
+
+  // ── Boot ────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     setLoadingConvs(true);
     fetchConversations()
       .then((res) => {
         const items = res.data.items;
         setConversations(items);
-
         if (items.length === 0) return;
 
-        // 👇 open conversation matching URL param, fallback to first
         const target = conversationId
           ? items.find((c) => c.id === conversationId) ?? items[0]
           : items[0];
@@ -83,13 +180,15 @@ export default function MessageIdPage() {
       .finally(() => setLoadingConvs(false));
   }, []);
 
+  // ── Socket room ─────────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!activeConvId) return;
     joinConversation(activeConvId);
-    return () => {
-      leaveConversation(activeConvId);
-    };
+    return () => { leaveConversation(activeConvId); };
   }, [activeConvId]);
+
+  // ── Socket events ───────────────────────────────────────────────────────────
 
   useEffect(() => {
     const socket = getSocket();
@@ -98,6 +197,7 @@ export default function MessageIdPage() {
     const onReceived = ({ conversationId, message }: { conversationId: string; message: Message }) => {
       if (conversationId === activeConvId) {
         setActiveMessages((prev) => [...prev, message]);
+        requestAnimationFrame(scrollToBottom);
       }
       setConversations((prev) =>
         prev.map((c) =>
@@ -117,37 +217,31 @@ export default function MessageIdPage() {
     const onReadUpdated = ({ conversationId, conversationUnreadCount }: { conversationId: string; conversationUnreadCount: number }) => {
       setConversations((prev) =>
         prev.map((c) =>
-          c.id === conversationId
-            ? { ...c, unread_count: conversationUnreadCount }
-            : c,
+          c.id === conversationId ? { ...c, unread_count: conversationUnreadCount } : c,
         ),
       );
     };
 
-    const onTyping = ({ conversationId }: { conversationId: string }) => {
-      if (conversationId === activeConvId) setIsTyping(true);
-    };
+    const onTyping     = ({ conversationId }: { conversationId: string }) => { if (conversationId === activeConvId) setIsTyping(true);  };
+    const onStopTyping = ({ conversationId }: { conversationId: string }) => { if (conversationId === activeConvId) setIsTyping(false); };
 
-    const onStopTyping = ({ conversationId }: { conversationId: string }) => {
-      if (conversationId === activeConvId) setIsTyping(false);
-    };
-
-    socket.on('message:received', onReceived);
-    socket.on('message:removed', onRemoved);
+    socket.on('message:received',     onReceived);
+    socket.on('message:removed',      onRemoved);
     socket.on('message:read_updated', onReadUpdated);
-    socket.on('message:typing', onTyping);
-    socket.on('message:stop_typing', onStopTyping);
+    socket.on('message:typing',       onTyping);
+    socket.on('message:stop_typing',  onStopTyping);
 
     return () => {
-      socket.off('message:received', onReceived);
-      socket.off('message:removed', onRemoved);
+      socket.off('message:received',     onReceived);
+      socket.off('message:removed',      onRemoved);
       socket.off('message:read_updated', onReadUpdated);
-      socket.off('message:typing', onTyping);
-      socket.off('message:stop_typing', onStopTyping);
+      socket.off('message:typing',       onTyping);
+      socket.off('message:stop_typing',  onStopTyping);
     };
   }, [activeConvId]);
 
-  // 2. On message sent
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
   const handleMessageSent = (msg: Message) => {
     setActiveMessages((prev) => [...prev, msg]);
     setConversations((prev) =>
@@ -157,15 +251,15 @@ export default function MessageIdPage() {
           : c,
       ),
     );
+    requestAnimationFrame(scrollToBottom);
   };
 
-  // 3. On conversation deleted
   const handleConversationDeleted = (deletedId: string) => {
     setConversations((prev) => {
       const remaining = prev.filter((c) => c.id !== deletedId);
       if (remaining.length > 0) {
         const next = remaining[0];
-        navigate(`/messages/${next.id}`); 
+        navigate(`/messages/${next.id}`);
         loadConversation(next);
       } else {
         setActiveConvId(null);
@@ -176,27 +270,29 @@ export default function MessageIdPage() {
     });
   };
 
-  // 4. On conversation selected from list
   const handleSelectConversation = (conv: Conversation) => {
-    navigate(`/messages/${conv.id}`); 
+    navigate(`/messages/${conv.id}`);
     loadConversation(conv);
     setShowMobileChat(true);
   };
 
-  // 5. On read state toggled
   const handleReadStateChange = (isUnread: boolean) => {
     setConversations((prev) =>
       prev.map((c) =>
         c.id === activeConvId ? { ...c, unread_count: isUnread ? 1 : 0 } : c,
       ),
     );
+    refreshUnreadCount();
   };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div
       data-test="message-id-page"
       className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overflow-hidden"
     >
+      {/* Sidebar */}
       <div className={`${showMobileChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-85 shrink-0 sticky top-0 h-[calc(100vh-64px)]`}>
         <MessagingHeader />
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -210,6 +306,7 @@ export default function MessageIdPage() {
         </div>
       </div>
 
+      {/* Chat panel */}
       <div className={`${showMobileChat ? 'flex' : 'hidden md:flex'} flex-col flex-1 md:ml-6 min-w-0`}>
         {activeConv ? (
           <>
@@ -225,7 +322,22 @@ export default function MessageIdPage() {
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+
+              {/* Older messages spinner — pinned at top of scroll area */}
+              {loadingMore && (
+                <div className="text-xs text-[#666] text-center py-2">
+                  Loading older messages…
+                </div>
+              )}
+
+              {/* Beginning of conversation hint */}
+              {!loadingMore && !hasMorePages && activeMessages.length > 0 && (
+                <div className="text-xs text-[#444] text-center py-2">
+                  Beginning of conversation
+                </div>
+              )}
+
               <SendMessageForm
                 conversationId={activeConv.id}
                 existingMessages={activeMessages}
