@@ -14,8 +14,9 @@ import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
-import AlbumOwnerInfo from "@/components/playlist/Album/AlbumOwnerInfo";
+import OwnerInfo from "@/components/playlist/OwnerInfo";
 import { useAuthStore } from "../../../stores/auth.store";
+import PlaylistActionsForYou from "@/components/playlist/Made for you/PlaylistActionsForYou";
 
 function PlaylistSlugPage() {
   const { username, playlistSlug } = useParams<{
@@ -178,6 +179,7 @@ function PlaylistSlugPage() {
   };
 
   const canEditPlaylist = user?.id === playlist?.owner_user_id;
+  const showOwnerActions = canEditPlaylist;
 
   if (loading) {
     return (
@@ -197,8 +199,8 @@ function PlaylistSlugPage() {
 
   return (
     <div
-      data-test="container px-4 md:px-8 lg:px-12 xl:px-20 playlist-slug-page"
-      className="flex-1 w-full bg-bg min-h-screen"
+      data-test="playlist-slug-page"
+      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen"
     >
       <PlaylistHero
         playlist={playlist}
@@ -214,15 +216,20 @@ function PlaylistSlugPage() {
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           {/* Left Column: Actions and Track List */}
           <div className="flex-1 min-w-0">
-            <PlaylistActions
-              playlist={playlist}
-              onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
-                setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
-              }
-            />
+            {showOwnerActions ? (
+              <PlaylistActions
+                playlist={playlist}
+                onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
+                  setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
+                }
+              />
+            ) : (
+              <PlaylistActionsForYou playlist={playlist} />
+            )}
 
             <div className="flex flex-col lg:flex-row gap-6 mt-8">
-              <AlbumOwnerInfo
+              <OwnerInfo
+                ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}
                 followers={albumOwner?.followers_count ?? 0}
                 username={

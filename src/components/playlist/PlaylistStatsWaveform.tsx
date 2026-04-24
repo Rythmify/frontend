@@ -119,12 +119,12 @@ export default function PlaylistStatsWaveform({
       ) : (
         <div
           data-test="playlist-stats-badge"
-          className="w-24 h-24 rounded-full bg-bg flex flex-col items-center justify-center"
+          className="w-24 h-24 rounded-full bg-[#121212] flex flex-col items-center justify-center"
         >
-          <span className="text-[28px] font-bold leading-none text-text-upload">
+          <span className="text-[28px] font-bold leading-none text-white">
             {playlist.track_count}
           </span>
-          <span className="text-[14px] uppercase font-bold text-text-upload mt-1">
+          <span className="text-[14px] uppercase font-bold text-white mt-1">
             Tracks
           </span>
           <span className="text-[14px] text-text-secondary mt-1">

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useAuthStore } from "@/stores/auth.store";
+import { uploadAvatar } from "@/services/user.service";
 
 interface EditProfileModalProps {
   user: {
@@ -29,6 +31,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const { user: currentUser, setUser } = useAuthStore();
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -52,7 +55,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     country?: string;
   }>({});
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const allowed = ["image/jpeg", "image/png", "image/webp"];
@@ -64,8 +69,34 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       alert("Image must be under 5MB.");
       return;
     }
+
+    const previewUrl = URL.createObjectURL(file);
     setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarPreview(previewUrl);
+
+    const latestUser = currentUser ?? undefined;
+    if (latestUser) {
+      setUser({ ...latestUser, avatar: previewUrl });
+    }
+
+    try {
+      const { profile_picture } = await uploadAvatar(file);
+      setAvatarPreview(profile_picture);
+      if (latestUser) {
+        setUser({ ...latestUser, avatar: profile_picture });
+      }
+      setAvatarFile(null);
+    } catch (error) {
+      console.error(error);
+      setAvatarPreview(user.avatar || null);
+      if (latestUser) {
+        setUser({ ...latestUser, avatar: user.avatar });
+      }
+      setAvatarFile(null);
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+      e.target.value = "";
+    }
   };
 
   useEffect(() => {
@@ -115,7 +146,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       city: city.trim(),
       country: country.trim(),
       location: city && country ? `${city}, ${country}` : city || country || "",
-      avatarFile,
+      avatarFile: null,
     });
     onClose();
   };
