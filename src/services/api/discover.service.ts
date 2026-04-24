@@ -1,5 +1,4 @@
 import axiosInstance from "./axiosInstance";
-import type { Playlist } from "./playlist/playlist.service";
 
 // =============================================================================
 // TYPES — API response shapes (aligned to OpenAPI spec)
@@ -168,6 +167,7 @@ export interface DiscoveryAlbum {
   track_count: number;
   like_count: number;
   created_at?: string;
+  preview_track?: DiscoveryTrack | null;
 }
 
 // =============================================================================
@@ -235,12 +235,12 @@ export const getAlbumsForYou = async (params?: {
   limit?: number;
   offset?: number;
 }): Promise<{
-  data: Playlist[];
+  data: DiscoveryAlbum[];
   source: "followed_artists" | "global_fallback";
   pagination: ListMeta;
 }> => {
   const res = await axiosInstance.get<{
-    data: Playlist[];
+    data: DiscoveryAlbum[];
     source: "followed_artists" | "global_fallback";
     pagination: ListMeta;
   }>("/home/albums-for-you", { params: { ...params, is_album_view: true } });
