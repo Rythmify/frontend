@@ -22,6 +22,7 @@ import { useAuthStore } from "../../stores/auth.store";
 import { audio, seekAudio, setGlobalWaveSurfer, setTrackLoadedLocally } from "../../services/audioService";
 import * as engagementService from "../../services/engagement.service";
 import { getTrackWaveform } from "../../services/track.service";
+import { formatPostedAt } from "../../services/Time";
 
 
 //  Helpers
@@ -155,7 +156,7 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
           duration: parsedDur > 0 ? parsedDur : undefined,
         });
 
-        setGlobalWaveSurfer(ws);
+        setGlobalWaveSurfer(ws, track.id);
         setTrackLoadedLocally(track.id);
 
         ws.on("timeupdate", (currentTime: number) => {
@@ -423,24 +424,24 @@ export default function PlaylistComponent({
   return (
     <div
       data-test="playlist-component"
-      style={{ display: "flex", gap: 16, padding: "20px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+      className="flex gap-3 sm:gap-6 py-4 sm:py-5 border-b border-white/5"
     >
       {/*Cover art with play overlay*/}
       <div
         data-test="playlist-component-cover"
-        style={{ position: "relative", width: 130, height: 130, flexShrink: 0, borderRadius: 2, overflow: "hidden", background: "#1a1a1a" }}
+        className="relative w-20 h-20 sm:w-[160px] sm:h-[160px] shrink-0 rounded overflow-hidden bg-[#1a1a1a]"
       >
         {playlist.coverUrl
-          ? <img src={playlist.coverUrl} alt={playlist.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          ? <img src={playlist.coverUrl} alt={playlist.title} className="w-full h-full object-cover block" />
           : (
             // Mosaic fallback: first 4 track covers
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", width: "100%", height: "100%" }}>
+            <div className="grid grid-cols-2 w-full h-full">
               {[0, 1, 2, 3].map((i) => {
                 const t = playlist.tracks[i];
                 return (
-                  <div key={i} style={{ background: "#1a1a1a", overflow: "hidden" }}>
+                  <div key={i} className="bg-[#1a1a1a] overflow-hidden">
                     {t?.coverUrl && (
-                      <img src={t.coverUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      <img src={t.coverUrl} alt="" className="w-full h-full object-cover block" />
                     )}
                   </div>
                 );
@@ -453,25 +454,16 @@ export default function PlaylistComponent({
         <button
           data-test="playlist-component-play-btn"
           onClick={handlePlayPause}
-          style={{
-            position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-            background: componentIsPlaying ? "rgba(0,0,0,0.45)" : "rgba(0,0,0,0)",
-            border: "none", cursor: "pointer",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.45)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = componentIsPlaying ? "rgba(0,0,0,0.45)" : "rgba(0,0,0,0)"; }}
+          className={`absolute inset-0 flex items-center justify-center transition-background duration-150 ${componentIsPlaying ? 'bg-black/45' : 'bg-transparent hover:bg-black/45'}`}
         >
-          <div style={{
-            width: 40, height: 40, borderRadius: "50%", background: "#fff",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
-            opacity: componentIsPlaying ? 1 : 0,
-            transition: "opacity 0.15s",
-          }}
+          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center shadow-xl transition-opacity duration-150 ${componentIsPlaying ? 'opacity-100' : 'opacity-0'}`}
             className="play-icon-circle"
           >
-            {componentIsPlaying ? <FaPause style={{ color: "#111", fontSize: 13 }} /> : <FaPlay style={{ color: "#111", fontSize: 13, marginLeft: 2 }} />}
+            {componentIsPlaying ? (
+              <FaPause className="text-[#111] text-[10px] sm:text-[13px]" />
+            ) : (
+              <FaPlay className="text-[#111] text-[10px] sm:text-[13px] ml-0.5" />
+            )}
           </div>
         </button>
 
@@ -479,41 +471,37 @@ export default function PlaylistComponent({
         {playlist.isPrivate && (
           <div
             data-test="playlist-component-private-badge"
-            style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.7)", borderRadius: 3, padding: "2px 6px", display: "flex", alignItems: "center", gap: 4, color: "#ccc", fontSize: 10 }}
+            className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 bg-black/70 rounded px-1.5 py-0.5 flex items-center gap-1 text-[#ccc] text-[8px] sm:text-[10px]"
           >
-            <FaLock size={9} /> Private
+            <FaLock size={8} /> Private
           </div>
         )}
       </div>
 
       {/* Right column */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+      <div className="flex-1 min-w-0 flex flex-col justify-center sm:justify-start gap-1 sm:gap-1.5">
 
         {/* Row 1: creator / repostedBy  ·  title  ·  timestamp */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-0.5 sm:gap-4">
+          <div className="flex-1 min-w-0">
             {/* Creator line */}
-            <div style={{ fontSize: 13, color: "#999", marginBottom: 2, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-xs text-white/50 mb-0.5">
               <Link
                 data-test="playlist-component-creator-link"
                 to={`/${playlist.creatorUsername}`}
-                style={{ color: "inherit", textDecoration: "none", fontWeight: 600 }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#fff")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "")}
+                className="font-semibold hover:text-white transition-colors truncate max-w-[120px] sm:max-w-none"
               >
                 {playlist.creatorName}
               </Link>
               {repostedBy && (
                 <>
-                  <BiRepost style={{ fontSize: 14, opacity: 0.7 }} />
+                  <BiRepost size={16} className="text-[#f50] hidden sm:block" />
                   <Link
                     data-test="playlist-component-reposted-by-link"
                     to={`/${repostedBy}`}
-                    style={{ color: "inherit", textDecoration: "none", fontWeight: 500 }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#fff")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "")}
+                    className="font-medium hover:text-white transition-colors truncate hidden sm:block"
                   >
-                    {repostedBy}
+                    reposted by {repostedBy}
                   </Link>
                 </>
               )}
@@ -523,39 +511,39 @@ export default function PlaylistComponent({
             <Link
               data-test="playlist-component-title-link"
               to={`/${playlist.creatorUsername}/sets/${playlist.playlistSlug ?? ""}`}
-              style={{ color: "#fff", textDecoration: "none", fontSize: 15, fontWeight: 700, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--color-accent,#eb4926)")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#fff")}
+              className="block text-sm sm:text-lg font-bold text-white hover:text-[#f50] transition-colors truncate"
             >
               {playlist.title}
             </Link>
           </div>
 
           {/* Timestamp + track count */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-            <span data-test="playlist-component-posted-at" style={{ fontSize: 12, color: "#999", whiteSpace: "nowrap" }}>
-              {playlist.postedAt}
+          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1.5 shrink-0">
+            <span data-test="playlist-component-posted-at" className="text-[10px] sm:text-xs text-white/40">
+              {formatPostedAt(playlist.postedAt)}
             </span>
             <span
               data-test="playlist-component-track-count"
-              style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.2)", color: "#e5e7eb", fontSize: 11, fontWeight: 600, padding: "3px 12px", borderRadius: 99, whiteSpace: "nowrap" }}
+              className="bg-white/5 border border-white/10 text-white/80 text-[8px] sm:text-[11px] font-bold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full"
             >
               {playlist.trackCount} tracks
             </span>
           </div>
         </div>
 
-        {/* Waveform (only when there is a track to preview) */}
+        {/* Waveform Area - Hidden on mobile for professional look */}
         {waveformTrack && (
-          <PlaylistWaveform
-            track={waveformTrack}
-            isActive={!!(activeTrack && activeTrack.id === waveformTrack.id)}
-          />
+          <div className="hidden md:block mt-4">
+            <PlaylistWaveform
+              track={waveformTrack}
+              isActive={!!(activeTrack && activeTrack.id === waveformTrack.id)}
+            />
+          </div>
         )}
 
-        {/* Track list */}
+        {/* Track list - Hidden on mobile for professional look */}
         {playlist.tracks.length > 0 && (
-          <div data-test="playlist-component-track-list" style={{ marginTop: 4 }}>
+          <div data-test="playlist-component-track-list" className="hidden md:block mt-4 space-y-1">
             {playlist.tracks.slice(0, 5).map((t, i) => (
               <TrackRow
                 key={t.id}
@@ -570,9 +558,7 @@ export default function PlaylistComponent({
               <Link
                 data-test="playlist-component-view-all-link"
                 to={`/${playlist.creatorUsername}/sets/${playlist.playlistSlug ?? ""}`}
-                style={{ display: "block", fontSize: 12, color: "#999", marginTop: 6, textDecoration: "none" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#fff")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#999")}
+                className="inline-block text-xs text-white/40 hover:text-white transition-colors mt-2"
               >
                 View all {playlist.trackCount} tracks →
               </Link>
@@ -581,8 +567,8 @@ export default function PlaylistComponent({
         )}
 
         {/* Action bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="flex flex-wrap items-center justify-between gap-y-3 mt-4">
+          <div className="flex flex-wrap items-center gap-2">
             <ScBtn icon={<FaHeart size={13} />} label={fmtN(likeCount)} active={liked} tooltip="Like" onClick={handleLike} dataTest="playlist-component-btn-like" />
             <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} active={reposted} tooltip="Repost" onClick={handleRepost} dataTest="playlist-component-btn-repost" />
             <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowSharePopup(true)} dataTest="playlist-component-btn-share" />
@@ -591,7 +577,7 @@ export default function PlaylistComponent({
           </div>
 
           {/* Stat: total play count (sum of tracks) */}
-          <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#999", fontSize: 13 }}>
+          <div className="flex items-center gap-1.5 text-xs text-white/40">
             <FaPlayCount size={10} />
             <span data-test="playlist-component-total-plays">
               {fmtN(playlist.tracks.reduce((acc, t) => acc + (t.playCount ?? 0), 0))}

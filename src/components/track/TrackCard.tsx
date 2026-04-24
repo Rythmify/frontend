@@ -575,7 +575,7 @@ export default function TrackCard({
 
   return (
     <div 
-      className="group relative flex gap-6 py-6 border-b border-white/5"
+      className="group relative flex gap-3 sm:gap-6 py-4 sm:py-6 border-b border-white/5"
       data-test="track-card"
     >
       {showShare && (
@@ -583,7 +583,7 @@ export default function TrackCard({
       )}
 
       {/* Cover Art */}
-      <div className="relative w-[160px] h-[160px] shrink-0 overflow-hidden rounded bg-black/40">
+      <div className="relative w-20 h-20 sm:w-[160px] sm:h-[160px] shrink-0 overflow-hidden rounded bg-black/40">
         <img 
           src={track.coverUrl || "https://picsum.photos/seed/rythmify/160/160"} 
           alt={track.title}
@@ -591,26 +591,30 @@ export default function TrackCard({
         />
         <button 
           onClick={handlePlayPause}
-          className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <div className="w-12 h-12 flex items-center justify-center bg-[#f50] rounded-full text-white shadow-xl">
-            {isActive && isPlaying ? <FaPause size={18} /> : <FaPlay size={18} className="translate-x-0.5" />}
+          <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center bg-[#f50] rounded-full text-white shadow-xl">
+            {isActive && isPlaying ? (
+              <FaPause size={isActive ? 12 : 18} className="sm:scale-100 scale-75" />
+            ) : (
+              <FaPlay size={isActive ? 12 : 18} className="translate-x-0.5 sm:scale-100 scale-75" />
+            )}
           </div>
         </button>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 flex flex-col gap-4">
+      <div className="flex-1 min-w-0 flex flex-col justify-center sm:justify-start gap-1 sm:gap-4">
         
         {/* Header: Artist & Title */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-2 sm:gap-4">
           <div className="flex-1 min-w-0">
-             <div className="flex items-center gap-2 text-xs text-white/50 mb-1">
-                <Link to={`/${track.artistUsername}`} className="hover:text-white transition-colors">
+             <div className="flex items-center gap-2 text-[10px] sm:text-xs text-white/50 mb-0.5 sm:mb-1">
+                <Link to={`/${track.artistUsername}`} className="hover:text-white transition-colors truncate">
                   {track.artistName}
                 </Link>
                 {repostedBy && (
-                  <span className="flex items-center gap-1">
+                  <span className="hidden sm:flex items-center gap-1">
                     <BiRepost size={14} className="text-[#f50]" />
                     reposted by <span className="text-white/80">{repostedBy}</span>
                   </span>
@@ -618,18 +622,18 @@ export default function TrackCard({
              </div>
              <Link 
               to={`/${track.artistUsername}/${track.trackSlug}`}
-              className="block text-lg font-bold text-white hover:text-[#f50] transition-colors overflow-hidden text-overflow-ellipsis whitespace-nowrap"
+              className="block text-sm sm:text-lg font-bold text-white hover:text-[#f50] transition-colors truncate"
              >
                {track.title}
              </Link>
           </div>
-          <div className="text-xs text-white/40 whitespace-nowrap pt-1">
+          <div className="text-[10px] sm:text-xs text-white/40 whitespace-nowrap pt-1">
             {track.postedAt}
           </div>
         </div>
 
-        {/* Waveform Area */}
-        <div className="relative">
+        {/* Waveform Area - Hidden on mobile for professional look */}
+        <div className="hidden md:block relative">
           <CardWaveform 
             track={track}
             isActive={isActive}
@@ -669,8 +673,8 @@ export default function TrackCard({
         )}
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between mt-auto">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-y-3 mt-auto">
+          <div className="flex flex-wrap items-center gap-2">
             <ScBtn 
               icon={<FaHeart size={14} />} 
               label={fmtN(likeCount)} 

@@ -32,7 +32,7 @@ export interface ProfileDataResult {
   followers: UserSummary[];
   following: EnrichedUserSummary[];
   isOwner: boolean;
-  activeUser: User;
+  activeUser: User | null;
   // ── Social state (non-owner only) ────────────────────────
   isFollowing: boolean;
   isBlocked: boolean;
@@ -60,8 +60,8 @@ export function useProfileData(
 ): ProfileDataResult {
   const { user: currentUser, setUser } = useAuthStore();
 
-  const isOwner = !username || username === currentUser?.username;
-  const activeUser = currentUser!;
+  const isOwner = !!currentUser && (!username || username === currentUser.username);
+  const activeUser = currentUser;
 
   const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
     null,

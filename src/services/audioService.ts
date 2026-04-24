@@ -31,6 +31,15 @@ export function setGlobalWaveSurfer(ws: any, trackId: string | null = null) {
   globalWaveSurferTrackId = trackId;
 }
 
+/**
+ * setTrackLoadedLocally - signals that the audio source for a specific track
+ * has already been set on the global audio element (e.g. by a WaveSurfer instance).
+ * This prevents the subscriber from redundantly reloading audio.src.
+ */
+export function setTrackLoadedLocally(trackId: string | null) {
+  loadedAudioTrackId = trackId;
+}
+
 // Wire store -> audio directly via subscribe (no React, no useEffect)
 usePlayerStore.subscribe((state, prev) => {
 
