@@ -5,8 +5,9 @@ import { usePlayerStore } from "../stores/player.store";
 export const audio = new Audio();
 (window as any).__globalAudio = audio;
 
-let currentLoadedId: string | null = null;
+let loadedAudioTrackId: string | null = null;
 export let globalWaveSurfer: any = null;
+export let globalWaveSurferTrackId: string | null = null;
 
 // When a direct seek is in progress (audio.currentTime set externally by WaveSurfer
 // or the progress bar), we suppress the isPlaying -> audio.play() branch in the
@@ -25,12 +26,9 @@ function markSeekInProgress() {
   }, 300);
 }
 
-export function setGlobalWaveSurfer(ws: any) {
+export function setGlobalWaveSurfer(ws: any, trackId: string | null = null) {
   globalWaveSurfer = ws;
-}
-
-export function setTrackLoadedLocally(id: string) {
-  currentLoadedId = id;
+  globalWaveSurferTrackId = trackId;
 }
 
 // Wire store -> audio directly via subscribe (no React, no useEffect)
@@ -38,16 +36,16 @@ usePlayerStore.subscribe((state, prev) => {
 
   // New track 
   // Only fires when the track id genuinely changes (not a same-track seek).
-  if (state.currentTrack && state.currentTrack.id !== currentLoadedId) {
+  if (state.currentTrack && state.currentTrack.id !== loadedAudioTrackId) {
     // Kill the old WaveSurfer instance synchronously before we change audio.src.
-    // This prevents WaveSurfer from intercepting the `play` event and forcefully
-    // reverting the track.
-    if (globalWaveSurfer) {
+    // ONLY if the global instance belongs to a different track.
+    if (globalWaveSurfer && globalWaveSurferTrackId !== state.currentTrack.id) {
       globalWaveSurfer.destroy();
       globalWaveSurfer = null;
+      globalWaveSurferTrackId = null;
     }
 
-    currentLoadedId = state.currentTrack.id;
+    loadedAudioTrackId = state.currentTrack.id;
     const targetTime = state.currentTime;
 
     audio.pause();
@@ -63,7 +61,9 @@ usePlayerStore.subscribe((state, prev) => {
     };
     audio.addEventListener("loadedmetadata", onLoaded);
 
-    audio.play().catch(() => {});
+    if (state.isPlaying) {
+      audio.play().catch(() => { });
+    }
     return;
   }
 
@@ -74,7 +74,7 @@ usePlayerStore.subscribe((state, prev) => {
   if (state.isPlaying !== prev.isPlaying) {
     if (state.isPlaying) {
       if (!seekInProgress) {
-        audio.play().catch(() => {});
+        audio.play().catch(() => { });
       }
     } else {
       audio.pause();
@@ -100,7 +100,7 @@ audio.addEventListener("ended", () => {
   const state = usePlayerStore.getState();
   if (state.repeatMode === "one") {
     audio.currentTime = 0;
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
   } else {
     state.next();
   }

@@ -81,12 +81,17 @@ export default function TrackSlugPage() {
   // FIX: play/pause handler now always uses the page's `track`, not heroTrack.
   // If this page's track is already loaded in the player → toggle play/pause.
   // Otherwise → load the page track into the player and start playing.
-  const handleHeroPlayPause = () => {
+  const handleHeroPlayPause = (startTime?: number) => {
     if (!track) return;
     if (currentTrack?.id === track.id) {
-      usePlayerStore.getState().togglePlay();
+      if (startTime !== undefined) {
+        usePlayerStore.getState().seek(startTime);
+        if (!isPlaying) usePlayerStore.getState().play();
+      } else {
+        usePlayerStore.getState().togglePlay();
+      }
     } else {
-      setPlayerTrack(track, [track, ...relatedTracks]);
+      setPlayerTrack(track, [track, ...relatedTracks], startTime);
       // Optimistic increment
       setTrack(prev => prev ? { ...prev, playCount: (prev.playCount || 0) + 1 } : null);
     }
@@ -110,6 +115,7 @@ export default function TrackSlugPage() {
       const newComment = await postComment(String(track.id), text, timestampSec);
       if (newComment) {
         setComments(prev => [...prev, newComment]);
+        setTrack(prev => prev ? { ...prev, commentCount: (prev.commentCount || 0) + 1 } : null);
       }
     } catch (err) {
       console.error("Failed to post comment:", err);
@@ -190,8 +196,13 @@ export default function TrackSlugPage() {
           <TrackCommentList 
             comments={comments} 
             trackId={String(track.id)} 
-            onCommentDeleted={(id) => {
+            totalComments={track.commentCount}
+            onCommentAdded={() => {
+              setTrack(prev => prev ? { ...prev, commentCount: (prev.commentCount || 0) + 1 } : null);
+            }}
+            onCommentDeleted={(id, countRemoved) => {
               setComments(prev => prev.filter(c => String(c.comment_id) !== String(id)));
+              setTrack(prev => prev ? { ...prev, commentCount: Math.max(0, (prev.commentCount || 0) - countRemoved) } : null);
             }}
           />
         </div>

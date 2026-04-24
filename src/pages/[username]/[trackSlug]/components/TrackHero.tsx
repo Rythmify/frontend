@@ -11,7 +11,7 @@ interface TrackHeroProps {
   track: Track;
   comments?: Comment[];
   isPlaying?: boolean;
-  onPlayPause?: () => void;
+  onPlayPause?: (startTime?: number) => void;
 }
 
 export default function TrackHero({
@@ -29,9 +29,9 @@ export default function TrackHero({
   const [showFloating, setShowFloating] = useState(false);
   const lastSecondRef = useRef<number>(-1);
 
-  const handlePlayPause = () => {
+  const handlePlayPause = (startTime?: number) => {
     waveformRef.current?.playPause();
-    onPlayPause?.();
+    onPlayPause?.(startTime);
   };
 
   // Logic to trigger floating comments when playback reaches their time
@@ -70,7 +70,7 @@ export default function TrackHero({
           {/* Play / Pause Button */}
           <button
             data-test="button-play-pause-hero"
-            onClick={handlePlayPause}
+            onClick={() => handlePlayPause()}
             className="w-12 h-12 md:w-16 md:h-16 min-w-[48px] md:min-w-[64px] rounded-full bg-[#111] border-0 cursor-pointer flex items-center justify-center shrink-0 mt-1 transition-colors duration-150 hover:bg-[#333]"
           >
             {isPlaying ? (

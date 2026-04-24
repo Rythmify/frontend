@@ -28,7 +28,6 @@ import {
   audio,
   seekAudio,
   setGlobalWaveSurfer,
-  setTrackLoadedLocally,
 } from "../../services/audioService";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import * as engagementService from "../../services/engagement.service";
@@ -229,8 +228,7 @@ function CardWaveform({
           duration: durationFallback > 0 ? durationFallback : undefined,
         });
 
-        setGlobalWaveSurfer(ws);
-        setTrackLoadedLocally(track.id);
+        setGlobalWaveSurfer(ws, track.id);
 
         ws.on("timeupdate", (currentTime: number) => {
           if (timeRef.current) timeRef.current.textContent = fmt(currentTime);
@@ -518,7 +516,9 @@ export default function TrackCard({
       setShowCommentBar(true);
     }
     if (!isActive) {
-      setTrack(track);
+      const dur = parseDur(track.duration);
+      const startTime = dur * ratio;
+      setTrack(track, undefined, startTime);
       setPlayCount(prev => prev + 1); // Optimistic increment
     }
   };
