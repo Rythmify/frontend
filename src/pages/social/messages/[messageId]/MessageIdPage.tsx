@@ -188,57 +188,68 @@ export default function MessageIdPage() {
     return () => { leaveConversation(activeConvId); };
   }, [activeConvId]);
 
-  // ── Socket events ───────────────────────────────────────────────────────────
+ // ── Socket events ─────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+useEffect(() => {
+  const socket = getSocket();
+  if (!socket) return;
 
-    const onReceived = ({ conversationId, message }: { conversationId: string; message: Message }) => {
-      if (conversationId === activeConvId) {
-        setActiveMessages((prev) => [...prev, message]);
-        requestAnimationFrame(scrollToBottom);
-      }
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === conversationId
-            ? { ...c, last_message: message, unread_count: c.unread_count + 1, updated_at: message.created_at }
-            : c,
-        ),
+  const onReceived = ({ conversationId, message }: { conversationId: string; message: Message }) => {
+    if (conversationId === activeConvId) {
+      setActiveMessages((prev) => [...prev, message]);
+      requestAnimationFrame(scrollToBottom);
+      // Mark as read immediately since user is looking at the conversation
+      const activeConv = conversations.find(c => c.id === conversationId);
+      if (activeConv) markConversationRead(activeConv, [message]);
+    }
+    // Always update the sidebar — moves this conversation to top
+    setConversations((prev) => {
+      const updated = prev.map((c) =>
+        c.id === conversationId
+          ? {
+              ...c,
+              last_message: message,
+              unread_count: conversationId === activeConvId ? 0 : c.unread_count + 1,
+              updated_at: message.created_at,
+            }
+          : c,
       );
-    };
-
-    const onRemoved = ({ conversationId, messageId }: { conversationId: string; messageId: string }) => {
-      if (conversationId === activeConvId) {
-        setActiveMessages((prev) => prev.filter((m) => m.id !== messageId));
-      }
-    };
-
-    const onReadUpdated = ({ conversationId, conversationUnreadCount }: { conversationId: string; conversationUnreadCount: number }) => {
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === conversationId ? { ...c, unread_count: conversationUnreadCount } : c,
-        ),
+      // Sort so the most recently updated conversation is first
+      return [...updated].sort(
+        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       );
-    };
+    });
+  };
 
-    const onTyping     = ({ conversationId }: { conversationId: string }) => { if (conversationId === activeConvId) setIsTyping(true);  };
-    const onStopTyping = ({ conversationId }: { conversationId: string }) => { if (conversationId === activeConvId) setIsTyping(false); };
+  const onRemoved = ({ conversationId, messageId }: { conversationId: string; messageId: string }) => {
+    if (conversationId === activeConvId) {
+      setActiveMessages((prev) => prev.filter((m) => m.id !== messageId));
+    }
+  };
 
-    socket.on('message:received',     onReceived);
-    socket.on('message:removed',      onRemoved);
-    socket.on('message:read_updated', onReadUpdated);
-    socket.on('message:typing',       onTyping);
-    socket.on('message:stop_typing',  onStopTyping);
+  const onReadUpdated = ({ conversationId, conversationUnreadCount }: { conversationId: string; conversationUnreadCount: number }) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === conversationId ? { ...c, unread_count: conversationUnreadCount } : c)),
+    );
+  };
 
-    return () => {
-      socket.off('message:received',     onReceived);
-      socket.off('message:removed',      onRemoved);
-      socket.off('message:read_updated', onReadUpdated);
-      socket.off('message:typing',       onTyping);
-      socket.off('message:stop_typing',  onStopTyping);
-    };
-  }, [activeConvId]);
+  const onTyping     = ({ conversationId }: { conversationId: string }) => { if (conversationId === activeConvId) setIsTyping(true);  };
+  const onStopTyping = ({ conversationId }: { conversationId: string }) => { if (conversationId === activeConvId) setIsTyping(false); };
+
+  socket.on('message:received',     onReceived);
+  socket.on('message:removed',      onRemoved);
+  socket.on('message:read_updated', onReadUpdated);
+  socket.on('message:typing',       onTyping);
+  socket.on('message:stop_typing',  onStopTyping);
+
+  return () => {
+    socket.off('message:received',     onReceived);
+    socket.off('message:removed',      onRemoved);
+    socket.off('message:read_updated', onReadUpdated);
+    socket.off('message:typing',       onTyping);
+    socket.off('message:stop_typing',  onStopTyping);
+  };
+}, [activeConvId]); // conversations removed from deps to avoid stale closure issues
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 

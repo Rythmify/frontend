@@ -8,6 +8,7 @@ import { SpamModal } from '../UI/SpamModal'
 import { markMessageReadState } from '@/services/api/messaging/conversationApi'
 import { unblockUser } from '@/services/api/messaging/conversationApi'
 import Tooltip from '@/components/UI/Tooltip'
+import { rejoinConversation } from '@/services/api/messaging/socketService'
 interface ConversationHeaderProps {
   reciepiantId: string
   conversationId: string
@@ -57,6 +58,7 @@ const ConversationHeader = ({
     try {
       await unblockUser(reciepiantId)
       setIsBlocked(false)
+      await rejoinConversation(conversationId)
     } catch {
       // silently fail
     }
