@@ -136,6 +136,30 @@ export interface StationTracksResponse {
   };
 }
 
+export interface MadeForYouTrackItem {
+  id: string;
+  title: string;
+  cover_image: string | null;
+  duration: number | null;
+  genre_name: string | null;
+  play_count: number;
+  like_count: number;
+  repost_count: number;
+  user_id: string;
+  artist_name: string;
+  stream_url: string | null;
+  created_at: string;
+}
+
+export interface MadeForYouResponse {
+  data: {
+    mix_id: string;
+    title: string;
+    cover_url: string | null;
+    tracks: MadeForYouTrackItem[];
+  };
+}
+
 export function formatDuration(totalSeconds: number) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds));
   const hours = Math.floor(safeSeconds / 3600);
@@ -325,6 +349,23 @@ export async function getStationTracks(
     tracks,
     pagination: res.data.pagination,
   };
+}
+
+async function getMadeForYou(kind: "daily" | "weekly") {
+  const res = await axiosInstance.get<MadeForYouResponse>(
+    `/home/made-for-you/${kind}`,
+  );
+  return res.data.data;
+}
+
+/** GET /home/made-for-you/daily */
+export async function getMadeForYouDaily() {
+  return getMadeForYou("daily");
+}
+
+/** GET /home/made-for-you/weekly */
+export async function getMadeForYouWeekly() {
+  return getMadeForYou("weekly");
 }
 
 /** DELETE /playlists/:id/tracks/:trackId — remove a track from a playlist */

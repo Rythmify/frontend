@@ -72,6 +72,7 @@ interface PlaylistHeroProps {
   moreOfLike?: boolean;
   coverImages?: Array<string | null | undefined>;
   isStation?: boolean;
+  isForYou?: boolean;
   colorIndex?: number;
   isMix?: boolean;
 }
@@ -87,6 +88,7 @@ export default function PlaylistHero({
   moreOfLike = false,
   coverImages,
   isStation = false,
+  isForYou = false,
   colorIndex = 0,
   isMix = false,
 }: PlaylistHeroProps) {
@@ -94,15 +96,15 @@ export default function PlaylistHero({
   const { user } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const badge = BADGE_COLORS[colorIndex % BADGE_COLORS.length];
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPreviewUrl(null);
+  }, [playlist.playlist_id]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
-
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  useEffect(() => {
-    setPreviewUrl(null);
-  }, [playlist.playlist_id]);
 
   const heroTitle = moreOfLike
     ? `Related Tracks: ${playlist.tracks[0]?.title ?? "Related Tracks"}`
@@ -122,13 +124,11 @@ export default function PlaylistHero({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const localUrl = URL.createObjectURL(file);
-      setPreviewUrl(localUrl);
+    if (!file) return;
 
-      if (onImageUpload) {
-        void onImageUpload(file);
-      }
+    setPreviewUrl(URL.createObjectURL(file));
+    if (onImageUpload) {
+      void onImageUpload(file);
     }
   };
 
@@ -136,6 +136,7 @@ export default function PlaylistHero({
     <div
       ref={heroRef}
       data-test="playlist-hero"
+      data-for-you={isForYou ? "true" : undefined}
       className="container m-auto px-4 py-6 w-full flex flex-row md:flex-row items-stretch gap-6 relative overflow-hidden"
       style={{
         background:
@@ -173,9 +174,7 @@ export default function PlaylistHero({
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#333] rounded text-[10px] uppercase tracking-wider font-bold text-gray-300">
                     <FaLock size={8} /> Private
                   </span>
-                ) : (
-                  ""
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -201,7 +200,50 @@ export default function PlaylistHero({
       {/* Right Content Section: Cover Art */}
       <div className="hidden md:flex shrink-0 items-center justify-center py-4 z-10">
         <div className="relative group">
-          {coverImages?.some(Boolean) ? (
+          {isForYou ? (
+            <div className="relative w-64 h-64 lg:w-80 lg:h-80 rounded-md overflow-hidden shadow-2xl border border-white/5 bg-input-bg">
+              <img
+                src={
+                  previewUrl ||
+                  coverImages?.[0] ||
+                  playlist.cover_image ||
+                  "https://picsum.photos/seed/playlist/600/600"
+                }
+                alt={playlist.name}
+                className="w-full h-full object-cover transition-all duration-200"
+              />
+
+              <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 opacity-70 z-10">
+                <i className="fa-brands fa-soundcloud text-white text-xs sm:text-base" />
+              </div>
+
+              <div
+                className="w-[90%] absolute left-2 bottom-2 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-sm flex items-baseline gap-1"
+                style={{ backgroundColor: badge.bg }}
+                data-test="for-you-card-badge"
+              >
+                <span
+                  className="text-sm sm:text-lg md:text-xl lg:text-2xl uppercase leading-none text-white"
+                  style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 900,
+                    fontStyle: "italic",
+                  }}
+                >
+                  FOR
+                </span>
+                <span
+                  className="text-sm sm:text-lg md:text-xl lg:text-2xl uppercase leading-none text-white"
+                  style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 900,
+                  }}
+                >
+                  YOU
+                </span>
+              </div>
+            </div>
+          ) : coverImages?.some(Boolean) ? (
             <div className="relative w-64 h-64 lg:w-80 lg:h-80 rounded-md overflow-hidden shadow-2xl border border-white/5 bg-[#0d0d1a]">
               {isStation && (
                 <>
@@ -220,6 +262,7 @@ export default function PlaylistHero({
                   </div>
                 </>
               )}
+
               {isMix && (
                 <div
                   className="absolute left-3 bottom-3 px-2 py-1 rounded-sm flex items-center gap-2 shadow-lg"
@@ -238,9 +281,30 @@ export default function PlaylistHero({
                   </span>
                 </div>
               )}
-              {!isStation && (
+
+              {isForYou && (
+                <div
+                  className="absolute left-3 bottom-3 px-2 py-1 rounded-sm flex items-center gap-2 shadow-lg"
+                  style={{ backgroundColor: badge.bg }}
+                  data-test="for-you-card-badge"
+                >
+                  <span
+                    className="text-sm sm:text-lg md:text-xl lg:text-2xl tracking-widest uppercase leading-none"
+                    style={{
+                      color: badge.text,
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 900,
+                    }}
+                  >
+                    FOR YOU
+                  </span>
+                </div>
+              )}
+
+              {!isStation && !isForYou && (
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.06),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.05),transparent_28%)]" />
               )}
+
               <div className="absolute top-[6%] left-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20">
                 <img
                   src={
@@ -291,7 +355,7 @@ export default function PlaylistHero({
               className="w-64 h-64 lg:w-80 lg:h-80 object-cover shadow-2xl rounded-md border border-white/5"
             />
           )}
-          {/*Show Upload Button*/}
+
           {showUploadButton ? (
             <div className="absolute inset-0 transition-all flex flex-col justify-end items-center pb-4">
               <button

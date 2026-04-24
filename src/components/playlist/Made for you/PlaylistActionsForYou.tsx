@@ -19,6 +19,7 @@ interface PlaylistActionsProps {
   playlist: Playlist & Partial<Pick<PlaylistDetails, "tracks">>;
   initialTracks?: PlaylistTrackItem[];
   isGeneratedPlaylist?: boolean;
+  generatedPlaylistTitle?: string;
   onAddToNextUp?: () => void;
   onPlaylistUpdated?: (updated: Playlist) => void;
   isStation?: boolean;
@@ -28,6 +29,7 @@ export default function PlaylistActions({
   playlist,
   initialTracks,
   isGeneratedPlaylist = false,
+  generatedPlaylistTitle,
   onAddToNextUp,
   onPlaylistUpdated,
   isStation = false,
@@ -194,7 +196,8 @@ export default function PlaylistActions({
               isStation || isGeneratedPlaylist ? undefined : playlist.playlist_id
             }
             trackTitle={
-              isGeneratedPlaylist ? "More of what you like" : playlist.name
+              generatedPlaylistTitle ??
+              (isGeneratedPlaylist ? "More of what you like" : playlist.name)
             }
             initialTracks={initialTracks?.map((track) => ({
               id: track.track_id,
