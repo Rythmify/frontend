@@ -1,12 +1,16 @@
 import type React from "react";
+import { useState } from "react";
 import { useHistoryStore } from "@/stores/history.store";
+import { useLikesStore } from "@/stores/likes.store";
+import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+
 export interface BuzzingPlaylist {
   id: string;
   genre: string;
   cover_image: string | null;
   track_count: number;
 }
-import { useLikesStore } from "@/stores/likes.store";
 
 // ─── Badge colors per genre index ─────────────────────────
 
@@ -37,6 +41,12 @@ export default function GenreCard({
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const { addGenre } = useHistoryStore();
   const liked = isPlaylistLiked(item.id);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const handlePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addGenre(item);
+  };
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -82,40 +92,28 @@ export default function GenreCard({
           </span>
         </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-          <div />
-          <div className="flex items-center justify-center flex-1">
-            <button
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
-              onClick={(e) => { e.stopPropagation(); addGenre(item); }}
-              data-test="button-play"
-            >
-              <i className="fa-solid fa-play text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ml-0.5" />
-            </button>
-          </div>
-          <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button
-              className="flex flex-col items-center gap-0.5 group/btn"
-              data-test={`button-like-genre-${item.id}`}
-              onClick={handleLike}
-            >
-              <i
-                className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`}
-              />
-            </button>
-            {/* <button
-              className="flex flex-col items-center gap-0.5 group/btn"
-              data-test={`button-more-genre-${item.id}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
-            </button> */}
-          </div>
-        </div>
+        <CardOverlay
+          isPlaying={false}
+          onPlay={handlePlay}
+          isLiked={liked}
+          onLike={handleLike}
+          moreMenuItems={[
+            {
+              label: "Add to playlist",
+              iconNode: AddToPlaylistIcon,
+              onClick: () => setShowPlaylistModal(true),
+            },
+          ]}
+        />
       </div>
 
+      {showPlaylistModal && (
+        <AddToPlaylistModal
+          playlistId={item.id}
+          trackTitle={item.genre}
+          onClose={() => setShowPlaylistModal(false)}
+        />
+      )}
     </div>
   );
 }

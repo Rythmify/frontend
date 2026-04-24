@@ -13,7 +13,7 @@ const AlbumsForYou = () => {
       .then((res) => {
         if (res.data.length > 0) setAlbums(res.data);
       })
-      .catch(() => setAlbums(mockAlbumPlaylists));
+      .catch();
   }, []);
 
   return (
