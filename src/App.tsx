@@ -6,7 +6,7 @@ import { router } from "./Router";
 import DevAuthToggle from "./DevAuthToggle";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useAuthStore } from "@/stores/auth.store";
-import { refreshToken } from "@/services/auth.service";
+import { performRefresh } from "@/services/api/axiosInstance";
 
 // Decode a JWT and return its exp field in ms (or null if invalid)
 function getJwtExpiryMs(token: string): number | null {
@@ -30,6 +30,8 @@ function App() {
 
   // Proactively refresh the access token 60 s before it expires so the
   // session stays alive as long as the browser tab is open.
+  // We also subscribe to auth-store changes so the timer starts immediately
+  // after a fresh login (not just on the initial page load).
   useEffect(() => {
     let timerId: ReturnType<typeof setTimeout> | null = null;
 
@@ -40,23 +42,45 @@ function App() {
       if (!token) return;
 
       const expiryMs = getJwtExpiryMs(token);
-      // Refresh 60 s before expiry; if we can't decode, try again in 13 min
+      // Refresh 60 s before expiry; if we can't decode, try again in 2 min
       const delayMs = expiryMs
         ? Math.max(expiryMs - Date.now() - 60_000, 0)
-        : 13 * 60 * 1000;
+        : 2 * 60 * 1000;
 
       timerId = setTimeout(async () => {
         try {
-          await refreshToken(); // saves new token to localStorage internally
-          schedule();           // reschedule for the new token
+          const newToken = await performRefresh();
+          if (newToken) {
+            schedule(); // reschedule for the new token's expiry
+          } else {
+            // Response was 200 but had no token — retry in 30 s
+            timerId = setTimeout(schedule, 30_000);
+          }
         } catch {
-          // Refresh failed — 401 interceptor will handle any following request
+          // Refresh failed transiently — retry in 30 s;
+          // the 401 interceptor will also handle it on the next request
+          timerId = setTimeout(schedule, 30_000);
         }
       }, delayMs);
     };
 
     schedule();
-    return () => { if (timerId) clearTimeout(timerId); };
+
+    // Restart timer whenever the user logs in (isAuthenticated flips to true)
+    let prevAuthenticated = useAuthStore.getState().isAuthenticated;
+    const unsubscribe = useAuthStore.subscribe((state) => {
+      if (state.isAuthenticated && !prevAuthenticated) schedule();
+      else if (!state.isAuthenticated && prevAuthenticated) {
+        if (timerId) clearTimeout(timerId);
+        timerId = null;
+      }
+      prevAuthenticated = state.isAuthenticated;
+    });
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+      unsubscribe();
+    };
   }, []);
 
   return (
