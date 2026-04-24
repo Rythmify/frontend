@@ -456,8 +456,7 @@ export default function PlaylistComponent({
           onClick={handlePlayPause}
           className={`absolute inset-0 flex items-center justify-center transition-background duration-150 ${componentIsPlaying ? 'bg-black/45' : 'bg-transparent hover:bg-black/45'}`}
         >
-          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center shadow-xl transition-opacity duration-150 ${componentIsPlaying ? 'opacity-100' : 'opacity-0'}`}
-            className="play-icon-circle"
+          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center shadow-xl transition-opacity duration-150 play-icon-circle ${componentIsPlaying ? 'opacity-100' : 'opacity-0'}`}
           >
             {componentIsPlaying ? (
               <FaPause className="text-[#111] text-[10px] sm:text-[13px]" />
