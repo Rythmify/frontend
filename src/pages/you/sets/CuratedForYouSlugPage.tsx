@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "../../../components/playlist/Made for you/PlaylistSidebarForYou";
 import PlaylistActions from "../../../components/playlist/Made for you/PlaylistActionsForYou";
@@ -7,48 +7,56 @@ import {
   type PlaylistDetails,
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
-import { getMixTracks } from "@/services/api/discover.service";
-import type { DiscoveryTrack, MixDetailsData } from "@/services/api/discover.service";
+import {
+  getCuratedMixByIdFromHome,
+  type CuratedHomeMixPreview,
+} from "@/services/api/discover.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { useAuthStore } from "@/stores/auth.store";
 import { getUserById, type PublicUser } from "@/services/user.service";
+import { getRelatedTracks } from "@/services/track.service";
+import type { Track } from "@/types/track";
+
 
 // ─── Mapper ──────────────────
 function mixToPlaylistDetails(
-  mix: MixDetailsData,
+  mix: CuratedHomeMixPreview,
+  seedTrack: Track,
+  tracks: Track[],
   userId: string,
 ): PlaylistDetails {
   return {
     playlist_id: mix.mix_id,
     owner_user_id: userId,
-    name: mix.title ?? "Mix",
-    description: null,
+    name: mix.title ?? seedTrack.title ?? "Mix",
+    description: seedTrack.title
+      ? `Related tracks : ${seedTrack.title}`
+      : "Related tracks picked for you",
     is_public: true,
-    cover_image: mix.cover_url ?? null,
-    created_at: mix.tracks[0]?.created_at ?? new Date().toISOString(),
+    cover_image: mix.cover_url ?? seedTrack.coverUrl ?? null,
+    created_at: mix.preview_track.created_at,
     updated_at: null,
-    track_count: mix.tracks.length,
+    track_count: tracks.length,
     like_count: 0,
     repost_count: 0,
-    // We map discovery fields to playlist fields
-    tracks: mix.tracks.map(
-      (t, i) =>
+    tracks: tracks.map(
+      (track, index) =>
         ({
-          track_id: t.id,
-          position: i + 1,
-          added_at: t.created_at,
-          title: t.title,
-          duration: t.duration ?? null,
-          cover_image: t.cover_image ?? null,
-          artist_name: t.artist_name ?? null,
-          artist_id: t.user_id,
-          is_public: true,
+          track_id: track.id,
+          position: index + 1,
+          added_at: track.postedAt,
+          title: track.title,
+          duration: null,
+          cover_image: track.coverUrl || null,
+          artist_name: track.artistName,
+          artist_id: track.artistId || track.artistUsername,
+          is_public: !track.isPrivate,
           deleted_at: null,
-          audio_url: t.stream_url,
-          play_count: t.play_count,
+          audio_url: track.audioUrl,
+          play_count: track.playCount,
         }) as PlaylistTrackItem & { audio_url?: string; play_count?: number },
     ),
   };
@@ -68,7 +76,7 @@ function toFeaturedArtist(user: PublicUser, trackCount: number): MockUser {
 
 // ─── Page ─────────────────────────────────────────────────
 
-function MixForYouSlugPage() {
+function CuratedForYouSlugPage() {
   const { mixSlug } = useParams<{ mixSlug: string }>();
   const user = useAuthStore((state) => state.user);
   const mixId = mixSlug;
@@ -97,32 +105,31 @@ function MixForYouSlugPage() {
       setError(null);
 
       try {
-        const mix = await getMixTracks(mixId);
+        const mix = await getCuratedMixByIdFromHome(mixId);
+
+        if (!mix) {
+          throw new Error("Mix not found.");
+        }
+
+        const { referenceTrack, tracks } = await getRelatedTracks(
+          mix.preview_track.id,
+        );
+
+        if (!tracks.length) {
+          throw new Error("Mix not found.");
+        }
 
         if (cancelled) return;
 
-        setPlaylist(mixToPlaylistDetails(mix, currentUserId));
+        setPlaylist(mixToPlaylistDetails(mix, referenceTrack, tracks, currentUserId));
 
-        const uniqueArtistIds = Array.from(
-          new Set(mix.tracks.map((track) => track.user_id).filter(Boolean)),
-        );
-
-        const fetchedUsers = await Promise.all(
-          uniqueArtistIds.map((id) =>
-            getUserById(id).catch(() => null),
-          ),
-        );
+        const artist = referenceTrack.artistId
+          ? await getUserById(referenceTrack.artistId).catch(() => null)
+          : null;
 
         if (cancelled) return;
 
-        const artists = fetchedUsers
-          .filter((user): user is PublicUser => Boolean(user))
-          .map((user) => {
-            const trackCount = mix.tracks.filter(
-              (track) => track.user_id === user.id,
-            ).length;
-            return toFeaturedArtist(user, trackCount);
-          });
+        const artists = artist ? [toFeaturedArtist(artist, 1)] : [];
 
         setFeaturedArtists(artists);
       } catch (err) {
@@ -275,4 +282,4 @@ function MixForYouSlugPage() {
   );
 }
 
-export default MixForYouSlugPage;
+export default CuratedForYouSlugPage;
