@@ -32,7 +32,6 @@ export default function UsernamePage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showBlock, setShowBlock] = useState(false);
 
-  // Use the profile data hook
   const {
     user,
     profileData,
@@ -46,29 +45,28 @@ export default function UsernamePage() {
     handleSave,
   } = useProfileData(username);
 
-  // Get likes store for owner fallback count
   const likedTracksStoreCount = useLikesStore((s) => s.likedTracks.length);
 
-  // ── Liked tracks ──────────────────────────────────────────────
   const [likedTracks, setLikedTracks] = useState<TrackSummary[]>([]);
   const [likedTracksCount, setLikedTracksCount] = useState(0);
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
   const [profileAlbums, setProfileAlbums] = useState<PlaylistCardData[]>([]);
+  const [profilePlaylists, setProfilePlaylists] = useState<PlaylistCardData[]>(
+    [],
+  );
 
-  // Load liked tracks
+  // ── Liked tracks ──────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
     const loadLikedTracks = async () => {
       try {
         if (isOwner) {
-          const countData = await getMyLikedTracks({ limit: 100 });
-          const data = await getMyLikedTracks({ limit: 3 });
-          const items = Array.isArray(data?.items)
-            ? data.items
-            : Array.isArray(data)
-              ? data
-              : [];
+          const [countData, data] = await Promise.all([
+            getMyLikedTracks({ limit: 100 }),
+            getMyLikedTracks({ limit: 3 }),
+          ]);
+          const items = Array.isArray(data?.items) ? data.items : [];
           const total =
             typeof countData?.meta?.total === "number" &&
             countData.meta.total > 0
@@ -78,16 +76,12 @@ export default function UsernamePage() {
             setLikedTracks(items);
             setLikedTracksCount(total);
           }
-        } else if (username && profileData) {
-          const countData = await getUserLikedTracks(profileData.id, {
-            limit: 100,
-          });
-          const data = await getUserLikedTracks(profileData.id, { limit: 3 });
-          const items = Array.isArray(data?.items)
-            ? data.items
-            : Array.isArray(data)
-              ? data
-              : [];
+        } else if (profileData?.id) {
+          const [countData, data] = await Promise.all([
+            getUserLikedTracks(profileData.id, { limit: 1 }),
+            getUserLikedTracks(profileData.id, { limit: 3 }),
+          ]);
+          const items = Array.isArray(data?.items) ? data.items : [];
           const total =
             typeof countData?.meta?.total === "number" &&
             countData.meta.total > 0
@@ -110,24 +104,21 @@ export default function UsernamePage() {
     return () => {
       cancelled = true;
     };
-  }, [isOwner, username, profileData?.id]);
+  }, [isOwner, profileData?.id]);
 
+  // ── Tracks ────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
     const loadTracks = async () => {
       try {
         if (isOwner) {
-          const ownedTracks = await getMyTracks(1, 100);
-          if (cancelled) return;
-          setProfileTracks(ownedTracks.tracks);
-          return;
+          const { tracks } = await getMyTracks(1, 100);
+          if (!cancelled) setProfileTracks(tracks);
+        } else if (profileData?.id) {
+          const { tracks } = await getUserTracks(profileData.id, 1, 3);
+          if (!cancelled) setProfileTracks(tracks);
         }
-
-        if (!profileData?.id) return;
-        const publicTracks = await getUserTracks(profileData.id, 1, 100);
-        if (cancelled) return;
-        setProfileTracks(publicTracks.tracks);
       } catch (error) {
         console.error(error);
         if (!cancelled) setProfileTracks([]);
@@ -140,10 +131,14 @@ export default function UsernamePage() {
     };
   }, [isOwner, profileData?.id]);
 
+  // ── Albums & playlists ────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
-    const mapPlaylistToCard = (playlist: Playlist): PlaylistCardData => ({
+    const mapToCard = (
+      playlist: Playlist,
+      isAlbum: boolean,
+    ): PlaylistCardData => ({
       id: playlist.playlist_id,
       title: playlist.name,
       owner: profileData?.display_name || user.displayName,
@@ -152,10 +147,10 @@ export default function UsernamePage() {
       coverUrl: playlist.cover_image ?? null,
       isPrivate: !playlist.is_public,
       isLiked: playlist.like_count > 0,
-      isAlbumView: true,
+      isAlbumView: isAlbum,
     });
 
-    const loadAlbums = async () => {
+    const loadPlaylists = async () => {
       try {
         const ownerId = isOwner ? activeUser.id : profileData?.id;
         if (!ownerId) return;
@@ -165,31 +160,35 @@ export default function UsernamePage() {
         });
         if (cancelled) return;
 
-        const albumItems = (res.data.items ?? []).filter(
-          (playlist) => playlist.is_album_view || playlist.subtype === "album",
+        const items: Playlist[] = res.data.items ?? [];
+
+        const albums = items.filter(
+          (p) =>
+            p.subtype === "album" ||
+            p.subtype === "ep" ||
+            p.subtype === "single" ||
+            p.subtype === "compilation",
         );
-        setProfileAlbums(albumItems.map(mapPlaylistToCard));
+        const playlists = items.filter((p) => p.subtype === "playlist");
+
+        setProfileAlbums(albums.map((p) => mapToCard(p, true)));
+        setProfilePlaylists(playlists.map((p) => mapToCard(p, false)));
       } catch (error) {
         console.error(error);
-        if (!cancelled) setProfileAlbums([]);
+        if (!cancelled) {
+          setProfileAlbums([]);
+          setProfilePlaylists([]);
+        }
       }
     };
 
-    loadAlbums();
+    loadPlaylists();
     return () => {
       cancelled = true;
     };
-  }, [
-    isOwner,
-    activeUser.id,
-    profileData?.id,
-    profileData?.display_name,
-    profileData?.username,
-    user.displayName,
-    user.username,
-  ]);
+  }, [isOwner, activeUser.id, profileData?.id]);
 
-  // Map liked tracks for sidebar
+  // ── Sidebar mappings ──────────────────────────────────────
   const likedTracksMapped = (Array.isArray(likedTracks) ? likedTracks : []).map(
     (t) => ({
       id: t.id,
@@ -201,7 +200,6 @@ export default function UsernamePage() {
     }),
   );
 
-  // Map followers/following for sidebar
   const followingMapped = following.map((u) => ({
     userId: u.id,
     username: u.username ?? u.id,
@@ -222,7 +220,7 @@ export default function UsernamePage() {
     isVerified: u.is_verified,
   }));
 
-  // Get active tab
+  // ── Tab routing ───────────────────────────────────────────
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.endsWith("/tracks")) return "Tracks";
@@ -234,12 +232,15 @@ export default function UsernamePage() {
   };
 
   const selectedTab = getActiveTab();
-
-  const handleTabChangeWrapper = (tab: string) => {
+  const handleTabChangeWrapper = (tab: string) =>
     handleTabChange(tab, navigate);
-  };
 
-  // Loading state
+  const hasContent =
+    profileTracks.length > 0 ||
+    profileAlbums.length > 0 ||
+    profilePlaylists.length > 0;
+
+  // ── Loading guard ─────────────────────────────────────────
   if (isLoadingProfile && !isOwner && !profileData) {
     return (
       <div className="container px-4 md:px-8 lg:px-20 flex items-center justify-center py-32">
@@ -272,29 +273,22 @@ export default function UsernamePage() {
 
       <div className="flex gap-6 py-6 items-start">
         <div className="flex-1 min-w-0">
-          {profileTracks.length > 0 || profileAlbums.length > 0 ? (
+          {hasContent ? (
             <div className="flex flex-col gap-8">
+              {/* Tracks */}
               {profileTracks.length > 0 && (
                 <section className="flex flex-col gap-3">
-                  <h2
-                    style={{
-                      color: "#fff",
-                      fontSize: 18,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Tracks
-                  </h2>
+                  <h2 className="text-white text-lg font-bold">Tracks</h2>
                   <div className="flex flex-col gap-4">
                     {profileTracks.map((t) => (
                       <TrackCard
                         key={t.id}
                         track={t}
-                        onCopyLink={() => {
+                        onCopyLink={() =>
                           navigator.clipboard.writeText(
                             `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`,
-                          );
-                        }}
+                          )
+                        }
                         onEdit={() =>
                           navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)
                         }
@@ -314,22 +308,31 @@ export default function UsernamePage() {
                 </section>
               )}
 
+              {/* Albums */}
               {profileAlbums.length > 0 && (
                 <section className="flex flex-col gap-3">
-                  <h2
-                    style={{
-                      color: "#fff",
-                      fontSize: 18,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Albums
-                  </h2>
+                  <h2 className="text-white text-lg font-bold">Albums</h2>
                   <div className="flex gap-4 overflow-x-auto pb-1">
                     {profileAlbums.map((album) => (
                       <PlaylistCard
                         key={album.id}
                         item={album}
+                        widthClassName="w-[180px] sm:w-[200px] md:w-[220px]"
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Playlists */}
+              {profilePlaylists.length > 0 && (
+                <section className="flex flex-col gap-3">
+                  <h2 className="text-white text-lg font-bold">Playlists</h2>
+                  <div className="flex gap-4 overflow-x-auto pb-1">
+                    {profilePlaylists.map((playlist) => (
+                      <PlaylistCard
+                        key={playlist.id}
+                        item={playlist}
                         widthClassName="w-[180px] sm:w-[200px] md:w-[220px]"
                       />
                     ))}
@@ -392,9 +395,7 @@ export default function UsernamePage() {
         <EditProfileModal
           user={user}
           onClose={() => setShowEdit(false)}
-          onSave={(data) => {
-            handleSave(data, () => setShowEdit(false));
-          }}
+          onSave={(data) => handleSave(data, () => setShowEdit(false))}
         />
       )}
 
@@ -408,9 +409,7 @@ export default function UsernamePage() {
             }
             userId={profileData.id}
             onClose={() => setShowBlock(false)}
-            onBlocked={() => {
-              setShowBlock(false);
-            }}
+            onBlocked={() => setShowBlock(false)}
           />
         </Modal>
       )}

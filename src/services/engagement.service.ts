@@ -1,7 +1,6 @@
 import axiosInstance from "./api/axiosInstance";
 import type { TrackSummary, ListMeta } from "./api/discover.service";
 import type { Playlist } from "./api/playlist/playlist.service";
-import type { Track } from "@/types/track";
 
 /**
  * Rythmify Engagement Service
@@ -10,33 +9,21 @@ import type { Track } from "@/types/track";
 
 // ─── Track Engagement ─────────────────────────────────────────────────────────
 
-/**
- * POST /tracks/{track_id}/like
- */
 export async function likeTrack(trackId: string | number) {
   const { data } = await axiosInstance.post(`/tracks/${trackId}/like`);
   return data;
 }
 
-/**
- * DELETE /tracks/{track_id}/like
- */
 export async function unlikeTrack(trackId: string | number) {
   const { data } = await axiosInstance.delete(`/tracks/${trackId}/like`);
   return data;
 }
 
-/**
- * POST /tracks/{track_id}/repost
- */
 export async function repostTrack(trackId: string | number) {
   const { data } = await axiosInstance.post(`/tracks/${trackId}/repost`);
   return data;
 }
 
-/**
- * DELETE /tracks/{track_id}/repost
- */
 export async function removeRepost(trackId: string | number) {
   const { data } = await axiosInstance.delete(`/tracks/${trackId}/repost`);
   return data;
@@ -45,7 +32,8 @@ export async function removeRepost(trackId: string | number) {
 // ─── Liked Content Fetching ───────────────────────────────────────────────────
 
 /**
- * GET /me/liked-tracks — paginated list of tracks the user has liked
+ * GET /me/liked-tracks
+ * Owner only — no public equivalent exists in the API.
  */
 export async function getMyLikedTracks(params?: {
   limit?: number;
@@ -55,13 +43,15 @@ export async function getMyLikedTracks(params?: {
     data: { items: any[]; pagination: any };
   }>("/me/liked-tracks", { params });
   return {
-    data: res.data.data.items,
-    pagination: res.data.data.pagination,
+    data: res.data.data.items ?? [],
+    pagination: res.data.data.pagination ?? { limit: 0, offset: 0, total: 0 },
   };
 }
 
 /**
- * GET /me/reposted-tracks — paginated list of tracks the user has reposted
+ * GET /me/reposted-tracks
+ * Owner only — the API has no GET /users/{userId}/reposts endpoint.
+ * Do not add a getUserRepostedTracks equivalent; it will 404.
  */
 export async function getMyRepostedTracks(params?: {
   limit?: number;
@@ -71,13 +61,13 @@ export async function getMyRepostedTracks(params?: {
     data: { items: any[]; pagination: any };
   }>("/me/reposted-tracks", { params });
   return {
-    data: res.data.data.items,
-    pagination: res.data.data.pagination,
+    data: res.data.data.items ?? [],
+    pagination: res.data.data.pagination ?? { limit: 0, offset: 0, total: 0 },
   };
 }
 
 /**
- * GET /me/liked-playlists — paginated list of playlists the user has liked
+ * GET /me/liked-playlists
  */
 export async function getMyLikedPlaylistsApi(params?: {
   limit?: number;
@@ -88,40 +78,28 @@ export async function getMyLikedPlaylistsApi(params?: {
     message: string;
   }>("/me/liked-playlists", { params });
   return {
-    data: res.data.data.items,
-    total: res.data.data.meta.total,
+    data: res.data.data.items ?? [],
+    total: res.data.data.meta?.total ?? 0,
   };
 }
 
 // ─── Playlist Engagement ──────────────────────────────────────────────────────
 
-/**
- * POST /playlists/{playlist_id}/like
- */
 export async function likePlaylist(playlistId: string | number) {
   const { data } = await axiosInstance.post(`/playlists/${playlistId}/like`);
   return data;
 }
 
-/**
- * DELETE /playlists/{playlist_id}/like
- */
 export async function unlikePlaylist(playlistId: string | number) {
   const { data } = await axiosInstance.delete(`/playlists/${playlistId}/like`);
   return data;
 }
 
-/**
- * POST /playlists/{playlist_id}/repost
- */
 export async function repostPlaylist(playlistId: string | number) {
   const { data } = await axiosInstance.post(`/playlists/${playlistId}/repost`);
   return data;
 }
 
-/**
- * DELETE /playlists/{playlist_id}/repost
- */
 export async function removePlaylistRepost(playlistId: string | number) {
   const { data } = await axiosInstance.delete(
     `/playlists/${playlistId}/repost`,
@@ -131,36 +109,17 @@ export async function removePlaylistRepost(playlistId: string | number) {
 
 // ─── Comment Engagement ───────────────────────────────────────────────────────
 
-/**
- * POST /comments/{comment_id}/like
- */
 export async function likeComment(commentId: string | number) {
   const { data } = await axiosInstance.post(`/comments/${commentId}/like`);
   return data;
 }
 
-/**
- * DELETE /comments/{comment_id}/like
- */
 export async function unlikeComment(commentId: string | number) {
   const { data } = await axiosInstance.delete(`/comments/${commentId}/like`);
   return data;
 }
 
-/**
- * DELETE /comments/{comment_id}
- */
 export async function deleteComment(commentId: string | number) {
   const { data } = await axiosInstance.delete(`/comments/${commentId}`);
-  return data;
-}
-
-export async function getUserRepostedTracks(
-  userId: string,
-  params?: { limit?: number; offset?: number },
-): Promise<{ data: Track[] }> {
-  const { data } = await axiosInstance.get(`/users/${userId}/reposts`, {
-    params,
-  });
   return data;
 }

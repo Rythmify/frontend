@@ -15,15 +15,6 @@ import {
 } from "@/services/user.service";
 import type { User } from "@/stores/auth.store";
 
-const profileTracksCountCache = new Map<string, number>();
-
-function getProfileCacheKey(
-  currentUser: User | null,
-  username: string | undefined,
-): string {
-  return username || currentUser?.id || "";
-}
-
 export interface ProfileStats {
   followers: number;
   following: number;
@@ -68,7 +59,6 @@ export function useProfileData(
   username: string | undefined,
 ): ProfileDataResult {
   const { user: currentUser, setUser } = useAuthStore();
-  const cacheKey = getProfileCacheKey(currentUser, username);
 
   const isOwner = !username || username === currentUser?.username;
   const activeUser = currentUser!;
@@ -81,7 +71,7 @@ export function useProfileData(
   const [stats, setStats] = useState<ProfileStats>({
     followers: 0,
     following: 0,
-    tracks: profileTracksCountCache.get(cacheKey) ?? 0,
+    tracks: 0,
   });
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -134,7 +124,6 @@ export function useProfileData(
           following: followingResult.total,
           tracks: ownedTracks.total,
         });
-        profileTracksCountCache.set(activeUser.id, ownedTracks.total);
 
         // Sync auth store
         const latestUser = useAuthStore.getState().user ?? currentUser;
@@ -176,7 +165,7 @@ export function useProfileData(
 
   // ── Non-owner load ────────────────────────────────────────
   useEffect(() => {
-    if (isOwner || !username || !currentUser) return;
+    if (isOwner || !username) return;
     let cancelled = false;
     setIsLoadingProfile(true);
 
@@ -214,7 +203,6 @@ export function useProfileData(
           following: profile.following_count,
           tracks: tracksTotal,
         });
-        profileTracksCountCache.set(userId, tracksTotal);
 
         if (followersRes.status === "fulfilled") {
           setFollowers(followersRes.value.items);

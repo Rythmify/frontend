@@ -92,6 +92,7 @@ export default function TracksPage() {
         onTabChange={(tab) => handleTabChange(tab, navigate)}
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
+        profileId={profileData?.id}
         followers={followersMapped}
         following={followingMapped}
         stats={stats}

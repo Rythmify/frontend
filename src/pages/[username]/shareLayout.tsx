@@ -7,7 +7,6 @@ import { useState, useEffect } from "react";
 import {
   getMyLikedTracks,
   getUserLikedTracks,
-  getUserByUsername,
 } from "@/services/user.service";
 
 interface ShareLayoutProps {
@@ -93,14 +92,13 @@ export default function ShareLayout({
           );
           setLikedTracksCount(countData?.meta?.total ?? items.length);
         } else {
-          // getUserByUsername: GET /search?type=users&q=:username → GET /users/:id
-          // We only need the id, so we resolve once then fetch liked tracks.
-          const profile = await getUserByUsername(user.username);
+          const userId = profileId;
+          if (!userId) return;
           if (cancelled) return;
 
           const [countData, data] = await Promise.all([
-            getUserLikedTracks(profile.id, { limit: 100 }),
-            getUserLikedTracks(profile.id, { limit: 3 }),
+            getUserLikedTracks(userId, { limit: 1 }),
+            getUserLikedTracks(userId, { limit: 3 }),
           ]);
           if (cancelled) return;
 
@@ -129,7 +127,7 @@ export default function ShareLayout({
     return () => {
       cancelled = true;
     };
-  }, [isOwner, user.username]);
+  }, [isOwner, profileId, user.username]);
 
   return (
     <div className="container px-4 md:px-8 lg:px-20">
