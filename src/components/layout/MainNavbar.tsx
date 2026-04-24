@@ -4,6 +4,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useNotificationStore } from '@/stores/notification.store';
 import { Bell, Mail, ChevronDown, MoreHorizontal, Menu, X, Search } from "lucide-react";
 import { disconnectSocket } from '@/services/api/messaging/socketService';
+import { usePlayerStore } from '@/stores/player.store';
+import { audio } from '@/services/audioService';
 import NotificationCard from '@/components/notificationsComponents/notificationCard';
 import { fetchNotifications, type Notification } from '@/services/api/notifications/notificationsAPI';
 import { fetchConversations, type Conversation } from '@/services/api/messaging/conversationApi';
@@ -12,6 +14,7 @@ import { useMessagingStore } from '@/stores/messaging.store';
 
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
+  const resetPlayer = usePlayerStore((s) => s.reset);
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
   const { unreadCount: unreadMessages, fetchUnreadCount: fetchUnreadMessages, refreshUnreadCount: refreshUnreadMessages, setupSocketListeners, teardownSocketListeners } = useMessagingStore();
   const navigate = useNavigate();
@@ -125,6 +128,9 @@ const MainNavbar = () => {
 
   const handleSignOut = () => {
     disconnectSocket();
+    audio.pause();
+    audio.src = "";
+    resetPlayer();
     logout();
     navigate("/logout");
   };

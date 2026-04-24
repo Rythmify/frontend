@@ -26,7 +26,7 @@ const styles = {
   arrowButton: `
   hidden sm:flex
   absolute top-[55%] -translate-y-1/1
-  z-10
+  z-50
   w-8 h-8 shrink-0
   rounded-full
   bg-input-bg
