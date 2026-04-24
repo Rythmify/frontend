@@ -5,7 +5,9 @@ import FollowingPage from "@/pages/you/following/FollowingPage";
 const mockNavigate = vi.fn();
 const mockGetFollowing = vi.fn();
 const mockGetUserById = vi.fn();
+const mockGetFollowStatus = vi.fn();
 const mockResolveUsername = vi.fn();
+const mockGetUserByUsername = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -19,6 +21,8 @@ vi.mock("@/stores/auth.store", () => ({
 vi.mock("@/services/user.service", () => ({
   getFollowing: (...args: unknown[]) => mockGetFollowing(...args),
   getUserById: (...args: unknown[]) => mockGetUserById(...args),
+  getFollowStatus: (...args: unknown[]) => mockGetFollowStatus(...args),
+  getUserByUsername: (...args: unknown[]) => mockGetUserByUsername(...args),
   resolveUsername: (...args: unknown[]) => mockResolveUsername(...args),
 }));
 
@@ -43,6 +47,25 @@ describe("FollowingPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockResolveUsername.mockResolvedValue("resolved-user-id");
+    mockGetUserByUsername.mockImplementation(async (username: string) => ({
+      id: `${username}-id`,
+      username,
+      display_name: username,
+      bio: null,
+      location: null,
+      gender: null,
+      role: "artist",
+      profile_picture: "",
+      cover_photo: null,
+      is_private: false,
+      is_verified: false,
+      followers_count: 0,
+      following_count: 0,
+      created_at: new Date().toISOString(),
+    }));
+    mockGetFollowStatus.mockImplementation(async (id: string) => ({
+      is_following: id === "artist1" || id === "artist2",
+    }));
     mockGetFollowing.mockResolvedValue({
       items: [
         {
@@ -141,13 +164,13 @@ describe("FollowingPage", () => {
   it("navigates to likes page on Likes tab click (owner)", () => {
     render(<FollowingPage />);
     fireEvent.click(screen.getByTestId("following-tab-likes"));
-    expect(mockNavigate).toHaveBeenCalledWith("/you/likes");
+    expect(mockNavigate).toHaveBeenCalledWith("/me/likes");
   });
 
   it("navigates to followers page on Followers tab click (owner)", () => {
     render(<FollowingPage />);
     fireEvent.click(screen.getByTestId("following-tab-followers"));
-    expect(mockNavigate).toHaveBeenCalledWith("/you/follower");
+    expect(mockNavigate).toHaveBeenCalledWith("/me/follower");
   });
 
   it("navigates to likes page on Likes tab click (non-owner)", () => {
@@ -174,6 +197,12 @@ describe("FollowingPage", () => {
       await screen.findByTestId("following-avatar-artist1"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("following-avatar-artist2")).toBeInTheDocument();
+    expect(screen.getByTestId("follow-button-artist1")).toHaveTextContent(
+      "Following",
+    );
+    expect(screen.getByTestId("follow-button-artist2")).toHaveTextContent(
+      "Following",
+    );
   });
 
   it("renders non-owner following list", async () => {
@@ -227,7 +256,7 @@ describe("FollowingPage", () => {
     render(<FollowingPage />);
     expect(
       await screen.findByTestId("following-count-artist1"),
-    ).toHaveTextContent("500000 followers");
+    ).toHaveTextContent("500.0K followers");
   });
 
   it("renders empty following list for non-owner with no data", async () => {

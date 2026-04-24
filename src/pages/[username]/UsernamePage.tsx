@@ -39,6 +39,7 @@ export default function UsernamePage() {
     followers,
     following,
     isOwner,
+    isFollowing,
     activeUser,
     isLoadingProfile,
     handleTabChange,
@@ -208,6 +209,7 @@ export default function UsernamePage() {
     followers: u.followers_count,
     tracks: 0,
     isVerified: u.is_verified,
+    isFollowing: u.isFollowing,
   }));
 
   const followersMapped = followers.map((u) => ({
@@ -254,6 +256,7 @@ export default function UsernamePage() {
       <ProfileHeader user={user} isOwner={isOwner} />
       <ProfileTabs
         isOwner={isOwner}
+        isFollowing={isFollowing}
         selectedTab={selectedTab}
         onTabChange={handleTabChangeWrapper}
         onShare={() => setShowShare(true)}

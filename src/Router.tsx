@@ -327,7 +327,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: "following",
-                element: <Lazy component={FollowingPage} />,
+                element: <Lazy component={YouFollowingPage} />,
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
