@@ -263,7 +263,6 @@ export default function FollowingPage() {
                   <FollowButton
                     username={u.username}
                     userId={u.userId}
-                    initialIsFollowing={true}
                     onFollowChange={(next) => {
                       if (isOwner && !next) {
                         setFollowing((prev) =>
