@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import ProfileHeader from "../../components/Profile/ProfileHeader/ProfileHeader";
 import ProfileTabs from "../../components/Profile/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideBar";
-import { useAuthStore } from "@/stores/auth.store";
+import { useLikesStore } from "@/stores/likes.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
 import { Modal } from "@/components/UI/Modal";
@@ -11,64 +11,114 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
 import type { Track } from "../../types/track";
-import { getMyLikedTracks } from "@/services/user.service";
+import { getMyLikedTracks, getUserLikedTracks } from "@/services/user.service";
+import { useProfileData } from "@/services/hooks/useProfileData";
+import type { TrackSummary } from "@/services/user.service";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
+import PlaylistCard, {
+  type PlaylistCardData,
+} from "@/components/UI/PlaylistCard/PlaylistCard";
 import {
-  getMyProfile,
-  getUserById,
-  getFollowers,
-  getFollowing,
-  getFollowStatus,
-  resolveUsername,
-  updateMyProfile,
-  type OwnUser,
-  type PublicUser,
-  type UserSummary,
-} from "@/services/user.service";
+  getPlaylistsByUser,
+  type Playlist,
+} from "@/services/api/playlist/playlist.service";
 
 export default function UsernamePage() {
   const { username } = useParams();
-  const { user: currentUser, setUser } = useAuthStore();
-  const [showShare, setShowShare] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
-  const [showBlock, setShowBlock] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
-    null,
-  );
-  const [followers, setFollowers] = useState<UserSummary[]>([]);
-  const [following, setFollowing] = useState<UserSummary[]>([]);
-  const [stats, setStats] = useState({ followers: 0, following: 0, tracks: 0 });
-  const [profileTracks, setProfileTracks] = useState<Track[]>([]);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [isBlocked, setIsBlocked] = useState(false);
-  const initiallyFollowing = useRef<boolean | null>(null);
-  const currentUserId = currentUser?.id;
-  const currentUsername = currentUser?.username;
-  const isOwner =
-    !!currentUser && (!username || username === currentUser.username);
+  const [showShare, setShowShare] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showBlock, setShowBlock] = useState(false);
 
+  const {
+    user,
+    profileData,
+    stats,
+    followers,
+    following,
+    isOwner,
+    activeUser,
+    isLoadingProfile,
+    handleTabChange,
+    handleSave,
+  } = useProfileData(username);
+
+  const likedTracksStoreCount = useLikesStore((s) => s.likedTracks.length);
+
+  const [likedTracks, setLikedTracks] = useState<TrackSummary[]>([]);
+  const [likedTracksCount, setLikedTracksCount] = useState(0);
+  const [profileTracks, setProfileTracks] = useState<Track[]>([]);
+  const [profileAlbums, setProfileAlbums] = useState<PlaylistCardData[]>([]);
+  const [profilePlaylists, setProfilePlaylists] = useState<PlaylistCardData[]>(
+    [],
+  );
+
+  // ── Liked tracks ──────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLikedTracks = async () => {
+      try {
+        if (isOwner) {
+          const [countData, data] = await Promise.all([
+            getMyLikedTracks({ limit: 100 }),
+            getMyLikedTracks({ limit: 3 }),
+          ]);
+          const items = Array.isArray(data?.items) ? data.items : [];
+          const total =
+            typeof countData?.meta?.total === "number" &&
+            countData.meta.total > 0
+              ? countData.meta.total
+              : items.length;
+          if (!cancelled) {
+            setLikedTracks(items);
+            setLikedTracksCount(total);
+          }
+        } else if (profileData?.id) {
+          const [countData, data] = await Promise.all([
+            getUserLikedTracks(profileData.id, { limit: 1 }),
+            getUserLikedTracks(profileData.id, { limit: 3 }),
+          ]);
+          const items = Array.isArray(data?.items) ? data.items : [];
+          const total =
+            typeof countData?.meta?.total === "number" &&
+            countData.meta.total > 0
+              ? countData.meta.total
+              : items.length;
+          if (!cancelled) {
+            setLikedTracks(items);
+            setLikedTracksCount(total);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setLikedTracks([]);
+          setLikedTracksCount(0);
+        }
+      }
+    };
+
+    loadLikedTracks();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner, profileData?.id]);
+
+  // ── Tracks ────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
     const loadTracks = async () => {
       try {
         if (isOwner) {
-          const ownedTracks = await getMyTracks(1, 100);
-          if (cancelled) return;
-          setProfileTracks(ownedTracks);
-          setStats((prev) => ({ ...prev, tracks: ownedTracks.length }));
-          return;
+          const { tracks } = await getMyTracks(1, 100);
+          if (!cancelled) setProfileTracks(tracks);
+        } else if (profileData?.id) {
+          const { tracks } = await getUserTracks(profileData.id, 1, 3);
+          if (!cancelled) setProfileTracks(tracks);
         }
-
-        if (!username) return;
-        const userId = await resolveUsername(username);
-        const publicTracks = await getUserTracks(userId, 1, 3);
-        if (cancelled) return;
-        setProfileTracks(publicTracks);
-        setStats((prev) => ({ ...prev, tracks: publicTracks.length }));
       } catch (error) {
         console.error(error);
         if (!cancelled) setProfileTracks([]);
@@ -76,182 +126,86 @@ export default function UsernamePage() {
     };
 
     loadTracks();
-
     return () => {
       cancelled = true;
     };
-  }, [isOwner, username]);
+  }, [isOwner, profileData?.id]);
 
+  // ── Albums & playlists ────────────────────────────────────
   useEffect(() => {
-    if (!currentUser) return;
+    let cancelled = false;
 
-    if (isOwner) {
-      getMyProfile()
-        .then((profile) => {
-          setProfileData(profile);
-          setStats((prev) => ({
-            ...prev,
-            followers: profile.followers_count,
-            following: profile.following_count,
-          }));
-          const latestUser = useAuthStore.getState().user ?? currentUser;
-          setUser({
-            ...latestUser,
-            bio: profile.bio || "",
-            avatar: profile.profile_picture ?? latestUser.avatar,
-            coverUrl: profile.cover_photo ?? latestUser.coverUrl,
-            location:
-              [(profile as OwnUser).city, (profile as OwnUser).country]
-                .filter(Boolean)
-                .join(", ") || latestUser.location,
-          });
-        })
-        .catch(console.error);
+    const mapToCard = (
+      playlist: Playlist,
+      isAlbum: boolean,
+    ): PlaylistCardData => ({
+      id: playlist.playlist_id,
+      title: playlist.name,
+      owner: profileData?.display_name || user.displayName,
+      ownerUsername: profileData?.username || user.username,
+      slug: playlist.slug ?? undefined,
+      coverUrl: playlist.cover_image ?? null,
+      isPrivate: !playlist.is_public,
+      isLiked: playlist.like_count > 0,
+      isAlbumView: isAlbum,
+    });
 
-      if (currentUserId) {
-        getFollowers(currentUserId, { limit: 100 })
-          .then((res) => {
-            setFollowers(res.items);
-            setStats((s) => ({ ...s, followers: res.meta.total }));
-          })
-          .catch(console.error);
-        getFollowing(currentUserId, { limit: 100 })
-          .then((res) => {
-            setFollowing(res.items);
-            setStats((s) => ({ ...s, following: res.meta.total }));
-          })
-          .catch(console.error);
-        getFollowing(currentUserId, { limit: 100 })
-          .then((res) => {
-            setFollowing(res.items);
-            setStats((s) => ({ ...s, following: res.meta.total }));
+    const loadPlaylists = async () => {
+      try {
+        const ownerId = isOwner ? activeUser.id : profileData?.id;
+        if (!ownerId) return;
 
-            // Seed store so FollowButton knows who is already followed
-            const { user: storeUser, setUser: storeSetUser } =
-              useAuthStore.getState();
-            if (storeUser) {
-              const existingIds = new Set(storeUser.following_ids);
-              const newIds = res.items
-                .map((u) => u.id)
-                .filter((id) => !existingIds.has(id));
-              if (newIds.length > 0) {
-                storeSetUser({
-                  ...storeUser,
-                  following_ids: [...storeUser.following_ids, ...newIds],
-                });
-              }
-            }
-          })
-          .catch(console.error);
+        const res = await getPlaylistsByUser(ownerId, activeUser.id, {
+          limit: 100,
+        });
+        if (cancelled) return;
+
+        const items: Playlist[] = res.data.items ?? [];
+
+        const albums = items.filter(
+          (p) =>
+            p.subtype === "album" ||
+            p.subtype === "ep" ||
+            p.subtype === "single" ||
+            p.subtype === "compilation",
+        );
+        const playlists = items.filter((p) => p.subtype === "playlist");
+
+        setProfileAlbums(albums.map((p) => mapToCard(p, true)));
+        setProfilePlaylists(playlists.map((p) => mapToCard(p, false)));
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setProfileAlbums([]);
+          setProfilePlaylists([]);
+        }
       }
-    } else {
-      if (!username) {
-        return;
-      }
-
-      resolveUsername(username)
-        .then((userId) => getUserById(userId))
-        .then((profile) => {
-          setProfileData(profile);
-          console.log('profile id:', profile.id)
-          setStats({
-            followers: profile.followers_count,
-            following: profile.following_count,
-            tracks: 0,
-          });
-        })
-        .catch(console.error);
-    }
-  }, [username, isOwner, currentUserId, currentUsername, setUser]);
-
-  useEffect(() => {
-    if (!isOwner && profileData) {
-      getFollowers(profileData.id, { limit: 100 })
-        .then((res) => setFollowers(res.items))
-        .catch(console.error);
-
-      getFollowing(profileData.id, { limit: 100 })
-        .then((res) => {
-          setFollowing(res.items);
-          setStats((s) => ({ ...s, following: res.meta.total }));
-        })
-        .catch(console.error);
-
-      getFollowStatus(profileData.id)
-        .then((status) => {
-          setIsFollowing(status.is_following);
-          setIsBlocked(status.is_blocking ?? false);
-          initiallyFollowing.current = status.is_following;
-        })
-        .catch(console.error);
-    }
-  }, [profileData?.id, isOwner]);
-
-  useEffect(() => {
-    if (!isOwner && profileData) {
-      const nowFollowing =
-        currentUser?.following_ids?.includes(profileData.id) ?? false;
-      setIsFollowing(nowFollowing);
-    }
-  }, [currentUser?.following_ids, profileData?.id, isOwner]);
-
-  const getActiveTab = () => {
-    const path = location.pathname;
-    if (path.endsWith("/tracks")) return "Tracks";
-    if (path.endsWith("/popular-tracks")) return "Popular tracks";
-    if (path.endsWith("/albums")) return "Albums";
-    if (path.endsWith("/sets")) return "Playlists";
-    if (path.endsWith("/reposts")) return "Reposts";
-    return "All";
-  };
-
-  const selectedTab = getActiveTab();
-  const likedTracks: {
-    id: string;
-    title: string;
-    artist: string;
-    coverUrl?: string;
-  }[] = [];
-
-  const handleTabChange = (tab: string) => {
-    const targetUsername = isOwner
-      ? (currentUser?.username ?? "")
-      : username || "";
-    const tabRoutes: Record<string, string> = {
-      All: `/${targetUsername}`,
-      "Popular tracks": `/${targetUsername}/popular-tracks`,
-      Tracks: `/${targetUsername}/tracks`,
-      Albums: `/${targetUsername}/albums`,
-      Playlists: `/${targetUsername}/sets`,
-      Reposts: `/${targetUsername}/reposts`,
     };
-    const route = tabRoutes[tab];
-    if (route) navigate(route);
-  };
 
-  if (!currentUser) return null;
+    loadPlaylists();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner, activeUser.id, profileData?.id]);
 
-  const displayedStats = stats;
-
-  const user = isOwner
-    ? currentUser
-    : {
-        ...currentUser,
-        username: profileData?.username || username || currentUser.username,
-        displayName:
-          profileData?.display_name || username || currentUser.username,
-        bio: profileData?.bio || "",
-        avatar: profileData?.profile_picture || "",
-        coverUrl: profileData?.cover_photo || "",
-        location: (profileData as PublicUser | null)?.location || "",
-      };
+  // ── Sidebar mappings ──────────────────────────────────────
+  const likedTracksMapped = (Array.isArray(likedTracks) ? likedTracks : []).map(
+    (t) => ({
+      id: t.id,
+      title: t.title,
+      artist: t.artist_name,
+      coverUrl: t.cover_image ?? undefined,
+      plays: t.play_count,
+      likes: t.like_count,
+    }),
+  );
 
   const followingMapped = following.map((u) => ({
     userId: u.id,
     username: u.username ?? u.id,
     displayName: u.display_name,
     avatar: u.profile_picture ?? "",
-    followers: 0,
+    followers: u.followers_count,
     tracks: 0,
     isVerified: u.is_verified,
   }));
@@ -266,62 +220,126 @@ export default function UsernamePage() {
     isVerified: u.is_verified,
   }));
 
-  console.log('profileData:', profileData?.id)
+  // ── Tab routing ───────────────────────────────────────────
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.endsWith("/tracks")) return "Tracks";
+    if (path.endsWith("/popular-tracks")) return "Popular tracks";
+    if (path.endsWith("/albums")) return "Albums";
+    if (path.endsWith("/sets")) return "Playlists";
+    if (path.endsWith("/reposts")) return "Reposts";
+    return "All";
+  };
+
+  const selectedTab = getActiveTab();
+  const handleTabChangeWrapper = (tab: string) =>
+    handleTabChange(tab, navigate);
+
+  const hasContent =
+    profileTracks.length > 0 ||
+    profileAlbums.length > 0 ||
+    profilePlaylists.length > 0;
+
+  // ── Loading guard ─────────────────────────────────────────
+  if (isLoadingProfile && !isOwner && !profileData) {
+    return (
+      <div className="container px-4 md:px-8 lg:px-20 flex items-center justify-center py-32">
+        <p className="text-white text-sm">Loading profile…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container px-4 md:px-8 lg:px-20">
       <ProfileHeader user={user} isOwner={isOwner} />
       <ProfileTabs
         isOwner={isOwner}
         selectedTab={selectedTab}
-        onTabChange={handleTabChange}
+        onTabChange={handleTabChangeWrapper}
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
         username={user.username}
         displayName={user.displayName}
-        tracks={displayedStats.tracks ?? 0}
+        tracks={stats.tracks ?? 0}
         onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
         blockDisabled={!profileData}
-        userId={isOwner ? currentUser.id : profileData?.id ?? ''}  
-        profilePicture={isOwner ? currentUser.avatar ?? null : profileData?.profile_picture ?? null} 
+        userId={isOwner ? activeUser.id : (profileData?.id ?? "")}
+        profilePicture={
+          isOwner
+            ? (activeUser.avatar ?? null)
+            : (profileData?.profile_picture ?? null)
+        }
       />
 
       <div className="flex gap-10 py-6 items-start">
         <div className="flex-1 min-w-0">
-          {profileTracks.length > 0 ? (
-            <>
-              <h2
-                style={{
-                  color: "#fff",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  marginBottom: 12,
-                }}
-              >
-                Recent
-              </h2>
-              {profileTracks.map((t) => (
-                <TrackCard
-                  key={t.id}
-                  track={t}
-                  onCopyLink={() => {
-                    navigator.clipboard.writeText(
-                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`,
-                    );
-                  }}
-                  onEdit={() =>
-                    navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)
-                  }
-                  onReplaceFile={() =>
-                    console.log("[TrackCard] replace file:", t.id)
-                  }
-                  onDelete={() => console.log("[TrackCard] delete:", t.id)}
-                  onDistribute={() =>
-                    console.log("[TrackCard] distribute:", t.id)
-                  }
-                  onAddToPlaylist={() => {}}
-                />
-              ))}
-            </>
+          {hasContent ? (
+            <div className="flex flex-col gap-8">
+              {/* Tracks */}
+              {profileTracks.length > 0 && (
+                <section className="flex flex-col gap-3">
+                  <h2 className="text-white text-lg font-bold">Tracks</h2>
+                  <div className="flex flex-col gap-4">
+                    {profileTracks.map((t) => (
+                      <TrackCard
+                        key={t.id}
+                        track={t}
+                        onCopyLink={() =>
+                          navigator.clipboard.writeText(
+                            `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`,
+                          )
+                        }
+                        onEdit={() =>
+                          navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)
+                        }
+                        onReplaceFile={() =>
+                          console.log("[TrackCard] replace file:", t.id)
+                        }
+                        onDelete={() =>
+                          console.log("[TrackCard] delete:", t.id)
+                        }
+                        onDistribute={() =>
+                          console.log("[TrackCard] distribute:", t.id)
+                        }
+                        onAddToPlaylist={() => {}}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Albums */}
+              {profileAlbums.length > 0 && (
+                <section className="flex flex-col gap-3">
+                  <h2 className="text-white text-lg font-bold">Albums</h2>
+                  <div className="flex gap-4 overflow-x-auto pb-1">
+                    {profileAlbums.map((album) => (
+                      <PlaylistCard
+                        key={album.id}
+                        item={album}
+                        widthClassName="w-[180px] sm:w-[200px] md:w-[220px]"
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Playlists */}
+              {profilePlaylists.length > 0 && (
+                <section className="flex flex-col gap-3">
+                  <h2 className="text-white text-lg font-bold">Playlists</h2>
+                  <div className="flex gap-4 overflow-x-auto pb-1">
+                    {profilePlaylists.map((playlist) => (
+                      <PlaylistCard
+                        key={playlist.id}
+                        item={playlist}
+                        widthClassName="w-[180px] sm:w-[200px] md:w-[220px]"
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
               <p
@@ -344,15 +362,23 @@ export default function UsernamePage() {
             </div>
           )}
         </div>
-        <div className="sticky top-24 self-start w-[320px] shrink-0">
+        <div
+          className="sticky top-24 self-start min-w-0 overflow-hidden"
+          style={{ maxWidth: "min-content" }}
+        >
           <ProfileSidebar
             user={user}
             isOwner={isOwner}
-            likedTracks={likedTracks}
+            likedTracks={likedTracksMapped}
+            likedTracksCount={
+              isOwner
+                ? Math.max(likedTracksCount, likedTracksStoreCount)
+                : likedTracksCount
+            }
             followers={followersMapped}
             following={followingMapped}
-            stats={displayedStats}
-            onTabChange={handleTabChange}
+            stats={stats}
+            onTabChange={handleTabChangeWrapper}
           />
         </div>
       </div>
@@ -363,49 +389,26 @@ export default function UsernamePage() {
           onClose={() => setShowShare(false)}
         />
       )}
+
       {showEdit && (
         <EditProfileModal
           user={user}
           onClose={() => setShowEdit(false)}
-          onSave={(data) => {
-            updateMyProfile({
-              display_name: data.displayName,
-              first_name: data.firstName,
-              last_name: data.lastName,
-              bio: data.bio,
-              city: data.city,
-              country: data.country,
-            }).catch(console.error);
+          onSave={(data) => handleSave(data, () => setShowEdit(false))}
+        />
+      )}
 
-            setUser({
-              ...currentUser,
-              displayName: data.displayName,
-              firstName: data.firstName,
-              lastName: data.lastName,
-              bio: data.bio,
-              city: data.city,
-              country: data.country,
-              location: data.location,
-              avatar: data.avatarFile
-                ? URL.createObjectURL(data.avatarFile)
-                : currentUser.avatar,
-            });
-            setShowEdit(false);
-          }}
-          />
-        )}
       {showBlock && profileData && (
         <Modal isOpen={showBlock} onClose={() => setShowBlock(false)}>
           <BlockUserModal
             username={
-              profileData.display_name ?? profileData.username ?? user.displayName
+              profileData.display_name ??
+              profileData.username ??
+              user.displayName
             }
             userId={profileData.id}
             onClose={() => setShowBlock(false)}
-            onBlocked={() => {
-              setIsBlocked(true);
-              setShowBlock(false);
-            }}
+            onBlocked={() => setShowBlock(false)}
           />
         </Modal>
       )}

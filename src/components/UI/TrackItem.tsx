@@ -62,7 +62,8 @@ const TrackItem: React.FC<TrackItemProps> = ({
       id,
       title,
       artistName: artist,
-      artistUsername: artistUsername || artist.toLowerCase().replace(/\s+/g, "-"),
+      artistUsername:
+        artistUsername || artist.toLowerCase().replace(/\s+/g, "-"),
       coverUrl: coverUrl || "",
       audioUrl: audioUrl || "",
       genre: genre || "",
@@ -108,7 +109,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
   return (
     <div
       data-test={`track-item-${id}`}
-      className="relative flex gap-3 group"
+      className="relative flex gap-3 group max-w-[320px] "
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => {
         setHovered(false);

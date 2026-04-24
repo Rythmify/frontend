@@ -40,27 +40,34 @@ function normalizeTrack(raw: any): Track {
 
   return {
     ...raw,
-    id:              raw.id,
-    title:           raw.title ?? "",
+    id: raw.id,
+    title: raw.title ?? "",
     // FIX: map all possible audio URL field names so the player always has a URL
-    audioUrl:        raw.stream_url || raw.audio_url || raw.audioUrl || "",
-    coverUrl:        raw.cover_image || raw.cover_url || raw.coverUrl || "",
-    artistName:      raw.artist_name  || raw.user?.display_name  || raw.artistName  || "",
-    artistUsername:  raw.user?.username || raw.artist_username || raw.artistUsername || raw.user_id || raw.artist_id || "",
+    audioUrl: raw.stream_url || raw.audio_url || raw.audioUrl || "",
+    coverUrl: raw.cover_image || raw.cover_url || raw.coverUrl || "",
+    artistName:
+      raw.artist_name || raw.user?.display_name || raw.artistName || "",
+    artistUsername:
+      raw.user?.username ||
+      raw.artist_username ||
+      raw.artistUsername ||
+      raw.user_id ||
+      raw.artist_id ||
+      "",
     // FIX: map slug field from API, fallback to id to ensure valid navigation URL
-    trackSlug:       raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
+    trackSlug: raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
     // FIX: format ISO timestamp into human-readable string
-    postedAt:        formatPostedAt(raw.created_at || raw.postedAt || ""),
-    playCount:       raw.play_count    ?? raw.playCount    ?? 0,
-    likeCount:       raw.like_count    ?? raw.likeCount    ?? 0,
-    repostCount:     raw.repost_count  ?? raw.repostCount  ?? 0,
-    commentCount:    raw.comment_count ?? raw.commentCount ?? 0,
-    genre:           raw.genre         ?? "",
-    waveformData:    raw.waveformData  ?? undefined,
-    isLiked:         raw.is_liked_by_me ?? raw.is_liked ?? raw.isLiked ?? false,
-    isReposted:      raw.is_reposted_by_me ?? raw.is_reposted ?? raw.isReposted ?? false,
-    artistId:        raw.user_id       || raw.artistId || "",
-    trackSlug:       raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
+    postedAt: formatPostedAt(raw.created_at || raw.postedAt || ""),
+    playCount: raw.play_count ?? raw.playCount ?? 0,
+    likeCount: raw.like_count ?? raw.likeCount ?? 0,
+    repostCount: raw.repost_count ?? raw.repostCount ?? 0,
+    commentCount: raw.comment_count ?? raw.commentCount ?? 0,
+    genre: raw.genre ?? "",
+    waveformData: raw.waveformData ?? undefined,
+    isLiked: raw.is_liked_by_me ?? raw.is_liked ?? raw.isLiked ?? false,
+    isReposted:
+      raw.is_reposted_by_me ?? raw.is_reposted ?? raw.isReposted ?? false,
+    artistId: raw.user_id || raw.artistId || "",
     duration,
   } as Track;
 }
@@ -71,29 +78,58 @@ function normalizeTrack(raw: any): Track {
  * GET /users/{user_id}/tracks
  * Returns paginated public tracks for a specific user.
  */
+// export async function getUserTracks(
+//   userId: string,
+//   page = 1,
+//   limit = 20
+// ): Promise<Track[]> {
+//   const { data } = await axiosInstance.get<{
+//     data: any[];
+//     pagination: unknown;
+//   }>(`/users/${userId}/tracks`, { params: { page, limit } });
+//   return (data.data ?? []).map(normalizeTrack);
+// }
+
 export async function getUserTracks(
   userId: string,
   page = 1,
-  limit = 20
-): Promise<Track[]> {
+  limit = 20,
+): Promise<{ tracks: Track[]; total: number }> {
   const { data } = await axiosInstance.get<{
     data: any[];
-    pagination: unknown;
+    pagination: { total: number; limit: number; offset: number };
   }>(`/users/${userId}/tracks`, { params: { page, limit } });
-  return (data.data ?? []).map(normalizeTrack);
+  return {
+    tracks: (data.data ?? []).map(normalizeTrack),
+    total: (data.pagination as any)?.total ?? 0,
+  };
+}
+
+export async function getMyTracks(
+  page = 1,
+  limit = 20,
+): Promise<{ tracks: Track[]; total: number }> {
+  const { data } = await axiosInstance.get<{
+    data: any[];
+    pagination: { total: number; limit: number; offset: number };
+  }>("/tracks/me", { params: { page, limit } });
+  return {
+    tracks: (data.data ?? []).map(normalizeTrack),
+    total: (data.pagination as any)?.total ?? 0,
+  };
 }
 
 /**
  * GET /tracks/me
  * Returns the authenticated user's own tracks (including private ones).
  */
-export async function getMyTracks(page = 1, limit = 20): Promise<Track[]> {
-  const { data } = await axiosInstance.get<{
-    data: any[];
-    pagination: unknown;
-  }>("/tracks/me", { params: { page, limit } });
-  return (data.data ?? []).map(normalizeTrack);
-}
+// export async function getMyTracks(page = 1, limit = 20): Promise<Track[]> {
+//   const { data } = await axiosInstance.get<{
+//     data: any[];
+//     pagination: unknown;
+//   }>("/tracks/me", { params: { page, limit } });
+//   return (data.data ?? []).map(normalizeTrack);
+// }
 
 /**
  * GET /tracks/{track_id}
@@ -101,7 +137,7 @@ export async function getMyTracks(page = 1, limit = 20): Promise<Track[]> {
  */
 export async function getTrackById(
   id: string,
-  secretToken?: string
+  secretToken?: string,
 ): Promise<Track> {
   const { data } = await axiosInstance.get<{ data: any }>(`/tracks/${id}`, {
     params: secretToken ? { secret_token: secretToken } : undefined,
@@ -115,7 +151,7 @@ export async function getTrackById(
  */
 export async function getTrackBySlug(
   _username: string,
-  trackId: string
+  trackId: string,
 ): Promise<Track> {
   const { data } = await axiosInstance.get<{ data: any }>(`/tracks/${trackId}`);
   return normalizeTrack(data.data);
@@ -138,7 +174,7 @@ export async function getRelatedTracks(
 ): Promise<{
   referenceTrack: Track;
   tracks: Track[];
-  }> {
+}> {
   const { data } = await axiosInstance.get<RelatedTrackResponse>(
     `/tracks/${trackId}/related`,
     { params: { limit, offset } },
@@ -167,19 +203,22 @@ export async function getRelatedTracks(
 export async function getTrackComments(
   trackId: string,
   limit = 20,
-  offset = 0
+  offset = 0,
 ): Promise<Comment[]> {
-  const { data } = await axiosInstance.get(
-    `/tracks/${trackId}/comments`,
-    { params: { limit, offset } }
-  );
-  return data?.data ?? [];
+  const { data } = await axiosInstance.get(`/tracks/${trackId}/comments`, {
+    params: { limit, offset },
+  });
+  return data?.data?.items ?? data?.data ?? [];
 }
 
 /**
  * POST /tracks/{track_id}/comments
  */
-export async function postComment(trackId: string, content: string, timestampSec: number) {
+export async function postComment(
+  trackId: string,
+  content: string,
+  timestampSec: number,
+) {
   const { data } = await axiosInstance.post(`/tracks/${trackId}/comments`, {
     content,
     track_timestamp: Math.floor(timestampSec),
