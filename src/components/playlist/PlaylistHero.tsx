@@ -136,7 +136,7 @@ export default function PlaylistHero({
     <div
       ref={heroRef}
       data-test="playlist-hero"
-      className="container m-auto px-4 md:px-8 lg:px-5 py-6 w-full flex flex-row md:flex-row items-stretch gap-6 relative overflow-hidden"
+      className="container m-auto px-4 py-6 w-full flex flex-row md:flex-row items-stretch gap-6 relative overflow-hidden"
       style={{
         background:
           "linear-gradient(135deg, #6b7280 0%, #9ca3af 50%, #6b7280 100%)",

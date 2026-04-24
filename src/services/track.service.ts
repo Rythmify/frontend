@@ -222,10 +222,15 @@ export async function getReplies(commentId: string) {
   return [];
 }
 
+const waveformCache = new Map<string, number[]>();
+
 /**
  * GET /tracks/{track_id}/waveform
  */
 export async function getTrackWaveform(trackId: string): Promise<number[]> {
+  const cached = waveformCache.get(trackId);
+  if (cached) return cached;
+
   try {
     const { data } = await axiosInstance.get(`/tracks/${trackId}/waveform`);
     const peaksPayload =
@@ -246,6 +251,7 @@ export async function getTrackWaveform(trackId: string): Promise<number[]> {
       }
     }
 
+    if (peaksArray.length > 0) waveformCache.set(trackId, peaksArray);
     return peaksArray;
   } catch {
     return [];
