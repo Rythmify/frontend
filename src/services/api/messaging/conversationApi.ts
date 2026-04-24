@@ -40,14 +40,11 @@ export interface Message {
 
 export interface Pagination {
   page: number;
-  limit: number;
-  total: number;
+  per_page: number;
+  total_items: number;
   total_pages: number;
-  // conversation list endpoint uses these names instead
-  per_page?: number;
-  total_items?: number;
-  has_next?: boolean;
-  has_prev?: boolean;
+  has_next: boolean;
+  has_prev: boolean;
 }
 
 export interface Conversation {
@@ -70,12 +67,12 @@ export interface ConversationListResponse {
 }
 
 export interface ConversationDetailResponse {
+  success: boolean;
   data: {
     conversation: Conversation;
     messages: Message[];
     pagination: Pagination;
   };
-  message: string;
 }
 
 export interface MessageCreatedResponse {
@@ -150,7 +147,7 @@ export interface Track {
   // Ownership
   user_id: string;                  // → track.artistId
   artist_name: string | null;       // → track.artistName
-  artist_username: string | null;   // → track.artistUsername  (add to your API if missing)
+  artist_username?: string | null;   // → track.artistUsername  (add to your API if missing)
 
   // Media
   stream_url: string | null;        // → track.audioUrl
@@ -160,7 +157,7 @@ export interface Track {
 
   // Playback metadata
   duration: number | null;          // seconds  → formatted as "m:ss" for track.duration
-  bitrate: number | null;
+  bitrate?: number | null;
   artists: string | null;           // comma-separated collaborators
 
   // Engagement
@@ -173,11 +170,11 @@ export interface Track {
   status: string;
   is_public: boolean;
   is_hidden: boolean;
-  is_liked: boolean;                // → track.isLiked     (add to your API if missing)
-  is_reposted: boolean;             // → track.isReposted  (add to your API if missing)
+  is_liked?: boolean;                // → track.isLiked     (add to your API if missing)
+  is_reposted?: boolean;             // → track.isReposted  (add to your API if missing)
 
   // Routing
-  slug: string | null;              // → track.trackSlug
+  slug?: string | null;              // → track.trackSlug
 
   // Timestamps
   created_at: string;               // → track.postedAt (formatted by adapter)
@@ -206,8 +203,8 @@ export interface Playlist {
 
   // Ownership
   owner_user_id: string;
-  creator_name: string | null;      // → playlist.creatorName  (add to your API if missing)
-  creator_username: string | null;  // → playlist.creatorUsername
+  creator_name?: string | null;      // → playlist.creatorName  (add to your API if missing)
+  creator_username?: string | null;  // → playlist.creatorUsername
 
   // Media
   cover_image: string | null;       // → playlist.coverUrl
@@ -222,7 +219,7 @@ export interface Playlist {
 
   // State flags
   is_public: boolean;
-  is_private: boolean;              // → playlist.isPrivate  (inverse of is_public)
+  is_private?: boolean;              // → playlist.isPrivate  (inverse of is_public)
 
   // Timestamps
   created_at: string;               // → playlist.postedAt
