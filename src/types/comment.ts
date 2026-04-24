@@ -16,4 +16,5 @@ export interface Comment {
   created_at: string;
   updated_at: string;
   author: CommentAuthor;
+  is_liked_by_me?: boolean;
 }
