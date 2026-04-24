@@ -10,7 +10,7 @@ export interface Participant {
   location: string;
   gender: string;
   role: string;
-  avatar: string | null;   
+  avatar: string | null;
   cover_photo: string;
   is_private: boolean;
   is_verified: boolean;
@@ -133,27 +133,52 @@ export interface FollowingSearchResponse {
   };
 }
 
+// ─── Track Type ───────────────────────────────────────────────────────────────
+// Full shape returned by GET /tracks/:id — every field the API sends back.
+// Fields used by TrackCard are annotated with what they map to.
+
 export interface Track {
+  // Core identity
   id: string;
-  title: string;
+  title: string;                    // → track.title
   description: string | null;
-  genre: string | null;
-  duration: number | null;
+  genre: string | null;             // → track.genre
+
+  // Ownership
+  user_id: string;                  // → track.artistId
+  artist_name: string | null;       // → track.artistName
+  artist_username: string | null;   // → track.artistUsername  (add to your API if missing)
+
+  // Media
+  stream_url: string | null;        // → track.audioUrl
+  preview_url: string | null;
+  cover_image: string | null;       // → track.coverUrl
+  waveform_url: string | null;
+
+  // Playback metadata
+  duration: number | null;          // seconds  → formatted as "m:ss" for track.duration
   bitrate: number | null;
+  artists: string | null;           // comma-separated collaborators
+
+  // Engagement
+  play_count: number;               // → track.playCount
+  like_count: number;               // → track.likeCount
+  repost_count: number;             // → track.repostCount  (add to your API if missing)
+  comment_count: number;            // → shown in TrackCard comments button
+
+  // State flags
   status: string;
   is_public: boolean;
   is_hidden: boolean;
-  user_id: string;
-  play_count: number;
-  like_count: number;
-  stream_url: string | null;
-  preview_url: string | null;
-  waveform_url: string | null;
-  artists: string | null;
-  created_at: string;
+  is_liked: boolean;                // → track.isLiked     (add to your API if missing)
+  is_reposted: boolean;             // → track.isReposted  (add to your API if missing)
+
+  // Routing
+  slug: string | null;              // → track.trackSlug
+
+  // Timestamps
+  created_at: string;               // → track.postedAt (formatted by adapter)
   updated_at: string;
-  cover_image: string | null;       
-  artist_name: string | null;   
 }
 
 export interface TrackResponse {
@@ -161,21 +186,44 @@ export interface TrackResponse {
   data: Track;
 }
 
-// ─── Playlist Types ───────────────────────────────────────────────────────────
+// ─── Playlist Track ───────────────────────────────────────────────────────────
+// Tracks nested inside a playlist response are the same shape.
+
+export type PlaylistTrack = Track;
+
+// ─── Playlist Type ────────────────────────────────────────────────────────────
+// Full shape returned by GET /playlists/:id?include_tracks=true
 
 export interface Playlist {
-  playlist_id: string;
+  // Core identity
+  playlist_id: string;              // → playlist.id
+  name: string;                     // → playlist.title
+  slug: string | null;              // → playlist.playlistSlug
+  description: string | null;       // → playlist.description
+
+  // Ownership
   owner_user_id: string;
-  name: string;
-  slug: string | null;            
-  description: string | null;
+  creator_name: string | null;      // → playlist.creatorName  (add to your API if missing)
+  creator_username: string | null;  // → playlist.creatorUsername
+
+  // Media
+  cover_image: string | null;       // → playlist.coverUrl
+
+  // Tracks
+  track_count: number;              // → playlist.trackCount
+  tracks: PlaylistTrack[];          // → playlist.tracks  (populated when include_tracks=true)
+
+  // Engagement
+  like_count: number;               // → playlist.likeCount
+  repost_count: number;             // → playlist.repostCount
+
+  // State flags
   is_public: boolean;
-  cover_image: string | null;      
-  track_count: number;
-  like_count: number;
-  repost_count: number;            
-  created_at: string;
-  updated_at: string;            
+  is_private: boolean;              // → playlist.isPrivate  (inverse of is_public)
+
+  // Timestamps
+  created_at: string;               // → playlist.postedAt
+  updated_at: string;
 }
 
 export interface PlaylistResponse {
@@ -214,13 +262,11 @@ export interface BlockData {
   created_at: string;
 }
 
-/** 201 — user was blocked successfully */
 export interface BlockCreatedResponse {
   data: BlockData;
   message: string;
 }
 
-/** 200 — user was already blocked, no change */
 export interface BlockAlreadyExistsResponse {
   message: string;
 }
@@ -389,7 +435,7 @@ export const searchFollowing = async (
   return response.data;
 };
 
-// GET /tracks/:trackId
+// GET /tracks/:trackId  — full track including all engagement + routing fields
 export const fetchTrack = async (trackId: string): Promise<TrackResponse> => {
   const response = await axiosInstance.get<TrackResponse>(
     `/tracks/${trackId}`
@@ -397,14 +443,15 @@ export const fetchTrack = async (trackId: string): Promise<TrackResponse> => {
   return response.data;
 };
 
-// GET /playlists/:playlistId
+// GET /playlists/:playlistId  — full playlist, always requests tracks
 export const fetchPlaylist = async (
   playlistId: string,
-  options?: { secret_token?: string; include_tracks?: boolean }
+  options?: { secret_token?: string }
 ): Promise<PlaylistResponse> => {
   const response = await axiosInstance.get<PlaylistResponse>(
     `/playlists/${playlistId}`,
-    { params: options }
+    // include_tracks=true so the tracks[] array is always populated
+    { params: { include_tracks: true, ...options } }
   );
   return response.data;
 };
@@ -451,32 +498,33 @@ export const submitReport = async (
   return response.data;
 };
 
-// GET /tracks/me
-export type TrackStatus = 'public' | 'private' | 'draft'
+// ─── My Tracks ────────────────────────────────────────────────────────────────
+
+export type TrackStatus = 'public' | 'private' | 'draft';
 
 export interface MyTrack {
-  id: string
-  title: string
-  genre: string
-  duration: number
-  cover_image: string | null
-  user_id: string
-  artist_name: string
-  play_count: number
-  like_count: number
-  stream_url: string
+  id: string;
+  title: string;
+  genre: string;
+  duration: number;
+  cover_image: string | null;
+  user_id: string;
+  artist_name: string;
+  play_count: number;
+  like_count: number;
+  stream_url: string;
 }
 
 export interface MyTracksPagination {
-  limit: number
-  offset: number
-  total: number
+  limit: number;
+  offset: number;
+  total: number;
 }
 
 export interface MyTracksResponse {
-  data: MyTrack[]
-  pagination: MyTracksPagination
-  message: string
+  data: MyTrack[];
+  pagination: MyTracksPagination;
+  message: string;
 }
 
 export const fetchMyTracks = async (
@@ -487,53 +535,51 @@ export const fetchMyTracks = async (
   const response = await axiosInstance.get<MyTracksResponse>('/tracks/me', {
     params: { limit, offset, ...(status ? { status } : {}) },
     headers: { 'Cache-Control': 'no-cache' },
-  })
-  return response.data
-}
+  });
+  return response.data;
+};
 
 // ─── Repost Types ─────────────────────────────────────────────────────────────
 
 export interface RepostedTrack {
-  id: string
-  title: string
-  genre: string
-  duration: number
-  cover_image: string | null
-  user_id: string
-  artist_name: string
-  play_count: number
-  like_count: number
-  stream_url: string
+  id: string;
+  title: string;
+  genre: string;
+  duration: number;
+  cover_image: string | null;
+  user_id: string;
+  artist_name: string;
+  play_count: number;
+  like_count: number;
+  stream_url: string;
 }
 
 export interface RepostedPlaylist {
-  id: string
-  title: string
-  description: string | null
-  cover_image: string | null
-  user_id: string
-  track_count: number
+  id: string;
+  title: string;
+  description: string | null;
+  cover_image: string | null;
+  user_id: string;
+  track_count: number;
 }
 
 export interface RepostPagination {
-  limit: number
-  offset: number
-  total: number
+  limit: number;
+  offset: number;
+  total: number;
 }
 
 export interface RepostedTracksResponse {
-  data: RepostedTrack[]
-  pagination: RepostPagination
-  message: string
+  data: RepostedTrack[];
+  pagination: RepostPagination;
+  message: string;
 }
 
 export interface RepostedPlaylistsResponse {
-  data: RepostedPlaylist[]
-  pagination: RepostPagination
-  message: string
+  data: RepostedPlaylist[];
+  pagination: RepostPagination;
+  message: string;
 }
-
-// ─── Repost API Functions ─────────────────────────────────────────────────────
 
 // GET /me/reposted-tracks
 export const fetchMyRepostedTracks = async (
@@ -546,9 +592,9 @@ export const fetchMyRepostedTracks = async (
       params: { limit, offset },
       headers: { 'Cache-Control': 'no-cache' },
     }
-  )
-  return response.data
-}
+  );
+  return response.data;
+};
 
 // GET /me/reposted-playlists
 export const fetchMyRepostedPlaylists = async (
@@ -561,9 +607,9 @@ export const fetchMyRepostedPlaylists = async (
       params: { limit, offset },
       headers: { 'Cache-Control': 'no-cache' },
     }
-  )
-  return response.data
-}
+  );
+  return response.data;
+};
 
 // GET /me/reposted-albums
 export const fetchMyRepostedAlbums = async (
@@ -576,6 +622,6 @@ export const fetchMyRepostedAlbums = async (
       params: { limit, offset },
       headers: { 'Cache-Control': 'no-cache' },
     }
-  )
-  return response.data
-}
+  );
+  return response.data;
+};
