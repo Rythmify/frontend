@@ -14,6 +14,14 @@ import type { Track } from "../../types/track";
 import { getMyLikedTracks, getUserLikedTracks } from "@/services/user.service";
 import { useProfileData } from "@/services/hooks/useProfileData";
 import type { TrackSummary } from "@/services/user.service";
+import { getMyTracks, getUserTracks } from "@/services/track.service";
+import PlaylistCard, {
+  type PlaylistCardData,
+} from "@/components/UI/PlaylistCard/PlaylistCard";
+import {
+  getPlaylistsByUser,
+  type Playlist,
+} from "@/services/api/playlist/playlist.service";
 
 export default function UsernamePage() {
   const { username } = useParams();
@@ -45,6 +53,7 @@ export default function UsernamePage() {
   const [likedTracks, setLikedTracks] = useState<TrackSummary[]>([]);
   const [likedTracksCount, setLikedTracksCount] = useState(0);
   const [profileTracks, setProfileTracks] = useState<Track[]>([]);
+  const [profileAlbums, setProfileAlbums] = useState<PlaylistCardData[]>([]);
 
   // Load liked tracks
   useEffect(() => {
@@ -102,6 +111,83 @@ export default function UsernamePage() {
       cancelled = true;
     };
   }, [isOwner, username, profileData?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTracks = async () => {
+      try {
+        if (isOwner) {
+          const ownedTracks = await getMyTracks(1, 100);
+          if (cancelled) return;
+          setProfileTracks(ownedTracks.tracks);
+          return;
+        }
+
+        if (!profileData?.id) return;
+        const publicTracks = await getUserTracks(profileData.id, 1, 100);
+        if (cancelled) return;
+        setProfileTracks(publicTracks.tracks);
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setProfileTracks([]);
+      }
+    };
+
+    loadTracks();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner, profileData?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const mapPlaylistToCard = (playlist: Playlist): PlaylistCardData => ({
+      id: playlist.playlist_id,
+      title: playlist.name,
+      owner: profileData?.display_name || user.displayName,
+      ownerUsername: profileData?.username || user.username,
+      slug: playlist.slug ?? undefined,
+      coverUrl: playlist.cover_image ?? null,
+      isPrivate: !playlist.is_public,
+      isLiked: playlist.like_count > 0,
+      isAlbumView: true,
+    });
+
+    const loadAlbums = async () => {
+      try {
+        const ownerId = isOwner ? activeUser.id : profileData?.id;
+        if (!ownerId) return;
+
+        const res = await getPlaylistsByUser(ownerId, activeUser.id, {
+          limit: 100,
+        });
+        if (cancelled) return;
+
+        const albumItems = (res.data.items ?? []).filter(
+          (playlist) => playlist.is_album_view || playlist.subtype === "album",
+        );
+        setProfileAlbums(albumItems.map(mapPlaylistToCard));
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setProfileAlbums([]);
+      }
+    };
+
+    loadAlbums();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isOwner,
+    activeUser.id,
+    profileData?.id,
+    profileData?.display_name,
+    profileData?.username,
+    user.displayName,
+    user.username,
+  ]);
 
   // Map liked tracks for sidebar
   const likedTracksMapped = (Array.isArray(likedTracks) ? likedTracks : []).map(
@@ -186,41 +272,71 @@ export default function UsernamePage() {
 
       <div className="flex gap-6 py-6 items-start">
         <div className="flex-1 min-w-0">
-          {profileTracks.length > 0 ? (
-            <>
-              <h2
-                style={{
-                  color: "#fff",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  marginBottom: 12,
-                }}
-              >
-                Recent
-              </h2>
-              {profileTracks.map((t) => (
-                <TrackCard
-                  key={t.id}
-                  track={t}
-                  onCopyLink={() => {
-                    navigator.clipboard.writeText(
-                      `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`,
-                    );
-                  }}
-                  onEdit={() =>
-                    navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)
-                  }
-                  onReplaceFile={() =>
-                    console.log("[TrackCard] replace file:", t.id)
-                  }
-                  onDelete={() => console.log("[TrackCard] delete:", t.id)}
-                  onDistribute={() =>
-                    console.log("[TrackCard] distribute:", t.id)
-                  }
-                  onAddToPlaylist={() => {}}
-                />
-              ))}
-            </>
+          {profileTracks.length > 0 || profileAlbums.length > 0 ? (
+            <div className="flex flex-col gap-8">
+              {profileTracks.length > 0 && (
+                <section className="flex flex-col gap-3">
+                  <h2
+                    style={{
+                      color: "#fff",
+                      fontSize: 18,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Tracks
+                  </h2>
+                  <div className="flex flex-col gap-4">
+                    {profileTracks.map((t) => (
+                      <TrackCard
+                        key={t.id}
+                        track={t}
+                        onCopyLink={() => {
+                          navigator.clipboard.writeText(
+                            `${window.location.origin}/${t.artistUsername}/${t.trackSlug ?? ""}`,
+                          );
+                        }}
+                        onEdit={() =>
+                          navigate(`/${t.artistUsername}/${t.trackSlug ?? ""}`)
+                        }
+                        onReplaceFile={() =>
+                          console.log("[TrackCard] replace file:", t.id)
+                        }
+                        onDelete={() =>
+                          console.log("[TrackCard] delete:", t.id)
+                        }
+                        onDistribute={() =>
+                          console.log("[TrackCard] distribute:", t.id)
+                        }
+                        onAddToPlaylist={() => {}}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {profileAlbums.length > 0 && (
+                <section className="flex flex-col gap-3">
+                  <h2
+                    style={{
+                      color: "#fff",
+                      fontSize: 18,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Albums
+                  </h2>
+                  <div className="flex gap-4 overflow-x-auto pb-1">
+                    {profileAlbums.map((album) => (
+                      <PlaylistCard
+                        key={album.id}
+                        item={album}
+                        widthClassName="w-[180px] sm:w-[200px] md:w-[220px]"
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
               <p

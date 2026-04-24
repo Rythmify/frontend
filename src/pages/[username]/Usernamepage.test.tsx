@@ -11,12 +11,17 @@ const mockGetFollowStatus = vi.fn();
 const mockResolveUsername = vi.fn();
 const mockUpdateMyProfile = vi.fn();
 const mockGetMyTracks = vi.fn();
+const mockGetUserTracks = vi.fn();
 const mockGetUserByUsername = vi.fn();
+const mockGetPlaylistsByUser = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
   useParams: vi.fn(),
   useLocation: vi.fn(),
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
 }));
 
 vi.mock("@/stores/auth.store", () => ({
@@ -34,8 +39,13 @@ vi.mock("@/services/user.service", () => ({
   updateMyProfile: (...args: unknown[]) => mockUpdateMyProfile(...args),
 }));
 
-vi.mock("@/services/api/upload/track.service", () => ({
+vi.mock("@/services/track.service", () => ({
   getMyTracks: (...args: unknown[]) => mockGetMyTracks(...args),
+  getUserTracks: (...args: unknown[]) => mockGetUserTracks(...args),
+}));
+
+vi.mock("@/services/api/playlist/playlist.service", () => ({
+  getPlaylistsByUser: (...args: unknown[]) => mockGetPlaylistsByUser(...args),
 }));
 
 vi.mock("@/components/Profile/MockData/mock", () => ({
@@ -200,10 +210,26 @@ describe("UsernamePage", () => {
     });
     mockUpdateMyProfile.mockResolvedValue({});
     mockGetMyTracks.mockResolvedValue({
-      data: [],
-      pagination: { page: 1, limit: 1, total: 0 },
+      tracks: [],
+      total: 0,
     });
-    (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    mockGetUserTracks.mockResolvedValue({
+      tracks: [],
+      total: 0,
+    });
+    mockGetPlaylistsByUser.mockResolvedValue({
+      data: {
+        items: [],
+        meta: { limit: 100, offset: 0, total: 0 },
+      },
+      message: "ok",
+    });
+    const authStoreMock = useAuthStore as unknown as ReturnType<typeof vi.fn>;
+    authStoreMock.mockReturnValue({
+      user: mockCurrentUser,
+      setUser: vi.fn(),
+    });
+    (authStoreMock as unknown as { getState: () => unknown }).getState = () => ({
       user: mockCurrentUser,
       setUser: vi.fn(),
     });
@@ -236,6 +262,68 @@ describe("UsernamePage", () => {
     expect(screen.getByTestId("empty-state-message")).toHaveTextContent(
       "Seems a little quiet over here",
     );
+  });
+
+  it("renders tracks and albums in the All tab when data exists", async () => {
+    mockGetMyTracks.mockResolvedValue({
+      tracks: [
+        {
+          id: "track-1",
+          title: "Track One",
+          artistUsername: "me",
+          trackSlug: "track-one",
+        },
+      ],
+      total: 1,
+    });
+    mockGetUserTracks.mockResolvedValue({
+      tracks: [
+        {
+          id: "track-1",
+          title: "Track One",
+          artistUsername: "me",
+          trackSlug: "track-one",
+        },
+      ],
+      total: 1,
+    });
+
+    mockGetPlaylistsByUser.mockResolvedValue({
+      data: {
+        items: [
+          {
+            playlist_id: "album-1",
+            owner_user_id: "1",
+            name: "Album One",
+            slug: "album-one",
+            description: null,
+            is_public: true,
+            cover_image: null,
+            subtype: "album",
+            release_date: null,
+            genre_id: null,
+            tags: [],
+            secret_token: null,
+            created_at: "",
+            updated_at: null,
+            track_count: 10,
+            like_count: 0,
+            is_album_view: true,
+          },
+        ],
+        meta: { limit: 100, offset: 0, total: 1 },
+      },
+      message: "ok",
+    });
+
+    render(<UsernamePage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Tracks")).toBeInTheDocument();
+      expect(screen.getByText("Albums")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Track One")).toBeInTheDocument();
+    expect(screen.getByText("Album One")).toBeInTheDocument();
   });
 
   it("shows Upload now button for owner on All tab", () => {
