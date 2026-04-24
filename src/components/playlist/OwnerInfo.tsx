@@ -23,7 +23,7 @@ export default function OwnerInfo({
   const fallbackLetter = name?.trim().charAt(0).toUpperCase() || "U";
   const { user } = useAuthStore();
   const isOwner =
-    (!!ownerUserId && user?.id === ownerUserId) || user?.username === username;
+    (ownerUserId && user?.id === ownerUserId) || user?.username === username;
   const isFollowing = !!user
     ? user.following_ids.includes(ownerUserId ?? "") ||
       user.following_ids.includes(username)
