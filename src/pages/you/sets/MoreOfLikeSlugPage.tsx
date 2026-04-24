@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "@/components/playlist/Made for you/PlaylistSidebarForYou";
-import PlaylistActions from "@/components/playlist/Album/PlaylistActionsAlbum";
+import PlaylistActions from "@/components/playlist/Made for you/PlaylistActionsForYou";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   type PlaylistDetails,
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
-import { getRelatedTracks } from "@/services/mocks/Track.service";
+import { getRelatedTracks } from "@/services/track.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
@@ -56,7 +56,7 @@ function buildPlaylist(
       seedTrack.artistUsername || seedTrack.artistName || seedTrack.id,
     name: "More of what you like",
     description: seedTrack.title
-      ? `Related tracks inspired by ${seedTrack.title}`
+      ? `Related tracks: ${seedTrack.title}`
       : "Related tracks picked for you",
     is_public: true,
     cover_image: seedTrack.coverUrl || null,
@@ -83,7 +83,10 @@ function MoreOfLikeSlugPage() {
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
   const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
   const [seedTrack, setSeedTrack] = useState<Track | null>(null);
-  const [relatedTracks, setRelatedTracks] = useState<PlaylistTrackItem[]>([]);
+  const [relatedTracks, setRelatedTracks] = useState<Track[]>([]);
+  const [relatedPlaylistTracks, setRelatedPlaylistTracks] = useState<
+    PlaylistTrackItem[]
+  >([]);
 
   const {
     setTrack: setPlayerTrack,
@@ -106,8 +109,7 @@ function MoreOfLikeSlugPage() {
       setError(null);
 
       try {
-        const trackId = playlist?.tracks[0]?.track_id ??
-        playlistSlug.includes(":")
+        const trackId = playlistSlug.includes(":")
           ? (playlistSlug.split(":").pop() ?? playlistSlug)
           : playlistSlug;
 
@@ -116,7 +118,12 @@ function MoreOfLikeSlugPage() {
         if (cancelled) return;
 
         setSeedTrack(referenceTrack);
-        setRelatedTracks(tracks.map((track, index) => toPlaylistTrackItem(track, index + 1)));
+        setRelatedTracks(tracks);
+        setRelatedPlaylistTracks(
+          tracks.map((track: Track, index: number) =>
+            toPlaylistTrackItem(track, index + 1),
+          ),
+        );
         setPlaylist(buildPlaylist(referenceTrack, tracks));
         setFeaturedArtists([]);
 
@@ -137,6 +144,7 @@ function MoreOfLikeSlugPage() {
           setFeaturedArtists([]);
           setSeedTrack(null);
           setRelatedTracks([]);
+          setRelatedPlaylistTracks([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -174,9 +182,8 @@ function MoreOfLikeSlugPage() {
   const handleHeroPlayPause = () => {
     if (!playlist || !relatedTracks.length) return;
 
-    const firstTrack = relatedTracks[0];
-    const playerTrack = toPlayerTrack(firstTrack);
-    const queue = relatedTracks.map(toPlayerTrack);
+    const playerTrack = toPlayerTrack(relatedPlaylistTracks[0]);
+    const queue = relatedPlaylistTracks.map(toPlayerTrack);
     const isThisPlaylistPlaying =
       (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
 
@@ -189,7 +196,7 @@ function MoreOfLikeSlugPage() {
           context: {
             type: "playlist",
             playlist_id: playlist.playlist_id,
-            queue: relatedTracks.map((t) => t.track_id),
+            queue: relatedPlaylistTracks.map((t) => t.track_id),
           },
         } as any,
         queue,
@@ -199,11 +206,11 @@ function MoreOfLikeSlugPage() {
 
   const handleTrackPlay = (track: PlaylistTrackItem) => {
     const playerTrack = toPlayerTrack(track);
-    const queue = relatedTracks.map(toPlayerTrack);
+    const queue = relatedPlaylistTracks.map(toPlayerTrack);
     const playlistContext = {
       type: "playlist",
       playlist_id: playlist?.playlist_id,
-      queue: relatedTracks.map((t) => t.track_id),
+      queue: relatedPlaylistTracks.map((t) => t.track_id),
     };
 
     if (currentTrack?.id === playerTrack.id) {
@@ -223,7 +230,7 @@ function MoreOfLikeSlugPage() {
   const isAlbumActive =
     isPlaying &&
     !!playlist &&
-    relatedTracks.some((track) => track.track_id === currentTrack?.id);
+    relatedPlaylistTracks.some((track) => track.track_id === currentTrack?.id);
 
   if (loading)
     return (
@@ -264,6 +271,8 @@ function MoreOfLikeSlugPage() {
           <div className="flex-1 min-w-0">
             <PlaylistActions
               playlist={playlist}
+              initialTracks={relatedPlaylistTracks}
+              isGeneratedPlaylist
               onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                 setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
               }
@@ -272,7 +281,7 @@ function MoreOfLikeSlugPage() {
             <div className="flex flex-col lg:flex-row gap-6 mt-8">
               
               <TrackList
-                tracks={relatedTracks}
+                tracks={relatedPlaylistTracks}
                 currentTrackId={currentTrack?.id}
                 isPlaying={isPlaying}
                 onTrackPlay={handleTrackPlay}

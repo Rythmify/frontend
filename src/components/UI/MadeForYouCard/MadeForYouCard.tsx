@@ -1,4 +1,5 @@
 import type React from "react";
+import { useNavigate } from "react-router-dom";
 import { useLikesStore } from "@/stores/likes.store";
 import { usePlayerStore } from "@/stores/player.store";
 import { useHistoryStore } from "@/stores/history.store";
@@ -11,6 +12,7 @@ export interface MadeForYouItem {
   title: string;
   subtitle: string;
   coverUrl: string;
+  madeKind?: "daily" | "weekly";
   /** e.g. ["DAILY", "DROPS"] or ["WEEKLY", "WAVE"] */
   badgeWords: [string, string];
   badgeBg?: string;
@@ -31,11 +33,16 @@ export default function MadeForYouCard({
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: MadeForYouCardProps) {
   const bg = item.badgeBg ?? "#1a237e";
+  const navigate = useNavigate();
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { addMadeForYou } = useHistoryStore();
   const liked = isPlaylistLiked(item.id);
   const isThisPlaying = isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
+  const handleNavigate = () => {
+    if (!item.madeKind) return;
+    navigate(`/discover/sets/new-for-you/${item.madeKind}/${item.id}`);
+  };
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,8 +67,18 @@ export default function MadeForYouCard({
 
   return (
     <div
-      className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
+      className={`group flex flex-col gap-2 ${widthClassName} shrink-0 ${item.madeKind ? "cursor-pointer" : ""}`}
       data-test={`made-for-you-card-${item.id}`}
+      onClick={handleNavigate}
+      onKeyDown={(e) => {
+        if (!item.madeKind) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleNavigate();
+        }
+      }}
+      role={item.madeKind ? "link" : undefined}
+      tabIndex={item.madeKind ? 0 : undefined}
     >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">

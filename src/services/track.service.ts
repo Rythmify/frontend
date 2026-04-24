@@ -123,39 +123,60 @@ export async function getTrackBySlug(
  * GET /tracks/{track_id}/related
  * Returns tracks related to the given track.
  */
-interface RelatedTrackResponse {
-  reference_track: any;
-  data: any[];
-  pagination: unknown;
+interface RelatedTrackItem {
+  id: string;
+  title: string;
+  cover_image?: string | null;
+  duration?: number | null;
+  genre_name?: string | null;
+  play_count?: number;
+  like_count?: number;
+  repost_count?: number;
+  user_id?: string;
+  artist_name?: string;
+  stream_url?: string | null;
+  created_at?: string;
 }
 
-export async function getRelatedTracks(
-  trackId: string,
-  limit = 20,
-  offset = 0,
-): Promise<{
+interface RelatedTracksResponse {
+  data: {
+    tracks: RelatedTrackItem[];
+    reference_track: RelatedTrackItem;
+  };
+  message?: string;
+  pagination?: {
+    page: number;
+    per_page: number;
+    total_items: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+}
+
+function mapRelatedTrack(item: RelatedTrackItem): Track {
+  return normalizeTrack({
+    ...item,
+    cover_image: item.cover_image ?? undefined,
+    genre: item.genre_name ?? undefined,
+    audio_url: item.stream_url ?? undefined,
+    created_at: item.created_at ?? undefined,
+  });
+}
+
+export async function getRelatedTracks(trackId: string): Promise<{
   referenceTrack: Track;
   tracks: Track[];
-  }> {
-  const { data } = await axiosInstance.get<RelatedTrackResponse>(
+}> {
+  const response = await axiosInstance.get<RelatedTracksResponse>(
     `/tracks/${trackId}/related`,
-    { params: { limit, offset } },
   );
 
-  const payload = (data as any)?.data ?? data;
-  const relatedItems = Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload?.items)
-      ? payload.items
-      : [];
+  const payload = response.data.data;
 
   return {
-    referenceTrack: normalizeTrack(
-      payload?.reference_track ?? payload?.referenceTrack,
-    ),
-    tracks: relatedItems
-      .map((item: any) => normalizeTrack(item))
-      .filter((track: Track) => track.id !== ""),
+    referenceTrack: mapRelatedTrack(payload.reference_track),
+    tracks: Array.isArray(payload.tracks) ? payload.tracks.map(mapRelatedTrack) : [],
   };
 }
 
