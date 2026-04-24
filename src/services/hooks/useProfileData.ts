@@ -108,8 +108,8 @@ export function useProfileData(
           await Promise.all([
             getMyProfile(),
             getMyTracks(1, 100),
-            getFollowers(activeUser.id, { limit: 100 }),
-            loadFollowingWithCounts(activeUser.id),
+            getFollowers(currentUser.id, { limit: 100 }),
+            loadFollowingWithCounts(currentUser.id),
           ]);
 
         if (cancelled) return;
@@ -286,7 +286,9 @@ export function useProfileData(
       country: data.country,
     }).catch(console.error);
 
-    const latestUser = useAuthStore.getState().user ?? activeUser;
+    const latestUser = useAuthStore.getState().user;
+    if (!latestUser) return;
+
     setUser({
       ...latestUser,
       displayName: data.displayName,

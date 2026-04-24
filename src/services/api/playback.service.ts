@@ -1,5 +1,5 @@
 import axiosInstance from "./axiosInstance";
-import type { Track } from "../../../types/track";
+import type { Track } from "@/types/track";
 
 export interface PlayerStateResponse {
   track_id: string | null;

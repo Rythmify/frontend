@@ -229,10 +229,16 @@ export const usePlayerStore = create<PlayerState>()(
           artistName: backendState.artist_name || "",
           audioUrl: backendState.stream_url || "",
           duration: backendState.duration?.toString() || "0",
-          // The rest can be placeholders or retrieved via another service
           artistUsername: "",
           trackSlug: "",
           coverUrl: "",
+          genre: "",
+          likeCount: 0,
+          repostCount: 0,
+          playCount: 0,
+          commentCount: 0,
+          postedAt: new Date().toISOString(),
+          waveformData: [],
         };
 
         set({
