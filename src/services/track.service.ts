@@ -177,6 +177,8 @@ export async function getRelatedTracks(
   const payload = (data as any)?.data ?? data;
   const relatedItems = Array.isArray(payload?.data)
     ? payload.data
+    : Array.isArray(payload?.tracks)
+      ? payload.tracks
     : Array.isArray(payload?.items)
       ? payload.items
       : [];
