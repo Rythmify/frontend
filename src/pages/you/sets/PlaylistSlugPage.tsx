@@ -197,8 +197,8 @@ function PlaylistSlugPage() {
 
   return (
     <div
-      data-test="container px-4 md:px-8 lg:px-12 xl:px-20 playlist-slug-page"
-      className="flex-1 w-full bg-bg min-h-screen"
+      data-test="playlist-slug-page"
+      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen"
     >
       <PlaylistHero
         playlist={playlist}
