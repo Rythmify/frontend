@@ -17,6 +17,7 @@ interface ShareLayoutProps {
   onTabChange: (tab: string) => void;
   onShare?: () => void;
   onEdit?: () => void;
+  profileId?: string;
   likedTracks?: Array<{
     id: string;
     title: string;
@@ -57,6 +58,7 @@ export default function ShareLayout({
   onTabChange,
   onShare,
   onEdit,
+  profileId,
   likedTracks = [],
   followers = [],
   following = [],
@@ -139,6 +141,10 @@ export default function ShareLayout({
         onTabChange={onTabChange}
         onShare={onShare}
         onEdit={onEdit}
+        username={user.username}
+        displayName={user.displayName}
+        userId={profileId ?? user.id}
+        profilePicture={user.avatar ?? null}
         tracks={stats.tracks ?? 0}
       />
 

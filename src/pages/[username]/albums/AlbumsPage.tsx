@@ -15,6 +15,7 @@ export default function AlbumsPage() {
 
   const {
     user,
+    profileData,
     stats,
     followers,
     following,
@@ -54,6 +55,7 @@ export default function AlbumsPage() {
         onTabChange={(tab) => handleTabChange(tab, navigate)}
         onShare={() => setShowShare(true)}
         onEdit={() => setShowEdit(true)}
+        profileId={profileData?.id}
         followers={followersMapped}
         following={followingMapped}
         stats={stats}

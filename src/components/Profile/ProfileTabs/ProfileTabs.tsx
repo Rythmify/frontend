@@ -52,8 +52,8 @@ interface ProfileTabsProps {
   blockDisabled?: boolean;
   username?: string;
   displayName?: string;
-  userId?: string;      
-  profilePicture?: string | null; 
+  userId?: string;
+  profilePicture?: string | null;
   tracks?: number;
   extraActions?: React.ReactNode;
 }
@@ -68,8 +68,8 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   blockDisabled = false,
   username = "",
   displayName = "",
-  userId = "",              
-  profilePicture = null,     
+  userId = "",
+  profilePicture = null,
   tracks = 0,
   extraActions,
 }) => {
@@ -124,7 +124,14 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           {tracks > 0 && (
             <button
               data-test="station-button"
-              onClick={() => {}}
+              onClick={() => {
+                const stationSlug = (displayName || username)
+                  .toLowerCase()
+                  .replace(/[^a-z0-9\s-]/g, "")
+                  .replace(/\s+/g, "-")
+                  .replace(/-+/g, "-");
+                navigate(`/discover/stations/${stationSlug}:${userId}`);
+              }}
               className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
             >
               <i className="fa-solid fa-tower-broadcast" />
@@ -155,7 +162,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
             <ModalNewMessageBody
               onClose={() => setIsOpen(false)}
-              prefilledRecipient={prefilledRecipient}  
+              prefilledRecipient={prefilledRecipient}
             />
           </Modal>
 
