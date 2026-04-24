@@ -5,8 +5,11 @@ import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { usePlayerStore } from "@/stores/player.store";
 import { useNavigate } from "react-router-dom";
-import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import CardOverlay, {
+  AddToPlaylistIcon,
+} from "@/components/UI/CardOverlay/CardOverlay";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import { getStationTracks } from "@/services/api/playlist/playlist.service";
 // ─── Color Schemes ────────────────────────────────────────
 
 const COLOR_SCHEMES = [
@@ -83,7 +86,9 @@ export default function StationCard({
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   const isThisStationPlaying =
-    isPlaying && !!station.previewTrack && currentTrack?.id === station.previewTrack.id;
+    isPlaying &&
+    !!station.previewTrack &&
+    currentTrack?.id === station.previewTrack.id;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -113,7 +118,7 @@ export default function StationCard({
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
-  const stationPath = `/discover/stations/${stationSlug}:${station.id}`;
+  const stationPath = `/discover/stations/${stationSlug}:${station.seedArtist.id}`;
 
   return (
     <div
@@ -185,7 +190,10 @@ export default function StationCard({
           isPlaying={isThisStationPlaying}
           onPlay={handlePlay}
           isLiked={liked}
-          onLike={(e) => { e.stopPropagation(); toggleStation(station); }}
+          onLike={(e) => {
+            e.stopPropagation();
+            toggleStation(station);
+          }}
           overlayZClass="z-40"
           dataTestPrefix="station-card"
           itemId={station.id}
@@ -211,7 +219,16 @@ export default function StationCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          trackId={station.previewTrack?.id}
+          fetchTracks={() =>
+            getStationTracks(station.seedArtist.id).then((r) =>
+              r.tracks.map((t) => ({
+                id: t.track_id,
+                title: t.title ?? "",
+                artistName: t.artist_name ?? "",
+                coverUrl: t.cover_image ?? undefined,
+              })),
+            )
+          }
           trackTitle={station.name}
           onClose={() => setShowPlaylistModal(false)}
         />

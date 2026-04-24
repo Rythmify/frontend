@@ -4,6 +4,7 @@ import { useHistoryStore } from "@/stores/history.store";
 import { useLikesStore } from "@/stores/likes.store";
 import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import { getTrendingByGenre } from "@/services/api/discover.service";
 
 export interface BuzzingPlaylist {
   id: string;
@@ -109,7 +110,16 @@ export default function GenreCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          playlistId={item.id}
+          fetchTracks={() =>
+            getTrendingByGenre(item.id).then((r) =>
+              r.tracks.map((t) => ({
+                id: t.id,
+                title: t.title,
+                artistName: t.artist_name ?? "",
+                coverUrl: t.cover_image ?? undefined,
+              })),
+            )
+          }
           trackTitle={item.genre}
           onClose={() => setShowPlaylistModal(false)}
         />
