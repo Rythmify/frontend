@@ -59,11 +59,17 @@ const DiscoverSidebar = () => {
     id: String(t.id),
     title: t.title,
     artist: t.artistName,
+    artistUsername: t.artistUsername,
     coverUrl: t.coverUrl,
+    audioUrl: t.audioUrl,
     plays: t.playCount,
     likes: t.likeCount,
     reposts: t.repostCount,
     comments: t.commentCount,
+    genre: t.genre,
+    duration: t.duration,
+    postedAt: t.postedAt,
+    isPrivate: t.isPrivate,
   });
 
   return (
