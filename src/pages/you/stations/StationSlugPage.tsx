@@ -85,14 +85,29 @@ export default function StationSlugPage() {
       setError(null);
 
       try {
-        const artistId = stationSlug.split(":").at(-1) ?? stationSlug;
-        const stationRes = await getStationTracks(artistId);
+        const parts = stationSlug.split(":");
+        const primaryId = parts.at(-1) || stationSlug;
+        
+        let stationRes;
+        try {
+          stationRes = await getStationTracks(primaryId);
+        } catch (err) {
+          // If we have a complex slug (e.g. slug:id or id1:id2), try the other part as fallback
+          if (parts.length > 1) {
+            stationRes = await getStationTracks(parts[0]);
+          } else {
+            throw err;
+          }
+        }
+        
         if (cancelled) return;
 
         setStation(stationRes.station);
         setStationTracks(stationRes.tracks);
 
         try {
+          // Use artist_id from station if available, otherwise fallback to the ID we used
+          const artistId = stationRes.station.artist_id || primaryId;
           const artist = await getUserById(artistId);
           if (!cancelled) setSeedArtist(artist);
         } catch {
