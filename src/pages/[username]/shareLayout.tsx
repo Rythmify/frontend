@@ -97,7 +97,7 @@ export default function ShareLayout({
           if (cancelled) return;
 
           const [countData, data] = await Promise.all([
-            getUserLikedTracks(profile.id, { limit: 1 }),
+            getUserLikedTracks(profile.id, { limit: 100 }),
             getUserLikedTracks(profile.id, { limit: 3 }),
           ]);
           if (cancelled) return;

@@ -68,6 +68,8 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 }) => {
   const navigate = useNavigate();
   const [bioExpanded, setBioExpanded] = useState(false);
+  const displayedLikedTracksCount =
+    likedTracksCount > 0 ? likedTracksCount : likedTracks.length;
 
   const bio = user.bio ?? "";
   const isBioLong = bio.length > BIO_CHAR_LIMIT;
@@ -140,7 +142,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       )}
 
       {/* Liked tracks — sourced from the profile being viewed, passed in as props */}
-      {likedTracksCount > 0 && (
+      {displayedLikedTracksCount > 0 && (
         <div>
           <div className="flex items-center justify-between w-full hover:opacity-70 transition-opacity">
             <button
@@ -148,7 +150,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               onClick={() => navigate(`/${user.username}/likes`)}
               className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
             >
-              {likedTracksCount} LIKES
+              {displayedLikedTracksCount} LIKES
             </button>
             <button
               data-test="likes-view-all"

@@ -53,6 +53,7 @@ export default function UsernamePage() {
     const loadLikedTracks = async () => {
       try {
         if (isOwner) {
+          const countData = await getMyLikedTracks({ limit: 100 });
           const data = await getMyLikedTracks({ limit: 3 });
           const items = Array.isArray(data?.items)
             ? data.items
@@ -60,14 +61,18 @@ export default function UsernamePage() {
               ? data
               : [];
           const total =
-            typeof data?.meta?.total === "number" && data.meta.total > 0
-              ? data.meta.total
+            typeof countData?.meta?.total === "number" &&
+            countData.meta.total > 0
+              ? countData.meta.total
               : items.length;
           if (!cancelled) {
             setLikedTracks(items);
             setLikedTracksCount(total);
           }
         } else if (username && profileData) {
+          const countData = await getUserLikedTracks(profileData.id, {
+            limit: 100,
+          });
           const data = await getUserLikedTracks(profileData.id, { limit: 3 });
           const items = Array.isArray(data?.items)
             ? data.items
@@ -75,8 +80,9 @@ export default function UsernamePage() {
               ? data
               : [];
           const total =
-            typeof data?.meta?.total === "number" && data.meta.total > 0
-              ? data.meta.total
+            typeof countData?.meta?.total === "number" &&
+            countData.meta.total > 0
+              ? countData.meta.total
               : items.length;
           if (!cancelled) {
             setLikedTracks(items);
