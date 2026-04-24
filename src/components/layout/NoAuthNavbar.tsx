@@ -32,7 +32,7 @@ const NoAuthNavbar = () => {
     }`;
 
   return (
-    <nav className="sticky top-1 z-50 w-full bg-bg ">
+    <nav className="sticky top-0 z-50 w-full bg-bg ">
 
       {/* Main navbar row */}
       <div className="container px-4 md:px-8 lg:px-12 xl:px-20 grid grid-cols-[auto_1fr_auto] items-center h-11.5">

@@ -4,14 +4,18 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useNotificationStore } from '@/stores/notification.store';
 import { Bell, Mail, ChevronDown, MoreHorizontal, Menu, X, Search } from "lucide-react";
 import { disconnectSocket } from '@/services/api/messaging/socketService';
+import { usePlayerStore } from '@/stores/player.store';
+import { audio } from '@/services/audioService';
 import NotificationCard from '@/components/notificationsComponents/notificationCard';
 import { fetchNotifications, type Notification } from '@/services/api/notifications/notificationsAPI';
 import { fetchConversations, type Conversation } from '@/services/api/messaging/conversationApi';
 import { ChatProfile } from '@/components/MessagingComponents/ChatProfile';
 import { useMessagingStore } from '@/stores/messaging.store';
+import UserAvatar from '@/components/UI/UserAvatar';
 
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
+  const resetPlayer = usePlayerStore((s) => s.reset);
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
   const { unreadCount: unreadMessages, fetchUnreadCount: fetchUnreadMessages, refreshUnreadCount: refreshUnreadMessages, setupSocketListeners, teardownSocketListeners } = useMessagingStore();
   const navigate = useNavigate();
@@ -58,7 +62,7 @@ const MainNavbar = () => {
     setNotificationsLoading(true);
 
     try {
-      const res = await fetchNotifications(1, 9, false);
+      const res = await fetchNotifications(1, 9);
       setNotifications(res.data.items ?? []);
     } catch {
       setNotifications([]);
@@ -125,6 +129,9 @@ const MainNavbar = () => {
 
   const handleSignOut = () => {
     disconnectSocket();
+    audio.pause();
+    audio.src = "";
+    resetPlayer();
     logout();
     navigate("/logout");
   };
@@ -200,11 +207,13 @@ const MainNavbar = () => {
               onClick={() => toggle(setShowAvatarMenu)}
               className="flex items-center gap-1 hover:opacity-80 transition-opacity"
             >
-              {user?.avatar ? (
-                <img src={user.avatar} alt="" className="w-[30px] h-[30px] rounded-full object-cover" />
-              ) : (
-                <div className="w-[30px] h-[30px] rounded-full bg-text-muted" />
-              )}
+              <UserAvatar
+                src={user?.avatar}
+                name={user?.displayName ?? user?.username ?? ""}
+                alt={user?.displayName ?? user?.username ?? "User"}
+                wrapperClassName="w-[30px] h-[30px] rounded-full overflow-hidden"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
+              />
               <ChevronDown size={25} className="mx-2 text-text-secondary hover:text-text-hover" />
             </button>
 
@@ -224,7 +233,7 @@ const MainNavbar = () => {
             )}
           </div>
 
-          {/* Notifications */}
+       {/* Notifications */}
           <div ref={notifRef} className="relative">
             <button
               data-test="btn-notifications"
@@ -273,7 +282,7 @@ const MainNavbar = () => {
                         <NotificationCard
                           key={notification.id}
                           notification={notification}
-                          showActions={false}
+                          showActions={false as unknown as undefined}
                           data-test={`navbar-notification-card-${notification.id}`}
                         />
                       ))}

@@ -4,16 +4,20 @@ import CuratedByRythmify from "@/components/discover/CuratedByRythmify/CuratedBy
 import { getHome } from "@/services/api/discover.service";
 import type { HomeData } from "@/services/api/discover.service";
 import GoMobile from "@/components/UI/GoMobile";
+import Spinner from "@/components/UI/Spinner";
 
 const DiscoverPageGuest = () => {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [homeError, setHomeError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     getHome()
-      .then(setHomeData)
-      .catch((err: Error) => setHomeError(err.message));
+      .then((data) => { setHomeData(data); setIsLoading(false); })
+      .catch((err: Error) => { setHomeError(err.message); setIsLoading(false); });
   }, []);
+
+  if (isLoading) return <Spinner />;
 
   return (
     <div
