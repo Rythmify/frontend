@@ -137,6 +137,13 @@ describe("ProfileTabs", () => {
     expect(screen.getByTestId("report-button")).toBeInTheDocument();
   });
 
+  it("opens the report modal when Report is clicked", () => {
+    render(<ProfileTabs {...defaultVisitorProps} />);
+    fireEvent.click(screen.getByTestId("more-button"));
+    fireEvent.click(screen.getByTestId("report-button"));
+    expect(screen.getByTestId("report-account-modal")).toBeInTheDocument();
+  });
+
   it("shows correct name in Block/Report", () => {
     render(<ProfileTabs {...defaultVisitorProps} />);
     fireEvent.click(screen.getByTestId("more-button"));

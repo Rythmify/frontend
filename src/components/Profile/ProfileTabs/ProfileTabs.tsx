@@ -4,6 +4,8 @@ import ModalNewMessageBody from "@/pages/social/messages/ModalNewMessageBody";
 import { Modal } from "@/components/MessagingComponents/Modal";
 import type { RecipientResult } from "@/components/MessagingComponents/RecipientInputBox";
 import FollowButton from "@/components/UI/FollowButton";
+import { ReportModal } from "@/components/UI/ReportModal";
+import { SpamModal } from "@/components/UI/SpamModal";
 
 interface TabButtonProps {
   children: React.ReactNode;
@@ -76,6 +78,8 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   const [showMore, setShowMore] = useState(false);
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isSpamOpen, setIsSpamOpen] = useState(false);
 
   // Build the prefilled recipient from profile data
   const prefilledRecipient: RecipientResult = {
@@ -192,6 +196,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
                 )}
                 <button
                   data-test="report-button"
+                  onClick={() => {
+                    setShowMore(false);
+                    setIsReportOpen(true);
+                  }}
                   className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
                 >
                   <i className="fa-solid fa-circle-exclamation text-xs w-4" />
@@ -202,6 +210,26 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           </div>
         </div>
       )}
+
+      <Modal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)}>
+        <ReportModal
+          userId={userId}
+          username={displayName || username}
+          onClose={() => setIsReportOpen(false)}
+          onSpamSelected={() => {
+            setIsReportOpen(false);
+            setIsSpamOpen(true);
+          }}
+        />
+      </Modal>
+
+      <Modal isOpen={isSpamOpen} onClose={() => setIsSpamOpen(false)}>
+        <SpamModal
+          userId={userId}
+          username={displayName || username}
+          onClose={() => setIsSpamOpen(false)}
+        />
+      </Modal>
     </div>
   );
 };
