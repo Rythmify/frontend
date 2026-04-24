@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Tooltip } from "@heroui/react";
 
@@ -53,6 +53,7 @@ export default function CardOverlay({
 }: CardOverlayProps) {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const menuPanelRef = useRef<HTMLDivElement>(null);
 
   const hasMenu = !!moreMenuItems && moreMenuItems.length > 0;
 
@@ -68,8 +69,20 @@ export default function CardOverlay({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setShowMoreMenu(false);
     };
+    const onPointerDown = (e: PointerEvent) => {
+      if (menuPanelRef.current && !menuPanelRef.current.contains(e.target as Node)) {
+        setShowMoreMenu(false);
+      }
+    };
+    const onScroll = () => setShowMoreMenu(false);
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("scroll", onScroll, true);
+    };
   }, [showMoreMenu]);
 
   const handleOpenMore = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -144,6 +157,7 @@ export default function CardOverlay({
               {showMoreMenu &&
                 createPortal(
                   <div
+                    ref={menuPanelRef}
                     style={{ top: menuPos.top, left: menuPos.left }}
                     className="fixed z-[9999] bg-bg w-44 border font-bold border-[#353535] rounded shadow-xl overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
