@@ -1,9 +1,17 @@
-import type { Message } from '../../services/api/messaging/conversationApi';
-import type { Track, Playlist } from '../../services/api/messaging/conversationApi';
+import type { Message, Track as ApiTrack, Playlist as ApiPlaylist } from '../../services/api/messaging/conversationApi';
+import type { Track } from '../../types/track';
+import type { Playlist } from '../../types/playlist';
+import TrackCard from '@/components/track/TrackCard';             
+import PlaylistComponent from '@/components/playlist/PlaylistComponent'; 
 
-// Extended Message type that may carry a pre-fetched resource (optimistic UI)
+// ─── Extended message type ────────────────────────────────────────────────────
+// _embedResources is the array form written by SendMessageForm (optimistic UI).
+// _embedResource is kept for backward-compat with any code that still uses the
+// scalar field.
+
 interface MessageWithEmbed extends Message {
-  _embedResource?: Track | Playlist;
+  _embedResources?: Array<ApiTrack | ApiPlaylist>;
+  _embedResource?: ApiTrack | ApiPlaylist;
 }
 
 interface MessageCellProps {
@@ -12,98 +20,135 @@ interface MessageCellProps {
   profilePicture?: string | null;
 }
 
-// ─── Embed Card ───────────────────────────────────────────────────────────────
+// ─── Type guard ───────────────────────────────────────────────────────────────
 
-function TrackEmbedCard({ track }: { track: Track }) {
+function isApiTrack(r: ApiTrack | ApiPlaylist): r is ApiTrack {
+  // Tracks have `title`; playlists have `name`
+  return 'title' in r;
+}
+
+// ─── Duration formatter ───────────────────────────────────────────────────────
+
+function secondsToDisplay(sec: number | null): string {
+  if (!sec) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// ─── Date formatter ───────────────────────────────────────────────────────────
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  const hrs  = Math.floor(mins / 60);
+  const days = Math.floor(hrs  / 24);
+  if (days  > 0) return `${days} day${days  > 1 ? 's' : ''} ago`;
+  if (hrs   > 0) return `${hrs} hour${hrs   > 1 ? 's' : ''} ago`;
+  if (mins  > 0) return `${mins} minute${mins > 1 ? 's' : ''} ago`;
+  return 'just now';
+}
+
+// ─── Shape adapters ───────────────────────────────────────────────────────────
+// Convert the API (snake_case) types from conversationApi.ts into the
+// camelCase frontend types consumed by TrackCard and PlaylistComponent.
+// Every field maps 1-to-1 from the enriched interfaces — no `as unknown` needed.
+
+function apiTrackToFrontend(t: ApiTrack): Track {
+  return {
+    id:             t.id,
+    title:          t.title,
+    artistName:     t.artist_name ?? t.artists ?? 'Unknown Artist',
+    artistUsername: t.artist_username ?? '',
+    artistId:       t.user_id,
+    coverUrl:       t.cover_image ?? '',
+    audioUrl:       t.stream_url  ?? '',
+    duration:       secondsToDisplay(t.duration),
+    waveformData:   [],                  // waveform peaks are fetched lazily by TrackCard itself
+    playCount:      t.play_count,
+    likeCount:      t.like_count,
+    repostCount:    t.repost_count,
+    genre:          t.genre ?? '',
+    trackSlug:      t.slug ?? t.id,
+    postedAt:       t.created_at,
+    isLiked:        t.is_liked,
+    isReposted:     t.is_reposted,
+    commentCount:   t.comment_count,
+  } as Track;
+}
+
+function apiPlaylistToFrontend(p: ApiPlaylist): Playlist {
+  const tracks = (p.tracks ?? []).map(apiTrackToFrontend);
+
+  return {
+    id:               p.playlist_id,
+    title:            p.name,
+    creatorName:      p.creator_name      ?? '',
+    creatorUsername:  p.creator_username  ?? '',
+    coverUrl:         p.cover_image       ?? tracks[0]?.coverUrl ?? '',
+    playlistSlug:     p.slug              ?? p.playlist_id,
+    trackCount:       p.track_count,
+    tracks,
+    likeCount:        p.like_count,
+    repostCount:      p.repost_count,
+    isPrivate:        p.is_private,
+    postedAt:         p.created_at,
+    description:      p.description ?? '',
+  } as Playlist;
+}
+
+// ─── Per-embed renderer ───────────────────────────────────────────────────────
+
+function EmbedRenderer({ resource }: { resource: ApiTrack | ApiPlaylist }) {
+  if (isApiTrack(resource)) {
+    const track = apiTrackToFrontend(resource);
+    return (
+      <div className="mt-3">
+        <TrackCard
+          track={track}
+          disableComments
+          onCopyLink={() => {}}
+          onAddToPlaylist={() => {}}
+        />
+      </div>
+    );
+  }
+
+  const playlist = apiPlaylistToFrontend(resource);
   return (
-    <div className="mt-2 flex items-center gap-3 bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2">
-      <div className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0">
-        {track.cover_image ? (
-          <img src={track.cover_image} alt={track.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b]" />
-        )}
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="text-sm font-semibold text-white truncate">{track.title}</span>
-        <span className="text-xs text-gray-400 truncate">
-          {track.artist_name ?? track.artists ?? 'Unknown Artist'}
-        </span>
-        {track.genre && (
-          <span className="text-xs text-[#f50] mt-0.5">{track.genre}</span>
-        )}
-      </div>
-      <div className="ml-auto flex-shrink-0 text-xs text-gray-500 text-right leading-tight">
-        {track.duration != null && (
-          <div>{formatDuration(track.duration)}</div>
-        )}
-        {track.play_count != null && (
-          <div>{track.play_count.toLocaleString()} plays</div>
-        )}
-      </div>
+    <div className="mt-3">
+      <PlaylistComponent
+        playlist={playlist}
+        onCopyLink={() => {}}
+      />
     </div>
   );
 }
 
-function PlaylistEmbedCard({ playlist }: { playlist: Playlist }) {
+// ─── Fallback pill ────────────────────────────────────────────────────────────
+// Shown for messages loaded from history that have no pre-fetched resource.
+// You can enhance this later to lazy-fetch the resource by embed_id.
+
+function EmbedFallback({ type }: { type: string }) {
   return (
-    <div className="mt-2 flex items-center gap-3 bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2">
-      <div className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0">
-        {playlist.cover_image ? (
-          <img src={playlist.cover_image} alt={playlist.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#6b5b8b] to-[#3b3b6b]" />
-        )}
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="text-sm font-semibold text-white truncate">{playlist.name}</span>
-        <span className="text-xs text-gray-400">
-          {playlist.track_count} track{playlist.track_count !== 1 ? 's' : ''}
-        </span>
-        {playlist.description && (
-          <span className="text-xs text-gray-500 truncate">{playlist.description}</span>
-        )}
-      </div>
-      <div className="ml-auto flex-shrink-0 text-xs text-gray-500 text-right leading-tight">
-        <div>{playlist.like_count.toLocaleString()} likes</div>
-        {playlist.repost_count != null && (
-          <div>{playlist.repost_count.toLocaleString()} reposts</div>
-        )}
-      </div>
+    <div className="mt-2 text-xs text-gray-500 italic">
+      {type === 'track' ? '🎵 Track attached' : '🎶 Playlist attached'}
     </div>
   );
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-function isTrack(resource: Track | Playlist): resource is Track {
-  return 'title' in resource;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function MessageCell({ message, displayName, profilePicture }: MessageCellProps) {
-  const timeAgo = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    return 'just now';
-  };
-
-  const embedResource = message._embedResource;
+  // Normalise both the array form (_embedResources) and the legacy scalar
+  // (_embedResource) into a single array for uniform rendering.
+  const embedResources: Array<ApiTrack | ApiPlaylist> =
+    message._embedResources ??
+    (message._embedResource ? [message._embedResource] : []);
 
   return (
     <div className="flex items-start gap-3 py-3">
+      {/* Avatar */}
       <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-[#2a2a2a]">
         {profilePicture ? (
           <img
@@ -116,29 +161,31 @@ export default function MessageCell({ message, displayName, profilePicture }: Me
         )}
       </div>
 
+      {/* Content */}
       <div className="flex-1 min-w-0">
+        {/* Name + timestamp */}
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-sm font-semibold text-white">{displayName}</span>
-          <span className="flex-shrink-0 text-xs text-gray-500">{timeAgo(message.created_at)}</span>
+          <span className="flex-shrink-0 text-xs text-gray-500">
+            {relativeTime(message.created_at)}
+          </span>
         </div>
 
+        {/* Text body */}
         {message.body && (
           <p className="text-sm text-gray-400 mt-0.5 break-words">{message.body}</p>
         )}
 
-        {/* Embed card — rendered from pre-fetched resource (optimistic) or embed_type label */}
-        {embedResource ? (
-          isTrack(embedResource)
-            ? <TrackEmbedCard track={embedResource as Track} />
-            : <PlaylistEmbedCard playlist={embedResource as Playlist} />
-        ) : message.embed_type === 'track' ? (
-          // Fallback: embed arrived from server without pre-fetched data
-          // (e.g. messages loaded from history). You can enhance this to
-          // fetch the resource lazily if needed.
-          <div className="mt-2 text-xs text-gray-500 italic">🎵 Track attached</div>
-        ) : message.embed_type === 'playlist' ? (
-          <div className="mt-2 text-xs text-gray-500 italic">🎶 Playlist attached</div>
-        ) : null}
+        {/* Embeds */}
+        {embedResources.length > 0
+          ? embedResources.map((resource, idx) => (
+              <EmbedRenderer key={idx} resource={resource} />
+            ))
+          : // Fallback: message came from history without pre-fetched data
+            message.embed_type
+              ? <EmbedFallback type={message.embed_type} />
+              : null
+        }
       </div>
     </div>
   );
