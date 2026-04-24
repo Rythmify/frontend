@@ -1,3 +1,4 @@
+import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import GenreCard from "./GenreCard";
@@ -8,6 +9,9 @@ import { useHistoryStore } from "@/stores/history.store";
 
 vi.mock("@/stores/likes.store", () => ({ useLikesStore: vi.fn() }));
 vi.mock("@/stores/history.store", () => ({ useHistoryStore: vi.fn() }));
+vi.mock("@heroui/react", () => ({
+  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
 
 // ─── Fixtures ─────────────────────────────────────────────
 
@@ -71,19 +75,15 @@ describe("GenreCard", () => {
   it("renders the unliked heart icon when playlist is not liked", () => {
     mockIsPlaylistLiked.mockReturnValue(false);
     render(<GenreCard item={mockItem} index={2} />);
-    const icon = screen
-      .getByTestId(`button-like-genre-${mockItem.id}`)
-      .querySelector("i");
-    expect(icon).toHaveClass("fa-regular");
+    const icon = screen.getByTestId("button-like").querySelector("i");
+    expect(icon).toHaveClass("fa-solid");
     expect(icon).toHaveClass("fa-heart");
   });
 
   it("renders the liked heart icon when playlist is liked", () => {
     mockIsPlaylistLiked.mockReturnValue(true);
     render(<GenreCard item={mockItem} index={0} />);
-    const icon = screen
-      .getByTestId(`button-like-genre-${mockItem.id}`)
-      .querySelector("i");
+    const icon = screen.getByTestId("button-like").querySelector("i");
     expect(icon).toHaveClass("fa-solid");
     expect(icon).toHaveClass("fa-heart");
   });
@@ -92,7 +92,7 @@ describe("GenreCard", () => {
 
   it("calls togglePlaylist with correct args when like button is clicked", () => {
     render(<GenreCard item={mockItem} index={3} />);
-    fireEvent.click(screen.getByTestId(`button-like-genre-${mockItem.id}`));
+    fireEvent.click(screen.getByTestId("button-like"));
     expect(mockTogglePlaylist).toHaveBeenCalledWith({
       id: mockItem.id,
       title: mockItem.genre,
@@ -108,7 +108,7 @@ describe("GenreCard", () => {
         <GenreCard item={mockItem} />
       </div>,
     );
-    fireEvent.click(screen.getByTestId(`button-like-genre-${mockItem.id}`));
+    fireEvent.click(screen.getByTestId("button-like"));
     expect(parentClick).not.toHaveBeenCalled();
   });
 

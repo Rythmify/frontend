@@ -1,4 +1,4 @@
-import axiosInstance from "./axiosInstance";
+﻿import axiosInstance from "./axiosInstance";
 import type { Playlist } from "./playlist/playlist.service";
 
 // =============================================================================
@@ -22,6 +22,7 @@ export interface DiscoveryTrack {
 
 export interface PersonalMix {
   id: string;
+  mix_id?: string;
   label: string | null;
   flavor: "listening_history"; // taste_profile was removed from spec
   genre_name: string | null;
@@ -43,7 +44,6 @@ export interface CuratedMixSummary {
 
 export interface DiscoveryStation {
   id: string;
-  name: string;
   artist_id: string;
   artist_name: string;
   images: {
@@ -51,7 +51,7 @@ export interface DiscoveryStation {
     center: string | null;
     right: string | null;
   };
-  preview_track?: DiscoveryTrack;
+  preview_track: DiscoveryTrack;
   track_count: number;
 }
 
@@ -82,7 +82,7 @@ export interface HomeData {
     source: "personalized" | "trending_fallback";
   } | null;
   trending_by_genre: {
-    genres: { genre_id: string; genre_name: string }[];
+    genres: { genre_id: string; genre_name: string; preview_track: DiscoveryTrack }[];
     initial_tab: {
       genre_id: string;
       genre_name: string;
@@ -169,6 +169,20 @@ export interface DiscoveryAlbum {
   track_count: number;
   like_count: number;
   created_at?: string;
+  preview_track?: DiscoveryTrack | null;
+}
+
+export type MixDetailsTrack = DiscoveryTrack;
+
+export interface MixDetailsData {
+  mix_id: string;
+  title: string;
+  cover_url: string | null;
+  tracks: MixDetailsTrack[];
+}
+
+export interface MixDetailsResponse {
+  data: MixDetailsData;
 }
 
 // =============================================================================
@@ -182,6 +196,13 @@ export const getHome = async (): Promise<HomeData> => {
   );
   // res.data is the full response body — we only need res.data.data (the payload)
   return res.data.data;
+};
+
+export const getCuratedMixByIdFromHome = async (
+  mixId: string,
+): Promise<CuratedHomeMixPreview | null> => {
+  const home = await getHome();
+  return home.curated?.mixes.find((mix) => mix.mix_id === mixId) ?? null;
 };
 
 // GET /me/history
@@ -236,28 +257,25 @@ export const getAlbumsForYou = async (params?: {
   limit?: number;
   offset?: number;
 }): Promise<{
-  data: Playlist[];
+  data: DiscoveryAlbum[];
   source: "followed_artists" | "global_fallback";
   pagination: ListMeta;
 }> => {
   const res = await axiosInstance.get<{
-    data: Playlist[];
+    data: DiscoveryAlbum[];
     source: "followed_artists" | "global_fallback";
     pagination: ListMeta;
   }>("/home/albums-for-you", { params: { ...params, is_album_view: true } });
   return res.data;
 };
 
-// GET /home/mixes/:mixId/tracks — tracks for a personal mix
+// GET /home/mixes/:mixId — personal mix details with tracks
 export const getMixTracks = async (
   mixId: string,
-): Promise<{ mix: PersonalMix; tracks: DiscoveryTrack[] }> => {
-  const res = await axiosInstance.get<{
-    data: { mix: PersonalMix; tracks: DiscoveryTrack[] };
-  }>(`/home/mixes/${mixId}/tracks`);
+): Promise<MixDetailsData> => {
+  const res = await axiosInstance.get<MixDetailsResponse>(`/home/mixes/${mixId}`);
   return res.data.data;
 };
-
 // POST /me/listening-history — record a play event (fire-and-forget)
 export const writeListeningHistory = async (
   trackId: string,
@@ -286,3 +304,4 @@ export const getTrendingByGenre = async (
   }>(`/home/trending-by-genre/${genreId}`, { params });
   return res.data.data;
 };
+

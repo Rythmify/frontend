@@ -83,6 +83,24 @@ export async function getMyLikedPlaylistsApi(params?: {
   };
 }
 
+// ─── Album Engagement ─────────────────────────────────────────────────────────
+
+/**
+ * POST /albums/{album_id}/like
+ */
+export async function likeAlbum(albumId: string) {
+  const { data } = await axiosInstance.post(`/albums/${albumId}/like`);
+  return data;
+}
+
+/**
+ * DELETE /albums/{album_id}/like
+ */
+export async function unlikeAlbum(albumId: string) {
+  const { data } = await axiosInstance.delete(`/albums/${albumId}/like`);
+  return data;
+}
+
 // ─── Playlist Engagement ──────────────────────────────────────────────────────
 
 export async function likePlaylist(playlistId: string | number) {
@@ -111,7 +129,7 @@ export async function removePlaylistRepost(playlistId: string | number) {
 
 export async function likeComment(commentId: string | number) {
   const { data } = await axiosInstance.post(`/comments/${commentId}/like`);
-  return data;
+  return data.data;
 }
 
 export async function unlikeComment(commentId: string | number) {

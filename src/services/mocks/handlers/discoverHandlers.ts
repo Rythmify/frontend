@@ -212,19 +212,19 @@ const mockWeeklyMix: CuratedMixSummary = {
 const mockStations: DiscoveryStation[] = [
   {
     id: "aaaa1111-2222-4333-8444-555566667777",
-    name: "Based on Drake",
     artist_id: ARTIST_IDS.drake,
     artist_name: "Drake",
     images: { left: "https://picsum.photos/seed/501/200/200", center: null, right: null },
     track_count: 50,
+    preview_track: mockDiscoveryTracks[0],
   },
   {
     id: "bbbb1111-2222-4333-8444-555566667777",
-    name: "Based on SZA",
     artist_id: ARTIST_IDS.sza,
     artist_name: "SZA",
     images: { left: "https://picsum.photos/seed/502/200/200", center: null, right: null },
     track_count: 50,
+    preview_track: mockDiscoveryTracks[1],
   },
 ];
 
@@ -481,7 +481,7 @@ export const discoverHandlers = [
     });
   }),
 
-  // GET /home/stations/:artistId/tracks — tracks for an artist station
+  // GET /home/stations/:artistId/tracks ï¿½ tracks for an artist station
   http.get("*/home/stations/:artistId/tracks", ({ params }) => {
     const station = mockStations.find(
       (item) => item.artist_id === params.artistId,
@@ -498,7 +498,7 @@ export const discoverHandlers = [
       data: {
         station: {
           id: station.id,
-          name: station.name,
+          name: station.artist_name,
           artist_id: station.artist_id,
           artist_name: station.artist_name,
           images: station.images,

@@ -32,7 +32,7 @@ export interface ProfileDataResult {
   followers: UserSummary[];
   following: EnrichedUserSummary[];
   isOwner: boolean;
-  activeUser: User;
+  activeUser: User | null;
   // ── Social state (non-owner only) ────────────────────────
   isFollowing: boolean;
   isBlocked: boolean;
@@ -60,8 +60,8 @@ export function useProfileData(
 ): ProfileDataResult {
   const { user: currentUser, setUser } = useAuthStore();
 
-  const isOwner = !username || username === currentUser?.username;
-  const activeUser = currentUser!;
+  const isOwner = !!currentUser && (!username || username === currentUser.username);
+  const activeUser = currentUser;
 
   const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
     null,
@@ -108,8 +108,8 @@ export function useProfileData(
           await Promise.all([
             getMyProfile(),
             getMyTracks(1, 100),
-            getFollowers(activeUser.id, { limit: 100 }),
-            loadFollowingWithCounts(activeUser.id),
+            getFollowers(currentUser.id, { limit: 100 }),
+            loadFollowingWithCounts(currentUser.id),
           ]);
 
         if (cancelled) return;
@@ -286,7 +286,9 @@ export function useProfileData(
       country: data.country,
     }).catch(console.error);
 
-    const latestUser = useAuthStore.getState().user ?? activeUser;
+    const latestUser = useAuthStore.getState().user;
+    if (!latestUser) return;
+
     setUser({
       ...latestUser,
       displayName: data.displayName,

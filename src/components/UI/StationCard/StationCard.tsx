@@ -1,7 +1,15 @@
+import type React from "react";
+import { useState } from "react";
 import type { Station } from "@/types/station";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
+import { usePlayerStore } from "@/stores/player.store";
 import { useNavigate } from "react-router-dom";
+import CardOverlay, {
+  AddToPlaylistIcon,
+} from "@/components/UI/CardOverlay/CardOverlay";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import { getStationTracks } from "@/services/api/playlist/playlist.service";
 // ─── Color Schemes ────────────────────────────────────────
 
 const COLOR_SCHEMES = [
@@ -72,8 +80,26 @@ export default function StationCard({
 }: StationCardProps) {
   const { isStationLiked, toggleStation } = useLikesStore();
   const { addStation } = useHistoryStore();
+  const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const liked = isStationLiked(station.id);
   const navigate = useNavigate();
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const isThisStationPlaying =
+    isPlaying &&
+    !!station.previewTrack &&
+    currentTrack?.id === station.previewTrack.id;
+
+  const handlePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!station.previewTrack) return;
+    if (currentTrack?.id === station.previewTrack.id) {
+      togglePlay();
+    } else {
+      setTrack(station.previewTrack);
+      addStation(station);
+    }
+  };
   // Use the artists array if available, otherwise fall back to seedArtist for all 3
   const artists = station.artists?.length
     ? station.artists
@@ -92,7 +118,7 @@ export default function StationCard({
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
-  const stationPath = `/discover/stations/${stationSlug}:${station.id}`;
+  const stationPath = `/discover/stations/${stationSlug}:${station.seedArtist.id}`;
 
   return (
     <div
@@ -160,44 +186,25 @@ export default function StationCard({
           </p>
         </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40">
-          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-          <div />
-          <div className="flex items-center justify-center flex-1">
-            <button
-              data-test={`station-card-play-${station.id}`}
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
-              onClick={(e) => {
-                e.stopPropagation();
-                addStation(station);
-              }}
-            >
-              <i className="fa-solid fa-play text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ml-0.5" />
-            </button>
-          </div>
-          <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button
-              data-test={`station-card-like-${station.id}`}
-              className="flex flex-col items-center gap-0.5 group/btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleStation(station);
-              }}
-            >
-              <i
-                className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`}
-              />
-            </button>
-            <button
-              data-test={`station-card-more-${station.id}`}
-              className="flex flex-col items-center gap-0.5 group/btn"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
-            </button>
-          </div>
-        </div>
+        <CardOverlay
+          isPlaying={isThisStationPlaying}
+          onPlay={handlePlay}
+          isLiked={liked}
+          onLike={(e) => {
+            e.stopPropagation();
+            toggleStation(station);
+          }}
+          overlayZClass="z-40"
+          dataTestPrefix="station-card"
+          itemId={station.id}
+          moreMenuItems={[
+            {
+              label: "Add to playlist",
+              iconNode: AddToPlaylistIcon,
+              onClick: () => setShowPlaylistModal(true),
+            },
+          ]}
+        />
       </div>
 
       {/* ── Below-card text ───────────────────────────────── */}
@@ -209,6 +216,23 @@ export default function StationCard({
           {station.seedArtist.displayName} · Artist station
         </p>
       </div>
+
+      {showPlaylistModal && (
+        <AddToPlaylistModal
+          fetchTracks={() =>
+            getStationTracks(station.seedArtist.id).then((r) =>
+              r.tracks.map((t) => ({
+                id: t.track_id,
+                title: t.title ?? "",
+                artistName: t.artist_name ?? "",
+                coverUrl: t.cover_image ?? undefined,
+              })),
+            )
+          }
+          trackTitle={station.name}
+          onClose={() => setShowPlaylistModal(false)}
+        />
+      )}
     </div>
   );
 }
