@@ -43,11 +43,13 @@ export default function MixCard({
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: MixCardProps) {
   const badge = BADGE_COLORS[colorIndex(mix)];
-  const { isMixLiked, toggleMix, togglePlaylist } = useLikesStore();
+  const { isMixLiked, toggleMix } = useLikesStore();
   const { addMix } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const navigate = useNavigate();
-  const liked = isMixLiked(mix.id);
+  // API sends mix_id; the TypeScript interface says id — coalesce both
+  const mixId: string = (mix as any).mix_id ?? mix.id;
+  const liked = isMixLiked(mixId);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // Guard against stale persisted history entries that predate the non-null contract
@@ -71,23 +73,17 @@ export default function MixCard({
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
-  const mixPath = `/discover/sets/${mixSlug}:${mix.id}`;
+  const mixPath = `/discover/sets/${mixSlug}:${mixId}`;
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleMix(mix);
-    togglePlaylist({
-      id: mix.id,
-      title: mix.label ?? "",
-      owner: `${mix.track_count} tracks`,
-      coverUrl: mix.cover_image ?? mix.preview_track.cover_image ?? null,
-    });
   };
 
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
-      data-test={`mix-card-${mix.id}`}
+      data-test={`mix-card-${mixId}`}
       onClick={() => navigate(mixPath)}
     >
       {/* Cover */}
@@ -144,7 +140,7 @@ export default function MixCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          playlistId={mix.id}
+          playlistId={mixId}
           trackTitle={mix.label ?? ""}
           onClose={() => setShowPlaylistModal(false)}
         />

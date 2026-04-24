@@ -34,7 +34,7 @@ export default function PlaylistCard({
   widthClassName = "w-[200px]",
 }: PlaylistCardProps) {
   const navigate = useNavigate();
-  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const { isPlaylistLiked, togglePlaylist, isAlbumLiked, toggleAlbum } = useLikesStore();
   const { currentTrack, isPlaying, togglePlay, setTrack } = usePlayerStore();
   const { user } = useAuthStore();
   const { addPlaylist } = useHistoryStore();
@@ -43,7 +43,7 @@ export default function PlaylistCard({
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // Derived State
-  const liked = isPlaylistLiked(item.id);
+  const liked = item.isAlbumView ? isAlbumLiked(item.id) : isPlaylistLiked(item.id);
   const isThisPlaylistPlaying =
     isPlaying &&
     (currentTrack as any)?.context?.type === "playlist" &&
@@ -108,7 +108,14 @@ export default function PlaylistCard({
           isPlaying={isThisPlaylistPlaying}
           onPlay={handlePlayClick}
           isLiked={liked}
-          onLike={(e) => { e.stopPropagation(); togglePlaylist(item); }}
+          onLike={(e) => {
+            e.stopPropagation();
+            if (item.isAlbumView) {
+              toggleAlbum({ playlist_id: item.id, name: item.title, cover_image: item.coverUrl } as any);
+            } else {
+              togglePlaylist(item);
+            }
+          }}
           moreMenuItems={[
             {
               label: "Add to playlist",
