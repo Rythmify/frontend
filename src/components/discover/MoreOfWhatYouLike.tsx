@@ -15,7 +15,11 @@ const MoreOfWhatYouLike = ({ tracks }: Props) => {
     <div data-test="section-more-of-what-you-like">
       <HorizontalCarousel title="More of what you like">
         {items.map((track) => (
-          <TrackCard key={track.id} track={track} />
+          <TrackCard
+            key={track.id}
+            track={track}
+            addToPlaylistTracks={items}
+          />
         ))}
       </HorizontalCarousel>
     </div>
