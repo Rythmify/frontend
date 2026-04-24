@@ -5,7 +5,10 @@ import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { useHistoryStore } from "@/stores/history.store";
-import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import CardOverlay, {
+  AddToPlaylistIcon,
+} from "@/components/UI/CardOverlay/CardOverlay";
+import type { Track } from "@/types/track";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,6 +23,7 @@ export type PlaylistCardData = {
   isPrivate?: boolean;
   isLiked?: boolean;
   isAlbumView?: boolean;
+  previewTrack?: Track;
 };
 
 interface PlaylistCardProps {
@@ -34,7 +38,8 @@ export default function PlaylistCard({
   widthClassName = "w-[200px]",
 }: PlaylistCardProps) {
   const navigate = useNavigate();
-  const { isPlaylistLiked, togglePlaylist, isAlbumLiked, toggleAlbum } = useLikesStore();
+  const { isPlaylistLiked, togglePlaylist, isAlbumLiked, toggleAlbum } =
+    useLikesStore();
   const { currentTrack, isPlaying, togglePlay, setTrack } = usePlayerStore();
   const { user } = useAuthStore();
   const { addPlaylist } = useHistoryStore();
@@ -43,16 +48,15 @@ export default function PlaylistCard({
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // Derived State
-  const liked = item.isAlbumView ? isAlbumLiked(item.id) : isPlaylistLiked(item.id);
-  const isThisPlaylistPlaying =
-    isPlaying &&
-    (currentTrack as any)?.context?.type === "playlist" &&
-    (currentTrack as any)?.context?.playlist_id === item.id;
+  const liked = item.isAlbumView
+    ? isAlbumLiked(item.id)
+    : isPlaylistLiked(item.id);
+  const isThisPlaying =
+    isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
 
   const ownerDisplay = UUID_RE.test(item.owner)
     ? (user?.displayName ?? user?.username ?? item.owner)
-    : item.ownerUsername?? item.owner;
-    
+    : (item.ownerUsername ?? item.owner);
 
   // SoundCloud navigation format: /[username]/sets/[slug]
   const playlistPath = item.isAlbumView
@@ -61,28 +65,13 @@ export default function PlaylistCard({
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if ((currentTrack as any)?.context?.playlist_id === item.id) {
+    if (!item.previewTrack) return;
+    if (currentTrack?.id === item.previewTrack.id) {
       togglePlay();
-      return;
+    } else {
+      setTrack(item.previewTrack);
+      addPlaylist(item);
     }
-    setTrack({
-      id: item.id,
-      title: item.title,
-      artistName: ownerDisplay,
-      artistUsername: item.ownerUsername ?? "",
-      coverUrl: item.coverUrl ?? "",
-      genre: "",
-      likeCount: 0,
-      repostCount: 0,
-      playCount: 0,
-      commentCount: 0,
-      duration: "0:00",
-      postedAt: "",
-      audioUrl: "",
-      waveformData: [],
-      context: { type: "playlist", playlist_id: item.id },
-    } as any);
-    addPlaylist(item);
   };
 
   return (
@@ -105,13 +94,17 @@ export default function PlaylistCard({
         )}
 
         <CardOverlay
-          isPlaying={isThisPlaylistPlaying}
+          isPlaying={isThisPlaying}
           onPlay={handlePlayClick}
           isLiked={liked}
           onLike={(e) => {
             e.stopPropagation();
             if (item.isAlbumView) {
-              toggleAlbum({ playlist_id: item.id, name: item.title, cover_image: item.coverUrl } as any);
+              toggleAlbum({
+                playlist_id: item.id,
+                name: item.title,
+                cover_image: item.coverUrl,
+              } as any);
             } else {
               togglePlaylist(item);
             }

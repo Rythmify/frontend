@@ -1,7 +1,11 @@
 import type React from "react";
+import { useState } from "react";
 import type { CuratedHomeMixPreview } from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import { usePlayerStore } from "@/stores/player.store";
+import { useLikesStore } from "@/stores/likes.store";
+import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 
 interface Props {
   mix: CuratedHomeMixPreview;
@@ -13,6 +17,19 @@ export default function CuratedMixCard({
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: Props) {
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
+  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const liked = isPlaylistLiked(mix.mix_id);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    togglePlaylist({
+      id: mix.mix_id,
+      title: mix.title,
+      owner: mix.preview_track?.artist_name ?? "",
+      coverUrl: mix.cover_url ?? null,
+    });
+  };
 
   const previewTrack = mix.preview_track
     ? mapDiscoveryTrack(mix.preview_track)
@@ -61,22 +78,19 @@ export default function CuratedMixCard({
           </span>
         </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-          <div />
-          <div className="flex items-center justify-center flex-1">
-            <button
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
-              onClick={handlePlay}
-              data-test="button-play"
-            >
-              <i
-                className={`fa-solid ${isThisPlaying ? "fa-pause" : "fa-play"} text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ${!isThisPlaying ? "ml-0.5" : ""}`}
-              />
-            </button>
-          </div>
-        </div>
+        <CardOverlay
+          isPlaying={isThisPlaying}
+          onPlay={handlePlay}
+          isLiked={liked}
+          onLike={handleLike}
+          moreMenuItems={[
+            {
+              label: "Add to playlist",
+              iconNode: AddToPlaylistIcon,
+              onClick: () => setShowPlaylistModal(true),
+            },
+          ]}
+        />
       </div>
 
       {/* Subtitle */}
@@ -86,6 +100,14 @@ export default function CuratedMixCard({
       >
         {mix.preview_track?.artist_name ?? mix.preview_track?.genre_name ?? ""}
       </p>
+
+      {showPlaylistModal && (
+        <AddToPlaylistModal
+          playlistId={mix.mix_id}
+          trackTitle={mix.title}
+          onClose={() => setShowPlaylistModal(false)}
+        />
+      )}
     </div>
   );
 }

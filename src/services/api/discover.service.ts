@@ -44,7 +44,6 @@ export interface CuratedMixSummary {
 
 export interface DiscoveryStation {
   id: string;
-  name: string;
   artist_id: string;
   artist_name: string;
   images: {
@@ -52,7 +51,7 @@ export interface DiscoveryStation {
     center: string | null;
     right: string | null;
   };
-  preview_track?: DiscoveryTrack;
+  preview_track: DiscoveryTrack;
   track_count: number;
 }
 
@@ -83,7 +82,7 @@ export interface HomeData {
     source: "personalized" | "trending_fallback";
   } | null;
   trending_by_genre: {
-    genres: { genre_id: string; genre_name: string }[];
+    genres: { genre_id: string; genre_name: string; preview_track: DiscoveryTrack }[];
     initial_tab: {
       genre_id: string;
       genre_name: string;
@@ -170,6 +169,7 @@ export interface DiscoveryAlbum {
   track_count: number;
   like_count: number;
   created_at?: string;
+  preview_track?: DiscoveryTrack | null;
 }
 
 export type MixDetailsTrack = DiscoveryTrack;
@@ -250,12 +250,12 @@ export const getAlbumsForYou = async (params?: {
   limit?: number;
   offset?: number;
 }): Promise<{
-  data: Playlist[];
+  data: DiscoveryAlbum[];
   source: "followed_artists" | "global_fallback";
   pagination: ListMeta;
 }> => {
   const res = await axiosInstance.get<{
-    data: Playlist[];
+    data: DiscoveryAlbum[];
     source: "followed_artists" | "global_fallback";
     pagination: ListMeta;
   }>("/home/albums-for-you", { params: { ...params, is_album_view: true } });

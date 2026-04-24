@@ -29,6 +29,7 @@ interface LikedTrack {
   likes?: number;
   reposts?: number;
   comments?: number;
+  audioUrl?: string;
 }
 
 interface ProfileSideBarProps {
