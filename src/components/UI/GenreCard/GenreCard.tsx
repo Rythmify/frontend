@@ -2,15 +2,18 @@ import type React from "react";
 import { useState } from "react";
 import { useHistoryStore } from "@/stores/history.store";
 import { useLikesStore } from "@/stores/likes.store";
+import { usePlayerStore } from "@/stores/player.store";
 import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { getTrendingByGenre } from "@/services/api/discover.service";
+import type { Track } from "@/types/track";
 
 export interface BuzzingPlaylist {
   id: string;
   genre: string;
   cover_image: string | null;
   track_count: number;
+  previewTrack?: Track;
 }
 
 // ─── Badge colors per genre index ─────────────────────────
@@ -41,12 +44,21 @@ export default function GenreCard({
   const badge = BADGE_COLORS[index % BADGE_COLORS.length];
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const { addGenre } = useHistoryStore();
+  const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const liked = isPlaylistLiked(item.id);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const isThisPlaying =
+    isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addGenre(item);
+    if (!item.previewTrack) return;
+    if (currentTrack?.id === item.previewTrack.id) {
+      togglePlay();
+    } else {
+      setTrack(item.previewTrack);
+      addGenre(item);
+    }
   };
 
   const handleLike = (e: React.MouseEvent) => {
@@ -94,7 +106,7 @@ export default function GenreCard({
         </div>
 
         <CardOverlay
-          isPlaying={false}
+          isPlaying={isThisPlaying}
           onPlay={handlePlay}
           isLiked={liked}
           onLike={handleLike}

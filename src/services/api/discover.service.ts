@@ -81,7 +81,7 @@ export interface HomeData {
     source: "personalized" | "trending_fallback";
   } | null;
   trending_by_genre: {
-    genres: { genre_id: string; genre_name: string }[];
+    genres: { genre_id: string; genre_name: string; preview_track: DiscoveryTrack }[];
     initial_tab: {
       genre_id: string;
       genre_name: string;
