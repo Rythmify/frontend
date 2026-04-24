@@ -164,6 +164,39 @@ const mockTrackComments: Record<
   ],
 };
 
+const likedTracksByUser: Record<
+  string,
+  { items: typeof mockTracksJson; total: number }
+> = {
+  shahd: { items: mockTracksJson.slice(0, 3), total: 8 },
+  "lege-cy": { items: mockTracksJson.slice(1, 4), total: 12 },
+  ghaliaa: { items: mockTracksJson.slice(0, 2), total: 6 },
+  "hadeer-yehya": { items: mockTracksJson.slice(2, 5), total: 4 },
+  "nour-yehya": { items: mockTracksJson.slice(0, 1), total: 1 },
+};
+
+function toTrackSummary(track: (typeof mockTracksJson)[number]) {
+  return {
+    id: track.id,
+    title: track.title,
+    genre: track.genre,
+    duration: Number.parseInt(track.duration, 10) || null,
+    cover_image: track.coverUrl,
+    user_id: track.artistUsername,
+    artist_name: track.artistName,
+    play_count: track.playCount,
+    like_count: track.likeCount,
+    stream_url: track.audioUrl,
+  };
+}
+
+function getLikedTracksForUser(userKey: string) {
+  return likedTracksByUser[userKey.toLowerCase()] ?? {
+    items: [],
+    total: 0,
+  };
+}
+
 export const trackPageHandlers = [
   http.get(`${BASE}/tracks`, () => {
     return HttpResponse.json(mockTracksJson);
@@ -233,6 +266,35 @@ export const trackPageHandlers = [
 
   http.get(`${BASE}/users`, () => {
     return HttpResponse.json(Array.isArray(mockUsers) ? mockUsers : []);
+  }),
+
+  http.get(`${BASE}/me/liked-tracks`, () => {
+    const liked = getLikedTracksForUser("shahd");
+    return HttpResponse.json({
+      data: {
+        items: liked.items.map(toTrackSummary),
+        meta: { limit: liked.items.length, offset: 0, total: liked.total },
+      },
+    });
+  }),
+
+  http.get(`${BASE}/users/:userId/liked-tracks`, ({ params }) => {
+    const userId = String(params.userId);
+    const user =
+      mockUsers.find((u) => String(u.id) === userId) ||
+      mockUsers.find((u) => u.username === userId);
+
+    if (!user) {
+      return HttpResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const liked = getLikedTracksForUser(user.username);
+    return HttpResponse.json({
+      data: {
+        items: liked.items.map(toTrackSummary),
+        meta: { limit: liked.items.length, offset: 0, total: liked.total },
+      },
+    });
   }),
 
   http.get(`${BASE}/users/:username`, ({ params }) => {

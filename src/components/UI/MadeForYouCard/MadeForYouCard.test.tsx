@@ -5,12 +5,23 @@ import { useLikesStore } from "@/stores/likes.store";
 import { usePlayerStore } from "@/stores/player.store";
 import { useHistoryStore } from "@/stores/history.store";
 import type { Track } from "@/types/track";
+import { useNavigate } from "react-router-dom";
 
 // ─── Mocks ────────────────────────────────────────────────
 
 vi.mock("@/stores/likes.store", () => ({ useLikesStore: vi.fn() }));
 vi.mock("@/stores/player.store", () => ({ usePlayerStore: vi.fn() }));
 vi.mock("@/stores/history.store", () => ({ useHistoryStore: vi.fn() }));
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-router-dom")>(
+    "react-router-dom",
+  );
+
+  return {
+    ...actual,
+    useNavigate: vi.fn(),
+  };
+});
 
 // ─── Fixtures ─────────────────────────────────────────────
 
@@ -36,6 +47,7 @@ const baseItem: MadeForYouItem = {
   title: "Daily Drops",
   subtitle: "New releases based on your taste",
   coverUrl: "https://example.com/daily.jpg",
+  madeKind: "daily",
   badgeWords: ["DAILY", "DROPS"],
   badgeBg: "#1a237e",
   previewTrack,
@@ -54,6 +66,7 @@ const makeStore = (overrides: Record<string, unknown> = {}) => ({
 describe("MadeForYouCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useNavigate).mockReturnValue(vi.fn());
     vi.mocked(usePlayerStore).mockReturnValue(makeStore() as any);
     vi.mocked(useLikesStore).mockReturnValue({
       isPlaylistLiked: vi.fn().mockReturnValue(false),
@@ -98,6 +111,18 @@ describe("MadeForYouCard", () => {
     render(<MadeForYouCard item={baseItem} />);
     expect(screen.getByTestId("made-for-you-card-subtitle")).toHaveTextContent(
       "New releases based on your taste",
+    );
+  });
+
+  it("navigates to the made for you slug page when clicked", () => {
+    const navigate = vi.fn();
+    vi.mocked(useNavigate).mockReturnValue(navigate);
+
+    render(<MadeForYouCard item={baseItem} />);
+    fireEvent.click(screen.getByTestId("made-for-you-card-daily-drops"));
+
+    expect(navigate).toHaveBeenCalledWith(
+      "/discover/sets/new-for-you/daily/daily-drops",
     );
   });
 

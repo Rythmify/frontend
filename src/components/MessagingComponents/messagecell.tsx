@@ -1,13 +1,6 @@
-import type { Message, Track as ApiTrack, Playlist as ApiPlaylist } from '../../services/api/messaging/conversationApi';
-import type { Track } from '../../types/track';
-import type { Playlist } from '../../types/playlist';
-import TrackCard from '@/components/track/TrackCard';             
-import PlaylistComponent from '@/components/playlist/PlaylistComponent'; 
-
-// ─── Extended message type ────────────────────────────────────────────────────
-// _embedResources is the array form written by SendMessageForm (optimistic UI).
-// _embedResource is kept for backward-compat with any code that still uses the
-// scalar field.
+import type { Message } from '../../services/api/messaging/conversationApi';
+import type { Track, Playlist } from '../../services/api/messaging/conversationApi';
+import UserAvatar from '@/components/UI/UserAvatar';
 
 interface MessageWithEmbed extends Message {
   _embedResources?: Array<ApiTrack | ApiPlaylist>;
@@ -148,18 +141,13 @@ export default function MessageCell({ message, displayName, profilePicture }: Me
 
   return (
     <div className="flex items-start gap-3 py-3">
-      {/* Avatar */}
-      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-[#2a2a2a]">
-        {profilePicture ? (
-          <img
-            src={profilePicture}
-            alt={displayName}
-            className="object-cover rounded-full w-9 h-9"
-          />
-        ) : (
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b] flex-shrink-0" />
-        )}
-      </div>
+      <UserAvatar
+        src={profilePicture}
+        name={displayName}
+        alt={displayName}
+        wrapperClassName="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-[#2a2a2a]"
+        initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
+      />
 
       {/* Content */}
       <div className="flex-1 min-w-0">

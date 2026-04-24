@@ -12,6 +12,31 @@ import { createPortal } from "react-dom";
 interface TrackCardProps {
   track: Track;
   widthClassName?: string;
+  addToPlaylistTracks?: Track[];
+}
+
+function buildSourcePlaylist(track: Track, relatedTracks: Track[]) {
+  return {
+    playlist_id: track.id,
+    name: "More of what you like",
+    description: track.title
+      ? `Related tracks inspired by ${track.title}`
+      : "Related tracks picked for you",
+    is_public: true,
+    cover_image: track.coverUrl || null,
+    created_at: track.postedAt || new Date().toISOString(),
+    track_count: relatedTracks.length,
+    like_count: 0,
+    repost_count: 0,
+    tracks: relatedTracks.map((t, index) => ({
+      id: t.id,
+      title: t.title,
+      artistName: t.artistName,
+      coverUrl: t.coverUrl,
+      track_id: t.id,
+      position: index + 1,
+    })),
+  };
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -105,7 +130,11 @@ const tooltipStyles = {
 };
 
 // ─── Component ────────────────────────────────────────────
-const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
+const TrackCard = ({
+  track,
+  widthClassName,
+  addToPlaylistTracks,
+}: TrackCardProps) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -116,6 +145,9 @@ const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
   const { addTrack } = useHistoryStore();
 
   const liked = isTrackLiked(track.id);
+  const sourcePlaylist = addToPlaylistTracks?.length
+    ? buildSourcePlaylist(track, addToPlaylistTracks)
+    : null;
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
@@ -266,8 +298,15 @@ const TrackCard = ({ track, widthClassName }: TrackCardProps) => {
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          trackTitle={track.title}
-          trackId={track.id}
+          trackTitle={sourcePlaylist?.name ?? track.title}
+          //playlistId={sourcePlaylist?.playlist_id}
+          initialTracks={sourcePlaylist?.tracks.map((t) => ({
+            id: t.track_id,
+            title: t.title ?? "",
+            artistName: t.artistName,
+            coverUrl: t.coverUrl,
+          }))}
+          moreOfLike={true}
           onClose={() => setShowPlaylistModal(false)}
         />
       )}

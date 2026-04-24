@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import TrackCard from "./Card";
 import type { Track } from "@/types/track";
@@ -14,6 +14,23 @@ vi.mock("react-router-dom", () => ({
 
 vi.mock("@heroui/react", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock("@/components/playlist/AddToPlaylistModal", () => ({
+  default: ({ initialTracks, playlistId, trackTitle }: any) => (
+    <div
+      data-test="add-to-playlist-modal"
+      data-initial-tracks={initialTracks?.length ?? 0}
+      data-playlist-id={playlistId ?? ""}
+      data-track-title={trackTitle ?? ""}
+    />
+  ),
+}));
+
+const mockGetRelatedTracks = vi.fn();
+
+vi.mock("@/services/track.service", () => ({
+  getRelatedTracks: (...args: any[]) => mockGetRelatedTracks(...args),
 }));
 
 vi.mock("@/stores/player.store", () => ({
@@ -151,5 +168,38 @@ describe("TrackCard", () => {
     render(<TrackCard track={mockTrack} />);
     fireEvent.click(screen.getByTestId("button-more"));
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("passes the full track list to add-to-playlist modal when provided", () => {
+    const extraTrack = { ...mockTrack, id: "2", title: "Second Track" };
+    mockGetRelatedTracks.mockResolvedValue({
+      referenceTrack: mockTrack,
+      tracks: [mockTrack, extraTrack],
+    });
+
+    render(
+      <TrackCard
+        track={mockTrack}
+        addToPlaylistTracks={[mockTrack, extraTrack]}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("button-more"));
+
+    return waitFor(() => {
+      expect(mockGetRelatedTracks).toHaveBeenCalledWith(mockTrack.id);
+      expect(screen.getByTestId("add-to-playlist-modal")).toHaveAttribute(
+        "data-initial-tracks",
+        "2",
+      );
+      expect(screen.getByTestId("add-to-playlist-modal")).toHaveAttribute(
+        "data-playlist-id",
+        mockTrack.id,
+      );
+      expect(screen.getByTestId("add-to-playlist-modal")).toHaveAttribute(
+        "data-track-title",
+        "More of what you like",
+      );
+    });
   });
 });
