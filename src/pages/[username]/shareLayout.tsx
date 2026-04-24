@@ -139,6 +139,7 @@ export default function ShareLayout({
         onTabChange={onTabChange}
         onShare={onShare}
         onEdit={onEdit}
+        tracks={stats.tracks ?? 0}
       />
 
       <div className="flex gap-6 py-6 items-start">

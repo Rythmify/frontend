@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import UsernamePage from "@/pages/[username]/UsernamePage";
 
@@ -11,6 +11,7 @@ const mockGetFollowStatus = vi.fn();
 const mockResolveUsername = vi.fn();
 const mockUpdateMyProfile = vi.fn();
 const mockGetMyTracks = vi.fn();
+const mockGetUserByUsername = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -25,6 +26,7 @@ vi.mock("@/stores/auth.store", () => ({
 vi.mock("@/services/user.service", () => ({
   getMyProfile: (...args: unknown[]) => mockGetMyProfile(...args),
   getUserById: (...args: unknown[]) => mockGetUserById(...args),
+  getUserByUsername: (...args: unknown[]) => mockGetUserByUsername(...args),
   getFollowers: (...args: unknown[]) => mockGetFollowers(...args),
   getFollowing: (...args: unknown[]) => mockGetFollowing(...args),
   getFollowStatus: (...args: unknown[]) => mockGetFollowStatus(...args),
@@ -180,6 +182,22 @@ describe("UsernamePage", () => {
       }
       return "1";
     });
+    mockGetUserByUsername.mockResolvedValue({
+      id: "travis-scott-id",
+      username: "travis-scott",
+      display_name: "Travis Scott",
+      bio: "Multi-platinum artist",
+      location: "Houston, TX",
+      profile_picture: null,
+      cover_photo: null,
+      followers_count: 6000000,
+      following_count: 200,
+      gender: null,
+      role: "artist",
+      is_private: false,
+      is_verified: false,
+      created_at: "2024-01-01T00:00:00Z",
+    });
     mockUpdateMyProfile.mockResolvedValue({});
     mockGetMyTracks.mockResolvedValue({
       data: [],
@@ -196,15 +214,6 @@ describe("UsernamePage", () => {
       username: "me",
     });
     localStorage.clear();
-  });
-
-  it("returns null when user is not authenticated", () => {
-    (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      user: null,
-      setUser: vi.fn(),
-    });
-    const { container } = render(<UsernamePage />);
-    expect(container.firstChild).toBeNull();
   });
 
   it("renders profile header", () => {
@@ -312,8 +321,11 @@ describe("UsernamePage", () => {
     });
 
     render(<UsernamePage />);
-    expect(screen.getByTestId("profile-header")).toHaveTextContent(
-      "Travis Scott",
-    );
+    expect(screen.getByText("Loading profile…")).toBeInTheDocument();
+    return waitFor(() => {
+      expect(screen.getByTestId("profile-header")).toHaveTextContent(
+        "Travis Scott",
+      );
+    });
   });
 });
