@@ -215,14 +215,14 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               View all
             </button>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center flex-nowrap overflow-visible pl-1 pr-1">
             {followers.slice(0, 9).map((follower, index) => (
               <button
                 key={follower.username}
                 data-test="follower-avatar"
                 onClick={() => navigate(`/${follower.username}`)}
-                className="w-12 h-12 rounded-full overflow-hidden bg-border flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
-                style={{ marginLeft: index === 0 ? 0 : "-8px", zIndex: index }}
+                className="w-11 h-11 rounded-full overflow-hidden bg-border flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
+                style={{ marginLeft: index === 0 ? 0 : "-10px", zIndex: index }}
                 title={follower.username}
               >
                 {follower.avatar ? (
