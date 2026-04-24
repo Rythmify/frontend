@@ -46,7 +46,9 @@ function normalizeTrack(raw: any): Track {
     audioUrl:        raw.stream_url || raw.audio_url || raw.audioUrl || "",
     coverUrl:        raw.cover_image || raw.cover_url || raw.coverUrl || "",
     artistName:      raw.artist_name  || raw.user?.display_name  || raw.artistName  || "",
-    artistUsername:  raw.user?.username || raw.user_id || raw.artistUsername || "",
+    artistUsername:  raw.user?.username || raw.artist_username || raw.artistUsername || raw.user_id || raw.artist_id || "",
+    // FIX: map slug field from API, fallback to id to ensure valid navigation URL
+    trackSlug:       raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
     // FIX: format ISO timestamp into human-readable string
     postedAt:        formatPostedAt(raw.created_at || raw.postedAt || ""),
     playCount:       raw.play_count    ?? raw.playCount    ?? 0,
@@ -171,7 +173,7 @@ export async function getTrackComments(
     `/tracks/${trackId}/comments`,
     { params: { limit, offset } }
   );
-  return data?.data?.items ?? [];
+  return data?.data ?? [];
 }
 
 /**

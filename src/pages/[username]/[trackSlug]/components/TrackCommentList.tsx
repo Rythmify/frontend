@@ -22,14 +22,22 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
   // LOCAL STORAGE KEY: rythmify_likes_{userId}
   const LIKES_CACHE_KEY = currentUser ? `rythmify_likes_${currentUser.id}` : null;
 
-  // Load likes from LocalStorage OR Backend flags (Backend support reverted)
+  // Load likes from backend is_liked_by_me flags, with localStorage as fallback
   useEffect(() => {
     setCommentList(comments);
     
     const initialLikes = new Set<string>();
     
-    // 1. Try to load from Local Cache (Frontend Persistence Workaround)
-    if (LIKES_CACHE_KEY) {
+    // 1. Use backend is_liked_by_me flags as primary source of truth
+    comments.forEach(c => {
+      if (c.is_liked_by_me) {
+        initialLikes.add(String(c.comment_id));
+      }
+    });
+
+    // 2. Only fall back to localStorage if backend returned no like info
+    const hasBackendLikeInfo = comments.some(c => c.is_liked_by_me !== undefined);
+    if (!hasBackendLikeInfo && LIKES_CACHE_KEY) {
       const cached = localStorage.getItem(LIKES_CACHE_KEY);
       if (cached) {
         try {
@@ -143,19 +151,36 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
 
   const handleDelete = async (commentId: string) => {
     if (!confirm("Are you sure?")) return;
+
+    // Optimistic update — remove from UI immediately
+    const removedComment = commentList.find(c => String(c.comment_id) === String(commentId));
+    const removedFromThreads: Record<string, import("../../../../types/comment").Comment[]> = {};
+
+    setCommentList(prev => prev.filter(c => String(c.comment_id) !== String(commentId)));
+    setExpandedThreads(prev => {
+      const next = { ...prev };
+      if (next[commentId]) {
+        removedFromThreads[commentId] = next[commentId];
+        delete next[commentId];
+      }
+      Object.keys(next).forEach(id => {
+        const before = next[id].filter(r => String(r.comment_id) === String(commentId));
+        if (before.length > 0) {
+          removedFromThreads[`reply_${id}`] = before;
+          // Decrement reply_count on the parent comment
+          setCommentList(currentList => currentList.map(c => 
+            String(c.comment_id) === String(id) 
+              ? { ...c, reply_count: Math.max(0, (c.reply_count || 0) - 1) } 
+              : c
+          ));
+        }
+        next[id] = next[id].filter(r => String(r.comment_id) !== String(commentId));
+      });
+      return next;
+    });
+
     try {
       await deleteComment(commentId);
-      
-      setCommentList(prev => prev.filter(c => String(c.comment_id) !== String(commentId)));
-      
-      setExpandedThreads(prev => {
-        const next = { ...prev };
-        delete next[commentId];
-        Object.keys(next).forEach(id => {
-          next[id] = next[id].filter(r => String(r.comment_id) !== String(commentId));
-        });
-        return next;
-      });
 
       if (likedComments.has(String(commentId))) {
         setLikedComments(prev => {
@@ -165,11 +190,42 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
         });
       }
 
-      // Notify parent to update count and waveform
       if (onCommentDeleted) {
         onCommentDeleted(commentId);
       }
-    } catch (err) {
+    } catch (err: any) {
+      // Rollback optimistic update on failure
+      if (removedComment) {
+        setCommentList(prev => [...prev, removedComment]);
+      }
+      setExpandedThreads(prev => {
+        const next = { ...prev };
+        if (removedFromThreads[commentId]) {
+          next[commentId] = removedFromThreads[commentId];
+        }
+        Object.keys(removedFromThreads).forEach(key => {
+          if (key.startsWith("reply_")) {
+            const parentId = key.replace("reply_", "");
+            if (next[parentId]) {
+              next[parentId] = [...next[parentId], ...removedFromThreads[key]];
+              // Restore reply_count on the parent comment
+              setCommentList(currentList => currentList.map(c => 
+                String(c.comment_id) === String(parentId) 
+                  ? { ...c, reply_count: (c.reply_count || 0) + removedFromThreads[key].length } 
+                  : c
+              ));
+            }
+          }
+        });
+        return next;
+      });
+
+      const status = err?.response?.status;
+      if (status === 403) {
+        alert("You can only delete your own comments.");
+      } else {
+        alert("Failed to delete comment. Please try again.");
+      }
       console.error("Failed to delete", err);
     }
   };

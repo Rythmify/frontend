@@ -135,7 +135,7 @@ export async function removePlaylistRepost(playlistId: string | number) {
  */
 export async function likeComment(commentId: string | number) {
   const { data } = await axiosInstance.post(`/comments/${commentId}/like`);
-  return data;
+  return data.data;
 }
 
 /**
