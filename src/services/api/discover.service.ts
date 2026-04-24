@@ -198,6 +198,13 @@ export const getHome = async (): Promise<HomeData> => {
   return res.data.data;
 };
 
+export const getCuratedMixByIdFromHome = async (
+  mixId: string,
+): Promise<CuratedHomeMixPreview | null> => {
+  const home = await getHome();
+  return home.curated?.mixes.find((mix) => mix.mix_id === mixId) ?? null;
+};
+
 // GET /me/history
 export const getRecentlyPlayed = async (): Promise<RecentlyPlayedEntry[]> => {
   const res = await axiosInstance.get<{ data: RecentlyPlayedEntry[] }>(
