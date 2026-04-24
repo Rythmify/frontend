@@ -40,11 +40,14 @@ export interface Message {
 
 export interface Pagination {
   page: number;
-  per_page: number;
-  total_items: number;
+  limit: number;
+  total: number;
   total_pages: number;
-  has_next: boolean;
-  has_prev: boolean;
+  // conversation list endpoint uses these names instead
+  per_page?: number;
+  total_items?: number;
+  has_next?: boolean;
+  has_prev?: boolean;
 }
 
 export interface Conversation {
@@ -67,12 +70,12 @@ export interface ConversationListResponse {
 }
 
 export interface ConversationDetailResponse {
-  success: boolean;
   data: {
     conversation: Conversation;
     messages: Message[];
     pagination: Pagination;
   };
+  message: string;
 }
 
 export interface MessageCreatedResponse {
