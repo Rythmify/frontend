@@ -117,7 +117,13 @@ export const authHandlers = [
   }),
 
   // POST /auth/reset-password
-  http.post('*/auth/reset-password', () => {
+  http.post('*/auth/reset-password', async ({ request }) => {
+    const body = await request.json() as { new_password: string };
+    if (body.new_password === 'oldpassword123') {
+      return HttpResponse.json({
+        error: { message: "New password cannot be the same as your old password." }
+      }, { status: 400 });
+    }
     return HttpResponse.json({
       data: { success: true },
       message: 'Password reset successfully.',

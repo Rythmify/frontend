@@ -99,7 +99,7 @@ export default function SetsPage() {
   ));
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="container px-4 md:px-8 lg:px-12 xl:px-20 min-h-screen flex flex-col">
       {/* Header Section */}
       <SetsHeader
         title="Hear your own playlists and the playlists you've liked:"
@@ -113,7 +113,7 @@ export default function SetsPage() {
       />
 
       {/* Main Content Carousel */}
-      <div className="px-4 pt-2 pb-10">
+      <div className="pt-2 pb-10">
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         {loading ? (

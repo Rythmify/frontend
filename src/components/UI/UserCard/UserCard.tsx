@@ -1,5 +1,6 @@
 // src/modules/feed/components/UserCard.tsx
 
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { User } from "@/types/user";
 import FollowButton from "@/components/UI/FollowButton";
@@ -38,6 +39,7 @@ const styles = {
     text-text-hover text-sm font-semibold text-center
     truncate w-full
     flex items-center justify-center gap-1
+    transition-colors duration-200 hover:text-text-muted
   `,
   verifiedIcon: `
     fa-solid fa-circle-check text-[#2196F3] text-xs
@@ -47,6 +49,7 @@ const styles = {
     text-text-secondary text-xs text-center
     w-full
     flex items-center justify-center gap-1
+    transition-colors duration-200 hover:text-text-muted
   `,
   followerIcon: `
     fa-solid fa-user text-[10px]
@@ -69,8 +72,14 @@ const getInitial = (name: string): string => {
 };
 
 // ─── Component ────────────────────────────────────────────
-const UserCard = ({ user, widthClassName, initialIsFollowing, onUnfollow }: UserCardProps) => {
+const UserCard = ({
+  user,
+  widthClassName,
+  initialIsFollowing,
+  onUnfollow,
+}: UserCardProps) => {
   const navigate = useNavigate();
+  const [followers, setFollowers] = useState(user.followers ?? 0);
 
   const handleClick = () => {
     navigate(`/${user.username}`);
@@ -98,7 +107,6 @@ const UserCard = ({ user, widthClassName, initialIsFollowing, onUnfollow }: User
             {getInitial(user.displayName)}
           </div>
         )}
-
       </div>
 
       {/* Display Name + Verified Badge */}
@@ -121,7 +129,7 @@ const UserCard = ({ user, widthClassName, initialIsFollowing, onUnfollow }: User
         data-test={`user-card-followers-${user.username}`}
       >
         <i className={styles.followerIcon}></i>
-        <span>{formatFollowers(user.followers)} followers</span>
+        <span>{formatFollowers(followers)} followers</span>
       </p>
 
       {/* Follow Button — visible on hover */}
@@ -130,7 +138,10 @@ const UserCard = ({ user, widthClassName, initialIsFollowing, onUnfollow }: User
           username={user.username}
           userId={user.id}
           initialIsFollowing={initialIsFollowing}
-          onFollowChange={(next) => { if (!next) onUnfollow?.(); }}
+          onFollowChange={(next) => {
+            setFollowers((f) => f + (next ? 1 : -1));
+            if (!next) onUnfollow?.();
+          }}
         />
       </div>
     </div>
@@ -138,5 +149,3 @@ const UserCard = ({ user, widthClassName, initialIsFollowing, onUnfollow }: User
 };
 
 export default UserCard;
-
-

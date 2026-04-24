@@ -58,6 +58,7 @@ function normalizeTrack(raw: any): Track {
     isLiked:         raw.is_liked_by_me ?? raw.is_liked ?? raw.isLiked ?? false,
     isReposted:      raw.is_reposted_by_me ?? raw.is_reposted ?? raw.isReposted ?? false,
     artistId:        raw.user_id       || raw.artistId || "",
+    trackSlug:       raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
     duration,
   } as Track;
 }
@@ -200,10 +201,15 @@ export async function getReplies(commentId: string) {
   return [];
 }
 
+const waveformCache = new Map<string, number[]>();
+
 /**
  * GET /tracks/{track_id}/waveform
  */
 export async function getTrackWaveform(trackId: string): Promise<number[]> {
+  const cached = waveformCache.get(trackId);
+  if (cached) return cached;
+
   try {
     const { data } = await axiosInstance.get(`/tracks/${trackId}/waveform`);
     const peaksPayload =
@@ -224,6 +230,7 @@ export async function getTrackWaveform(trackId: string): Promise<number[]> {
       }
     }
 
+    if (peaksArray.length > 0) waveformCache.set(trackId, peaksArray);
     return peaksArray;
   } catch {
     return [];
