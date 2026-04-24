@@ -25,15 +25,17 @@ function getPlaylistErrorMessage(err: unknown) {
     return fallback;
   }
 
-  const response = (err as {
-    response?: {
-      data?: {
-        error?: { message?: string };
-        message?: string;
+  const response = (
+    err as {
+      response?: {
+        data?: {
+          error?: { message?: string };
+          message?: string;
+        };
       };
-    };
-    message?: string;
-  }).response;
+      message?: string;
+    }
+  ).response;
 
   return (
     response?.data?.error?.message ??
@@ -47,8 +49,9 @@ interface AddToPlaylistModalProps {
   trackId?: string;
   trackTitle: string;
   trackCoverUrl?: string;
-  playlistId?: string; // if adding whole playlist
+  playlistId?: string;
   initialTracks?: DisplayTrack[];
+  fetchTracks?: () => Promise<DisplayTrack[]>;
   moreOfLike?: boolean;
   artistName?: string;
   onClose: () => void;
@@ -61,6 +64,7 @@ const AddToPlaylistModal = ({
   onClose,
   playlistId,
   initialTracks,
+  fetchTracks,
   moreOfLike = false,
   artistName,
 }: AddToPlaylistModalProps) => {
@@ -110,6 +114,9 @@ const AddToPlaylistModal = ({
 
         if (initialTracks?.length) {
           setTracksToAdd(initialTracks);
+        } else if (fetchTracks) {
+          const tracks = await fetchTracks();
+          setTracksToAdd(tracks);
         } else if (playlistId) {
           const playlistRes = await getPlaylist(playlistId);
           const tracks: DisplayTrack[] = (playlistRes.data.tracks || []).map(
@@ -141,6 +148,7 @@ const AddToPlaylistModal = ({
     initializeData();
   }, [
     initialTracks,
+    fetchTracks,
     trackId,
     playlistId,
     trackTitle,
@@ -188,9 +196,9 @@ const AddToPlaylistModal = ({
       const slug = playlistTitle
         .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "") 
-        .replace(/\s+/g, "-") 
-        .replace(/-+/g, "-"); 
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
 
       const res = await createPlaylist({
         name: playlistTitle.trim(),
@@ -200,21 +208,9 @@ const AddToPlaylistModal = ({
 
       const newPlaylistId = res.data.playlist_id;
 
-      const tracksForNewPlaylist =
-        isMoreOfLike
-          ? initialTracks ?? tracksToAdd
-          : playlistId
-            ? tracksToAdd
-            : trackId
-              ? [
-                  {
-                    id: trackId,
-                    title: trackTitle,
-                    artistName,
-                    coverUrl: trackCoverUrl,
-                  },
-                ]
-              : tracksToAdd.slice(0, 1);
+      const tracksForNewPlaylist = isMoreOfLike
+        ? (initialTracks ?? tracksToAdd)
+        : tracksToAdd;
 
       for (const t of tracksForNewPlaylist) {
         await addTrackToPlaylist(newPlaylistId, String(t.id));
