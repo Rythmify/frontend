@@ -56,6 +56,9 @@ const DiscoverPage = lazy(() => import("@/pages/feed/discover/DiscoverPage"));
 const MixForYouSlugPage = lazy(
   () => import("@/pages/you/sets/MixForYouSlugPage"),
 );
+const MadeForYouSlugPage = lazy(
+  () => import("@/pages/you/sets/MadeForYouSlugPage"),
+);
 const StationSlugPage = lazy(
   () => import("@/pages/you/stations/StationSlugPage"),
 );
@@ -206,6 +209,10 @@ export const router = createBrowserRouter([
       {
         path: "discover/sets/:mixSlug",
         element: <Lazy component={MixForYouSlugPage} />,
+      },
+      {
+        path: "discover/sets/new-for-you/:kind/:mixId",
+        element: <Lazy component={MadeForYouSlugPage} />,
       },
       {
         path: "discover/stations/:stationSlug",

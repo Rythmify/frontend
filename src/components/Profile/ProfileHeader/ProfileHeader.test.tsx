@@ -128,10 +128,9 @@ describe("ProfileHeader", () => {
 
   it("shows replace and delete options when avatar update menu is open", () => {
     render(<ProfileHeader user={mockUser} isOwner={true} />);
-    const avatarContainer = screen
-      .getByTestId("avatar-file-input")
-      .closest("div.relative")
-      ?.querySelector(".rounded-full") as HTMLElement;
+    const avatarContainer = document.querySelector(
+      '[data-testid="avatar-container"]',
+    ) as HTMLElement;
     fireEvent.mouseEnter(avatarContainer!);
     fireEvent.click(screen.getByTestId("avatar-update-button"));
     expect(screen.getByTestId("avatar-replace-button")).toBeInTheDocument();
@@ -163,6 +162,10 @@ describe("ProfileHeader", () => {
         isOwner={true}
       />,
     );
+    const coverDiv = document.querySelector(
+      "[style*='cover.jpg']",
+    ) as HTMLElement;
+    fireEvent.mouseEnter(coverDiv);
     fireEvent.click(screen.getByTestId("cover-update-button"));
     expect(screen.getByTestId("cover-replace-button")).toBeInTheDocument();
     expect(screen.getByTestId("cover-delete-button")).toBeInTheDocument();

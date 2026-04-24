@@ -13,7 +13,7 @@ vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock("@/components/Profile/FollowButton", () => ({
+vi.mock("@/components/UI/FollowButton", () => ({
   default: ({ username }: { username: string }) => (
     <button data-test={`follow-button-${username}`}>Follow</button>
   ),
@@ -135,6 +135,13 @@ describe("ProfileTabs", () => {
     fireEvent.click(screen.getByTestId("more-button"));
     expect(screen.getByTestId("block-button")).toBeInTheDocument();
     expect(screen.getByTestId("report-button")).toBeInTheDocument();
+  });
+
+  it("opens the report modal when Report is clicked", () => {
+    render(<ProfileTabs {...defaultVisitorProps} />);
+    fireEvent.click(screen.getByTestId("more-button"));
+    fireEvent.click(screen.getByTestId("report-button"));
+    expect(screen.getByTestId("report-account-modal")).toBeInTheDocument();
   });
 
   it("shows correct name in Block/Report", () => {

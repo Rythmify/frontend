@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import FollowButton from "../FollowButton";
+import UserAvatar from "../UserAvatar";
 
 // ─── Types ────────────────────────────────────────────────
 export interface Artist {
@@ -31,7 +32,6 @@ const styles = {
   artistItem: `flex items-center justify-between`,
   artistInfo: `flex items-center gap-3`,
   avatar: `w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-border flex-shrink-0`,
-  avatarImg: `w-full h-full object-cover`,
   details: `flex flex-col`,
   nameRow: `flex items-center gap-1`,
   username: `cursor-pointer text-sm font-bold text-text-hover hover:opacity-70 transition-opacity`,
@@ -105,21 +105,15 @@ const ArtistListSection = ({
           >
             <div className={styles.artistInfo}>
               {/* Avatar */}
-              <div
-                data-test={`artist-avatar-${artist.username}`}
+              <UserAvatar
+                src={artist.avatar}
+                name={artist.username}
+                alt={artist.username}
+                dataTest={`artist-avatar-${artist.username}`}
+                wrapperClassName={styles.avatar}
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
                 onClick={() => navigate(`/${artist.username}`)}
-                className={styles.avatar}
-              >
-                {artist.avatar ? (
-                  <img
-                    src={artist.avatar}
-                    alt={artist.username}
-                    className={styles.avatarImg}
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b]" />
-                )}
-              </div>
+              />
 
               {/* Details */}
               <div className={styles.details}>
