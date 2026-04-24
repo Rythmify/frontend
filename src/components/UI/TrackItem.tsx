@@ -17,7 +17,7 @@ interface TrackItemProps {
   onUnlike?: (id: string) => void;
   initialLiked?: boolean;
   artistUsername?: string;
-  audioUrl: string;
+  audioUrl?: string;
   genre?: string;
   duration?: string;
   postedAt?: string;
@@ -69,7 +69,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       artistUsername:
         artistUsername || artist.toLowerCase().replace(/\s+/g, "-"),
       coverUrl: coverUrl || "",
-      audioUrl: audioUrl,
+      audioUrl: audioUrl ?? "",
       genre: genre || "",
       likeCount: likes || 0,
       repostCount: reposts || 0,
@@ -105,7 +105,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       artistName: artist,
       artistUsername: finalArtistSlug,
       coverUrl: coverUrl || "",
-      audioUrl: audioUrl,
+      audioUrl: audioUrl ?? "",
       genre: genre,
       likeCount: likes || 0,
       repostCount: reposts || 0,
