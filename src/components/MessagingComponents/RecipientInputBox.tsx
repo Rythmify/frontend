@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { searchFollowing, globalSearch } from '@/services/api/messaging/conversationApi'
+import UserAvatar from '@/components/UI/UserAvatar'
 
 export interface RecipientResult {
   id: string
@@ -130,15 +131,13 @@ export function RecipientInputBox({ onSelect, onClear, error }: RecipientInputBo
               onClick={() => handleSelect(user)}
               className="flex items-center gap-3 w-full px-3 py-2 text-left hover:bg-[#2a2a2a] transition-colors"
             >
-              <div className="flex-shrink-0 w-8 h-8 overflow-hidden rounded-full bg-neutral-600">
-                {user.profile_picture ? (
-                  <img src={user.profile_picture} alt={user.display_name} className="object-cover w-full h-full" />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full text-xs font-bold text-white">
-                    {user.display_name.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-              </div>
+              <UserAvatar
+                src={user.profile_picture}
+                name={user.display_name}
+                alt={user.display_name}
+                wrapperClassName="flex-shrink-0 w-8 h-8 overflow-hidden rounded-full bg-neutral-600"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-xs font-bold"
+              />
               <span className="text-sm font-bold text-gray-300 hover:text-white">
                 {user.display_name}
               </span>

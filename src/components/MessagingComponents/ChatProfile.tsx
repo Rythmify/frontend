@@ -1,4 +1,5 @@
 import { type Conversation } from '@/services/api/messaging/conversationApi'
+import UserAvatar from '@/components/UI/UserAvatar'
 
 const timeAgo = (dateStr: string): string => {
  const diff = Date.now() - new Date(dateStr).getTime();
@@ -34,15 +35,13 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
     <span className="w-2.5 h-2.5 rounded-full bg-[#f50] block" />
   )}
 </div>
-       {participant.avatar ? (
-  <img
-    src={participant.avatar}
-    alt={participant.display_name}
-    className="object-cover rounded-full w-11 h-11"
-  />
-) : (
-  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b] flex-shrink-0" />
-)}
+       <UserAvatar
+         src={participant.avatar}
+         name={participant.display_name}
+         alt={participant.display_name}
+         wrapperClassName="w-11 h-11 rounded-full overflow-hidden flex-shrink-0"
+         initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
+       />
       </div>
 
       <div className="flex-1 min-w-0">
