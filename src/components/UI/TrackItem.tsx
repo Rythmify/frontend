@@ -22,6 +22,7 @@ interface TrackItemProps {
   duration?: string;
   postedAt?: string;
   isPrivate?: boolean;
+  trackSlug?: string;
 }
 
 const formatCount = (n: number) => {
@@ -47,6 +48,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
   duration = "0:00",
   postedAt = "",
   isPrivate = false,
+  trackSlug,
 }) => {
   const [hovered, setHovered] = useState(false);
   const [coverHovered, setCoverHovered] = useState(false);
@@ -86,6 +88,8 @@ const TrackItem: React.FC<TrackItemProps> = ({
 
   const finalArtistSlug =
     artistUsername || artist.toLowerCase().replace(/\s+/g, "-");
+
+  const trackPath = `/discover/personalised/${trackSlug ?? ""}:${id}`;
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -173,7 +177,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
         </button>
         <button
           data-test={`track-title-${id}`}
-          onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
+          onClick={() => navigate(trackPath)}
           className="text-sm cursor-pointer font-semibold text-text-hover text-left truncate"
         >
           {title}

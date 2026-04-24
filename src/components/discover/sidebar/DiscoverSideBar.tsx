@@ -70,6 +70,7 @@ const DiscoverSidebar = () => {
     duration: t.duration,
     postedAt: t.postedAt,
     isPrivate: t.isPrivate,
+    trackSlug: t.trackSlug,
   });
 
   return (
