@@ -3,10 +3,12 @@ import type { User } from "@/stores/auth.store";
 import { useNavigate } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 import TrackItem from "@/components/UI/TrackItem";
+import UserAvatar from "@/components/UI/UserAvatar";
 
 interface FollowingUser {
   userId?: string;
   username: string;
+  displayName?: string;
   followers: number;
   tracks?: number;
   avatar?: string;
@@ -217,24 +219,16 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           </div>
           <div className="flex items-center flex-nowrap overflow-visible pl-1 pr-1">
             {followers.slice(0, 9).map((follower, index) => (
-              <button
+              <UserAvatar
                 key={follower.username}
-                data-test="follower-avatar"
+                dataTest="follower-avatar"
+                src={follower.avatar}
+                name={follower.username}
+                alt={follower.username}
+                wrapperClassName="w-11 h-11 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
                 onClick={() => navigate(`/${follower.username}`)}
-                className="w-11 h-11 rounded-full overflow-hidden bg-border flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
-                style={{ marginLeft: index === 0 ? 0 : "-10px", zIndex: index }}
-                title={follower.username}
-              >
-                {follower.avatar ? (
-                  <img
-                    src={follower.avatar}
-                    alt={follower.username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-border" />
-                )}
-              </button>
+              />
             ))}
           </div>
         </div>
@@ -267,21 +261,15 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               className="flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
-                <div
-                  data-test="following-avatar"
+                <UserAvatar
+                  dataTest="following-avatar"
+                  src={u.avatar}
+                  name={u.displayName || u.username}
+                  alt={u.displayName || u.username}
+                  wrapperClassName="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-zinc-800 flex-shrink-0"
+                  initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
                   onClick={() => navigate(`/${u.username}`)}
-                  className="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-border flex-shrink-0"
-                >
-                  {u.avatar ? (
-                    <img
-                      src={u.avatar}
-                      alt={u.username}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-border" />
-                  )}
-                </div>
+                />
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1">
                     <button

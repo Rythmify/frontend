@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
+import UserAvatar from "@/components/UI/UserAvatar";
 import {
   getFollowers,
   getUserById,
@@ -149,21 +150,15 @@ export default function FollowerPage() {
     <div className="py-8 container px-4 md:px-8 lg:px-20">
       {/* Header */}
       <div className="flex items-center gap-4 mb-3">
-        <div
-          data-test="follower-page-avatar"
-          className="w-24 h-24 cursor-pointer rounded-full overflow-hidden bg-text-muted flex-shrink-0"
+        <UserAvatar
+          dataTest="follower-page-avatar"
+          src={profileAvatar}
+          name={profileDisplayName || profileUsername}
+          alt={profileDisplayName || profileUsername}
+          wrapperClassName="w-24 h-24 cursor-pointer rounded-full overflow-hidden flex-shrink-0"
+          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
           onClick={() => navigate(profilePath)}
-        >
-          {profileAvatar ? (
-            <img
-              src={profileAvatar}
-              alt={profileUsername}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-text-muted" />
-          )}
-        </div>
+        />
         <div>
           <h1
             data-test="follower-page-title"
@@ -216,21 +211,15 @@ export default function FollowerPage() {
               className="flex flex-col items-center gap-2 group"
             >
               {/* Avatar */}
-              <div
-                data-test={`follower-avatar-${u.username}`}
-                className="w-full cursor-pointer aspect-square rounded-full overflow-hidden bg-text-muted"
+              <UserAvatar
+                dataTest={`follower-avatar-${u.username}`}
+                src={u.avatar}
+                name={u.displayName || u.username}
+                alt={u.displayName || u.username}
+                wrapperClassName="w-full cursor-pointer aspect-square rounded-full overflow-hidden"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
                 onClick={() => navigate(u.profilePath)}
-              >
-                {u.avatar ? (
-                  <img
-                    src={u.avatar}
-                    alt={u.username}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="h-full w-full bg-text-muted" />
-                )}
-              </div>
+              />
 
               {/* Name */}
               <span
