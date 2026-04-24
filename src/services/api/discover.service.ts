@@ -1,4 +1,5 @@
-import axiosInstance from "./axiosInstance";
+﻿import axiosInstance from "./axiosInstance";
+import type { Playlist } from "./playlist/playlist.service";
 
 // =============================================================================
 // TYPES — API response shapes (aligned to OpenAPI spec)
@@ -21,6 +22,7 @@ export interface DiscoveryTrack {
 
 export interface PersonalMix {
   id: string;
+  mix_id?: string;
   label: string | null;
   flavor: "listening_history"; // taste_profile was removed from spec
   genre_name: string | null;
@@ -170,6 +172,19 @@ export interface DiscoveryAlbum {
   preview_track?: DiscoveryTrack | null;
 }
 
+export type MixDetailsTrack = DiscoveryTrack;
+
+export interface MixDetailsData {
+  mix_id: string;
+  title: string;
+  cover_url: string | null;
+  tracks: MixDetailsTrack[];
+}
+
+export interface MixDetailsResponse {
+  data: MixDetailsData;
+}
+
 // =============================================================================
 // API CALLS
 // =============================================================================
@@ -181,6 +196,13 @@ export const getHome = async (): Promise<HomeData> => {
   );
   // res.data is the full response body — we only need res.data.data (the payload)
   return res.data.data;
+};
+
+export const getCuratedMixByIdFromHome = async (
+  mixId: string,
+): Promise<CuratedHomeMixPreview | null> => {
+  const home = await getHome();
+  return home.curated?.mixes.find((mix) => mix.mix_id === mixId) ?? null;
 };
 
 // GET /me/history
@@ -247,16 +269,13 @@ export const getAlbumsForYou = async (params?: {
   return res.data;
 };
 
-// GET /home/mixes/:mixId/tracks — tracks for a personal mix
+// GET /home/mixes/:mixId — personal mix details with tracks
 export const getMixTracks = async (
   mixId: string,
-): Promise<{ mix: PersonalMix; tracks: DiscoveryTrack[] }> => {
-  const res = await axiosInstance.get<{
-    data: { mix: PersonalMix; tracks: DiscoveryTrack[] };
-  }>(`/home/mixes/${mixId}/tracks`);
+): Promise<MixDetailsData> => {
+  const res = await axiosInstance.get<MixDetailsResponse>(`/home/mixes/${mixId}`);
   return res.data.data;
 };
-
 // POST /me/listening-history — record a play event (fire-and-forget)
 export const writeListeningHistory = async (
   trackId: string,
@@ -285,3 +304,4 @@ export const getTrendingByGenre = async (
   }>(`/home/trending-by-genre/${genreId}`, { params });
   return res.data.data;
 };
+

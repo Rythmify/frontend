@@ -9,8 +9,8 @@ import WaveSurfer from "wavesurfer.js";
 import type { Track } from "../../../../types/track";
 import {
   audio,
+  seekAudio,
   setGlobalWaveSurfer,
-  setTrackLoadedLocally,
 } from "../../../../services/audioService";
 import { getTrackWaveform } from "../../../../services/track.service";
 import { usePlayerStore } from "../../../../stores/player.store";
@@ -21,12 +21,13 @@ export interface TrackWaveformHandle {
 
 const TrackWaveform = forwardRef<
   TrackWaveformHandle,
-  { track: Track; onPlayPause?: () => void }
+  { track: Track; onPlayPause?: (startTime?: number) => void }
 >(({ track, onPlayPause }, ref) => {
   const waveformRef = useRef<HTMLDivElement | null>(null);
   const timeRef = useRef<HTMLDivElement | null>(null);
   const durationRef = useRef<HTMLDivElement | null>(null);
   const waveSurferRef = useRef<WaveSurfer | null>(null);
+  const lastInteractionTimeRef = useRef<number | null>(null);
 
   const [isHover, setIsHover] = useState(false);
 
@@ -110,8 +111,7 @@ const TrackWaveform = forwardRef<
         !playerState.currentTrack ||
         playerState.currentTrack.id === track.id
       ) {
-        setGlobalWaveSurfer(ws);
-        setTrackLoadedLocally(track.id);
+        setGlobalWaveSurfer(ws, track.id);
       }
 
       const formatTime = (seconds: number) => {
@@ -137,9 +137,8 @@ const TrackWaveform = forwardRef<
       // WaveSurfer's built-in "interaction" event fires before our onClick, so we
       // suppress it here and let the div's onClick bubble up to onPlayPause.
       ws.on("interaction", (newTime: number) => {
-        audio.currentTime = newTime;
-        usePlayerStore.getState().seekTo(newTime);
-        // Do NOT call ws.play() or audio.play() here.
+        lastInteractionTimeRef.current = newTime;
+        seekAudio(newTime);
       });
 
       ws.on("error", () => {});
@@ -164,7 +163,10 @@ const TrackWaveform = forwardRef<
     <div>
       <div
         style={{ position: "relative", cursor: "pointer", width: "100%" }}
-        onClick={onPlayPause}
+        onClick={() => {
+          onPlayPause?.(lastInteractionTimeRef.current ?? undefined);
+          lastInteractionTimeRef.current = null;
+        }}
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
       >

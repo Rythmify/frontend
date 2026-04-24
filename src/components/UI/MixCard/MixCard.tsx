@@ -42,13 +42,13 @@ export default function MixCard({
   mix,
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: MixCardProps) {
+  const mixId = mix.mix_id ?? mix.id;
   const badge = BADGE_COLORS[colorIndex(mix)];
   const { isMixLiked, toggleMix } = useLikesStore();
   const { addMix } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const navigate = useNavigate();
   // API sends mix_id; the TypeScript interface says id — coalesce both
-  const mixId: string = (mix as any).mix_id ?? mix.id;
   const liked = isMixLiked(mixId);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
@@ -63,18 +63,12 @@ export default function MixCard({
       togglePlay();
     } else {
       setTrack(previewTrack);
-      addMix(mix);
+      addMix({ ...mix, id: mixId });
     }
   };
 
-  const mixSlug = (mix.label ?? "")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
 
-  const mixPath = `/discover/sets/${mixSlug}:${mixId}`;
-
+ const mixPath = `/discover/sets/${mixId}`;
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleMix(mix);

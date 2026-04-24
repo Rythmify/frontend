@@ -146,9 +146,9 @@ export default function ShareLayout({
         tracks={stats.tracks ?? 0}
       />
 
-      <div className="flex gap-6 py-6 items-start">
-        <div className="flex-1">{children}</div>
-        <div className="sticky top-24 self-start">
+      <div className="flex gap-10 py-6 items-start">
+        <div className="flex-1 min-w-0">{children}</div>
+        <div className="sticky top-24 self-start w-[320px] shrink-0">
           <ProfileSidebar
             user={user}
             isOwner={isOwner}

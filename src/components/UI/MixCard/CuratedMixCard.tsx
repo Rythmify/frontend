@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { CuratedHomeMixPreview } from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import { usePlayerStore } from "@/stores/player.store";
@@ -16,6 +17,7 @@ export default function CuratedMixCard({
   mix,
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: Props) {
+  const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const liked = isPlaylistLiked(mix.mix_id);
@@ -48,11 +50,13 @@ export default function CuratedMixCard({
   };
 
   const coverSrc = mix.cover_url ?? mix.preview_track?.cover_image ?? null;
+  const mixPath = `/rythmify/sets/${mix.mix_id}`;
 
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
       data-test={`curated-mix-card-${mix.mix_id}`}
+      onClick={() => navigate(mixPath)}
     >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
