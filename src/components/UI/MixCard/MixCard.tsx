@@ -39,12 +39,13 @@ export default function MixCard({
   mix,
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: MixCardProps) {
+  const mixId = mix.mix_id ?? mix.id;
   const badge = BADGE_COLORS[colorIndex(mix)];
   const { isMixLiked, toggleMix, togglePlaylist } = useLikesStore();
   const { addMix } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const navigate = useNavigate();
-  const liked = isMixLiked(mix.id);
+  const liked = isMixLiked(mixId);
 
   // Guard against stale persisted history entries that predate the non-null contract
   const previewTrack = mix.preview_track ? mapDiscoveryTrack(mix.preview_track) : null;
@@ -57,23 +58,18 @@ export default function MixCard({
       togglePlay();
     } else {
       setTrack(previewTrack);
-      addMix(mix);
+      addMix({ ...mix, id: mixId });
     }
   };
 
-  const mixSlug = (mix.label ?? "")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
 
-  const mixPath = `/discover/sets/${mixSlug}:${mix.id}`;
+  const mixPath = `/discover/sets/${mixId}`;
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleMix(mix);
+    toggleMix({ ...mix, id: mixId });
     togglePlaylist({
-      id: mix.id,
+      id: mixId,
       title: mix.label ?? "",
       owner: `${mix.track_count} tracks`,
       coverUrl: mix.cover_image ?? mix.preview_track.cover_image ?? null,
@@ -83,7 +79,7 @@ export default function MixCard({
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
-      data-test={`mix-card-${mix.id}`}
+      data-test={`mix-card-${mixId}`}
       onClick={() => navigate(mixPath)}
     >
       {/* Cover */}
