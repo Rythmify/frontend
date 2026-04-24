@@ -118,7 +118,9 @@ export default function TrackCommentList({
                   }
                 });
               }
-            } catch (e) {}
+            } catch (e) {
+              // Ignore invalid JSON in localStorage
+            }
           }
         }
         return next;
