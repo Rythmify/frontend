@@ -44,6 +44,7 @@ interface PlayerState {
   toggleRepeat: () => void;
   toggleLike: () => void;
   addToQueue: (track: Track) => void;
+  reset: () => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -178,4 +179,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   addToQueue: (track) =>
     set((s) => ({ queue: [...s.queue, track] })),
+
+  reset: () =>
+    set({
+      currentTrack: null,
+      queue: [],
+      queueIndex: 0,
+      isPlaying: false,
+      currentTime: 0,
+      duration: 0,
+      isLiked: false,
+    }),
 }));

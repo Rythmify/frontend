@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { type Notification } from '@/services/api/notifications/notificationsAPI'
+import { type Notification,markNotificationRead } from '@/services/api/notifications/notificationsAPI'
 import FollowButton from '@/components/UI/FollowButton'
 import { Modal } from '@/components/UI/Modal'
 import { BlockUserModal } from '@/components/UI/BlockModal'
@@ -22,11 +22,16 @@ const formatRelativeTime = (dateStr: string): string => {
 
 const buildActionText = (n: Notification): string => {
   switch (n.type) {
-    case 'follow':  return 'started following you'
-    case 'like':    return `liked your track "${n.resource?.title ?? n.resource?.id ?? ''}"`
-    case 'repost':  return `reposted your track "${n.resource?.title ?? n.resource?.id ?? ''}"`
-    case 'comment': return `commented "${n.resource?.body ?? ''}" on your track`
-    default:        return ''
+    case 'follow':
+      return 'started following you'
+    case 'like':
+      return `liked your ${n.resource_type}  "${n.resource_details?.title ?? ''}"`
+    case 'repost':
+      return `reposted your ${n.resource_type} "${n.resource_details?.title ?? ''}"`
+    case 'comment':
+      return `commented "${n.resource_details?.content ?? ''}" on your ${n.resource_type}`
+    default:
+      return ''
   }
 }
 
@@ -63,12 +68,13 @@ const styles = {
 interface NotificationCardProps {
   notification: Notification
   showActions?: boolean
-  'data-test'?: string
+ onMarkRead?: (id: string) => void
+'data-test'?: string
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const NotificationCard = ({ notification: n, showActions = true }: NotificationCardProps) => {
+const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: NotificationCardProps) => {
   const navigate = useNavigate()
 
   const [menuOpen, setMenuOpen]         = useState(false)
@@ -76,11 +82,19 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isSpamOpen, setIsSpamOpen]     = useState(false)
 
-  const handleCellClick = () => {
+    const handleCellClick = async () => {
+    if (!n.is_read) {
+      try {
+        await markNotificationRead(n.id)
+        onMarkRead?.(n.id)
+      } catch {
+        // non-critical — still navigate
+      }
+    }
     if (n.type === 'follow') {
       navigate(`/${n.actor.username}`)
     } else {
-      navigate(`/tracks/${n.resource?.id}`)
+      navigate(`/tracks/${n.resource_id}`)
     }
   }
 
@@ -94,10 +108,10 @@ const NotificationCard = ({ notification: n, showActions = true }: NotificationC
           {!n.is_read && <div className={styles.unreadDotOverlay} />}
 
           <div className={styles.avatar}>
-            {n.actor.profile_picture ? (
+            {n.actor?.avatar ? (
               <img
                 data-test={`notification-avatar-img-${n.id}`}
-                src={n.actor.profile_picture}
+                src={n.actor.avatar}
                 alt={n.actor.display_name}
                 className={styles.avatarImg}
               />
