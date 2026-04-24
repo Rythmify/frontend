@@ -10,6 +10,7 @@ import {
   getRelatedTracks,
   getTrackComments,
   postComment,
+  incrementPlayCount,
 } from "../../../services/track.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Comment } from "../../../types/comment";
@@ -81,14 +82,17 @@ export default function TrackSlugPage() {
   // FIX: play/pause handler now always uses the page's `track`, not heroTrack.
   // If this page's track is already loaded in the player → toggle play/pause.
   // Otherwise → load the page track into the player and start playing.
-  const handleHeroPlayPause = () => {
+  const handleHeroPlayPause = (startTime?: number) => {
     if (!track) return;
     if (currentTrack?.id === track.id) {
-      usePlayerStore.getState().togglePlay();
+      if (startTime !== undefined) {
+        usePlayerStore.getState().seek(startTime);
+        if (!isPlaying) usePlayerStore.getState().play();
+      } else {
+        usePlayerStore.getState().togglePlay();
+      }
     } else {
-      setPlayerTrack(track, [track, ...relatedTracks]);
-      // Optimistic increment
-      setTrack(prev => prev ? { ...prev, playCount: (prev.playCount || 0) + 1 } : null);
+      setPlayerTrack(track, [track, ...relatedTracks], startTime);
     }
   };
 
@@ -104,12 +108,29 @@ export default function TrackSlugPage() {
     }
   };
 
+  // View counting logic: Count only if user listens to at least 30 seconds
+  useEffect(() => {
+    let hasCounted = false;
+    if (!track || currentTrack?.id !== track.id) return;
+
+    const unsubscribe = usePlayerStore.subscribe((state) => {
+      if (!hasCounted && state.currentTime >= 30 && state.currentTrack?.id === track.id) {
+        hasCounted = true;
+        incrementPlayCount(track.id);
+        setTrack(prev => prev ? { ...prev, playCount: (prev.playCount || 0) + 1 } : null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [track?.id, currentTrack?.id]);
+
   const handleComment = async (text: string, timestampSec: number) => {
     if (!track) return;
     try {
       const newComment = await postComment(String(track.id), text, timestampSec);
       if (newComment) {
         setComments(prev => [...prev, newComment]);
+        setTrack(prev => prev ? { ...prev, commentCount: (prev.commentCount || 0) + 1 } : null);
       }
     } catch (err) {
       console.error("Failed to post comment:", err);
@@ -190,8 +211,13 @@ export default function TrackSlugPage() {
           <TrackCommentList 
             comments={comments} 
             trackId={String(track.id)} 
-            onCommentDeleted={(id) => {
+            totalComments={track.commentCount}
+            onCommentAdded={() => {
+              setTrack(prev => prev ? { ...prev, commentCount: (prev.commentCount || 0) + 1 } : null);
+            }}
+            onCommentDeleted={(id, countRemoved) => {
               setComments(prev => prev.filter(c => String(c.comment_id) !== String(id)));
+              setTrack(prev => prev ? { ...prev, commentCount: Math.max(0, (prev.commentCount || 0) - countRemoved) } : null);
             }}
           />
         </div>

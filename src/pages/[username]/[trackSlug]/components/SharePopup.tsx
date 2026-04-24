@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import type { Track } from "../../../../types/track";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
+import axiosInstance from "@/services/api/axiosInstance";
 
 interface SharePopupProps {
   track?: Track;
@@ -130,8 +131,20 @@ export default function SharePopup({
 
         {/* Tab Content */}
         <div className="px-5 py-5">
-          {activeTab === "share" && <ShareTab data={displayData} />}
-          {activeTab === "embed" && <EmbedTab data={displayData} />}
+          {activeTab === "share" && (
+            <ShareTab
+              track={track}
+              playlist={playlist}
+              data={displayData}
+            />
+          )}
+          {activeTab === "embed" && (
+            <EmbedTab
+              track={track}
+              playlist={playlist}
+              data={displayData}
+            />
+          )}
           {activeTab === "message" && <MessageTab />}
         </div>
       </div>
@@ -140,11 +153,50 @@ export default function SharePopup({
 }
 
 // Share Tab
-function ShareTab({ data }: { data: any }) {
+function ShareTab({
+  track,
+  playlist,
+  data,
+}: {
+  track?: Track;
+  playlist?: Playlist;
+  data: any;
+}) {
   const [atTimestamp, setAtTimestamp] = useState(false);
   const [shortenLink, setShortenLink] = useState(false);
   const [copied, setCopied] = useState(false);
-  const shareUrl = window.location.href;
+
+  const getTargetUrl = () => {
+    const origin = window.location.origin;
+    if (track) {
+      return `${origin}/${track.artistUsername}/${track.trackSlug || track.id}`;
+    }
+    if (playlist) {
+      return `${origin}/playlist/${playlist.playlist_id}`;
+    }
+    return window.location.href;
+  };
+
+  const targetUrl = getTargetUrl();
+  const [shareUrl, setShareUrl] = useState(targetUrl);
+
+  useEffect(() => {
+    if (shortenLink) {
+      axiosInstance
+        .get(`/resolve`, { params: { url: targetUrl } })
+        .then((res) => {
+          if (res.data?.data?.permalink) {
+            setShareUrl(res.data.data.permalink);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to resolve shortened link:", err);
+          setShareUrl(targetUrl);
+        });
+    } else {
+      setShareUrl(targetUrl);
+    }
+  }, [shortenLink, targetUrl]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -314,9 +366,32 @@ function ShareTab({ data }: { data: any }) {
 }
 
 // Embed Tab
-function EmbedTab({ data }: { data: any }) {
+function EmbedTab({
+  track,
+  playlist,
+  data,
+}: {
+  track?: Track;
+  playlist?: Playlist;
+  data: any;
+}) {
   const [copied, setCopied] = useState(false);
-  const embedCode = `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"\n  src="https://rythmify.com/player/?url=${encodeURIComponent(window.location.href)}">\n</iframe>`;
+
+  const getTargetUrl = () => {
+    const origin = window.location.origin;
+    if (track) {
+      return `${origin}/${track.artistUsername}/${track.trackSlug || track.id}`;
+    }
+    if (playlist) {
+      return `${origin}/playlist/${playlist.playlist_id}`;
+    }
+    return window.location.href;
+  };
+
+  const targetUrl = getTargetUrl();
+  const embedCode = `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"\n  src="https://rythmify.com/player/?url=${encodeURIComponent(
+    targetUrl
+  )}">\n</iframe>`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(embedCode);

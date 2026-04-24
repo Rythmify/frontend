@@ -68,6 +68,7 @@ export default function PopularTracksPage() {
     followers: 0,
     tracks: 0,
     isVerified: u.is_verified,
+    isFollowing: u.isFollowing,
   }));
 
   return (

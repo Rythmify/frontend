@@ -65,6 +65,9 @@ const StationSlugPage = lazy(
 const MoreOfLikeSlugPage = lazy(
   () => import("@/pages/you/sets/MoreOfLikeSlugPage"),
 );
+const CuratedForYouSlugPage = lazy(
+  () => import("@/pages/you/sets/CuratedForYouSlugPage"),
+);
 
 // Feed
 const FeedPage = lazy(() => import("@/pages/feed/FeedPage"));
@@ -222,6 +225,10 @@ export const router = createBrowserRouter([
         path: "discover/personalised/:playlistSlug",
         element: <Lazy component={MoreOfLikeSlugPage} />,
       },
+      {
+        path: "rythmify/sets/:mixSlug",
+        element: <Lazy component={CuratedForYouSlugPage} />,
+      },
       { path: "people", element: <Lazy component={PeoplePage} /> },
       { path: "download", element: <Lazy component={DownloadPage} /> },
       { path: "logout", element: <LogoutPage /> },
@@ -320,7 +327,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: "following",
-                element: <Lazy component={FollowingPage} />,
+                element: <Lazy component={YouFollowingPage} />,
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },

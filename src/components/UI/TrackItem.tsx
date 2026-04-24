@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
+import { useHistoryStore } from "@/stores/history.store";
 import type { Track } from "@/types/track";
 
 interface TrackItemProps {
@@ -21,6 +22,7 @@ interface TrackItemProps {
   duration?: string;
   postedAt?: string;
   isPrivate?: boolean;
+  trackSlug?: string;
 }
 
 const formatCount = (n: number) => {
@@ -46,14 +48,16 @@ const TrackItem: React.FC<TrackItemProps> = ({
   duration = "0:00",
   postedAt = "",
   isPrivate = false,
+  trackSlug,
 }) => {
   const [hovered, setHovered] = useState(false);
   const [coverHovered, setCoverHovered] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const navigate = useNavigate();
-  const setTrack = usePlayerStore((state) => state.setTrack);
+  const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const isTrackLiked = useLikesStore((s) => s.isTrackLiked);
   const toggleTrack = useLikesStore((s) => s.toggleTrack);
+  const { addTrack } = useHistoryStore();
 
   const liked = isTrackLiked(id);
 
@@ -65,7 +69,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       artistUsername:
         artistUsername || artist.toLowerCase().replace(/\s+/g, "-"),
       coverUrl: coverUrl || "",
-      audioUrl: audioUrl || "",
+      audioUrl: audioUrl ?? "",
       genre: genre || "",
       likeCount: likes || 0,
       repostCount: reposts || 0,
@@ -80,11 +84,20 @@ const TrackItem: React.FC<TrackItemProps> = ({
     if (liked) onUnlike?.(id);
   };
 
+  const isThisTrackPlaying = currentTrack?.id === id && isPlaying;
+
   const finalArtistSlug =
     artistUsername || artist.toLowerCase().replace(/\s+/g, "-");
 
+  const trackPath = `/discover/personalised/${trackSlug ?? ""}:${id}`;
+
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (currentTrack?.id === id) {
+      togglePlay();
+      return;
+    }
 
     const trackForPlayer: Track = {
       id: id,
@@ -92,7 +105,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       artistName: artist,
       artistUsername: finalArtistSlug,
       coverUrl: coverUrl || "",
-      audioUrl: audioUrl || "",
+      audioUrl: audioUrl ?? "",
       genre: genre,
       likeCount: likes || 0,
       repostCount: reposts || 0,
@@ -105,6 +118,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
     };
 
     setTrack(trackForPlayer);
+    addTrack(trackForPlayer);
   };
   return (
     <div
@@ -134,8 +148,8 @@ const TrackItem: React.FC<TrackItemProps> = ({
           <div className="w-full h-full bg-border" />
         )}
 
-        {/* Play Button Overlay - Shows on Cover Hover */}
-        {coverHovered && (
+        {/* Play Button Overlay - Shows on hover or when this track is playing */}
+        {(coverHovered || isThisTrackPlaying) && (
           <div
             className="absolute inset-0 bg-black/40 flex items-center justify-center"
             onClick={handlePlayClick}
@@ -144,7 +158,9 @@ const TrackItem: React.FC<TrackItemProps> = ({
               data-test={`track-play-button-${id}`}
               className="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
             >
-              <i className="fa-solid fa-play text-black text-xs pl-0.5"></i>
+              <i
+                className={`fa-solid ${isThisTrackPlaying ? "fa-pause" : "fa-play"} text-black text-xs ${isThisTrackPlaying ? "" : "pl-0.5"}`}
+              ></i>
             </button>
           </div>
         )}
@@ -161,7 +177,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
         </button>
         <button
           data-test={`track-title-${id}`}
-          onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
+          onClick={() => navigate(trackPath)}
           className="text-sm cursor-pointer font-semibold text-text-hover text-left truncate"
         >
           {title}

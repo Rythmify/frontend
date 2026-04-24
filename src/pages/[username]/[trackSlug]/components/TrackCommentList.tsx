@@ -7,10 +7,18 @@ import { useAuthStore } from "../../../../stores/auth.store";
 interface TrackCommentListProps {
   comments: Comment[];
   trackId: string;
-  onCommentDeleted?: (commentId: string) => void;
+  totalComments?: number;
+  onCommentAdded?: () => void;
+  onCommentDeleted?: (commentId: string, countRemoved: number) => void;
 }
 
-export default function TrackCommentList({ comments, trackId, onCommentDeleted }: TrackCommentListProps) {
+export default function TrackCommentList({ 
+  comments, 
+  trackId, 
+  totalComments, 
+  onCommentAdded,
+  onCommentDeleted 
+}: TrackCommentListProps) {
   const { user: currentUser } = useAuthStore();
   const [commentList, setCommentList] = useState<Comment[]>(comments);
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
@@ -18,18 +26,34 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
   const [replyText, setReplyText] = useState("");
   const [expandedThreads, setExpandedThreads] = useState<Record<string, Comment[]>>({});
   const [loadingThreads, setLoadingThreads] = useState<Set<string>>(new Set());
+  const [processingLikes, setProcessingLikes] = useState<Set<string>>(new Set());
 
   // LOCAL STORAGE KEY: rythmify_likes_{userId}
   const LIKES_CACHE_KEY = currentUser ? `rythmify_likes_${currentUser.id}` : null;
 
-  // Load likes from LocalStorage OR Backend flags (Backend support reverted)
+  // Load likes from backend is_liked_by_me flags, with localStorage as fallback
   useEffect(() => {
     setCommentList(comments);
     
     const initialLikes = new Set<string>();
     
-    // 1. Try to load from Local Cache (Frontend Persistence Workaround)
-    if (LIKES_CACHE_KEY) {
+    // 1. Use backend is_liked_by_me flags as primary source of truth
+    comments.forEach(c => {
+      if (c.is_liked_by_me) {
+        initialLikes.add(String(c.comment_id));
+      }
+    });
+
+    // Also check expanded threads if they exist
+    Object.values(expandedThreads).flat().forEach(r => {
+      if (r.is_liked_by_me) {
+        initialLikes.add(String(r.comment_id));
+      }
+    });
+
+    // 2. Only fall back to localStorage if backend returned no like info
+    const hasBackendLikeInfo = comments.some(c => c.is_liked_by_me !== undefined);
+    if (!hasBackendLikeInfo && LIKES_CACHE_KEY) {
       const cached = localStorage.getItem(LIKES_CACHE_KEY);
       if (cached) {
         try {
@@ -43,7 +67,11 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
       }
     }
 
-    setLikedComments(initialLikes);
+    setLikedComments(prev => {
+      const next = new Set(prev);
+      initialLikes.forEach(id => next.add(id));
+      return next;
+    });
   }, [comments, LIKES_CACHE_KEY]);
 
   // Persist likes to LocalStorage whenever they change
@@ -65,6 +93,38 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
     try {
       const replies = await getReplies(commentId);
       setExpandedThreads(prev => ({ ...prev, [commentId]: replies }));
+      
+      // Update likedComments set with backend data from replies AND localStorage
+      setLikedComments(prev => {
+        const next = new Set(prev);
+        
+        // 1. Check backend flags
+        replies.forEach((r: Comment) => {
+          if (r.is_liked_by_me) {
+            next.add(String(r.comment_id));
+          }
+        });
+
+        // 2. Check localStorage fallback (Crucial for replies while backend is pending fixes)
+        if (LIKES_CACHE_KEY) {
+          const cached = localStorage.getItem(LIKES_CACHE_KEY);
+          if (cached) {
+            try {
+              const cachedIds = JSON.parse(cached);
+              if (Array.isArray(cachedIds)) {
+                replies.forEach((r: Comment) => {
+                  if (cachedIds.includes(String(r.comment_id))) {
+                    next.add(String(r.comment_id));
+                  }
+                });
+              }
+            } catch (e) {
+              // Ignore invalid JSON in localStorage
+            }
+          }
+        }
+        return next;
+      });
     } catch (err) {
       console.error("Failed to fetch replies", err);
     } finally {
@@ -78,44 +138,64 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
 
   const handleLikeToggle = async (comment: any) => {
     const commentIdStr = String(comment.comment_id);
+    if (processingLikes.has(commentIdStr)) return;
+
     const isCurrentlyLiked = likedComments.has(commentIdStr);
-    const newLikedComments = new Set(likedComments);
+    setProcessingLikes(prev => new Set(prev).add(commentIdStr));
     
-    const updateComment = (c: Comment) => {
-      if (String(c.comment_id) === commentIdStr) {
-        return {
-          ...c,
-          like_count: isCurrentlyLiked ? Math.max(0, c.like_count - 1) : c.like_count + 1
-        } as any;
-      }
-      return c;
+    // Optimistic Update
+    const updateState = (isLiked: boolean) => {
+      const updater = (c: Comment) => {
+        if (String(c.comment_id) === commentIdStr) {
+          return {
+            ...c,
+            like_count: isLiked ? c.like_count + 1 : Math.max(0, c.like_count - 1),
+            is_liked_by_me: isLiked
+          } as any;
+        }
+        return c;
+      };
+
+      setCommentList(prev => prev.map(updater));
+      setExpandedThreads(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(id => {
+          next[id] = next[id].map(updater);
+        });
+        return next;
+      });
+
+      setLikedComments(prev => {
+        const next = new Set(prev);
+        if (isLiked) next.add(commentIdStr);
+        else next.delete(commentIdStr);
+        return next;
+      });
     };
 
-    setCommentList(prev => prev.map(updateComment));
-    setExpandedThreads(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(id => {
-        next[id] = next[id].map(updateComment);
-      });
-      return next;
-    });
-
-    if (isCurrentlyLiked) newLikedComments.delete(commentIdStr);
-    else newLikedComments.add(commentIdStr);
-    setLikedComments(newLikedComments);
+    updateState(!isCurrentlyLiked);
 
     try {
-      if (isCurrentlyLiked) await unlikeComment(commentIdStr);
-      else await likeComment(commentIdStr);
+      if (isCurrentlyLiked) {
+        await unlikeComment(commentIdStr);
+      } else {
+        await likeComment(commentIdStr);
+      }
     } catch (err) {
-      console.error("Failed to toggle like", err);
+      console.error("Failed to toggle like, rolling back", err);
+      updateState(isCurrentlyLiked);
+    } finally {
+      setProcessingLikes(prev => {
+        const next = new Set(prev);
+        next.delete(commentIdStr);
+        return next;
+      });
     }
   };
 
   const handleReplySubmit = async (targetId: string, parentCommentId: string) => {
     if (!replyText.trim()) return;
     try {
-      // Backend only supports replies on main comments, so we use parentCommentId
       const newReply = await postReply(parentCommentId, replyText);
       
       setCommentList(prev => prev.map(c => {
@@ -125,17 +205,14 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
         return c;
       }));
 
-      if (expandedThreads[parentCommentId]) {
-        setExpandedThreads(prev => ({
-          ...prev,
-          [parentCommentId]: [...prev[parentCommentId], newReply]
-        }));
-      } else {
-        handleFetchReplies(parentCommentId);
-      }
+      setExpandedThreads(prev => ({
+        ...prev,
+        [parentCommentId]: prev[parentCommentId] ? [...prev[parentCommentId], newReply] : [newReply]
+      }));
 
       setReplyText("");
       setReplyingTo(null);
+      if (onCommentAdded) onCommentAdded();
     } catch (err) {
       console.error("Failed to post reply", err);
     }
@@ -143,34 +220,81 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
 
   const handleDelete = async (commentId: string) => {
     if (!confirm("Are you sure?")) return;
-    try {
-      await deleteComment(commentId);
-      
-      setCommentList(prev => prev.filter(c => String(c.comment_id) !== String(commentId)));
-      
-      setExpandedThreads(prev => {
-        const next = { ...prev };
-        delete next[commentId];
-        Object.keys(next).forEach(id => {
-          next[id] = next[id].filter(r => String(r.comment_id) !== String(commentId));
-        });
-        return next;
-      });
 
-      if (likedComments.has(String(commentId))) {
+    // 1. Snapshot state for potential rollback
+    const commentIdStr = String(commentId);
+    const parentComment = commentList.find(c => String(c.comment_id) === commentIdStr);
+    const isReply = !parentComment;
+    const threadSnapshot = { ...expandedThreads };
+    
+    // Find parent if this is a reply deletion
+    let parentIdOfReply: string | null = null;
+    if (isReply) {
+      for (const [pId, replies] of Object.entries(expandedThreads)) {
+        if (replies.some(r => String(r.comment_id) === commentIdStr)) {
+          parentIdOfReply = pId;
+          break;
+        }
+      }
+    }
+
+    // 2. Calculate count to remove
+    const repliesToRemove = parentComment ? (expandedThreads[commentIdStr]?.length || 0) : 0;
+    const totalToRemove = 1 + repliesToRemove;
+
+    // 3. Optimistic UI Update
+    setCommentList(prev => {
+      let next = prev.filter(c => String(c.comment_id) !== commentIdStr);
+      if (parentIdOfReply) {
+        next = next.map(c => 
+          String(c.comment_id) === parentIdOfReply 
+            ? { ...c, reply_count: Math.max(0, (c.reply_count || 0) - 1) } 
+            : c
+        );
+      }
+      return next;
+    });
+
+    setExpandedThreads(prev => {
+      const next = { ...prev };
+      if (parentComment) delete next[commentIdStr];
+      if (parentIdOfReply && next[parentIdOfReply]) {
+        next[parentIdOfReply] = next[parentIdOfReply].filter(r => String(r.comment_id) !== commentIdStr);
+      }
+      return next;
+    });
+
+    try {
+      await deleteComment(commentIdStr);
+      
+      // Cleanup likes
+      if (likedComments.has(commentIdStr)) {
         setLikedComments(prev => {
           const next = new Set(prev);
-          next.delete(String(commentId));
+          next.delete(commentIdStr);
           return next;
         });
       }
 
-      // Notify parent to update count and waveform
-      if (onCommentDeleted) {
-        onCommentDeleted(commentId);
-      }
-    } catch (err) {
-      console.error("Failed to delete", err);
+      // Notify parent to update global count
+      if (onCommentDeleted) onCommentDeleted(commentIdStr, totalToRemove);
+      
+    } catch (err: any) {
+      console.error("Delete failed, rolling back", err);
+      // Rollback
+      setCommentList(prev => {
+        const restored = parentComment ? [...prev, parentComment] : prev;
+        if (parentIdOfReply) {
+          return restored.map(c => 
+            String(c.comment_id) === parentIdOfReply 
+              ? { ...c, reply_count: (c.reply_count || 0) + 1 } 
+              : c
+          );
+        }
+        return restored;
+      });
+      setExpandedThreads(threadSnapshot);
+      alert("Failed to delete comment. You may not have permission.");
     }
   };
 
@@ -307,7 +431,7 @@ export default function TrackCommentList({ comments, trackId, onCommentDeleted }
     <div className="mt-8 border-t border-[var(--color-border)] pt-6">
       <div className="flex items-center gap-2 mb-8 uppercase tracking-widest text-[11px] font-bold text-[var(--color-text-muted)]">
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-        {commentList.length} Comments
+        {totalComments ?? commentList.length} Comments
       </div>
 
       <div className="flex flex-col gap-10">
