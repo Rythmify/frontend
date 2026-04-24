@@ -1,6 +1,7 @@
 import axiosInstance from "./api/axiosInstance";
 import type { TrackSummary, ListMeta } from "./api/discover.service";
 import type { Playlist } from "./api/playlist/playlist.service";
+import type { Track } from "@/types/track";
 
 /**
  * Rythmify Engagement Service
@@ -51,11 +52,11 @@ export async function getMyLikedTracks(params?: {
   offset?: number;
 }): Promise<{ data: TrackSummary[]; pagination: ListMeta }> {
   const res = await axiosInstance.get<{
-    data: { items: any[], pagination: any };
+    data: { items: any[]; pagination: any };
   }>("/me/liked-tracks", { params });
   return {
     data: res.data.data.items,
-    pagination: res.data.data.pagination
+    pagination: res.data.data.pagination,
   };
 }
 
@@ -71,7 +72,7 @@ export async function getMyRepostedTracks(params?: {
   }>("/me/reposted-tracks", { params });
   return {
     data: res.data.data.items,
-    pagination: res.data.data.pagination
+    pagination: res.data.data.pagination,
   };
 }
 
@@ -123,7 +124,7 @@ export async function repostPlaylist(playlistId: string | number) {
  */
 export async function removePlaylistRepost(playlistId: string | number) {
   const { data } = await axiosInstance.delete(
-    `/playlists/${playlistId}/repost`
+    `/playlists/${playlistId}/repost`,
   );
   return data;
 }
@@ -151,5 +152,15 @@ export async function unlikeComment(commentId: string | number) {
  */
 export async function deleteComment(commentId: string | number) {
   const { data } = await axiosInstance.delete(`/comments/${commentId}`);
+  return data;
+}
+
+export async function getUserRepostedTracks(
+  userId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<{ data: Track[] }> {
+  const { data } = await axiosInstance.get(`/users/${userId}/reposts`, {
+    params,
+  });
   return data;
 }

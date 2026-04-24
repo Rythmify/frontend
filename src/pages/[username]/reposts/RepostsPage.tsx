@@ -5,7 +5,10 @@ import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
 import { useProfileData } from "@/services/hooks/useProfileData";
-import { getMyRepostedTracks } from "@/services/engagement.service";
+import {
+  getMyRepostedTracks,
+  getUserRepostedTracks,
+} from "@/services/engagement.service";
 import type { Track } from "@/types/track";
 
 export default function RepostsPage() {
@@ -29,13 +32,20 @@ export default function RepostsPage() {
   } = useProfileData(username);
 
   useEffect(() => {
-    if (!isOwner) return;
+    // Wait until we know who we're looking at
+    if (!isOwner && !profileData?.id) return;
+
     setLoadingReposts(true);
-    getMyRepostedTracks({ limit: 50 })
-      .then((res) => setRepostedTracks(res.data))
+
+    const fetchReposts = isOwner
+      ? getMyRepostedTracks({ limit: 50 })
+      : getUserRepostedTracks(profileData!.id, { limit: 50 });
+
+    fetchReposts
+      .then((res: { data: Track[] }) => setRepostedTracks(res.data))
       .catch(console.error)
       .finally(() => setLoadingReposts(false));
-  }, [isOwner]);
+  }, [isOwner, profileData?.id]);
 
   if (!currentUser) return null;
 
