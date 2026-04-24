@@ -172,7 +172,7 @@ export interface DiscoveryAlbum {
   created_at?: string;
 }
 
-export interface MixDetailsTrack extends DiscoveryTrack {}
+export type MixDetailsTrack = DiscoveryTrack;
 
 export interface MixDetailsData {
   mix_id: string;
