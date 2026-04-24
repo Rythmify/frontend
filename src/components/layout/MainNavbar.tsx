@@ -233,79 +233,78 @@ const MainNavbar = () => {
             )}
           </div>
 
-       {/* Notifications */}
-          <div ref={notifRef} className="relative">
-            <button
-              data-test="btn-notifications"
-              onClick={handleNotificationsToggle}
-              className="relative text-text-secondary hover:text-text transition-colors"
-            >
-              <Bell size={22} className="hover:text-text-hover mt-2" />
-              {unreadCount > 0 && (
-                <span
-                  data-test="notification-unread-badge"
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
-                >
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </button>
-
-            {showNotifications && (
-              <div data-test="notifications-dropdown" className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50">
-
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <h3 data-test="notifications-dropdown-title" className="text-md font-medium text-text">Notifications</h3>
-                  <Link data-test="notifications-settings-link" to="/settings/notifications" className="text-xs text-text-secondary hover:text-text" onClick={closeAll}>
-                    Settings
-                  </Link>
-                </div>
-
-                {/* Scrollable list */}
-                <div
-                  data-test="notifications-dropdown-content"
-                  ref={notifListRef}
-                  className="py-2 max-h-[400px] overflow-y-auto"
-                >
-                  {notificationsLoading ? (
-                    <div data-test="notifications-dropdown-loading" className="px-4 py-3 text-md text-text-muted text-center">
-                      Loading notifications...
-                    </div>
-                  ) : notifications.length === 0 ? (
-                    <div data-test="notifications-dropdown-empty" className="px-4 py-3 text-md text-text-muted text-center">
-                      No new notifications
-                    </div>
-                  ) : (
-                    <div data-test="notifications-dropdown-list" className="flex flex-col">
-                      {notifications.map((notification) => (
-                        <NotificationCard
-                          key={notification.id}
-                          notification={notification}
-                          showActions={false as unknown as undefined}
-                          data-test={`navbar-notification-card-${notification.id}`}
-                        />
-                      ))}
-
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer */}
-                <div className="border-t border-border px-4 py-2">
-                  <Link
-                    data-test="notifications-view-all-link"
-                    to="/notifications"
-                    className="text-xs font-medium text-text hover:text-text-secondary block text-center"
-                    onClick={closeAll}
-                  >
-                    View all notifications
-                  </Link>
-                </div>
-
-              </div>
-            )}
+      {/* Notifications */}
+<div ref={notifRef} className="relative">
+  <button
+    data-test="btn-notifications"
+    onClick={handleNotificationsToggle}
+    className="relative text-text-secondary hover:text-text transition-colors"
+  >
+    <Bell size={22} className="hover:text-text-hover mt-2" />
+    {unreadCount > 0 && (
+      <span
+        data-test="notification-unread-badge"
+        className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+      >
+        {unreadCount > 99 ? '99+' : unreadCount}
+      </span>
+    )}
+  </button>
+ 
+  {showNotifications && (
+    <div data-test="notifications-dropdown" className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50">
+ 
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h3 data-test="notifications-dropdown-title" className="text-md font-medium text-text">Notifications</h3>
+        <Link data-test="notifications-settings-link" to="/settings/notifications" className="text-xs text-text-secondary hover:text-text" onClick={closeAll}>
+          Settings
+        </Link>
+      </div>
+ 
+      {/* Scrollable list */}
+      <div
+        data-test="notifications-dropdown-content"
+        ref={notifListRef}
+        className="py-2 max-h-[400px] overflow-y-auto"
+      >
+        {notificationsLoading ? (
+          <div data-test="notifications-dropdown-loading" className="px-4 py-3 text-md text-text-muted text-center">
+            Loading notifications...
           </div>
+        ) : notifications.length === 0 ? (
+          <div data-test="notifications-dropdown-empty" className="px-4 py-3 text-md text-text-muted text-center">
+            No new notifications
+          </div>
+        ) : (
+          <div data-test="notifications-dropdown-list" className="flex flex-col">
+            {notifications.map((notification) => (
+              <NotificationCard
+                key={notification.id}
+                notification={notification}
+                showActions={false}
+                data-test={`navbar-notification-card-${notification.id}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+ 
+      {/* Footer */}
+      <div className="border-t border-border px-4 py-2">
+        <Link
+          data-test="notifications-view-all-link"
+          to="/notifications"
+          className="text-xs font-medium text-text hover:text-text-secondary block text-center"
+          onClick={closeAll}
+        >
+          View all notifications
+        </Link>
+      </div>
+ 
+    </div>
+  )}
+</div>
 
           {/* Messages */}
           <div ref={msgRef} className="relative">
