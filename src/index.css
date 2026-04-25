@@ -69,6 +69,10 @@
  */
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   .dark {
     --color-bg: #121212;
     --color-bg-inverted:#ffffff;
