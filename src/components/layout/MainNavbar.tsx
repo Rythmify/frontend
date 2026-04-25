@@ -190,7 +190,7 @@ const MainNavbar = () => {
         <div className="hidden md:flex items-center gap-2 lg:gap-3 xl:gap-4 shrink-0">
 
           {/* Text links — desktop only */}
-          <Link to="/creator/checkout" className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors">
+          <Link to="/premium" className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors">
             Try Artist Pro
           </Link>
           <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text-hover transition-colors">
@@ -225,7 +225,7 @@ const MainNavbar = () => {
                 <DropdownLink icon="fa-solid fa-tower-broadcast"     label="Stations"         to="/you/stations"            onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-user-plus"           label="Following"        to="/you/following"           onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-users"               label="Who to follow"    to="/people"                  onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-circle-plus"         label="Try Artist Pro"   to="/creator/checkout"        onClick={closeAll} iconClassName="text-accent" />
+                <DropdownLink icon="fa-solid fa-circle-plus"         label="Try Artist Pro"   to="/premium"                  onClick={closeAll} iconClassName="text-accent" />
                 <DropdownLink icon="fa-solid fa-chart-simple"        label="Tracks"           to={`/${user?.username}/tracks`} onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-chart-line"          label="Insights"         to="/you/insights"            onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-arrow-up-from-bracket" label="Distribute"     to="/artists/distribution"    onClick={closeAll} />
@@ -437,7 +437,7 @@ const MainNavbar = () => {
           <NavLink to="/feed"     className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Feed</NavLink>
           <NavLink to="/you/library" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Library</NavLink>
           <div className="border-t border-border my-1" />
-          <Link to="/creator/checkout" className="block px-4 py-3 text-md font-medium text-accent hover:text-accent-hover transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+          <Link to="/premium" className="block px-4 py-3 text-md font-medium text-accent hover:text-accent-hover transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
             Try Artist Pro
           </Link>
           <Link to="/artists" className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
