@@ -239,6 +239,31 @@ interface CardFieldErrors {
   cvv?: string;
 }
 
+function addMonthsClamped(baseDate: Date, months: number) {
+  const date = new Date(baseDate);
+  const dayOfMonth = date.getDate();
+
+  date.setDate(1);
+  date.setMonth(date.getMonth() + months);
+
+  const lastDayOfTargetMonth = new Date(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    0,
+  ).getDate();
+
+  date.setDate(Math.min(dayOfMonth, lastDayOfTargetMonth));
+  return date;
+}
+
+function formatRenewalDate(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
 function AlertCircleIcon() {
   return (
     <svg
@@ -505,7 +530,9 @@ export default function CheckoutPage() {
   const yearlyTotal = "EGP 359.88";
   const monthlyTotal = "EGP 59.99/month";
   const displayTotal = billing === "yearly" ? yearlyTotal : monthlyTotal;
-  const renewDate = "Apr 25, 2027";
+  const today = new Date();
+  const yearlyRenewDate = formatRenewalDate(addMonthsClamped(today, 12));
+  const monthlyRenewDate = formatRenewalDate(addMonthsClamped(today, 1));
 
   // NEW: CTA button label + style based on payment method
   const ctaLabel =
@@ -751,10 +778,20 @@ export default function CheckoutPage() {
                 </span>
               </div>
               <p className="m-0 text-[13px] leading-[1.55] text-black/50">
-                Subscription will automatically renew at {displayTotal} every{" "}
-                {billing === "yearly" ? "year" : "month"}, starting {renewDate},
-                unless you cancel before the day of your next renewal in your
-                subscription settings.
+                {billing === "monthly" ? (
+                  <>
+                    Subscription will automatically renew at EGP 59.99 every
+                    month, starting {monthlyRenewDate}, unless you cancel before
+                    the day of your next renewal in your subscription settings.
+                  </>
+                ) : (
+                  <>
+                    Subscription will automatically renew at {displayTotal}{" "}
+                    every year, starting {yearlyRenewDate}, unless you cancel
+                    before the day of your next renewal in your subscription
+                    settings.
+                  </>
+                )}
               </p>
               <p className="mb-0 mt-3 text-[13px] text-black/40">
                 All prices in EGP
