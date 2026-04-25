@@ -77,7 +77,7 @@ export default function PlaylistActionsAlbum({
   return (
     <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
       <div
-        className="flex flex-row items-center gap-2 py-4"
+        className="flex flex-row items-center gap-4 py-4"
         data-test="album-playlist-actions"
       >
         {/* Like Button */}
