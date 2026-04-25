@@ -82,7 +82,6 @@ const sections: FeatureSection[] = [
         free: NA,
         artistPro: AVL,
       },
-      { name: "Schedule track releases", free: NA, artistPro: AVL },
     ],
   },
   {
@@ -126,19 +125,11 @@ const sections: FeatureSection[] = [
         free: NA,
         artistPro: AVL,
       },
-      {
-        name: "Split royalties",
-        description: "Make sure your collaborators get paid.",
-        free: NA,
-        artistPro: AVL,
-      },
     ],
   },
   {
     title: "Special treatment",
     rows: [
-      { name: "Priority support", free: NA, artistPro: AVL },
-      { name: "Get 50% off Go+", free: NA, artistPro: AVL },
       {
         name: "Exclusive Partner Savings",
         description:
@@ -289,7 +280,7 @@ export default function CompareTable() {
               return (
                 <div
                   key={`${section.title}::${row.name}`}
-                  className="flex items-start border-b border-[#f3f4f6] py-6"
+                  className="flex items-center border-b border-[#f3f4f6] py-6"
                 >
                   <div className="w-[380px] pr-8">
                     <div className="text-[16px] font-bold leading-[1.35] text-black">
