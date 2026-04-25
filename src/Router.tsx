@@ -68,7 +68,9 @@ const MoreOfLikeSlugPage = lazy(
 const CuratedForYouSlugPage = lazy(
   () => import("@/pages/you/sets/CuratedForYouSlugPage"),
 );
-
+const AlbumsForYouSlugPage = lazy(
+  () => import("@/pages/you/albums/AlbumsForYouSlugPage"),
+);
 // Feed
 const FeedPage = lazy(() => import("@/pages/feed/FeedPage"));
 const ChartsPage = lazy(() => import("@/pages/feed/charts/ChartsPage"));
@@ -228,6 +230,10 @@ export const router = createBrowserRouter([
       {
         path: "rythmify/sets/:mixSlug",
         element: <Lazy component={CuratedForYouSlugPage} />,
+      },
+      {
+        path: "discover/albums/:albumSlug",
+        element: <Lazy component={AlbumsForYouSlugPage} />,
       },
       { path: "people", element: <Lazy component={PeoplePage} /> },
       { path: "download", element: <Lazy component={DownloadPage} /> },
