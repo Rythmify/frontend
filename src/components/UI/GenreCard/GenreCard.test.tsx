@@ -44,7 +44,23 @@ const mockItem = {
   genre: "Hip-Hop",
   cover_image: "https://example.com/hiphop.jpg",
   track_count: 123,
-  previewTrack: { id: "track-1", title: "Track 1" },
+  previewTrack: {
+    id: "track-1",
+    title: "Track 1",
+    artistName: "Artist 1",
+    artistUsername: "artist1",
+    coverUrl: "https://example.com/cover1.jpg",
+    genre: "Hip-Hop",
+    likeCount: 10,
+    repostCount: 5,
+    playCount: 100,
+    commentCount: 2,
+    duration: "3:00",
+    postedAt: "1 day ago",
+    waveformData: [],
+    audioUrl: "https://example.com/audio1.mp3",
+    trackSlug: "track-1",
+  },
 };
 
 const mockToggleGenre = vi.fn();

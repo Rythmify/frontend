@@ -84,7 +84,7 @@ const GENRE_IMAGES: Record<string, string> = {
 const DEFAULT_GENRE_IMAGE =
   "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&q=80";
 
-const MOCK_GENRES = [
+const MOCK_GENRES: Props["genres"] = [
   { genre_id: "genre-1", genre_name: "Hip-Hop" },
   { genre_id: "genre-2", genre_name: "Pop" },
   { genre_id: "genre-3", genre_name: "Electronic" },
