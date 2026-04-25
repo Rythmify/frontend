@@ -24,7 +24,8 @@ interface HistoryStore {
   addPlaylist: (playlist: PlaylistCardData) => void;
   addGenre: (genre: BuzzingPlaylist) => void;
   addMadeForYou: (item: MadeForYouItem) => void;
-  clearHistory: () => void;
+  clearHistory: () => Promise<void>;
+  hydrateFromBackend: () => Promise<void>;
   getRecentTracks: () => Track[];
   getRecentStations: () => Station[];
 }
@@ -52,7 +53,7 @@ export const useHistoryStore = create<HistoryStore>()(
             playedAt,
           }),
         }));
-        writeListeningHistory(String(track.id), playedAt).catch(() => {
+        writeListeningHistory(String(track.id)).catch(() => {
           // best-effort — don't surface errors to the user
         });
       },
@@ -102,7 +103,46 @@ export const useHistoryStore = create<HistoryStore>()(
           }),
         })),
 
-      clearHistory: () => set({ entries: [] }),
+      clearHistory: async () => {
+        set({ entries: [] });
+        const { axiosInstance } = await import("@/services/api/axiosInstance");
+        try {
+          await axiosInstance.delete("/me/history");
+        } catch (e) {
+          console.error("Failed to clear backend history", e);
+        }
+      },
+
+      hydrateFromBackend: async () => {
+        try {
+          const { getListeningHistory } = await import("@/services/api/discover.service");
+          const { mapListeningHistoryEntry } = await import("@/services/api/discover.mapper");
+          const res = await getListeningHistory({ limit: 50 });
+          
+          if (res && res.data) {
+            const backendEntries: HistoryEntry[] = res.data.map(entry => {
+              const mapped = mapListeningHistoryEntry(entry);
+              return {
+                type: "track",
+                item: mapped,
+                playedAt: mapped.playedAt
+              };
+            });
+
+            set((s) => {
+              // Merge local non-track entries with backend track entries
+              const localNonTracks = s.entries.filter(e => e.type !== "track");
+              const merged = [...backendEntries, ...localNonTracks]
+                .sort((a, b) => new Date(b.playedAt).getTime() - new Date(a.playedAt).getTime())
+                .slice(0, MAX_ENTRIES);
+              
+              return { entries: merged };
+            });
+          }
+        } catch (e) {
+          console.error("Failed to hydrate history from backend", e);
+        }
+      },
 
       getRecentTracks: () =>
         get()

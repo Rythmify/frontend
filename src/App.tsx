@@ -24,6 +24,14 @@ function App() {
       useAuthStore.getState().logout();
     };
     window.addEventListener("auth:session-expired", handleSessionExpired);
+
+    // Initial hydration if already authenticated
+    if (useAuthStore.getState().isAuthenticated) {
+      import("@/stores/player.store").then((m) => m.usePlayerStore.getState().loadFromBackend());
+      import("@/stores/likes.store").then((m) => m.useLikesStore.getState().hydrateFromApi());
+      import("@/stores/history.store").then((m) => m.useHistoryStore.getState().hydrateFromBackend());
+    }
+
     return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
   }, []);
 

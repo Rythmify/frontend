@@ -12,7 +12,7 @@ import VolumeSlider from "./VolumeSlider";
 import QueuePanel from "./QueuePanel";
 import { FaHeart, FaUserPlus, FaUserCheck } from "react-icons/fa";
 import { MdQueueMusic } from "react-icons/md";
-import { followUser, unfollowUser } from "../../services/user.service";
+import FollowButton from "../UI/FollowButton";
 
 export default function StickyPlayer() {
   const {
@@ -26,7 +26,7 @@ export default function StickyPlayer() {
   } = usePlayerStore();
 
   const { isTrackLiked, toggleTrack } = useLikesStore();
-  const { user, toggleFollow } = useAuthStore();
+  const { user } = useAuthStore();
 
   const [queueOpen, setQueueOpen] = useState(false);
 
@@ -34,39 +34,6 @@ export default function StickyPlayer() {
   const isFollowing = currentTrack
     ? (user?.following_ids ?? []).includes(currentTrack.artistId || currentTrack.artistUsername)
     : false;
-
-  const handleFollowClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user) {
-      alert("Please sign in to follow artists.");
-      return;
-    }
-    
-    if (!currentTrack) return;
-    
-    // Fallback to artistUsername if artistId is missing (though ID is preferred for API)
-    const username = currentTrack.artistUsername;
-    const userId = currentTrack.artistId || currentTrack.artistUsername; 
-    
-    if (!userId) return;
-    
-    const next = !isFollowing;
-
-    // Optimistic update
-    toggleFollow(username, [userId]);
-
-    try {
-      if (next) {
-        await followUser(userId);
-      } else {
-        await unfollowUser(userId);
-      }
-    } catch (err) {
-      console.error("Failed to toggle follow in player:", err);
-      // Revert optimistic update
-      toggleFollow(username, [userId]);
-    }
-  };
 
   if (!currentTrack) return null;
 
@@ -135,16 +102,17 @@ export default function StickyPlayer() {
       </button>
 
       {/* 5. Follow */}
-      <button
-        data-test="player-button-follow"
-        onClick={handleFollowClick}
-        title={isFollowing ? "Unfollow" : "Follow"}
-        className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer text-base
-          ${!user ? "opacity-30 grayscale" : ""}
-          ${isFollowing ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
-      >
-        {isFollowing ? <FaUserCheck /> : <FaUserPlus />}
-      </button>
+      <div className="shrink-0 flex items-center justify-center w-10 h-10">
+        <FollowButton
+          userId={currentTrack.artistId || currentTrack.artistUsername}
+          username={currentTrack.artistUsername}
+          className={`!p-0 !bg-transparent !w-full !h-full flex items-center justify-center text-base transition-colors duration-150
+            ${!user ? "opacity-30 grayscale" : ""}
+            ${isFollowing ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
+        >
+          {isFollowing ? <FaUserCheck /> : <FaUserPlus />}
+        </FollowButton>
+      </div>
 
       {/* 6. Queue */}
       <button

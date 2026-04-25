@@ -1,4 +1,4 @@
-﻿import axiosInstance from "./axiosInstance";
+import axiosInstance from "./axiosInstance";
 
 // =============================================================================
 // TYPES — API response shapes (aligned to OpenAPI spec)
@@ -281,15 +281,11 @@ export const getMixTracks = async (
   const res = await axiosInstance.get<MixDetailsResponse>(`/home/mixes/${mixId}`);
   return res.data.data;
 };
-// POST /me/listening-history — record a play event (fire-and-forget)
+// POST /tracks/:track_id/play — record a play event (fire-and-forget)
 export const writeListeningHistory = async (
   trackId: string,
-  playedAt: string,
 ): Promise<void> => {
-  await axiosInstance.post("/me/listening-history", {
-    track_id: trackId,
-    played_at: playedAt,
-  });
+  await axiosInstance.post(`/tracks/${trackId}/play`);
 };
 
 // to do

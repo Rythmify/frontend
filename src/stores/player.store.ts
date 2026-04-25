@@ -390,7 +390,16 @@ usePlayerStore.subscribe((state, prev) => {
 
 useAuthStore.subscribe((state, prev) => {
   if (state.isAuthenticated && !prev.isAuthenticated) {
+    // On login, hydrate everything from backend
     usePlayerStore.getState().loadFromBackend();
+    
+    import("./likes.store").then((m) => {
+      m.useLikesStore.getState().hydrateFromApi();
+    }).catch(e => console.error("Failed to hydrate likes", e));
+
+    import("./history.store").then((m) => {
+      m.useHistoryStore.getState().hydrateFromBackend();
+    }).catch(e => console.error("Failed to hydrate history", e));
   }
 });
 
