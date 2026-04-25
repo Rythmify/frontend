@@ -148,7 +148,6 @@ const sections: FeatureSection[] = [
   },
 ];
 
-// ─── Green check circle ────────────────────────────────────────────────────────
 function CheckCircle() {
   return (
     <svg
@@ -156,17 +155,12 @@ function CheckCircle() {
       height="16"
       viewBox="0 0 24 24"
       fill="none"
-      style={{
-        display: "inline-block",
-        verticalAlign: "middle",
-        marginLeft: 4,
-        flexShrink: 0,
-      }}
+      className="ml-1 inline-block h-4 w-4 flex-shrink-0 align-middle"
     >
-      <circle cx="12" cy="12" r="10" fill="#16a34a" />
+      <circle cx="12" cy="12" r="10" className="fill-emerald-600" />
       <path
         d="M7 12.5l3.5 3.5 6.5-7"
-        stroke="white"
+        className="stroke-white"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -175,151 +169,65 @@ function CheckCircle() {
   );
 }
 
-// ─── Cell ──────────────────────────────────────────────────────────────────────
 function Cell({ value }: { value: CellValue }) {
   if (value.type === "na") {
     return (
-      <span style={{ color: "#9ca3af", fontSize: 14 }}>
-        Not Available <span style={{ color: "#d1d5db", fontSize: 11 }}>↓</span>
+      <span className="text-[13px] text-slate-400">
+        Not Available <span className="text-[11px] text-slate-300">↓</span>
       </span>
     );
   }
+
   if (value.type === "unlimited") {
-    return (
-      <span style={{ color: "#16a34a", fontWeight: 600, fontSize: 14 }}>
-        Unlimited
-      </span>
-    );
+    return <span className="text-[13px] font-semibold text-emerald-600">Unlimited</span>;
   }
+
   if (value.type === "available") {
     return (
-      <span
-        style={{
-          color: "#16a34a",
-          fontWeight: 500,
-          fontSize: 14,
-          display: "inline-flex",
-          alignItems: "center",
-        }}
-      >
+      <span className="inline-flex items-center text-[13px] font-medium text-emerald-600">
         Available
         <CheckCircle />
       </span>
     );
   }
+
   if (value.value === "ARTIST PRO") {
     return (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 4,
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: "0.05em",
-          padding: "3px 10px",
-          borderRadius: 999,
-          backgroundColor: "rgba(201,168,76,0.15)",
-          color: "#c9a84c",
-        }}
-      >
-        🔥 ARTIST PRO
+      <span className="inline-flex items-center rounded-full bg-[rgba(201,168,76,0.18)] px-2.5 py-[3px] text-[10px] font-bold tracking-[0.05em] text-[#c9a84c]">
+        ARTIST PRO
       </span>
     );
   }
+
   if (value.value === "Full access") {
-    return (
-      <span style={{ color: "#16a34a", fontWeight: 600, fontSize: 14 }}>
-        Full access
-      </span>
-    );
+    return <span className="text-[13px] font-semibold text-emerald-600">Full access</span>;
   }
-  return <span style={{ color: "#111", fontSize: 14 }}>{value.value}</span>;
+
+  return <span className="text-[13px] text-black">{value.value}</span>;
 }
 
-// ─── Plan header row — columns pinned to the right ─────────────────────────────
-const COL_W = 200; // px width per plan column
+const COL_W = "w-[200px]";
 
 function PlanHeaderRow() {
   return (
-    <div
-      style={{
-        display: "flex",
-        borderBottom: "1px solid #e5e7eb",
-        paddingTop: 20,
-        paddingBottom: 20,
-        backgroundColor: "#fff",
-      }}
-    >
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
+    <div className="flex border-b border-[#e5e7eb] bg-white py-5">
+      <div className="flex-1" />
 
-      {/* Free */}
-      <div
-        style={{
-          width: COL_W,
-          flexShrink: 0,
-          borderLeft: "1px solid #e5e7eb",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4,
-          paddingLeft: 16,
-          paddingRight: 16,
-        }}
-      >
-        <span style={{ fontWeight: 800, fontSize: 16, color: "#111" }}>
-          Free
-        </span>
-        <span style={{ fontSize: 12, color: "#9ca3af" }}>Free</span>
-        <span
-          style={{
-            fontSize: 11,
-            color: "#9ca3af",
-            border: "1px solid #e5e7eb",
-            borderRadius: 999,
-            padding: "3px 12px",
-            marginTop: 4,
-          }}
-        >
+      <div className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-1 border-l border-[#e5e7eb] px-4`}>
+        <span className="text-[15px] font-extrabold text-black">Free</span>
+        <span className="text-[12px] text-slate-400">Free</span>
+        <span className="mt-1 rounded-full border border-[#e5e7eb] px-3 py-[3px] text-[11px] text-slate-400">
           Current plan
         </span>
       </div>
 
-      {/* Artist Pro */}
-      <div
-        style={{
-          width: COL_W,
-          flexShrink: 0,
-          borderLeft: "1px solid #e5e7eb",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 4,
-          paddingLeft: 16,
-          paddingRight: 16,
-        }}
-      >
-        <span style={{ fontWeight: 800, fontSize: 16, color: "#111" }}>
-          Artist Pro
-        </span>
-        <p style={{ fontSize: 12, textAlign: "center", margin: 0 }}>
-          <span style={{ fontWeight: 700, color: "#ff5500" }}>EGP 74.99 </span>
-          <span style={{ color: "#9ca3af" }}>/month, billed yearly</span>
+      <div className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-1 border-l border-[#e5e7eb] px-4`}>
+        <span className="text-[15px] font-extrabold text-black">Artist Pro</span>
+        <p className="m-0 text-[11px] text-center">
+          <span className="font-bold text-[#ff5500]">EGP 74.99 </span>
+          <span className="text-slate-400">/month, billed yearly</span>
         </p>
-        <button
-          style={{
-            marginTop: 4,
-            backgroundColor: "#111",
-            color: "#fff",
-            fontSize: 12,
-            fontWeight: 700,
-            padding: "8px 20px",
-            borderRadius: 8,
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
+        <button className="mt-1 rounded-[7px] bg-black px-[18px] py-[7px] text-[11px] font-bold text-white">
           Get started
         </button>
       </div>
@@ -327,7 +235,6 @@ function PlanHeaderRow() {
   );
 }
 
-// ─── CompareTable ──────────────────────────────────────────────────────────────
 export default function CompareTable() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -339,52 +246,23 @@ export default function CompareTable() {
     });
 
   return (
-    <section
-      style={{
-        paddingLeft: 80,
-        paddingRight: 80,
-        paddingBottom: 80,
-        backgroundColor: "#fff",
-      }}
-    >
-      <h2
-        style={{
-          fontSize: 36,
-          fontWeight: 800,
-          textAlign: "center",
-          color: "#111",
-          paddingTop: 56,
-          marginBottom: 32,
-        }}
-      >
+    <section className="bg-white px-6 pb-20 md:px-10 lg:px-20">
+      <h2 className="mb-8 pt-14 text-center text-[2.25rem] font-extrabold tracking-[-0.03em] text-black">
         Compare features.
       </h2>
 
-      {/* Sticky top header */}
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          backgroundColor: "#fff",
-        }}
-      >
+      <div className="sticky top-0 z-20 bg-white">
         <PlanHeaderRow />
       </div>
 
       {sections.map((section) => (
         <div key={section.title}>
-          {/* Repeating plan header before each section */}
           <PlanHeaderRow />
 
-          {/* Section title */}
-          <div style={{ padding: "16px 0", borderBottom: "1px solid #f3f4f6" }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>
-              {section.title}
-            </span>
+          <div className="border-b border-[#f3f4f6] py-4">
+            <span className="text-[14px] font-bold text-black">{section.title}</span>
           </div>
 
-          {/* Feature rows */}
           {section.rows.map((row) => {
             const key = `${section.title}::${row.name}`;
             const isOpen = expanded.has(key);
@@ -392,32 +270,14 @@ export default function CompareTable() {
             return (
               <div
                 key={key}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  borderBottom: "1px solid #f3f4f6",
-                  paddingTop: 18,
-                  paddingBottom: 18,
-                }}
+                className="flex items-start border-b border-[#f3f4f6] py-[18px]"
               >
-                {/* Feature name — full left */}
-                <div style={{ flex: 1, paddingRight: 32 }}>
+                <div className="flex-1 pr-8">
                   <button
                     onClick={() => row.description && toggle(key)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: "#111",
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: row.description ? "pointer" : "default",
-                      textAlign: "left",
-                      width: "100%",
-                    }}
+                    className={`flex w-full items-center gap-1.5 bg-transparent p-0 text-left text-[14px] font-bold text-black ${
+                      row.description ? "cursor-pointer" : "cursor-default"
+                    } border-none`}
                   >
                     {row.name}
                     {row.description && (
@@ -428,58 +288,30 @@ export default function CompareTable() {
                         fill="none"
                         stroke="#9ca3af"
                         strokeWidth="2.5"
-                        style={{
-                          flexShrink: 0,
-                          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                          transition: "transform 0.15s",
-                        }}
+                        className={`flex-shrink-0 transition-transform duration-150 ${
+                          isOpen ? "rotate-180" : "rotate-0"
+                        }`}
                       >
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     )}
                   </button>
+
                   {isOpen && row.description && (
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "#9ca3af",
-                        marginTop: 6,
-                        lineHeight: 1.6,
-                      }}
-                    >
+                    <p className="mt-1.5 text-[12px] leading-[1.6] text-slate-400">
                       {row.description}
                     </p>
                   )}
                 </div>
 
-                {/* Free value */}
                 <div
-                  style={{
-                    width: COL_W,
-                    flexShrink: 0,
-                    borderLeft: "1px solid #f3f4f6",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    paddingLeft: 16,
-                    paddingRight: 16,
-                  }}
+                  className={`flex ${COL_W} flex-shrink-0 items-center justify-center border-l border-[#f3f4f6] px-4`}
                 >
                   <Cell value={row.free} />
                 </div>
 
-                {/* Artist Pro value */}
                 <div
-                  style={{
-                    width: COL_W,
-                    flexShrink: 0,
-                    borderLeft: "1px solid #f3f4f6",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    paddingLeft: 16,
-                    paddingRight: 16,
-                  }}
+                  className={`flex ${COL_W} flex-shrink-0 items-center justify-center border-l border-[#f3f4f6] px-4`}
                 >
                   <Cell value={row.artistPro} />
                 </div>
@@ -489,26 +321,15 @@ export default function CompareTable() {
         </div>
       ))}
 
-      {/* Footer */}
-      <footer
-        style={{
-          marginTop: 64,
-          paddingTop: 24,
-          borderTop: "1px solid #e5e7eb",
-          fontSize: 12,
-          color: "#9ca3af",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
-        <p style={{ margin: 0 }}>
+      <footer className="mt-16 flex flex-col gap-3 border-t border-[#e5e7eb] pt-6 text-[12px] text-slate-400">
+        <p className="m-0">
           Signed in as Roweda Ahmed.{" "}
-          <a href="#" style={{ color: "#ff5500", textDecoration: "none" }}>
+          <a href="#" className="text-[#ff5500] no-underline">
             Sign out
           </a>
         </p>
-        <nav style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+
+        <nav className="flex flex-wrap gap-5">
           {[
             "Legal",
             "Privacy",
@@ -517,27 +338,13 @@ export default function CompareTable() {
             "Imprint",
             "Help Center",
           ].map((link) => (
-            <a
-              key={link}
-              href="#"
-              style={{ color: "#9ca3af", textDecoration: "none" }}
-            >
+            <a key={link} href="#" className="text-slate-400 no-underline">
               {link}
             </a>
           ))}
         </nav>
-        <select
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: 4,
-            padding: "4px 8px",
-            fontSize: 12,
-            color: "#9ca3af",
-            background: "transparent",
-            width: "fit-content",
-            cursor: "pointer",
-          }}
-        >
+
+        <select className="w-fit cursor-pointer rounded border border-[#e5e7eb] bg-transparent px-2 py-1 text-[12px] text-slate-400">
           <option>English (US)</option>
         </select>
       </footer>

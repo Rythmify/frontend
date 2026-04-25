@@ -3,12 +3,7 @@ import heroBackground from "../../assets/hero-background-image-speakers.svg";
 const features = [
   {
     icon: (
-      <svg
-        width="46"
-        height="46"
-        viewBox="0 0 60 60"
-        fill="none"
-      >
+      <svg width="46" height="46" viewBox="0 0 60 60" fill="none">
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -22,12 +17,7 @@ const features = [
   },
   {
     icon: (
-      <svg
-        width="46"
-        height="46"
-        viewBox="0 0 60 60"
-        fill="none"
-      >
+      <svg width="46" height="46" viewBox="0 0 60 60" fill="none">
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -41,12 +31,7 @@ const features = [
   },
   {
     icon: (
-      <svg
-        width="46"
-        height="46"
-        viewBox="0 0 60 60"
-        fill="none"
-      >
+      <svg width="46" height="46" viewBox="0 0 60 60" fill="none">
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -60,12 +45,7 @@ const features = [
   },
   {
     icon: (
-      <svg
-        width="46"
-        height="46"
-        viewBox="0 0 60 60"
-        fill="none"
-      >
+      <svg width="46" height="46" viewBox="0 0 60 60" fill="none">
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -89,16 +69,7 @@ export default function HeroSection() {
           src={heroBackground}
           alt=""
           aria-hidden="true"
-          className="absolute right-0 top-0 h-full w-[88%] object-contain object-right-top pointer-events-none select-none"
-          style={{
-            zIndex: 1,
-            opacity: 0.96,
-            filter: "brightness(0.98) contrast(1.02) saturate(1.01)",
-            maskImage:
-              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 18%, black 70%)",
-            WebkitMaskImage:
-              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 18%, black 70%)",
-          }}
+          className="absolute right-0 top-0 z-[1] h-full w-[88%] select-none object-contain object-right-top pointer-events-none opacity-[0.96] brightness-[0.98] contrast-[1.02] saturate-[1.01] [mask-image:linear-gradient(to_right,transparent_0%,rgba(0,0,0,0.08)_18%,black_70%)] [WebkitMaskImage:linear-gradient(to_right,transparent_0%,rgba(0,0,0,0.08)_18%,black_70%)]"
         />
 
         <div className="relative z-10 mt-24 max-w-3xl lg:max-w-4xl lg:ml-24 xl:ml-36">
@@ -113,7 +84,7 @@ export default function HeroSection() {
               Get Artist Pro
             </button>
             <button className="bg-transparent text-white border border-white/50 font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:border-white transition-colors cursor-pointer">
-              See all plans
+              See plan
             </button>
           </div>
         </div>
