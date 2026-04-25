@@ -12,6 +12,7 @@ export interface TrackComment {
 
 export interface TrackCardProps {
   track: Track;
+  contextQueue?: Track[];
   repostedBy?: string;
   disableComments?: boolean;
   onCopyLink?: () => void | Promise<void>;

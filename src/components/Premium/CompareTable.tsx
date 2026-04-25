@@ -134,7 +134,7 @@ function PlanHeaderRow() {
           <span>/month, billed yearly for EGP 359.88</span>
         </p>
         <Link
-          to="/creator/checkout"
+          to="/creator/payment"
           className="mt-2 rounded-full bg-black px-6 py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90"
         >
           Get started

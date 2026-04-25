@@ -200,7 +200,7 @@ const ArtistToolsCard = () => {
             key={tool.id}
             className={styles.toolButton}
             data-test={`button-tool-${tool.label.toLowerCase()}`}
-            onClick={() => navigate("/creator/checkout")}
+            onClick={() => navigate("/premium")}
           >
             <svg
               aria-label="Paywalled feature"
@@ -243,7 +243,7 @@ const ArtistToolsCard = () => {
                 key={tool.id}
                 className={styles.toolButton}
                 data-test={`button-tool-${tool.label.toLowerCase().replace(" ", "-")}`}
-                onClick={() => navigate("/creator/checkout")}
+                onClick={() => navigate("/premium")}
               >
                 <svg
                   aria-label="Paywalled feature"
@@ -287,7 +287,7 @@ const ArtistToolsCard = () => {
       <button
         className={styles.ctaButton}
         data-test="button-artist-tools-cta"
-        onClick={() => navigate("/creator/checkout")}
+        onClick={() => navigate("/premium")}
       >
         <i className="fa-solid fa-circle-plus text-sm"></i>
         <span>Unlock Artist tools from EGP 29.99/month.</span>
