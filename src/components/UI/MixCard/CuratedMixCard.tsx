@@ -1,12 +1,11 @@
 import type React from "react";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CuratedHomeMixPreview } from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
-import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
-import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import { useAuthStore } from "@/stores/auth.store";
+import CardOverlay from "@/components/UI/CardOverlay/CardOverlay";
 
 interface Props {
   mix: CuratedHomeMixPreview;
@@ -20,11 +19,15 @@ export default function CuratedMixCard({
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const liked = isPlaylistLiked(mix.mix_id);
-  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      navigate("/signin");
+      return;
+    }
     togglePlaylist({
       id: mix.mix_id,
       title: mix.title,
@@ -89,9 +92,24 @@ export default function CuratedMixCard({
           onLike={handleLike}
           moreMenuItems={[
             {
+              label: "Repost",
+              iconNode: <i className="fa-solid fa-retweet text-xs w-4" />,
+              onClick: () => navigate("/signin"),
+            },
+            {
+              label: "Share",
+              iconNode: <i className="fa-solid fa-arrow-up-from-bracket text-xs w-4" />,
+              onClick: () => navigate("/signin"),
+            },
+            {
+              label: "Copy Link",
+              iconNode: <i className="fa-solid fa-copy text-xs w-4" />,
+              onClick: () => navigate("/signin"),
+            },
+            {
               label: "Add to playlist",
-              iconNode: AddToPlaylistIcon,
-              onClick: () => setShowPlaylistModal(true),
+              iconNode: <i className="fa-solid fa-list text-xs w-4" />,
+              onClick: () => navigate("/signin"),
             },
           ]}
         />
@@ -105,13 +123,6 @@ export default function CuratedMixCard({
         {mix.preview_track?.artist_name ?? mix.preview_track?.genre_name ?? ""}
       </p>
 
-      {showPlaylistModal && (
-        <AddToPlaylistModal
-          playlistId={mix.mix_id}
-          trackTitle={mix.title}
-          onClose={() => setShowPlaylistModal(false)}
-        />
-      )}
     </div>
   );
 }
