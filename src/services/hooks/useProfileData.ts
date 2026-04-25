@@ -21,8 +21,11 @@ export interface ProfileStats {
   tracks: number;
 }
 
-// UserSummary enriched with a follower count (used by the "All" tab sidebar)
-export type EnrichedUserSummary = UserSummary & { followers_count: number };
+// UserSummary enriched with sidebar-specific metadata.
+export type EnrichedUserSummary = UserSummary & {
+  followers_count: number;
+  isFollowing?: boolean;
+};
 
 export interface ProfileDataResult {
   // ── Display data ─────────────────────────────────────────
@@ -87,11 +90,19 @@ export function useProfileData(
     const profileResults = await Promise.allSettled(
       res.items.map((u) => getUserById(u.id)),
     );
+    const followStatusResults = await Promise.allSettled(
+      res.items.map((u) => getFollowStatus(u.id)),
+    );
     const enriched: EnrichedUserSummary[] = res.items.map((u, i) => {
       const result = profileResults[i];
+      const followStatus = followStatusResults[i];
       const followers_count =
         result.status === "fulfilled" ? result.value.followers_count : 0;
-      return { ...u, followers_count };
+      const isFollowing =
+        followStatus.status === "fulfilled"
+          ? followStatus.value.is_following
+          : undefined;
+      return { ...u, followers_count, isFollowing };
     });
     return { items: enriched, total: res.meta.total };
   };

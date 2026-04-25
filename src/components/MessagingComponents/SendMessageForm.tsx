@@ -104,7 +104,10 @@ export default function SendMessageForm({
   const user = useAuthStore(state => state.user);
   const getSenderInfo = (senderId: string) => {
     if (senderId === user?.id) {
-      return { display_name: 'Me', profile_picture: user?.avatar ?? null };
+      return {
+        display_name: user?.displayName ?? user?.username ?? 'Me',
+        profile_picture: user?.avatar ?? null,
+      };
     }
     return ParticipantInfo;
   };
