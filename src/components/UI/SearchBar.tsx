@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
-import { getSuggestions, type SuggestionUser } from "@/services/api/search/SearchAPI";
+import { getSuggestions, type SuggestionUser, type SuggestionsResponse } from "../../../services/api/search/SearchAPI";
 import UserAvatar from "@/components/UI/UserAvatar";
 
 interface Props {
@@ -55,18 +55,18 @@ export default function SearchBar({
     const controller = new AbortController();
 
     getSuggestions(trimmed, controller.signal)
-      .then(({ users: u, suggestions: s }) => {
-        setUsers(u ?? []);
-        setTextSuggestions(s ?? []);
+      .then(({ users, suggestions }: SuggestionsResponse) => {
+        setUsers(users ?? []);
+        setTextSuggestions(suggestions ?? []);
         setActiveIndex(-1);
         // Only open if we actually got something back
-        if ((u ?? []).length > 0 || (s ?? []).length > 0) {
+        if ((users ?? []).length > 0 || (suggestions ?? []).length > 0) {
           setOpen(true);
         }
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         // Swallow abort errors silently — a new effect will fire immediately
-        if (err?.code === "ERR_CANCELED" || err?.name === "AbortError" || err?.name === "CanceledError") {
+        if (err instanceof Error && (err.name === "AbortError" || err.message.includes("canceled"))) {
           return;
         }
         // Real error — clear and close rather than showing stale data
