@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 const FOOTER_LINKS = [
   { label: "Directory", to: "/people" },
   { label: "About us", to: "/pages/contact" },
-  { label: "Artist Resources", to: "/creator/checkout" },
+  { label: "Artist Resources", to: "/premium" },
   { label: "Newsroom", to: "#" },
   { label: "Topics", to: "#" },
   { label: "Jobs", to: "#" },
