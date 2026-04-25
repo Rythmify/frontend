@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
-import { getSuggestions, type SuggestionUser, type SuggestionsResponse } from "@/services/api/search/SearchApi";
+import { getSuggestions, type SuggestionUser, type SuggestionsResponse } from "@/services/api/search/Searchapi";
 import UserAvatar from "./UserAvatar";
 
 interface Props {
