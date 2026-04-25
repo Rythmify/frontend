@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import FollowButton from "../FollowButton/FollowButton";
 import { useNavigate } from "react-router-dom";
 import ModalNewMessageBody from "@/pages/social/messages/ModalNewMessageBody";
 import { Modal } from "@/components/MessagingComponents/Modal";
 import type { RecipientResult } from "@/components/MessagingComponents/RecipientInputBox";
+import FollowButton from "@/components/UI/FollowButton";
+import { ReportModal } from "@/components/UI/ReportModal";
+import { SpamModal } from "@/components/UI/SpamModal";
 
 interface TabButtonProps {
   children: React.ReactNode;
@@ -44,6 +46,7 @@ const tabs = [
 
 interface ProfileTabsProps {
   isOwner?: boolean;
+  isFollowing?: boolean;
   onTabChange?: (tab: string) => void;
   selectedTab?: string;
   onShare?: () => void;
@@ -52,14 +55,15 @@ interface ProfileTabsProps {
   blockDisabled?: boolean;
   username?: string;
   displayName?: string;
-  userId?: string;      
-  profilePicture?: string | null; 
+  userId?: string;
+  profilePicture?: string | null;
   tracks?: number;
   extraActions?: React.ReactNode;
 }
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({
   isOwner = false,
+  isFollowing,
   onTabChange,
   selectedTab = "All",
   onShare,
@@ -68,14 +72,16 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
   blockDisabled = false,
   username = "",
   displayName = "",
-  userId = "",              
-  profilePicture = null,     
+  userId = "",
+  profilePicture = null,
   tracks = 0,
   extraActions,
 }) => {
   const [showMore, setShowMore] = useState(false);
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isSpamOpen, setIsSpamOpen] = useState(false);
 
   // Build the prefilled recipient from profile data
   const prefilledRecipient: RecipientResult = {
@@ -124,7 +130,14 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           {tracks > 0 && (
             <button
               data-test="station-button"
-              onClick={() => {}}
+              onClick={() => {
+                const stationSlug = (displayName || username)
+                  .toLowerCase()
+                  .replace(/[^a-z0-9\s-]/g, "")
+                  .replace(/\s+/g, "-")
+                  .replace(/-+/g, "-");
+                navigate(`/discover/stations/${stationSlug}:${userId}`);
+              }}
               className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
             >
               <i className="fa-solid fa-tower-broadcast" />
@@ -132,7 +145,11 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             </button>
           )}
 
-          <FollowButton username={username} />
+          <FollowButton
+            username={username}
+            userId={userId}
+            initialIsFollowing={isFollowing}
+          />
 
           <button
             data-test="share-button"
@@ -155,7 +172,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
             <ModalNewMessageBody
               onClose={() => setIsOpen(false)}
-              prefilledRecipient={prefilledRecipient}  
+              prefilledRecipient={prefilledRecipient}
             />
           </Modal>
 
@@ -185,6 +202,10 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
                 )}
                 <button
                   data-test="report-button"
+                  onClick={() => {
+                    setShowMore(false);
+                    setIsReportOpen(true);
+                  }}
                   className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
                 >
                   <i className="fa-solid fa-circle-exclamation text-xs w-4" />
@@ -195,6 +216,26 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           </div>
         </div>
       )}
+
+      <Modal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)}>
+        <ReportModal
+          userId={userId}
+          username={displayName || username}
+          onClose={() => setIsReportOpen(false)}
+          onSpamSelected={() => {
+            setIsReportOpen(false);
+            setIsSpamOpen(true);
+          }}
+        />
+      </Modal>
+
+      <Modal isOpen={isSpamOpen} onClose={() => setIsSpamOpen(false)}>
+        <SpamModal
+          userId={userId}
+          username={displayName || username}
+          onClose={() => setIsSpamOpen(false)}
+        />
+      </Modal>
     </div>
   );
 };

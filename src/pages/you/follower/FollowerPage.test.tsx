@@ -1,11 +1,13 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import FollowerPage from "@/pages/you/follower/FollowerPage";
 
 const mockNavigate = vi.fn();
 const mockGetFollowers = vi.fn();
 const mockGetUserById = vi.fn();
+const mockGetFollowStatus = vi.fn();
 const mockResolveUsername = vi.fn();
+const mockGetUserByUsername = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -19,6 +21,8 @@ vi.mock("@/stores/auth.store", () => ({
 vi.mock("@/services/user.service", () => ({
   getFollowers: (...args: unknown[]) => mockGetFollowers(...args),
   getUserById: (...args: unknown[]) => mockGetUserById(...args),
+  getFollowStatus: (...args: unknown[]) => mockGetFollowStatus(...args),
+  getUserByUsername: (...args: unknown[]) => mockGetUserByUsername(...args),
   resolveUsername: (...args: unknown[]) => mockResolveUsername(...args),
 }));
 
@@ -80,6 +84,25 @@ describe("FollowerPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockResolveUsername.mockResolvedValue("resolved-user-id");
+    mockGetUserByUsername.mockImplementation(async (username: string) => ({
+      id: `${username}-id`,
+      username,
+      display_name: username,
+      bio: null,
+      location: null,
+      gender: null,
+      role: "artist",
+      profile_picture: "",
+      cover_photo: null,
+      is_private: false,
+      is_verified: false,
+      followers_count: 0,
+      following_count: 0,
+      created_at: new Date().toISOString(),
+    }));
+    mockGetFollowStatus.mockImplementation(async (id: string) => ({
+      is_following: id === "follower1-id",
+    }));
     mockGetFollowers.mockResolvedValue({
       items: [
         {
@@ -202,6 +225,12 @@ describe("FollowerPage", () => {
       await screen.findByTestId("follower-avatar-follower1"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("follower-avatar-follower2")).toBeInTheDocument();
+    expect(screen.getByTestId("follow-button-follower1")).toHaveTextContent(
+      "Following",
+    );
+    expect(screen.getByTestId("follow-button-follower2")).toHaveTextContent(
+      "Follow",
+    );
   });
 
   it("renders non-owner follower list", async () => {
@@ -213,6 +242,9 @@ describe("FollowerPage", () => {
       await screen.findByTestId("follower-avatar-follower1"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("follower-avatar-follower2")).toBeInTheDocument();
+    expect(screen.getByTestId("follow-button-follower1")).toHaveTextContent(
+      "Following",
+    );
   });
 
   it("navigates to follower profile on avatar click", async () => {
@@ -254,15 +286,13 @@ describe("FollowerPage", () => {
 
   it("renders verified badge for verified follower", async () => {
     render(<FollowerPage />);
-    await waitFor(() => {
-      expect(screen.getByText(/follower2/)).toBeInTheDocument();
-    });
+    expect(await screen.findByTestId("follower-avatar-follower2")).toBeInTheDocument();
   });
 
   it("shows formatted follower count for large numbers", async () => {
     render(<FollowerPage />);
     expect(
       await screen.findByTestId("follower-count-follower2"),
-    ).toHaveTextContent("5000 followers");
+    ).toHaveTextContent("5.0K followers");
   });
 });

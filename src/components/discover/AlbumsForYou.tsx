@@ -1,36 +1,45 @@
 import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
-import PlaylistCard from "../UI/PlaylistCard/PlaylistCard";
-import type { Playlist } from "@/services/api/playlist/playlist.service";
+import type { DiscoveryAlbum } from "@/services/api/discover.service";
 import { getAlbumsForYou } from "@/services/api/discover.service";
-import { mockAlbumPlaylists } from "@/services/mocks/handlers/playlistHandlers";
+import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
+import AlbumCard from "../UI/AlbumCard";
+import { useLikesStore } from "@/stores/likes.store";
 
 const AlbumsForYou = () => {
-  const [albums, setAlbums] = useState<Playlist[]>([]);
+  const [albums, setAlbums] = useState<DiscoveryAlbum[]>([]);
+  const seedAlbums = useLikesStore((s) => s.seedAlbums);
 
   useEffect(() => {
     getAlbumsForYou()
       .then((res) => {
-        if (res.data.length > 0) setAlbums(res.data);
+        if (res.data.length > 0) {
+          setAlbums(res.data);
+          seedAlbums(res.data);
+        }
       })
-      .catch(() => setAlbums(mockAlbumPlaylists));
-  }, []);
+      .catch();
+  }, [seedAlbums]);
 
   return (
     <div data-test="section-albums-for-you">
       <HorizontalCarousel title="Albums for you" data-section="albums-for-you">
         {albums.map((album) => (
-          <PlaylistCard
-            key={album.playlist_id}
+          <AlbumCard
+            key={album.id}
             widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"
             item={{
-              id: album.playlist_id,
+              id: album.id,
               title: album.name,
-              owner: album.owner_user_id,
-              slug: null,
+              owner: album.owner_name,
+              ownerId: album.owner_id,
               coverUrl: album.cover_image ?? null,
-              isPrivate: !album.is_public,
-              isAlbumView: true,
+              trackCount: album.track_count,
+              likeCount: album.like_count,
+              createdAt: album.created_at,
+              previewTrack: album.preview_track
+                ? mapDiscoveryTrack(album.preview_track)
+                : undefined,
             }}
           />
         ))}

@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
+import UserAvatar from "@/components/UI/UserAvatar";
 import {
   getFollowers,
+  getFollowStatus,
   getUserById,
-  resolveUsername,
+  getUserByUsername,
   type UserSummary,
 } from "@/services/user.service";
 
@@ -18,11 +20,14 @@ interface EnrichedUser {
   avatar: string;
   followers: number;
   isVerified: boolean;
+  isFollowing: boolean;
   profilePath: string;
 }
 
 async function enrich(u: UserSummary): Promise<EnrichedUser> {
-  if (!u.id) {
+  const resolvedId = u.id || (u as UserSummary & { user_id?: string }).user_id || "";
+
+  if (!resolvedId) {
     console.warn("enrich: received item with no id", u);
     return {
       userId: "",
@@ -31,31 +36,36 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
       avatar: u.profile_picture ?? "",
       followers: 0,
       isVerified: u.is_verified,
+      isFollowing: false,
       profilePath: "/",
     };
   }
 
   try {
-    const profile = await getUserById(u.id); // ← u.user_id → u.id
-    const uname = profile.username ?? u.id;
+    const profile = await getUserById(resolvedId);
+    const followStatus = await getFollowStatus(resolvedId);
+    const uname = profile.username ?? resolvedId;
+
     return {
-      userId: u.id, // ← u.user_id → u.id
+      userId: resolvedId,
       username: uname,
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
       followers: profile.followers_count ?? 0,
       isVerified: profile.is_verified ?? u.is_verified,
+      isFollowing: followStatus.is_following,
       profilePath: `/${uname}`,
     };
   } catch {
     return {
-      userId: u.id, // ← u.user_id → u.id
-      username: u.id,
+      userId: resolvedId,
+      username: resolvedId,
       displayName: u.display_name,
       avatar: u.profile_picture ?? "",
       followers: 0,
       isVerified: u.is_verified,
-      profilePath: `/${u.id}`,
+      isFollowing: false,
+      profilePath: `/${resolvedId}`,
     };
   }
 }
@@ -79,7 +89,6 @@ export default function FollowerPage() {
   const [enriched, setEnriched] = useState<EnrichedUser[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  // Step 1 — fetch raw followers
   useEffect(() => {
     let cancelled = false;
     setLoaded(false);
@@ -92,8 +101,10 @@ export default function FollowerPage() {
         if (isOwner) {
           userId = currentUser?.id;
         } else if (username) {
-          userId = await resolveUsername(username);
+          const profile = await getUserByUsername(username);
+          userId = profile.id;
         }
+
         if (!userId) return;
 
         const res = await getFollowers(userId, { limit: 100, offset: 0 });
@@ -110,7 +121,6 @@ export default function FollowerPage() {
     };
   }, [username, isOwner, currentUser?.id]);
 
-  // Step 2 — enrich
   useEffect(() => {
     if (rawFollowers === null) return;
 
@@ -146,23 +156,16 @@ export default function FollowerPage() {
 
   return (
     <div className="py-8 container px-4 md:px-8 lg:px-20">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-3">
-        <div
-          data-test="follower-page-avatar"
-          className="w-24 h-24 cursor-pointer rounded-full overflow-hidden bg-text-muted flex-shrink-0"
+        <UserAvatar
+          dataTest="follower-page-avatar"
+          src={profileAvatar}
+          name={profileDisplayName || profileUsername}
+          alt={profileDisplayName || profileUsername}
+          wrapperClassName="w-24 h-24 cursor-pointer rounded-full overflow-hidden flex-shrink-0"
+          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
           onClick={() => navigate(profilePath)}
-        >
-          {profileAvatar ? (
-            <img
-              src={profileAvatar}
-              alt={profileUsername}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-text-muted" />
-          )}
-        </div>
+        />
         <div>
           <h1
             data-test="follower-page-title"
@@ -177,7 +180,6 @@ export default function FollowerPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-6 mb-8">
         {tabs.map((tab) => (
           <button
@@ -195,7 +197,6 @@ export default function FollowerPage() {
         ))}
       </div>
 
-      {/* Empty state */}
       {loaded && enriched.length === 0 && (
         <div className="flex items-center justify-center py-24">
           <p className="text-white text-lg font-bold">
@@ -206,7 +207,6 @@ export default function FollowerPage() {
         </div>
       )}
 
-      {/* Grid */}
       {enriched.length > 0 && (
         <div className="grid grid-cols-6 gap-6">
           {enriched.map((u) => (
@@ -214,24 +214,16 @@ export default function FollowerPage() {
               key={u.userId}
               className="flex flex-col items-center gap-2 group"
             >
-              {/* Avatar */}
-              <div
-                data-test={`follower-avatar-${u.username}`}
-                className="w-full cursor-pointer aspect-square rounded-full overflow-hidden bg-text-muted"
+              <UserAvatar
+                dataTest={`follower-avatar-${u.username}`}
+                src={u.avatar}
+                name={u.displayName || u.username}
+                alt={u.displayName || u.username}
+                wrapperClassName="w-full cursor-pointer aspect-square rounded-full overflow-hidden"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
                 onClick={() => navigate(u.profilePath)}
-              >
-                {u.avatar ? (
-                  <img
-                    src={u.avatar}
-                    alt={u.username}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="h-full w-full bg-text-muted" />
-                )}
-              </div>
+              />
 
-              {/* Name */}
               <span
                 className="text-white cursor-pointer text-sm font-bold text-center truncate w-full px-1"
                 onClick={() => navigate(u.profilePath)}
@@ -242,7 +234,6 @@ export default function FollowerPage() {
                 )}
               </span>
 
-              {/* Follower count */}
               <span
                 data-test={`follower-count-${u.username}`}
                 className="text-text-secondary cursor-pointer text-xs flex items-center gap-1"
@@ -257,10 +248,13 @@ export default function FollowerPage() {
                 followers
               </span>
 
-              {/* Follow button — reads from store, no override needed */}
               <div className="h-8 flex items-center justify-center">
                 <div className="hidden group-hover:block">
-                  <FollowButton username={u.username} userId={u.userId} />
+                  <FollowButton
+                    username={u.username}
+                    userId={u.userId}
+                    initialIsFollowing={u.isFollowing}
+                  />
                 </div>
               </div>
             </div>
@@ -275,7 +269,6 @@ export default function FollowerPage() {
         </div>
       )}
 
-      {/* Footer */}
       <div className="mt-16 flex flex-col gap-8">
         <div className="flex flex-wrap gap-x-1 text-xs text-text-secondary">
           {[

@@ -4,15 +4,18 @@ import { useLikesStore } from "@/stores/likes.store";
 import { useNavigate, useParams } from "react-router-dom";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
+import UserAvatar from "@/components/UI/UserAvatar";
+import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
+import AlbumCard from "@/components/playlist/PlaylistCard";
 import {
   getMyLikedTracks,
-  resolveUsername,
-  getUserById,
+  getUserByUsername,
   type TrackSummary,
 } from "@/services/user.service";
 import type { Track } from "@/types/track";
 
 const tabs = ["Likes", "Following", "Followers"];
+const CARD_WIDTH = "w-[180px] sm:w-[200px] md:w-[220px] lg:w-[230px]";
 
 function mapToTrack(t: TrackSummary): Track {
   return {
@@ -39,6 +42,8 @@ export default function LikesPage() {
   const { username } = useParams();
   const { user: currentUser } = useAuthStore();
   const localLikedTracks = useLikesStore((state) => state.likedTracks);
+  const likedPlaylists = useLikesStore((state) => state.likedPlaylists);
+  const likedAlbums = useLikesStore((state) => state.likedAlbums);
   const [showShare, setShowShare] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profileDisplayName, setProfileDisplayName] = useState("");
@@ -47,6 +52,7 @@ export default function LikesPage() {
 
   const isOwner = !username || username === currentUser?.username;
 
+  // Resolve non-owner profile info
   useEffect(() => {
     if (isOwner) {
       setProfileDisplayName(
@@ -55,8 +61,7 @@ export default function LikesPage() {
       setProfileAvatar(currentUser?.avatar ?? "");
       setProfileUsername(currentUser?.username ?? "");
     } else if (username) {
-      resolveUsername(username)
-        .then((id) => getUserById(id))
+      getUserByUsername(username)
         .then((profile) => {
           setProfileDisplayName(profile.display_name);
           setProfileAvatar(profile.profile_picture ?? "");
@@ -66,9 +71,9 @@ export default function LikesPage() {
     }
   }, [username, isOwner, currentUser]);
 
+  // Fetch liked tracks (owner only — public liked tracks not in API spec)
   useEffect(() => {
     if (!isOwner) {
-      // Public liked tracks per user not in API spec, show empty
       setLoading(false);
       return;
     }
@@ -92,7 +97,13 @@ export default function LikesPage() {
   }, [isOwner]);
 
   const displayedTracks = isOwner ? localLikedTracks : [];
+  const displayedPlaylists = isOwner ? likedPlaylists : [];
+  const displayedAlbums = isOwner ? likedAlbums : [];
   const showLoading = loading && displayedTracks.length === 0;
+  const hasAnyLikedContent =
+    displayedTracks.length > 0 ||
+    displayedPlaylists.length > 0 ||
+    displayedAlbums.length > 0;
 
   const handleTabChange = (tab: string) => {
     const base = profileUsername ? `/${profileUsername}` : "/you";
@@ -107,21 +118,15 @@ export default function LikesPage() {
     <div className="py-8 container px-4 md:px-8 lg:px-20">
       {/* Header */}
       <div className="flex items-center gap-4 mb-3">
-        <div
-          data-test="likes-user-avatar"
-          className="w-24 h-24 rounded-full overflow-hidden bg-text-muted flex-shrink-0 cursor-pointer"
+        <UserAvatar
+          dataTest="likes-user-avatar"
+          src={profileAvatar}
+          name={profileDisplayName || profileUsername}
+          alt={profileDisplayName || profileUsername}
+          wrapperClassName="w-24 h-24 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
           onClick={() => navigate(`/${profileUsername}`)}
-        >
-          {profileAvatar ? (
-            <img
-              src={profileAvatar}
-              alt={profileUsername}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-text-muted" />
-          )}
-        </div>
+        />
         <h1
           data-test="likes-page-title"
           className="text-white text-2xl font-bold"
@@ -155,8 +160,8 @@ export default function LikesPage() {
           className="text-text-secondary text-sm"
         >
           {isOwner
-            ? "Hear the tracks you've liked"
-            : `Hear the tracks ${profileDisplayName || profileUsername} has liked`}
+            ? "Hear the tracks, playlists, and albums you've liked"
+            : `Hear the tracks, playlists, and albums ${profileDisplayName || profileUsername} has liked`}
         </p>
         <button
           data-test="likes-share-button"
@@ -173,8 +178,54 @@ export default function LikesPage() {
         <div className="flex items-center justify-center py-24">
           <p className="text-text-secondary text-sm">Loading...</p>
         </div>
+      ) : hasAnyLikedContent ? (
+        <div className="flex flex-col gap-10">
+          {displayedTracks.length > 0 && (
+            <LikesContent tracks={displayedTracks} showControls={true} />
+          )}
+
+          {displayedPlaylists.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <h2 className="text-white text-lg font-semibold">
+                Liked playlists
+              </h2>
+              <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1 scrollbar-hide">
+                {displayedPlaylists.map((playlist) => (
+                  <PlaylistCard
+                    key={playlist.id}
+                    item={playlist}
+                    widthClassName={CARD_WIDTH}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {displayedAlbums.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <h2 className="text-white text-lg font-semibold">
+                Liked albums
+              </h2>
+              <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1 scrollbar-hide">
+                {displayedAlbums.map((album) => (
+                  <AlbumCard
+                    key={album.playlist_id}
+                    playlist={album}
+                    widthClassName={CARD_WIDTH}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       ) : (
-        <LikesContent tracks={displayedTracks} showControls={true} />
+        <div className="flex items-center justify-center py-24">
+          <p className="text-white font-bold text-lg sm:text-2xl">
+            {isOwner
+              ? "You have no likes yet."
+              : `${profileDisplayName || profileUsername} hasn't liked anything yet.`}
+          </p>
+        </div>
       )}
 
       {/* Footer */}

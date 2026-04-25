@@ -1,12 +1,22 @@
 import type React from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useHistoryStore } from "@/stores/history.store";
+import { useLikesStore } from "@/stores/likes.store";
+import { usePlayerStore } from "@/stores/player.store";
+import { useAuthStore } from "@/stores/auth.store";
+import CardOverlay from "@/components/UI/CardOverlay/CardOverlay";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import { getTrendingByGenre } from "@/services/api/discover.service";
+import type { Track } from "@/types/track";
+
 export interface BuzzingPlaylist {
   id: string;
   genre: string;
   cover_image: string | null;
   track_count: number;
+  previewTrack?: Track;
 }
-import { useLikesStore } from "@/stores/likes.store";
 
 // ─── Badge colors per genre index ─────────────────────────
 
@@ -34,18 +44,65 @@ export default function GenreCard({
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: GenreCardProps) {
   const badge = BADGE_COLORS[index % BADGE_COLORS.length];
-  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const navigate = useNavigate();
+  const { isGenreLiked, toggleGenre } = useLikesStore();
   const { addGenre } = useHistoryStore();
-  const liked = isPlaylistLiked(item.id);
+  const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const liked = isGenreLiked(item.id);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const isThisPlaying =
+    isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
+
+  const handlePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!item.previewTrack) return;
+    if (currentTrack?.id === item.previewTrack.id) {
+      togglePlay();
+    } else {
+      setTrack(item.previewTrack);
+      addGenre(item);
+    }
+  };
+
+  const guestMenuItems = [
+    {
+      label: "Repost",
+      iconNode: <i className="fa-solid fa-retweet text-xs w-4" />,
+      onClick: () => navigate("/signin"),
+    },
+    {
+      label: "Share",
+      iconNode: <i className="fa-solid fa-arrow-up-from-bracket text-xs w-4" />,
+      onClick: () => navigate("/signin"),
+    },
+    {
+      label: "Copy Link",
+      iconNode: <i className="fa-solid fa-copy text-xs w-4" />,
+      onClick: () => navigate("/signin"),
+    },
+    {
+      label: "Add to playlist",
+      iconNode: <i className="fa-solid fa-list text-xs w-4" />,
+      onClick: () => navigate("/signin"),
+    },
+  ];
+
+  const authMenuItems = [
+    {
+      label: "Add to playlist",
+      iconNode: <i className="fa-solid fa-list text-xs w-4" />,
+      onClick: () => setShowPlaylistModal(true),
+    },
+  ];
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    togglePlaylist({
-      id: item.id,
-      title: item.genre,
-      owner: `${item.track_count} tracks`,
-      coverUrl: item.cover_image,
-    });
+    if (!isAuthenticated) {
+      navigate("/signin");
+      return;
+    }
+    toggleGenre({ id: item.id, genre: item.genre, cover_image: item.cover_image });
   };
 
   return (
@@ -82,40 +139,31 @@ export default function GenreCard({
           </span>
         </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-          <div />
-          <div className="flex items-center justify-center flex-1">
-            <button
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
-              onClick={(e) => { e.stopPropagation(); addGenre(item); }}
-              data-test="button-play"
-            >
-              <i className="fa-solid fa-play text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ml-0.5" />
-            </button>
-          </div>
-          <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button
-              className="flex flex-col items-center gap-0.5 group/btn"
-              data-test={`button-like-genre-${item.id}`}
-              onClick={handleLike}
-            >
-              <i
-                className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`}
-              />
-            </button>
-            {/* <button
-              className="flex flex-col items-center gap-0.5 group/btn"
-              data-test={`button-more-genre-${item.id}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
-            </button> */}
-          </div>
-        </div>
+        <CardOverlay
+          isPlaying={isThisPlaying}
+          onPlay={handlePlay}
+          isLiked={liked}
+          onLike={handleLike}
+          moreMenuItems={isAuthenticated ? authMenuItems : guestMenuItems}
+        />
       </div>
 
+      {showPlaylistModal && (
+        <AddToPlaylistModal
+          fetchTracks={() =>
+            getTrendingByGenre(item.id).then((r) =>
+              r.tracks.map((t) => ({
+                id: t.id,
+                title: t.title,
+                artistName: t.artist_name ?? "",
+                coverUrl: t.cover_image ?? undefined,
+              })),
+            )
+          }
+          trackTitle={item.genre}
+          onClose={() => setShowPlaylistModal(false)}
+        />
+      )}
     </div>
   );
 }

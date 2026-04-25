@@ -1,7 +1,11 @@
 import type React from "react";
+import { useNavigate } from "react-router-dom";
 import type { CuratedHomeMixPreview } from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import { usePlayerStore } from "@/stores/player.store";
+import { useLikesStore } from "@/stores/likes.store";
+import { useAuthStore } from "@/stores/auth.store";
+import CardOverlay from "@/components/UI/CardOverlay/CardOverlay";
 
 interface Props {
   mix: CuratedHomeMixPreview;
@@ -12,7 +16,25 @@ export default function CuratedMixCard({
   mix,
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: Props) {
+  const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
+  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const liked = isPlaylistLiked(mix.mix_id);
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      navigate("/signin");
+      return;
+    }
+    togglePlaylist({
+      id: mix.mix_id,
+      title: mix.title,
+      owner: mix.preview_track?.artist_name ?? "",
+      coverUrl: mix.cover_url ?? null,
+    });
+  };
 
   const previewTrack = mix.preview_track
     ? mapDiscoveryTrack(mix.preview_track)
@@ -31,11 +53,13 @@ export default function CuratedMixCard({
   };
 
   const coverSrc = mix.cover_url ?? mix.preview_track?.cover_image ?? null;
+  const mixPath = `/rythmify/sets/${mix.mix_id}`;
 
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
       data-test={`curated-mix-card-${mix.mix_id}`}
+      onClick={() => navigate(mixPath)}
     >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
@@ -61,22 +85,34 @@ export default function CuratedMixCard({
           </span>
         </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-          <div />
-          <div className="flex items-center justify-center flex-1">
-            <button
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
-              onClick={handlePlay}
-              data-test="button-play"
-            >
-              <i
-                className={`fa-solid ${isThisPlaying ? "fa-pause" : "fa-play"} text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ${!isThisPlaying ? "ml-0.5" : ""}`}
-              />
-            </button>
-          </div>
-        </div>
+        <CardOverlay
+          isPlaying={isThisPlaying}
+          onPlay={handlePlay}
+          isLiked={liked}
+          onLike={handleLike}
+          moreMenuItems={[
+            {
+              label: "Repost",
+              iconNode: <i className="fa-solid fa-retweet text-xs w-4" />,
+              onClick: () => navigate("/signin"),
+            },
+            {
+              label: "Share",
+              iconNode: <i className="fa-solid fa-arrow-up-from-bracket text-xs w-4" />,
+              onClick: () => navigate("/signin"),
+            },
+            {
+              label: "Copy Link",
+              iconNode: <i className="fa-solid fa-copy text-xs w-4" />,
+              onClick: () => navigate("/signin"),
+            },
+            {
+              label: "Add to playlist",
+              iconNode: <i className="fa-solid fa-list text-xs w-4" />,
+              onClick: () => navigate("/signin"),
+            },
+          ]}
+        />
       </div>
 
       {/* Subtitle */}
@@ -86,6 +122,7 @@ export default function CuratedMixCard({
       >
         {mix.preview_track?.artist_name ?? mix.preview_track?.genre_name ?? ""}
       </p>
+
     </div>
   );
 }

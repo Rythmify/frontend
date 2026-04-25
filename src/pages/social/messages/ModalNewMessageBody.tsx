@@ -2,23 +2,21 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MessageBox } from '@/components/MessagingComponents/MessageBox'
 import { RecipientInputBox, type RecipientResult } from '@/components/MessagingComponents/RecipientInputBox'
-import { startConversation } from '@/services/api/messaging/conversationApi'
+import { startConversation, sendMessage } from '@/services/api/messaging/conversationApi'
 import type { ResolvedEmbed } from '@/components/MessagingComponents/MessageBox'
 
 interface ModalNewMessageBodyProps {
   onClose: () => void
-   prefilledRecipient?: RecipientResult // optional prop to prefill the recipient (e.g. when clicking "Message" from a profile) 
+  prefilledRecipient?: RecipientResult
 }
 
 const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBodyProps) => {
   const navigate = useNavigate()
 
-  const [selected, setSelected] = useState<RecipientResult | null>(
-    prefilledRecipient ?? null  
-  )
-  const [message, setMessage]       = useState('')
-  const [embed, setEmbed]           = useState<ResolvedEmbed | null>(null)
-  const [isSending, setIsSending]   = useState(false)
+  const [selected, setSelected]             = useState<RecipientResult | null>(prefilledRecipient ?? null)
+  const [message, setMessage]               = useState('')
+  const [embeds, setEmbeds]                 = useState<ResolvedEmbed[]>([])   // ← plural
+  const [isSending, setIsSending]           = useState(false)
   const [recipientError, setRecipientError] = useState<string | null>(null)
   const [messageError, setMessageError]     = useState<string | null>(null)
 
@@ -30,8 +28,8 @@ const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBod
       hasError = true
     }
 
-    if (!message.trim()) {
-      setMessageError('Enter a message.')
+    if (!message.trim() && embeds.length === 0) {
+      setMessageError('Enter a message or paste a track/playlist link.')
       hasError = true
     }
 
@@ -40,12 +38,37 @@ const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBod
     setRecipientError(null)
     setMessageError(null)
     setIsSending(true)
+
     try {
-      await startConversation({
-        recipient_id: selected!.id,
-        body: message.trim(),
-        ...(embed ? { resource: { type: embed.type, id: embed.id } } : {}),
-      })
+      if (embeds.length === 0) {
+        // Plain text message — start conversation as before
+        await startConversation({
+          recipient_id: selected!.id,
+          body: message.trim(),
+        })
+      } else {
+        // First message: text body + first embed (startConversation only accepts one resource)
+        const firstConvo = await startConversation({
+          recipient_id: selected!.id,
+          ...(message.trim() ? { body: message.trim() } : {}),
+          resource: { type: embeds[0].type, id: embeds[0].id },
+        })
+
+        // Resolve the conversation ID from the response so we can append more messages
+        const convoResponse = firstConvo as { data?: { conversation?: { id?: string }; id?: string } }
+        const conversationId =
+          convoResponse.data?.conversation?.id ?? (convoResponse.data as { id?: string })?.id
+
+        // Additional embeds — each as a separate message in the same conversation
+        if (conversationId && embeds.length > 1) {
+          for (let i = 1; i < embeds.length; i++) {
+            await sendMessage(conversationId, {
+              resource: { type: embeds[i].type, id: embeds[i].id },
+            })
+          }
+        }
+      }
+
       onClose()
       navigate(`/messages/${selected!.id}`)
     } catch {
@@ -64,7 +87,7 @@ const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBod
         To <span className="text-red-500">*</span>
       </label>
 
-         <div className="mb-4">
+      <div className="mb-4">
         {prefilledRecipient ? (
           <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] border border-border rounded">
             <span className="text-white text-sm font-semibold">
@@ -89,7 +112,7 @@ const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBod
       <MessageBox
         onValueChange={(val) => { setMessage(val); if (val.trim()) setMessageError(null) }}
         onIsEmptyChange={() => {}}
-        onEmbedResolved={setEmbed}
+        onEmbedsResolved={setEmbeds}   // ← plural, matches updated MessageBox prop
         hasError={!!messageError}
       />
 
@@ -102,7 +125,8 @@ const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBod
         <button
           data-test="send-message-button"
           onClick={handleSend}
-          className="px-3 py-1 text-sm font-extrabold text-black bg-white rounded"
+          disabled={isSending}
+          className="px-3 py-1 text-sm font-extrabold text-black bg-white rounded disabled:opacity-50"
         >
           {isSending ? 'Sending…' : 'Send'}
         </button>

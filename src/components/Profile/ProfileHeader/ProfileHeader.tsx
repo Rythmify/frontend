@@ -203,11 +203,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </div>
         )}
 
-        <div className="absolute inset-0 flex items-center px-6 gap-6">
+        <div className="absolute inset-0 flex flex-col sm:flex-row items-center sm:items-end pb-6 px-4 sm:px-6 gap-4 sm:gap-6">
           <div className="relative flex-shrink-0">
             <div
               data-testid="avatar-container"
-              className="w-[200px] h-[200px] rounded-full overflow-hidden flex items-center justify-center bg-[#68A039] cursor-pointer"
+              className="w-[120px] h-[120px] sm:w-[200px] sm:h-[200px] rounded-full overflow-hidden flex items-center justify-center bg-[#68A039] cursor-pointer shadow-xl border-4 border-black/10"
               onMouseEnter={() => setHoveringAvatar(true)}
               onMouseLeave={() => {
                 if (!showImageMenu) setHoveringAvatar(false);
@@ -222,18 +222,18 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 />
               ) : (
                 <span
-                  className={`text-8xl font-bold text-white transition-opacity ${hoveringAvatar ? "opacity-30" : "opacity-100"}`}
+                  className={`text-6xl sm:text-8xl font-bold text-white transition-opacity ${hoveringAvatar ? "opacity-30" : "opacity-100"}`}
                 >
                   {username.charAt(0).toUpperCase()}
                 </span>
               )}
 
               {isOwner && hoveringAvatar && (
-                <div className="absolute inset-0 bg-black/50 flex items-end justify-center pb-8 rounded-full">
+                <div className="absolute inset-0 bg-black/50 flex items-end justify-center pb-4 sm:pb-8 rounded-full">
                   <div className="relative">
                     <button
                       data-test="avatar-update-button"
-                      className={`cursor-pointer bg-black rounded text-sm hover:text-[#737272] font-semibold px-4 py-1.5 ${showImageMenu ? "text-accent" : "text-white"}`}
+                      className={`cursor-pointer bg-black rounded text-[10px] sm:text-sm hover:text-[#737272] font-semibold px-2 py-1 sm:px-4 sm:py-1.5 ${showImageMenu ? "text-accent" : "text-white"}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowImageMenu((prev) => !prev);
@@ -273,16 +273,16 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-col gap-0">
-            <h1 className="text-white font-bold text-2xl px-2 py-1 bg-black self-start">
+          <div className="flex flex-col gap-0 items-center sm:items-start text-center sm:text-left mb-2">
+            <h1 className="text-white font-bold text-xl sm:text-2xl px-2 py-1 bg-black self-center sm:self-start leading-tight">
               {displayName}
             </h1>
             <div className="flex flex-col gap-1">
-              <p className="text-gray-400 font-bold text-sm px-2 py-1 bg-black self-start">
+              <p className="text-gray-400 font-bold text-xs sm:text-sm px-2 py-1 bg-black self-center sm:self-start">
                 {username}
               </p>
               {location && (
-                <p className="text-gray-400 font-bold text-sm px-2 py-1 bg-black self-start">
+                <p className="text-gray-400 font-bold text-xs sm:text-sm px-2 py-1 bg-black self-center sm:self-start">
                   {location}
                 </p>
               )}

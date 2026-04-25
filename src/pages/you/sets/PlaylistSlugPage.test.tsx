@@ -10,6 +10,7 @@ import {
 import { getUsers } from "@/services/mocks/User.service";
 import { usePlayerStore } from "@/stores/player.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { useLikesStore } from "@/stores/likes.store";
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
   getPlaylist: vi.fn(),
@@ -26,6 +27,10 @@ vi.mock("@/stores/player.store", () => ({
 
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
+}));
+
+vi.mock("@/stores/likes.store", () => ({
+  useLikesStore: vi.fn(),
 }));
 
 vi.mock("@/components/Upload/GuestPageFooter", () => ({
@@ -69,6 +74,9 @@ vi.mock("../../../components/playlist/PlaylistActions", () => ({
     </div>
   ),
 }));
+vi.mock("@/components/playlist/Made for you/PlaylistActionsForYou", () => ({
+  default: () => <div data-test="playlist-actions-for-you" />,
+}));
 vi.mock("../../../components/playlist/PlaylistSidebar", () => ({
   default: () => <div data-test="playlist-sidebar" />,
 }));
@@ -99,6 +107,9 @@ describe("PlaylistSlugPage", () => {
         username: "testuser",
         displayName: "Test User",
       },
+    } as any);
+    vi.mocked(useLikesStore).mockReturnValue({
+      likedPlaylists: [],
     } as any);
     vi.mocked(getUsers).mockResolvedValue([] as any);
   });
@@ -144,6 +155,20 @@ describe("PlaylistSlugPage", () => {
       expect(screen.getByTestId("playlist-actions")).toBeInTheDocument();
       expect(screen.getByTestId("playlist-sidebar")).toBeInTheDocument();
     });
+  });
+
+  it("renders mix-for-you actions for liked playlists", async () => {
+    vi.mocked(useLikesStore).mockReturnValue({
+      likedPlaylists: [{ id: "pl-abc" }],
+    } as any);
+    vi.mocked(getPlaylist).mockResolvedValue({ data: mockPlaylistData } as any);
+
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("playlist-actions-for-you")).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("playlist-actions")).not.toBeInTheDocument();
   });
 
   it("shows error when fetch fails", async () => {

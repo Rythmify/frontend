@@ -1,11 +1,11 @@
 interface MiniPlayerProps {
-  profilePicture: string | null
+  coverImage: string | null
   trackName: string
   artistName: string
   onClose: () => void
 }
 
-const MiniPlayer = ({ profilePicture, trackName, artistName, onClose }: MiniPlayerProps) => {
+const MiniPlayer = ({ coverImage, trackName, artistName, onClose }: MiniPlayerProps) => {
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-bg border-t border-border">
 
@@ -13,8 +13,8 @@ const MiniPlayer = ({ profilePicture, trackName, artistName, onClose }: MiniPlay
       <div className="flex items-center gap-3">
         {/* Avatar */}
         <div className="w-9 h-9 rounded-sm overflow-hidden flex-shrink-0">
-          {profilePicture ? (
-            <img src={profilePicture} alt={artistName} className="w-full h-full object-cover" />
+          {coverImage ? (
+            <img src={coverImage} alt={artistName} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b]" />
           )}

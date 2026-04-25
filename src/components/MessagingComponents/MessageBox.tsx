@@ -10,20 +10,30 @@ export type ResolvedEmbed =
 interface MessageInputProps {
   onValueChange?: (value: string) => void
   onIsEmptyChange?: (isEmpty: boolean) => void
-  onEmbedResolved?: (embed: ResolvedEmbed | null) => void
+  onEmbedsResolved?: (embeds: ResolvedEmbed[]) => void
   hasError?: boolean
 }
 
-const URL_REGEX = /https?:\/\/rythmify\.com\/(tracks|users|playlists)\/[^\s]+/g
 
-export function MessageBox({ onValueChange, onIsEmptyChange, onEmbedResolved, hasError }: MessageInputProps) {
-  const [value, setValue]   = useState("")
-  const [embed, setEmbed]   = useState<ResolvedEmbed | null>(null)
-  const debounceRef         = useRef<ReturnType<typeof setTimeout> | null>(null)
+const URL_REGEX =
+  /https?:\/\/(?:[\w-]+\.azurestaticapps\.net|rythmify\.com)\/[^\s"'<>]+/g
 
-  const clearEmbed = () => {
-    setEmbed(null)
-    onEmbedResolved?.(null)
+export function MessageBox({
+  onValueChange,
+  onIsEmptyChange,
+  onEmbedsResolved,
+  hasError,
+}: MessageInputProps) {
+  const [value, setValue]     = useState("")
+  const [embeds, setEmbeds]   = useState<ResolvedEmbed[]>([])
+  const debounceRef           = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Track which URLs we've already resolved so we don't re-fetch on every keystroke
+  const resolvedUrlsRef       = useRef<Map<string, ResolvedEmbed | null>>(new Map())
+
+  const removeEmbed = (id: string) => {
+    const next = embeds.filter(e => e.id !== id)
+    setEmbeds(next)
+    onEmbedsResolved?.(next)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -34,51 +44,61 @@ export function MessageBox({ onValueChange, onIsEmptyChange, onEmbedResolved, ha
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
-    const urls = text.match(URL_REGEX)
-    if (!urls) {
-      clearEmbed()
+    const matches = text.match(URL_REGEX)
+    if (!matches) {
+      setEmbeds([])
+      onEmbedsResolved?.([])
       return
     }
 
-    debounceRef.current = setTimeout(async () => {
-      const url = urls[urls.length - 1]
-      try {
-        const resolved = await resolvePermalink(url)
-        const { type, id } = resolved.data
+    // Deduplicate URLs found in text
+    const uniqueUrls = [...new Set(matches)]
 
-        if (type === "track") {
-          const trackRes = await fetchTrack(id)
-          const next: ResolvedEmbed = { type: "track", id, resource: trackRes.data }
-          setEmbed(next)
-          onEmbedResolved?.(next)
-        } else if (type === "playlist") {
-          const playlistRes = await fetchPlaylist(id)
-          const next: ResolvedEmbed = { type: "playlist", id, resource: playlistRes.data }
-          setEmbed(next)
-          onEmbedResolved?.(next)
-        } else {
-          clearEmbed()
-        }
-      } catch {
-        clearEmbed()
-      }
+    debounceRef.current = setTimeout(async () => {
+      const results = await Promise.all(
+        uniqueUrls.map(async (url): Promise<ResolvedEmbed | null> => {
+          // Return cached result if we already resolved this URL
+          if (resolvedUrlsRef.current.has(url)) {
+            return resolvedUrlsRef.current.get(url) ?? null
+          }
+
+          try {
+            const resolved = await resolvePermalink(url)
+            const { type, id } = resolved.data
+
+            let embed: ResolvedEmbed | null = null
+
+            if (type === "track") {
+              const trackRes = await fetchTrack(id)
+              embed = { type: "track", id, resource: trackRes.data }
+            } else if (type === "playlist") {
+              const playlistRes = await fetchPlaylist(id)
+              embed = { type: "playlist", id, resource: playlistRes.data }
+            }
+            // "user" type — we don't embed users, ignore
+
+            resolvedUrlsRef.current.set(url, embed)
+            return embed
+          } catch {
+            resolvedUrlsRef.current.set(url, null)
+            return null
+          }
+        })
+      )
+
+      const validEmbeds = results.filter((r): r is ResolvedEmbed => r !== null)
+      // Deduplicate by id (same track/playlist linked twice)
+      const seen = new Set<string>()
+      const deduped = validEmbeds.filter(e => {
+        if (seen.has(e.id)) return false
+        seen.add(e.id)
+        return true
+      })
+
+      setEmbeds(deduped)
+      onEmbedsResolved?.(deduped)
     }, 600)
   }
-
-  // Derive MiniPlayer props from the resolved embed
- const miniPlayerProps = embed
-  ? embed.type === "track"
-    ? {
-        profilePicture: null,
-        trackName:      embed.resource.title,
-        artistName:     embed.resource.artists ?? "Unknown Artist",
-      }
-    : {
-        profilePicture: null,
-        trackName:      embed.resource.name,          
-        artistName:     `${embed.resource.track_count} track${embed.resource.track_count !== 1 ? "s" : ""}`,
-      }
-  : null
 
   return (
     <div data-test="message-box" className="flex flex-col gap-1">
@@ -87,13 +107,36 @@ export function MessageBox({ onValueChange, onIsEmptyChange, onEmbedResolved, ha
         value={value}
         onChange={handleChange}
         rows={4}
-        className={`w-full resize-y bg-[#2a2a2a] border text-white text-sm px-3 py-2 rounded focus:outline-none caret-[#f50] ${hasError ? "border-red-500" : "border-[#444] focus:border-[#666]"}`}
+        className={`w-full resize-y bg-[#2a2a2a] border text-white text-sm px-3 py-2 rounded focus:outline-none caret-[#f50] ${
+          hasError ? "border-red-500" : "border-[#444] focus:border-[#666]"
+        }`}
       />
-      {miniPlayerProps && (
-        <MiniPlayer
-          {...miniPlayerProps}
-          onClose={clearEmbed}
-        />
+
+      {embeds.length > 0 && (
+        <div className="flex flex-col">
+          {embeds.map(embed => {
+            const props =
+              embed.type === "track"
+                ? {
+                    coverImage:  embed.resource.cover_image,
+                    trackName:   embed.resource.title,
+                    artistName:  embed.resource.artist_name ?? embed.resource.artists ?? "Unknown Artist",
+                  }
+                : {
+                    coverImage:  embed.resource.cover_image,
+                    trackName:   embed.resource.name,
+                    artistName:  `${embed.resource.track_count} track${embed.resource.track_count !== 1 ? "s" : ""}`,
+                  }
+
+            return (
+              <MiniPlayer
+                key={embed.id}
+                {...props}
+                onClose={() => removeEmbed(embed.id)}
+              />
+            )
+          })}
+        </div>
       )}
     </div>
   )

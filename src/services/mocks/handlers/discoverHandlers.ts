@@ -212,19 +212,19 @@ const mockWeeklyMix: CuratedMixSummary = {
 const mockStations: DiscoveryStation[] = [
   {
     id: "aaaa1111-2222-4333-8444-555566667777",
-    name: "Based on Drake",
     artist_id: ARTIST_IDS.drake,
     artist_name: "Drake",
     images: { left: "https://picsum.photos/seed/501/200/200", center: null, right: null },
     track_count: 50,
+    preview_track: mockDiscoveryTracks[0],
   },
   {
     id: "bbbb1111-2222-4333-8444-555566667777",
-    name: "Based on SZA",
     artist_id: ARTIST_IDS.sza,
     artist_name: "SZA",
     images: { left: "https://picsum.photos/seed/502/200/200", center: null, right: null },
     track_count: 50,
+    preview_track: mockDiscoveryTracks[1],
   },
 ];
 
@@ -481,6 +481,48 @@ export const discoverHandlers = [
     });
   }),
 
+  // GET /home/stations/:artistId/tracks � tracks for an artist station
+  http.get("*/home/stations/:artistId/tracks", ({ params }) => {
+    const station = mockStations.find(
+      (item) => item.artist_id === params.artistId,
+    );
+
+    if (!station) {
+      return HttpResponse.json(
+        { error: { code: "NOT_FOUND", message: "Station not found." } },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json({
+      data: {
+        station: {
+          id: station.id,
+          name: station.artist_name,
+          artist_id: station.artist_id,
+          artist_name: station.artist_name,
+          images: station.images,
+          track_count: station.track_count,
+        },
+        tracks: mockDiscoveryTracks.map((track, index) => ({
+          track_id: track.id,
+          position: index + 1,
+          added_at: track.created_at,
+          title: track.title,
+          duration: track.duration,
+          cover_image: track.cover_image,
+          is_public: true,
+          deleted_at: null,
+          artist_name: track.artist_name,
+          artist_id: track.user_id,
+          audio_url: track.stream_url,
+          play_count: track.play_count,
+        })),
+      },
+      message: "Station fetched successfully.",
+    });
+  }),
+
   // GET /home/albums-for-you — albums curated for the user
   http.get("*/home/albums-for-you", () => {
     return HttpResponse.json({
@@ -584,3 +626,5 @@ export const discoverHandlers = [
     });
   }),
 ];
+
+

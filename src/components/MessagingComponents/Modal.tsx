@@ -24,7 +24,7 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
     <div
       data-test="modal-backdrop"
       className="fixed inset-0 flex z-[9999] overflow-y-auto bg-bg-inverted/40 flex-col "
-      onClick={onClose} // clicking backdrop closes it
+      onClick={(e) => e.stopPropagation()}
     >
       <div className="relative mt-10 mr-10">
         <button

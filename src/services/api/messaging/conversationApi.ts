@@ -152,6 +152,8 @@ export interface Track {
   artists: string | null;
   created_at: string;
   updated_at: string;
+  cover_image: string | null;       
+  artist_name: string | null;   
 }
 
 export interface TrackResponse {
@@ -164,12 +166,16 @@ export interface TrackResponse {
 export interface Playlist {
   playlist_id: string;
   owner_user_id: string;
-  name: string;               
+  name: string;
+  slug: string | null;            
   description: string | null;
   is_public: boolean;
+  cover_image: string | null;      
   track_count: number;
   like_count: number;
+  repost_count: number;            
   created_at: string;
+  updated_at: string;            
 }
 
 export interface PlaylistResponse {

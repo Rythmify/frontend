@@ -3,11 +3,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import CuratedMixCard from "./CuratedMixCard";
 import { usePlayerStore } from "@/stores/player.store";
 import type { CuratedHomeMixPreview } from "@/services/api/discover.service";
+const mockNavigate = vi.fn();
 
 // ─── Mocks ────────────────────────────────────────────────
 
 vi.mock("@/stores/player.store", () => ({
   usePlayerStore: vi.fn(),
+}));
+
+vi.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
 }));
 
 // ─── Fixtures ─────────────────────────────────────────────
@@ -47,6 +52,7 @@ const makeStore = (overrides: Record<string, unknown> = {}) => ({
 describe("CuratedMixCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockNavigate.mockClear();
     vi.mocked(usePlayerStore).mockReturnValue(makeStore() as any);
   });
 
@@ -226,5 +232,11 @@ describe("CuratedMixCard", () => {
     expect(
       screen.getByTestId("curated-mix-card-mix_custom_aaa-001"),
     ).toHaveClass("w-[110px]");
+  });
+
+  it("navigates to the curated mix page when the card is clicked", () => {
+    render(<CuratedMixCard mix={baseMix} />);
+    fireEvent.click(screen.getByTestId("curated-mix-card-mix_custom_aaa-001"));
+    expect(mockNavigate).toHaveBeenCalledWith("/rythmify/sets/mix_custom_aaa-001");
   });
 });

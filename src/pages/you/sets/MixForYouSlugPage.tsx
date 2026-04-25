@@ -8,38 +8,33 @@ import {
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { getMixTracks } from "@/services/api/discover.service";
-import type {
-  DiscoveryTrack,
-  PersonalMix,
-} from "@/services/api/discover.service";
-import { mockMixes, mockMixTracks } from "@/services/mocks/discover";
-import { getUsers } from "../../../services/mocks/User.service";
+import type { DiscoveryTrack, MixDetailsData } from "@/services/api/discover.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { useAuthStore } from "@/stores/auth.store";
+import { getUserById, type PublicUser } from "@/services/user.service";
 
 // ─── Mapper ──────────────────
 function mixToPlaylistDetails(
-  mix: PersonalMix,
-  tracks: DiscoveryTrack[],
+  mix: MixDetailsData,
   userId: string,
 ): PlaylistDetails {
   return {
-    playlist_id: mix.id,
+    playlist_id: mix.mix_id,
     owner_user_id: userId,
-    name: mix.label ?? "Mix",
+    name: mix.title ?? "Mix",
     description: null,
     is_public: true,
-    cover_image: mix.cover_image ?? null,
-    created_at: mix.generated_at,
+    cover_image: mix.cover_url ?? null,
+    created_at: mix.tracks[0]?.created_at ?? new Date().toISOString(),
     updated_at: null,
-    track_count: mix.track_count,
+    track_count: mix.tracks.length,
     like_count: 0,
     repost_count: 0,
     // We map discovery fields to playlist fields
-    tracks: tracks.map(
+    tracks: mix.tracks.map(
       (t, i) =>
         ({
           track_id: t.id,
@@ -59,12 +54,24 @@ function mixToPlaylistDetails(
   };
 }
 
+function toFeaturedArtist(user: PublicUser, trackCount: number): MockUser {
+  return {
+    id: user.id as unknown as number,
+    username: user.username ?? user.display_name,
+    displayName: user.display_name,
+    avatarUrl: user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
+    followerCount: user.followers_count ?? 0,
+    trackCount,
+    isFollowing: false,
+  };
+}
+
 // ─── Page ─────────────────────────────────────────────────
 
 function MixForYouSlugPage() {
   const { mixSlug } = useParams<{ mixSlug: string }>();
   const user = useAuthStore((state) => state.user);
-  const mixId = mixSlug?.includes(":") ? mixSlug.split(":").pop() : mixSlug;
+  const mixId = mixSlug;
 
   const currentUserId = user?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890";
 
@@ -90,26 +97,37 @@ function MixForYouSlugPage() {
       setError(null);
 
       try {
-        const [{ mix, tracks }, fetchedUsers] = await Promise.all([
-          getMixTracks(mixId),
-          getUsers(),
-        ]);
+        const mix = await getMixTracks(mixId);
 
         if (cancelled) return;
 
-        setPlaylist(mixToPlaylistDetails(mix, tracks, currentUserId));
-        setFeaturedArtists(
-          Array.isArray(fetchedUsers)
-            ? (fetchedUsers as MockUser[]).slice(0, 3)
-            : [],
+        setPlaylist(mixToPlaylistDetails(mix, currentUserId));
+
+        const uniqueArtistIds = Array.from(
+          new Set(mix.tracks.map((track) => track.user_id).filter(Boolean)),
         );
+
+        const fetchedUsers = await Promise.all(
+          uniqueArtistIds.map((id) =>
+            getUserById(id).catch(() => null),
+          ),
+        );
+
+        if (cancelled) return;
+
+        const artists = fetchedUsers
+          .filter((user): user is PublicUser => Boolean(user))
+          .map((user) => {
+            const trackCount = mix.tracks.filter(
+              (track) => track.user_id === user.id,
+            ).length;
+            return toFeaturedArtist(user, trackCount);
+          });
+
+        setFeaturedArtists(artists);
       } catch (err) {
         if (cancelled) return;
-
-        const mockMix = mockMixes.find((m) => m.id === mixId) ?? mockMixes[0];
-        setPlaylist(
-          mixToPlaylistDetails(mockMix, mockMixTracks, currentUserId),
-        );
+        setError("Mix not found.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -227,6 +245,7 @@ function MixForYouSlugPage() {
         activeTrackId={currentTrack?.id}
         onPlayPause={handleHeroPlayPause}
         showUploadButton={false}
+        isMix={true}
       />
 
       <div className=" mx-auto">

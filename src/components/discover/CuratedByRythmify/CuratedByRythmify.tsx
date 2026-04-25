@@ -8,7 +8,7 @@ interface Props {
 }
 
 const CuratedByRythmify = ({ mixes }: Props) => {
-  const items = mixes.length ? mixes : mockCuratedMixes;
+  const items = mixes;
 
   return (
     <div data-test="section-curated-by-rythmify">
