@@ -35,93 +35,6 @@ const DownloadIcon = () => (
   </svg>
 );
 
-const BoostIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    aria-hidden="true"
-  >
-    <path
-      d="M20.25 8.75H13.25V2.5L3.75 15.25H10.75V21.5L20.25 8.75Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    ></path>
-  </svg>
-);
-
-const MoneyIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    aria-hidden="true"
-  >
-    <path
-      d="M3 6.37476C3 4.51079 4.51104 2.99976 6.375 2.99976C8.23896 2.99976 9.75 4.51079 9.75 6.37476C9.75 7.98095 8.62799 9.32508 7.125 9.66612V11.25H16.875V9.66612C15.372 9.32508 14.25 7.98095 14.25 6.37476C14.25 4.51079 15.761 2.99976 17.625 2.99976C19.489 2.99976 21 4.51079 21 6.37476C21 7.98095 19.878 9.32508 18.375 9.66612V12C18.375 12.4142 18.0392 12.75 17.625 12.75H12.7502L12.7501 14.3336C14.253 14.6747 15.375 16.0188 15.375 17.625C15.375 19.489 13.864 21 12 21C10.136 21 8.625 19.489 8.625 17.625C8.625 16.0188 9.74703 14.6746 11.2501 14.3336L11.2502 12.75H6.375C5.96079 12.75 5.625 12.4142 5.625 12V9.66612C4.12201 9.32508 3 7.98095 3 6.37476ZM6.375 4.49976C5.33947 4.49976 4.5 5.33922 4.5 6.37476C4.5 7.41029 5.33947 8.24976 6.375 8.24976C7.41053 8.24976 8.25 7.41029 8.25 6.37476C8.25 5.33922 7.41053 4.49976 6.375 4.49976ZM15.75 6.37476C15.75 7.41029 16.5895 8.24976 17.625 8.24976C18.6605 8.24976 19.5 7.41029 19.5 6.37476C19.5 5.33922 18.6605 4.49976 17.625 4.49976C16.5895 4.49976 15.75 5.33922 15.75 6.37476ZM12 15.75C10.9645 15.75 10.125 16.5895 10.125 17.625C10.125 18.6605 10.9645 19.5 12 19.5C13.0355 19.5 13.875 18.6605 13.875 17.625C13.875 16.5895 13.0355 15.75 12 15.75Z"
-      fill="currentColor"
-    ></path>
-  </svg>
-);
-
-const ReplaceIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    aria-hidden="true"
-  >
-    <path
-      d="M16.5 13.5L19.5 16.5L16.5 19.5"
-      stroke="black"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    ></path>
-    <path
-      d="M4.5 16.5H19.5"
-      stroke="black"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    ></path>
-    <path
-      d="M7.5 10.5L4.5 7.5L7.5 4.5"
-      stroke="black"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    ></path>
-    <path
-      d="M19.5 7.5H4.5"
-      stroke="black"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    ></path>
-  </svg>
-);
-
-const AIIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path d="M5.75 7.25L5.75 3.25H4.25L4.25 7.25H3.25V8.75H6.75V7.25H5.75Z"></path>
-    <path d="M17.25 7.25H18.25V3.25H19.75V7.25H20.75V8.75H17.25V7.25Z"></path>
-    <path d="M10.25 13.25H11.25V3.25H12.75V13.25H13.75V14.75H10.25V13.25Z"></path>
-    <path d="M5.75 20.75L5.75 10.25H4.25L4.25 20.75H5.75Z"></path>
-    <path d="M19.75 20.75V10.25H18.25L18.25 20.75H19.75Z"></path>
-    <path d="M12.75 20.75L12.75 16.25H11.25L11.25 20.75H12.75Z"></path>
-  </svg>
-);
-
 const ProBadgeIcon = () => (
   <svg
     width="30"
@@ -148,30 +61,6 @@ const plan = {
   features: [
     { icon: <UploadIcon />, label: "Unlimited uploads" },
     { icon: <DownloadIcon />, label: "Offline listening downloads" },
-    {
-      icon: <BoostIcon />,
-      label: "Boost tracks and get 100+ listeners",
-      badge: "2X MONTH",
-      badgeStyle: "gold" as const,
-    },
-    {
-      icon: <MoneyIcon />,
-      label: "Distribute & monetize tracks",
-      badge: "2X MONTH",
-      badgeStyle: "gold" as const,
-    },
-    {
-      icon: <ReplaceIcon />,
-      label: "Replace tracks without losing stats",
-      badge: "3X MONTH",
-      badgeStyle: "gold" as const,
-    },
-    {
-      icon: <AIIcon />,
-      label: "AI Mastering",
-      badge: "1X MONTH",
-      badgeStyle: "gold" as const,
-    },
   ],
 };
 
@@ -210,17 +99,6 @@ function PlanCard() {
             >
               <span className="flex-shrink-0 text-black">{feature.icon}</span>
               <span className="flex-1">{feature.label}</span>
-              {"badge" in feature && feature.badge ? (
-                <span
-                  className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[0.625rem] font-bold tracking-[0.05em] ${
-                    feature.badgeStyle === "gold"
-                      ? "bg-[rgba(201,168,76,0.18)] text-[#c9a84c]"
-                      : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {feature.badge}
-                </span>
-              ) : null}
             </li>
           ))}
         </ul>

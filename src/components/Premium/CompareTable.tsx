@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -27,116 +26,10 @@ const txt = (value: string): CellValue => ({ type: "text", value });
 
 const sections: FeatureSection[] = [
   {
-    title: "Get heard",
-    rows: [
-      {
-        name: "Promote tracks",
-        description:
-          "Our algorithm analyzes and recommends your tracks to 100 or even 1000 listeners most likely to love it.",
-        free: NA,
-        artistPro: UNL,
-      },
-      {
-        name: "Get playlisted",
-        description:
-          "Subscribers that opt in can get featured on playlists like Buzzing followed by future fans, A&Rs, and more.",
-        free: NA,
-        artistPro: UNL,
-      },
-      {
-        name: "Distribute and get paid",
-        description:
-          "Earn royalties from 60+ social and streaming platforms like Spotify and TikTok.",
-        free: NA,
-        artistPro: UNL,
-      },
-      {
-        name: "Advanced audience stats",
-        description:
-          "See how listeners found your music, your top fans, and where they're located.",
-        free: txt("How fans found you"),
-        artistPro: UNL,
-      },
-    ],
-  },
-  {
     title: "Manage your music",
     rows: [
-      { name: "Upload limit", free: txt("2 hours"), artistPro: UNL },
-      {
-        name: "Free mastering credits",
-        free: NA,
-        artistPro: txt("3 tracks / month"),
-      },
-      {
-        name: "Replace tracks",
-        description:
-          "Swap out your track files without losing plays, likes, or comments.",
-        free: NA,
-        artistPro: UNL,
-      },
-      {
-        name: "Quiet mode",
-        description:
-          "Hide or turn off comments for tracks, and choose if you want to have plays and likes displayed.",
-        free: NA,
-        artistPro: AVL,
-      },
-    ],
-  },
-  {
-    title: "Build your brand",
-    rows: [
-      {
-        name: "Profile badge",
-        description: "Visible to fans and collaborators.",
-        free: NA,
-        artistPro: txt("ARTIST PRO"),
-      },
-      {
-        name: "Spotlight",
-        description:
-          "Have control over your first impression by spotlighting your best tracks at the top of your profile.",
-        free: NA,
-        artistPro: txt("5 tracks"),
-      },
-    ],
-  },
-  {
-    title: "Get paid",
-    rows: [
-      {
-        name: "Monetize on SoundCloud",
-        description:
-          "Get paid for streams on SoundCloud with fan-powered royalties, and keep 100% of your earnings.",
-        free: NA,
-        artistPro: UNL,
-      },
-      {
-        name: "Distribute and monetize on 60+ other platforms",
-        description:
-          "Get paid regularly for streams on Spotify, Apple Music, TikTok and more, and keep 100% of your earnings.",
-        free: NA,
-        artistPro: UNL,
-      },
-      {
-        name: "YouTube Content ID",
-        description: "Get paid when your music is used in YouTube videos.",
-        free: NA,
-        artistPro: AVL,
-      },
-    ],
-  },
-  {
-    title: "Special treatment",
-    rows: [
-      {
-        name: "Exclusive Partner Savings",
-        description:
-          "Exclusive offers & discounts from partners like Groover, Serato, and Tracklib.",
-        free: txt("Partial access"),
-        artistPro: txt("Full access"),
-      },
+      { name: "Unlimited uploads", free: txt("3 tracks"), artistPro: UNL },
+      { name: "Offline listening downloads", free: NA, artistPro: AVL },
     ],
   },
 ];
