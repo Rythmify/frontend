@@ -21,10 +21,11 @@ export default function PlayerControls() {
   } = usePlayerStore();
 
   return (
-    <div data-test="player-controls" className="flex items-center gap-0.5 sm:gap-1">
+    <div data-test="player-controls" className="flex items-center gap-1">
+
       {/* Previous */}
       <ControlBtn data-test="player-button-previous" onClick={previous}>
-        <FaStepBackward size={14} />
+        <FaStepBackward className="text-xl" />
       </ControlBtn>
 
       {/* Play / Pause */}
@@ -32,30 +33,29 @@ export default function PlayerControls() {
         data-test="player-button-play-pause"
         onClick={togglePlay}
         className="
-          w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0
-          bg-white text-black hover:bg-white/90
-          transition-all duration-150 cursor-pointer mx-1
+          w-9 h-9 rounded-full flex items-center justify-center shrink-0
+          bg-white text-black hover:bg-[#ccc]
+          transition-colors duration-150 cursor-pointer mx-1
         "
       >
-        {isPlaying ? (
-          <FaPause size={12} />
-        ) : (
-          <FaPlay size={12} className="ml-0.5" />
-        )}
+        {isPlaying
+          ? <FaPause className="text-md" />
+          : <FaPlay className="text-md ml-0.5" />
+        }
       </button>
 
       {/* Next */}
       <ControlBtn data-test="player-button-next" onClick={next}>
-        <FaStepForward size={14} />
+        <FaStepForward className="text-xl" />
       </ControlBtn>
-
+    
       {/* Shuffle */}
       <ControlBtn
         data-test="player-button-shuffle"
         onClick={toggleShuffle}
         active={isShuffle}
       >
-        <FaRandom size={14} />
+        <FaRandom className="text-md" />
       </ControlBtn>
 
       {/* Repeat */}
@@ -64,12 +64,12 @@ export default function PlayerControls() {
         onClick={toggleRepeat}
         active={repeatMode !== "none"}
       >
-        {repeatMode === "one" ? (
-          <MdRepeatOne size={18} />
-        ) : (
-          <MdRepeat size={18} />
-        )}
+        {repeatMode === "one"
+          ? <MdRepeatOne className="text-base" />
+          : <MdRepeat className="text-base" />
+        }
       </ControlBtn>
+
     </div>
   );
 }
@@ -90,12 +90,15 @@ function ControlBtn({
       data-test={dataTest}
       onClick={onClick}
       className={`
-        w-8 h-8 flex items-center justify-center
+        w-10 h-10 flex items-center justify-center rounded
         transition-colors duration-150 cursor-pointer
-        ${active ? "text-[#f50]" : "text-white hover:text-white/70"}
+        ${active
+          ? "text-accent hover:text-accent-hover"
+          : "text-white hover:text-text-muted"
+        }
       `}
     >
       {children}
     </button>
   );
-}
+}
