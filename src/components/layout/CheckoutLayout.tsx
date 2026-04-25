@@ -11,7 +11,7 @@ const CheckoutLayout = () => (
       <Outlet />
     </main>
 
-    <Footer />
+   
   </div>
 );
 
