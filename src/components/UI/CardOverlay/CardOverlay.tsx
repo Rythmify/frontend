@@ -38,6 +38,7 @@ export const AddToPlaylistIcon = (
 );
 
 const MENU_WIDTH_PX = 176; // w-44
+const MENU_ITEM_HEIGHT_PX = 40;
 
 // ─── Component ────────────────────────────────────────────
 
@@ -88,8 +89,10 @@ export default function CardOverlay({
   const handleOpenMore = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
+    const estimatedHeight = (moreMenuItems?.length ?? 1) * MENU_ITEM_HEIGHT_PX;
+    const flipUp = window.innerHeight - rect.bottom < estimatedHeight;
     setMenuPos({
-      top: rect.bottom,
+      top: flipUp ? rect.top - estimatedHeight : rect.bottom,
       left: rect.right - MENU_WIDTH_PX,
     });
     setShowMoreMenu((prev) => !prev);

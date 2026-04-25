@@ -125,6 +125,42 @@ export async function removePlaylistRepost(playlistId: string | number) {
   return data;
 }
 
+// ─── Mix Engagement ───────────────────────────────────────────────────────────
+
+export async function likeMix(mixId: string) {
+  const { data } = await axiosInstance.post(`/home/mixes/${mixId}/like`);
+  return data;
+}
+
+export async function unlikeMix(mixId: string) {
+  const { data } = await axiosInstance.delete(`/home/mixes/${mixId}/like`);
+  return data;
+}
+
+// ─── Genre Trending Engagement ────────────────────────────────────────────────
+
+export async function likeGenreTrending(genreId: string) {
+  const { data } = await axiosInstance.post(`/genres/${genreId}/like`);
+  return data;
+}
+
+export async function unlikeGenreTrending(genreId: string) {
+  const { data } = await axiosInstance.delete(`/genres/${genreId}/like`);
+  return data;
+}
+
+// ─── Station Engagement ───────────────────────────────────────────────────────
+
+export async function likeStation(artistId: string) {
+  const { data } = await axiosInstance.post(`/stations/${artistId}/like`);
+  return data;
+}
+
+export async function unlikeStation(artistId: string) {
+  const { data } = await axiosInstance.delete(`/stations/${artistId}/like`);
+  return data;
+}
+
 // ─── Comment Engagement ───────────────────────────────────────────────────────
 
 export async function likeComment(commentId: string | number) {
