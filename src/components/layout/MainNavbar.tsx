@@ -365,7 +365,7 @@ const MainNavbar = () => {
                 <DropdownLink label="Artist Membership" to="/premium"       onClick={closeAll} />
                 <div className="border-t border-border my-1" />
                 <DropdownLink label="Keyboard shortcuts" to="#"                      onClick={closeAll} />
-                <DropdownLink label="Subscription"      to="/settings"               onClick={closeAll} />
+                <DropdownLink label="Subscriptions"      to="/subscriptions"          onClick={closeAll} />
                 <DropdownLink label="Settings"          to="/settings"               onClick={closeAll} />
                 <div className="border-t border-border my-1" />
                 <button
