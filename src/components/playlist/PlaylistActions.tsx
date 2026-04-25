@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { HiUpload, HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
@@ -27,17 +27,14 @@ export default function PlaylistActions({
 }: PlaylistActionsProps) {
   const navigate = useNavigate();
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
-  const { addToQueue, queue } = usePlayerStore();
+  const { addToQueue } = usePlayerStore();
   const liked = isPlaylistLiked(playlist.playlist_id);
-  const isQueued =
-    playlist.tracks.length > 0 &&
-    playlist.tracks.some((track) =>
-      queue.some((queuedTrack) => queuedTrack.id === track.track_id),
-    );
 
   const [shareOpen, setShareOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [addedToQueue, setAddedToQueue] = useState(false);
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const parseDuration = (duration?: number | null): string => {
     if (typeof duration !== "number" || Number.isNaN(duration)) return "0:00";
@@ -68,7 +65,20 @@ export default function PlaylistActions({
     const tracks = playlist.tracks.map(toPlayerTrack);
     if (!tracks.length) return;
     tracks.forEach((track) => addToQueue(track));
+
+    setAddedToQueue(true);
+    if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+    queueTimerRef.current = setTimeout(() => {
+      setAddedToQueue(false);
+      queueTimerRef.current = null;
+    }, 3000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+    };
+  }, []);
 
   return (
     <>
@@ -132,7 +142,7 @@ export default function PlaylistActions({
           tooltip="Add to Next Up"
           data-test="button-add-next-up"
           onClick={handleAddToNextUp}
-          active={isQueued}
+          active={addedToQueue}
         >
           <LuListEnd className="text-[18px]" />
         </ActionButton>
