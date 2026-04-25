@@ -64,6 +64,9 @@ interface PlayerState {
   toggleRepeat: () => void;
   toggleLike: () => void;
   addToQueue: (track: Track) => void;
+  addNextInQueue: (track: Track) => void;
+  removeFromQueue: (index: number) => void;
+  reorderQueue: (fromIndex: number, toIndex: number) => void;
   reset: () => void;
   loadFromBackend: () => Promise<void>;
 }
@@ -199,6 +202,44 @@ export const usePlayerStore = create<PlayerState>()(
 
       addToQueue: (track) =>
         set((s) => ({ queue: [...s.queue, track] })),
+
+      addNextInQueue: (track) =>
+        set((s) => {
+          const next = s.queueIndex + 1;
+          const newQueue = [
+            ...s.queue.slice(0, next),
+            track,
+            ...s.queue.slice(next),
+          ];
+          return { queue: newQueue };
+        }),
+
+      removeFromQueue: (index) =>
+        set((s) => {
+          const newQueue = s.queue.filter((_, i) => i !== index);
+          const newIndex =
+            index < s.queueIndex
+              ? s.queueIndex - 1
+              : Math.min(s.queueIndex, newQueue.length - 1);
+          return { queue: newQueue, queueIndex: Math.max(0, newIndex) };
+        }),
+
+      reorderQueue: (fromIndex, toIndex) =>
+        set((s) => {
+          const newQueue = [...s.queue];
+          const [moved] = newQueue.splice(fromIndex, 1);
+          newQueue.splice(toIndex, 0, moved);
+          // Keep queueIndex pointing at the same track after reorder
+          let newQueueIndex = s.queueIndex;
+          if (fromIndex === s.queueIndex) {
+            newQueueIndex = toIndex;
+          } else if (fromIndex < s.queueIndex && toIndex >= s.queueIndex) {
+            newQueueIndex = s.queueIndex - 1;
+          } else if (fromIndex > s.queueIndex && toIndex <= s.queueIndex) {
+            newQueueIndex = s.queueIndex + 1;
+          }
+          return { queue: newQueue, queueIndex: newQueueIndex };
+        }),
 
       reset: () =>
         set({
