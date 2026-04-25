@@ -356,7 +356,7 @@ export default function PlaylistComponent({
     const wasLiked = liked;
     // Update local count optimistically
     setLikeCount((p) => (wasLiked ? p - 1 : p + 1));
-    
+
     // Map minimal playlist data for the store
     const playlistData: PlaylistCardData = {
       id: playlist.id,
@@ -364,10 +364,16 @@ export default function PlaylistComponent({
       owner: playlist.creatorName,
       coverUrl: playlist.coverUrl ?? firstTrack?.coverUrl ?? null,
       isPrivate: playlist.isPrivate || false,
-      isLiked: !wasLiked
+      isLiked: !wasLiked,
     };
-    
-    togglePlaylist(playlistData);
+
+    try {
+      await togglePlaylist(playlistData);
+    } catch (err) {
+      // Revert local count on failure
+      setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
+      console.error("Failed to toggle playlist like:", err);
+    }
   };
 
   const handleRepost = async () => {

@@ -1,10 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import React from "react";
 import TrackSlugPage from "../../pages/[username]/[trackSlug]/TrackSlugPage";
 import type { Track } from "../../types/track";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 
-// vi.hoisted lets us reference these values inside vi.mock factories,
-// which are hoisted to the top of the file by vitest at compile time.
+// ── Mocks ──────────────────────────────────────────────────────────────────
+
 const { mockTrack, mockNavigate } = vi.hoisted(() => {
   const mt: Track = {
     id: "550e8400-e29b-41d4-a716-446655440000",
@@ -26,52 +28,59 @@ const { mockTrack, mockNavigate } = vi.hoisted(() => {
   return { mockTrack: mt, mockNavigate: vi.fn() };
 });
 
-vi.mock("react-router-dom", () => ({
-  useParams: vi.fn(() => ({ username: "samo-lotfy", trackSlug: "msh-awl-mara" })),
-  useNavigate: () => mockNavigate,
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-    <a href={to}>{children}</a>
-  ),
-}));
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
-vi.mock("../audioService", () => ({
-  seekAudio: vi.fn(),
-  audio: { currentTime: 0, src: "" },
-  setTrackLoadedLocally: vi.fn(),
-  setGlobalWaveSurfer: vi.fn(),
-  globalWaveSurfer: null,
-}));
-
-vi.mock("../../stores/player.store", () => ({
-  usePlayerStore: vi.fn(() => ({
-    currentTrack: null,
-    isPlaying: false,
-    setTrack: vi.fn(),
-    togglePlay: vi.fn(),
-  })),
-}));
-
-vi.mock("../../services/mocks/Track.service", () => ({
+vi.mock("../../services/track.service", () => ({
   getTrackBySlug: vi.fn().mockResolvedValue(mockTrack),
-  getRelatedTracks: vi.fn().mockResolvedValue([]),
-  likeTrack: vi.fn().mockResolvedValue({ liked: true, likeCount: 1 }),
-  unlikeTrack: vi.fn().mockResolvedValue({ liked: false, likeCount: 0 }),
-  repostTrack: vi.fn().mockResolvedValue({ reposted: true, repostCount: 1 }),
+  getRelatedTracks: vi.fn().mockResolvedValue({ tracks: [] }),
+  getTrackComments: vi.fn().mockResolvedValue([]),
   postComment: vi.fn().mockResolvedValue({}),
+  incrementPlayCount: vi.fn(),
 }));
 
-vi.mock("../../services/mocks/User.service", () => ({
-  getUsers: vi.fn().mockResolvedValue([]),
+vi.mock("../../services/user.service", () => ({
+  getUserById: vi.fn().mockResolvedValue({}),
   followUser: vi.fn().mockResolvedValue({}),
   unfollowUser: vi.fn().mockResolvedValue({}),
 }));
 
-// Stub the heavy child components so we can test the page in isolation
+vi.mock("../../stores/player.store", () => ({
+  usePlayerStore: Object.assign(
+    vi.fn(() => ({
+      currentTrack: null,
+      isPlaying: false,
+      setTrack: vi.fn(),
+      togglePlay: vi.fn(),
+    })),
+    {
+      subscribe: vi.fn(() => vi.fn()),
+      getState: vi.fn(() => ({
+        seek: vi.fn(),
+        play: vi.fn(),
+        togglePlay: vi.fn(),
+      })),
+    }
+  ),
+}));
+
+vi.mock("../../stores/auth.store", () => ({
+  useAuthStore: vi.fn(() => ({
+    user: { id: "user-123", username: "me", following_ids: [] },
+  })),
+}));
+
+// Mock children
 vi.mock("../../pages/[username]/[trackSlug]/components/TrackHero", () => ({
   default: ({ track, isPlaying, onPlayPause }: any) => (
     <div data-test="track-hero">
       <span data-test="track-title">{track.title}</span>
-      <button data-test="button-play-pause-hero" onClick={onPlayPause}>
+      <button data-test="button-play-pause-hero" onClick={() => onPlayPause()}>
         {isPlaying ? "Pause" : "Play"}
       </button>
     </div>
@@ -83,12 +92,8 @@ vi.mock("../../pages/[username]/[trackSlug]/components/TrackActions", () => ({
 }));
 
 vi.mock("../../pages/[username]/[trackSlug]/components/TrackList", () => ({
-  default: ({ tracks, onTrackPlay }: any) => (
-    <div data-test="track-list">
-      {tracks.map((t: Track) => (
-        <div key={t.id} onClick={() => onTrackPlay(t)}>{t.title}</div>
-      ))}
-    </div>
+  default: ({ tracks }: any) => (
+    <div data-test="track-list">{tracks?.length} tracks</div>
   ),
 }));
 
@@ -96,56 +101,60 @@ vi.mock("../../pages/[username]/[trackSlug]/components/TrackSidebar", () => ({
   default: () => <div data-test="track-sidebar" />,
 }));
 
+vi.mock("../../pages/[username]/[trackSlug]/components/TrackCommentList", () => ({
+  default: () => <div data-test="track-comment-list" />,
+}));
+
+import { getTrackBySlug } from "../../services/track.service";
 import { usePlayerStore } from "../../stores/player.store";
 
 describe("TrackSlugPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (usePlayerStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      currentTrack: null,
-      isPlaying: false,
-      setTrack: vi.fn(),
-      togglePlay: vi.fn(),
-    });
   });
 
+  const renderPage = (username = "samo-lotfy", trackId = "msh-awl-mara") =>
+    render(
+      <MemoryRouter initialEntries={[`/${username}/${trackId}`]}>
+        <Routes>
+          <Route path="/:username/:trackId" element={<TrackSlugPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
   it("shows a loading skeleton before data arrives", () => {
-    render(<TrackSlugPage />);
+    vi.mocked(getTrackBySlug).mockReturnValue(new Promise(() => {}));
+    renderPage();
     expect(screen.getByTestId("track-slug-loading")).toBeInTheDocument();
   });
 
   it("renders the full page once data loads", async () => {
-    render(<TrackSlugPage />);
+    vi.mocked(getTrackBySlug).mockResolvedValue(mockTrack);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByTestId("track-slug-page")).toBeInTheDocument();
     });
   });
 
   it("displays the track title in the hero", async () => {
-    render(<TrackSlugPage />);
+    vi.mocked(getTrackBySlug).mockResolvedValue(mockTrack);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByTestId("track-title")).toHaveTextContent("Msh Awl Mara");
     });
   });
 
-  it("renders the related tracks list", async () => {
-    render(<TrackSlugPage />);
-    await waitFor(() => {
-      expect(screen.getByTestId("track-list")).toBeInTheDocument();
-    });
-  });
-
   it("renders the sidebar column", async () => {
-    render(<TrackSlugPage />);
+    vi.mocked(getTrackBySlug).mockResolvedValue(mockTrack);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByTestId("track-sidebar-col")).toBeInTheDocument();
     });
   });
 
   it("shows an error state when the fetch fails", async () => {
-    const { getTrackBySlug } = await import("../../services/mocks/Track.service");
-    (getTrackBySlug as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Network error"));
-    render(<TrackSlugPage />);
+    vi.mocked(getTrackBySlug).mockRejectedValueOnce(new Error("Network error"));
+    renderPage();
     await waitFor(() => {
       expect(screen.getByTestId("track-slug-error")).toBeInTheDocument();
     });

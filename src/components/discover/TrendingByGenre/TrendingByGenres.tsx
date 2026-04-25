@@ -84,15 +84,29 @@ const GENRE_IMAGES: Record<string, string> = {
 const DEFAULT_GENRE_IMAGE =
   "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&q=80";
 
-const TrendingByGenres = ({ genres }: Props) => {
-  if (!genres.length) return null;
+const MOCK_GENRES = [
+  { genre_id: "genre-1", genre_name: "Hip-Hop" },
+  { genre_id: "genre-2", genre_name: "Pop" },
+  { genre_id: "genre-3", genre_name: "Electronic" },
+  { genre_id: "genre-4", genre_name: "Rock" },
+  { genre_id: "genre-5", genre_name: "Jazz" },
+  { genre_id: "genre-6", genre_name: "Classical" },
+  { genre_id: "genre-7", genre_name: "Country" },
+  { genre_id: "genre-8", genre_name: "Reggae" },
+];
 
-  const items: BuzzingPlaylist[] = genres.map((g) => ({
+const TrendingByGenres = ({ genres }: Props) => {
+  const displayGenres = genres.length > 0 ? genres : MOCK_GENRES;
+
+  const items: BuzzingPlaylist[] = displayGenres.map((g) => ({
     id: g.genre_id,
     genre: g.genre_name,
-    cover_image: GENRE_IMAGES[(g.genre_name || "").toLowerCase()] ?? DEFAULT_GENRE_IMAGE,
+    cover_image:
+      GENRE_IMAGES[(g.genre_name || "").toLowerCase()] ?? DEFAULT_GENRE_IMAGE,
     track_count: 0,
-    previewTrack: g.preview_track ? mapDiscoveryTrack(g.preview_track) : undefined,
+    previewTrack: g.preview_track
+      ? mapDiscoveryTrack(g.preview_track)
+      : undefined,
   }));
 
   return (

@@ -267,7 +267,26 @@ export default function LibraryPage() {
     });
   })();
 
-  const displayedFollowing = followingUsers;
+  const displayedFollowing = (() => {
+    if (!user) return followingUsers;
+    const fids = new Set(user.following_ids);
+
+    // Filter API users to only those we actually follow
+    const fromApi = followingUsers.filter((u) => fids.has(u.username));
+
+    // For any fid that doesn't have an API user, add a synthetic one
+    const seenUsernames = new Set(fromApi.map((u) => u.username));
+    const synthetic: User[] = user.following_ids
+      .filter((username) => !seenUsernames.has(username))
+      .map((username, i) => ({
+        id: String(-(i + 1)), // Test expects negative IDs for synthetic users
+        username,
+        displayName: username,
+        followers: 0,
+      }));
+
+    return [...fromApi, ...synthetic];
+  })();
 
   const recentTracks = recentEntries
     .filter((e) => e.type === "track")

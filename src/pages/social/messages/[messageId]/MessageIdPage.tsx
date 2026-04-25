@@ -16,7 +16,7 @@ import { useMessagingStore } from '@/stores/messaging.store';
 
 export default function MessageIdPage() {
   const navigate = useNavigate();
-  const { conversationId } = useParams()  
+  const { messageId } = useParams<{ messageId: string }>();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -73,8 +73,8 @@ export default function MessageIdPage() {
         if (items.length === 0) return;
 
         // 👇 open conversation matching URL param, fallback to first
-        const target = conversationId
-          ? items.find((c) => c.id === conversationId) ?? items[0]
+        const target = messageId
+          ? items.find((c) => c.id === messageId || c.participant.id === messageId) ?? items[0]
           : items[0];
 
         loadConversation(target);
@@ -165,7 +165,7 @@ export default function MessageIdPage() {
       const remaining = prev.filter((c) => c.id !== deletedId);
       if (remaining.length > 0) {
         const next = remaining[0];
-        navigate(`/messages/${next.id}`); 
+        navigate(`/messages/${next.participant.id}`); 
         loadConversation(next);
       } else {
         setActiveConvId(null);
@@ -178,7 +178,7 @@ export default function MessageIdPage() {
 
   // 4. On conversation selected from list
   const handleSelectConversation = (conv: Conversation) => {
-    navigate(`/messages/${conv.id}`); 
+    navigate(`/messages/${conv.participant.id}`); 
     loadConversation(conv);
     setShowMobileChat(true);
   };

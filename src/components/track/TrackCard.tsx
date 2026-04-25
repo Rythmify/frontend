@@ -481,6 +481,7 @@ export default function TrackCard({
   const [isReposted, setIsReposted] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [addedToQueue, setAddedToQueue] = useState(false);
+  const [showMore, setShowMore] = useState(false);
 
   const [commentText, setCommentText] = useState("");
   const [showCommentBar, setShowCommentBar] = useState(false);
@@ -508,6 +509,20 @@ export default function TrackCard({
     };
     fetchComments();
   }, [track.id]);
+
+  // Click outside more dropdown
+  const moreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setShowMore(false);
+      }
+    };
+    if (showMore) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showMore]);
 
   const handlePlayPause = () => {
     if (isActive) {
@@ -561,7 +576,7 @@ export default function TrackCard({
       else await engagementService.repostTrack(track.id);
     } catch (err) {
       setIsReposted(wasReposted);
-      setRepostCount(prev => wasReposted ? prev - 1 : prev + 1);
+      setRepostCount(prev => wasReposted ? prev + 1 : prev - 1);
       console.error("Repost toggle failed", err);
     }
   };
@@ -620,7 +635,7 @@ export default function TrackCard({
           <div className="flex-1 min-w-0">
              <div className="flex items-center gap-2 text-[10px] sm:text-xs text-white/50 mb-0.5 sm:mb-1">
                 <div className="flex items-center gap-2">
-                  <Link to={`/${track.artistUsername}`} className="hover:text-white transition-colors truncate">
+                  <Link to={`/${track.artistUsername}`} data-test="track-card-artist-link" className="hover:text-white transition-colors truncate">
                     {track.artistName}
                   </Link>
                   <FollowButton 
@@ -632,19 +647,27 @@ export default function TrackCard({
                 {repostedBy && (
                   <span className="hidden sm:flex items-center gap-1">
                     <BiRepost size={14} className="text-[#f50]" />
-                    reposted by <span className="text-white/80">{repostedBy}</span>
+                    reposted by <span data-test="track-card-reposted-by-link" className="text-white/80">{repostedBy}</span>
                   </span>
                 )}
              </div>
              <Link 
               to={`/${track.artistUsername}/${track.trackSlug}`}
+              data-test="track-card-title-link"
               className="block text-sm sm:text-lg font-bold text-white hover:text-[#f50] transition-colors truncate"
              >
                {track.title}
              </Link>
           </div>
-          <div className="text-[10px] sm:text-xs text-white/40 whitespace-nowrap pt-1">
-            {track.postedAt}
+          <div className="flex flex-col items-end gap-1">
+            <div data-test="track-card-posted-at" className="text-[10px] sm:text-xs text-white/40 whitespace-nowrap pt-1">
+              {track.postedAt}
+            </div>
+            {track.genre && (
+              <span data-test="track-card-genre" className="bg-white/10 text-white/60 text-[9px] uppercase px-1.5 py-0.5 rounded-full">
+                {track.genre}
+              </span>
+            )}
           </div>
         </div>
 
@@ -691,43 +714,99 @@ export default function TrackCard({
         {/* Footer Actions */}
         <div className="flex flex-wrap items-center justify-between gap-y-3 mt-auto">
           <div className="flex flex-wrap items-center gap-2">
-            <ScBtn 
-              icon={<FaHeart size={14} />} 
-              label={fmtN(likeCount)} 
-              active={isLiked} 
-              onClick={handleLike} 
-              tooltip="Like"
-            />
-            <ScBtn 
-              icon={<BiRepost size={20} />} 
-              label={fmtN(repostCount)} 
-              active={isReposted} 
-              onClick={handleRepost} 
-              tooltip="Repost"
-            />
-            <ScBtn icon={<HiArrowUpOnSquare size={16} />} tooltip="Share" onClick={() => setShowShare(true)} />
-            <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} />
+            {!isOwner ? (
+              <>
+                <ScBtn 
+                  icon={<FaHeart size={14} />} 
+                  label={fmtN(likeCount)} 
+                  active={isLiked} 
+                  onClick={handleLike} 
+                  tooltip="Like"
+                  data-test="track-card-btn-like"
+                />
+                <ScBtn 
+                  icon={<BiRepost size={20} />} 
+                  label={fmtN(repostCount)} 
+                  active={isReposted} 
+                  onClick={handleRepost} 
+                  tooltip="Repost"
+                  data-test="track-card-btn-repost"
+                />
+              </>
+            ) : (
+              <>
+                <ScBtn 
+                  icon={<LuPencil size={14} />} 
+                  label="Edit" 
+                  onClick={onEdit} 
+                  tooltip="Edit Track"
+                  data-test="track-card-btn-edit"
+                />
+                <ScBtn 
+                  icon={<TbUpload size={16} />} 
+                  label="Replace File" 
+                  onClick={onReplaceFile} 
+                  tooltip="Replace Audio File"
+                  data-test="track-card-btn-replace"
+                />
+              </>
+            )}
+            <ScBtn icon={<HiArrowUpOnSquare size={16} />} tooltip="Share" onClick={() => setShowShare(true)} data-test="track-card-btn-share" />
+            <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} data-test="track-card-btn-copy" />
             <ScBtn
               icon={<MdQueueMusic size={16} />}
               tooltip={addedToQueue ? "Added!" : "Add to Next up"}
               active={addedToQueue}
+              data-test="track-card-btn-queue"
               onClick={() => {
                 addToQueue(track);
                 setAddedToQueue(true);
                 setTimeout(() => setAddedToQueue(false), 2000);
               }}
             />
+            
+            <div className="relative" ref={moreRef}>
+              <ScBtn 
+                icon={<HiDotsHorizontal size={16} />} 
+                tooltip="More" 
+                data-test="track-card-btn-more"
+                onClick={() => setShowMore(!showMore)}
+              />
+              {showMore && (
+                <div 
+                  data-test="track-card-more-dropdown"
+                  className="absolute bottom-full left-0 mb-2 w-48 bg-[#222] border border-white/10 rounded shadow-xl z-50 py-1"
+                >
+                  <button 
+                    onClick={() => { onAddToPlaylist?.(); setShowMore(false) }}
+                    className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/5 flex items-center gap-2"
+                  >
+                    <MdPlaylistAdd size={18} /> Add to playlist
+                  </button>
+                  {isOwner && (
+                    <button 
+                      onClick={() => { onDelete?.(); setShowMore(false) }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-white/5 flex items-center gap-2"
+                    >
+                      <LuTrash2 size={16} /> Delete track
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
             <button 
                onClick={() => setShowDiscussion(!showDiscussion)}
+               data-test="track-card-btn-comments"
                className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${showDiscussion ? 'text-[#f50]' : 'text-white/60 hover:text-white'}`}
             >
               <MdComment size={16} />
-              {comments.length} Comments
+              <span data-test="track-card-comment-count">{comments.length}</span> Comments
             </button>
           </div>
 
           <div className="flex items-center gap-4 text-xs text-white/40">
-            <span className="flex items-center gap-1">
+            <span data-test="track-card-play-count" className="flex items-center gap-1">
               <FaPlayCount size={10} />
               {fmtN(playCount)}
             </span>

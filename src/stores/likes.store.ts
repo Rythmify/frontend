@@ -42,12 +42,12 @@ interface LikesStore {
   likedMixes: LikedMix[];
   likedGenres: LikedGenre[];
 
-  toggleTrack: (track: Track) => void;
-  toggleStation: (station: Station) => void;
-  togglePlaylist: (playlist: PlaylistCardData) => void;
-  toggleAlbum: (album: Playlist) => void;
-  toggleMix: (mix: LikedMix) => void;
-  toggleGenre: (genre: LikedGenre) => void;
+  toggleTrack: (track: Track) => Promise<void>;
+  toggleStation: (station: Station) => Promise<void>;
+  togglePlaylist: (playlist: PlaylistCardData) => Promise<void>;
+  toggleAlbum: (album: Playlist) => Promise<void>;
+  toggleMix: (mix: LikedMix) => Promise<void>;
+  toggleGenre: (genre: LikedGenre) => Promise<void>;
 
   isTrackLiked: (id: number | string) => boolean;
   isStationLiked: (id: string) => boolean;
@@ -81,7 +81,7 @@ export const useLikesStore = create<LikesStore>()(
             : [track, ...s.likedTracks],
         }));
         const call = isLiked ? unlikeTrack(track.id) : likeTrack(track.id);
-        call.catch((err) => {
+        return call.catch((err) => {
           const status = err?.response?.status;
           if (isLiked && status === 404) return;
           if (!isLiked && status === 409) return;
@@ -90,6 +90,7 @@ export const useLikesStore = create<LikesStore>()(
               ? [track, ...s.likedTracks]
               : s.likedTracks.filter((t) => String(t.id) !== String(track.id)),
           }));
+          throw err;
         });
       },
 
@@ -102,12 +103,13 @@ export const useLikesStore = create<LikesStore>()(
         }));
         const artistId = station.seedArtist.id;
         const call = isLiked ? unlikeStationApi(artistId) : likeStationApi(artistId);
-        call.catch(() => {
+        return call.catch((err) => {
           set((s) => ({
             likedStations: isLiked
               ? [station, ...s.likedStations]
               : s.likedStations.filter((st) => st.id !== station.id),
           }));
+          throw err;
         });
       },
 
@@ -121,7 +123,14 @@ export const useLikesStore = create<LikesStore>()(
         const call = isLiked
           ? unlikePlaylist(playlist.id)
           : likePlaylist(playlist.id);
-        call.catch(() => {});
+        return call.catch((err) => {
+          set((s) => ({
+            likedPlaylists: isLiked
+              ? [playlist, ...s.likedPlaylists]
+              : s.likedPlaylists.filter((p) => p.id !== playlist.id),
+          }));
+          throw err;
+        });
       },
 
       toggleMix: (mix) => {
@@ -133,12 +142,13 @@ export const useLikesStore = create<LikesStore>()(
             : [mix, ...s.likedMixes],
         }));
         const call = isLiked ? unlikeMix(mixId) : likeMix(mixId);
-        call.catch(() => {
+        return call.catch((err) => {
           set((s) => ({
             likedMixes: isLiked
               ? [mix, ...s.likedMixes]
               : s.likedMixes.filter((m) => (m.mix_id ?? m.id) !== mixId),
           }));
+          throw err;
         });
       },
 
@@ -152,12 +162,13 @@ export const useLikesStore = create<LikesStore>()(
         const call = isLiked
           ? unlikeGenreTrending(genre.id)
           : likeGenreTrending(genre.id);
-        call.catch(() => {
+        return call.catch((err) => {
           set((s) => ({
             likedGenres: isLiked
               ? [genre, ...s.likedGenres]
               : s.likedGenres.filter((g) => g.id !== genre.id),
           }));
+          throw err;
         });
       },
 
@@ -173,7 +184,7 @@ export const useLikesStore = create<LikesStore>()(
         const call = isLiked
           ? unlikeAlbum(album.playlist_id)
           : likeAlbum(album.playlist_id);
-        call.catch((err) => {
+        return call.catch((err) => {
           const status = err?.response?.status;
           if (isLiked && status === 404) return;
           if (!isLiked && status === 409) return;
@@ -184,6 +195,7 @@ export const useLikesStore = create<LikesStore>()(
                   (a) => a.playlist_id !== album.playlist_id,
                 ),
           }));
+          throw err;
         });
       },
 
