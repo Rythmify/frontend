@@ -217,7 +217,7 @@ function ArtistCard({ artist }: { artist: MockUser }) {
       {/* Follow / Following button */}
       <FollowButton 
         username={artist.username} 
-        userId={artist.id} 
+        userId={String(artist.id)} 
         initialIsFollowing={artist.isFollowing}
         onFollowChange={handleFollowChange}
         className="shrink-0 min-w-[80px]"

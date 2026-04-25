@@ -105,7 +105,7 @@ export const useHistoryStore = create<HistoryStore>()(
 
       clearHistory: async () => {
         set({ entries: [] });
-        const { axiosInstance } = await import("@/services/api/axiosInstance");
+        const { default: axiosInstance } = await import("@/services/api/axiosInstance");
         try {
           await axiosInstance.delete("/me/history");
         } catch (e) {

@@ -116,7 +116,7 @@ function TrackItem({
       waveformData: [],
       audioUrl: track.audio_url ?? "",
       isPrivate: !track.is_public,
-      artistId: track.artist_id || track.user_id || "",
+      artistId: track.artist_id || "",
     };
 
     setTrack(trackForPlayer);

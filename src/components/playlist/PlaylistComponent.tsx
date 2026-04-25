@@ -363,7 +363,7 @@ export default function PlaylistComponent({
       title: playlist.title,
       owner: playlist.creatorName,
       coverUrl: playlist.coverUrl ?? firstTrack?.coverUrl ?? null,
-      isPrivate: !playlist.is_public,
+      isPrivate: playlist.isPrivate || false,
       isLiked: !wasLiked
     };
     
