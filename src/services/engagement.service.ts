@@ -83,6 +83,24 @@ export async function getMyLikedPlaylistsApi(params?: {
   };
 }
 
+// ─── Album Engagement ─────────────────────────────────────────────────────────
+
+/**
+ * POST /albums/{album_id}/like
+ */
+export async function likeAlbum(albumId: string) {
+  const { data } = await axiosInstance.post(`/albums/${albumId}/like`);
+  return data;
+}
+
+/**
+ * DELETE /albums/{album_id}/like
+ */
+export async function unlikeAlbum(albumId: string) {
+  const { data } = await axiosInstance.delete(`/albums/${albumId}/like`);
+  return data;
+}
+
 // ─── Playlist Engagement ──────────────────────────────────────────────────────
 
 export async function likePlaylist(playlistId: string | number) {
@@ -107,11 +125,47 @@ export async function removePlaylistRepost(playlistId: string | number) {
   return data;
 }
 
+// ─── Mix Engagement ───────────────────────────────────────────────────────────
+
+export async function likeMix(mixId: string) {
+  const { data } = await axiosInstance.post(`/home/mixes/${mixId}/like`);
+  return data;
+}
+
+export async function unlikeMix(mixId: string) {
+  const { data } = await axiosInstance.delete(`/home/mixes/${mixId}/like`);
+  return data;
+}
+
+// ─── Genre Trending Engagement ────────────────────────────────────────────────
+
+export async function likeGenreTrending(genreId: string) {
+  const { data } = await axiosInstance.post(`/genres/${genreId}/like`);
+  return data;
+}
+
+export async function unlikeGenreTrending(genreId: string) {
+  const { data } = await axiosInstance.delete(`/genres/${genreId}/like`);
+  return data;
+}
+
+// ─── Station Engagement ───────────────────────────────────────────────────────
+
+export async function likeStation(artistId: string) {
+  const { data } = await axiosInstance.post(`/stations/${artistId}/like`);
+  return data;
+}
+
+export async function unlikeStation(artistId: string) {
+  const { data } = await axiosInstance.delete(`/stations/${artistId}/like`);
+  return data;
+}
+
 // ─── Comment Engagement ───────────────────────────────────────────────────────
 
 export async function likeComment(commentId: string | number) {
   const { data } = await axiosInstance.post(`/comments/${commentId}/like`);
-  return data;
+  return data.data;
 }
 
 export async function unlikeComment(commentId: string | number) {

@@ -48,7 +48,14 @@ function normalizeTrack(raw: any): Track {
     artistName:
       raw.artist_name || raw.user?.display_name || raw.artistName || "",
     artistUsername:
-      raw.user?.username || raw.user_id || raw.artistUsername || "",
+      raw.user?.username ||
+      raw.artist_username ||
+      raw.artistUsername ||
+      raw.user_id ||
+      raw.artist_id ||
+      "",
+    // FIX: map slug field from API, fallback to id to ensure valid navigation URL
+    trackSlug: raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
     // FIX: format ISO timestamp into human-readable string
     postedAt: formatPostedAt(raw.created_at || raw.postedAt || ""),
     playCount: raw.play_count ?? raw.playCount ?? 0,
@@ -61,7 +68,6 @@ function normalizeTrack(raw: any): Track {
     isReposted:
       raw.is_reposted_by_me ?? raw.is_reposted ?? raw.isReposted ?? false,
     artistId: raw.user_id || raw.artistId || "",
-    trackSlug: raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
     duration,
   } as Track;
 }
@@ -175,11 +181,13 @@ export async function getRelatedTracks(
   );
 
   const payload = (data as any)?.data ?? data;
-  const relatedItems = Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload?.items)
-      ? payload.items
-      : [];
+  const relatedItems = Array.isArray(payload?.tracks)
+    ? payload.tracks
+    : Array.isArray(payload?.data)
+      ? payload.data
+      : Array.isArray(payload?.items)
+        ? payload.items
+        : [];
 
   return {
     referenceTrack: normalizeTrack(
@@ -202,7 +210,7 @@ export async function getTrackComments(
   const { data } = await axiosInstance.get(`/tracks/${trackId}/comments`, {
     params: { limit, offset },
   });
-  return data?.data?.items ?? [];
+  return data?.data?.items ?? data?.data ?? [];
 }
 
 /**

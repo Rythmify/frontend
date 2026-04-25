@@ -5,7 +5,6 @@ import PlaylistActionsForYou from "@/components/playlist/Made for you/PlaylistAc
 import PlaylistHero from "@/components/playlist/PlaylistHero";
 import TrackList from "@/components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
-import { getHome } from "@/services/api/discover.service";
 import {
   getStationTracks,
   type PlaylistTrackItem,
@@ -86,30 +85,30 @@ export default function StationSlugPage() {
       setError(null);
 
       try {
-        const home = await getHome();
-        if (cancelled) return;
-
-        const stations = home.discover_with_stations ?? [];
-        const stationId = stationSlug.split(":").at(-1) ?? stationSlug;
-        const stationSlugPart = stationSlug.split(":")[0] ?? stationSlug;
-        const found = stations.find(
-          (s) =>
-            s.id === stationId ||
-            s.artist_id === stationId ||
-            slugify(s.name) === stationSlugPart ||
-            slugify(s.artist_name) === stationSlugPart,
-        );
-
-        if (!found) throw new Error("Station not found");
-
-        const stationRes = await getStationTracks(found.artist_id);
+        const parts = stationSlug.split(":");
+        const primaryId = parts.at(-1) || stationSlug;
+        
+        let stationRes;
+        try {
+          stationRes = await getStationTracks(primaryId);
+        } catch (err) {
+          // If we have a complex slug (e.g. slug:id or id1:id2), try the other part as fallback
+          if (parts.length > 1) {
+            stationRes = await getStationTracks(parts[0]);
+          } else {
+            throw err;
+          }
+        }
+        
         if (cancelled) return;
 
         setStation(stationRes.station);
         setStationTracks(stationRes.tracks);
 
         try {
-          const artist = await getUserById(found.artist_id);
+          // Use artist_id from station if available, otherwise fallback to the ID we used
+          const artistId = stationRes.station.artist_id || primaryId;
+          const artist = await getUserById(artistId);
           if (!cancelled) setSeedArtist(artist);
         } catch {
           if (!cancelled) setSeedArtist(null);

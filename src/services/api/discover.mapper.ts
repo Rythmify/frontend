@@ -120,18 +120,20 @@ export function mapPersonalMix(api: PersonalMix): Mix {
 export function mapDiscoveryStation(api: DiscoveryStation): Station {
   return {
     id: api.id,
-    name: api.name,
+    name: api.artist_name,
     seedArtist: {
       id: api.artist_id,
       displayName: api.artist_name,
+      avatarUrl: api.images.center ?? undefined,
     },
     artists: [
-      { avatarUrl: api.images?.left ?? undefined, displayName: "" },
-      { avatarUrl: api.images?.center ?? undefined, displayName: api.artist_name },
-      { avatarUrl: api.images?.right ?? undefined, displayName: "" },
+      { avatarUrl: api.images.left ?? undefined, displayName: "" },
+      { avatarUrl: api.images.center ?? undefined, displayName: api.artist_name },
+      { avatarUrl: api.images.right ?? undefined, displayName: "" },
     ],
-    coverUrl: null,
+    coverUrl: api.images.center ?? null,
     trackCount: api.track_count,
+    previewTrack: mapDiscoveryTrack(api.preview_track),
   };
 }
 

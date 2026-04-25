@@ -65,6 +65,9 @@ const StationSlugPage = lazy(
 const MoreOfLikeSlugPage = lazy(
   () => import("@/pages/you/sets/MoreOfLikeSlugPage"),
 );
+const CuratedForYouSlugPage = lazy(
+  () => import("@/pages/you/sets/CuratedForYouSlugPage"),
+);
 
 // Feed
 const FeedPage = lazy(() => import("@/pages/feed/FeedPage"));
@@ -152,9 +155,9 @@ const VinylPage = lazy(() => import("@/pages/creator/artists/vinyl/VinylPage"));
 const CommentsArtistPage = lazy(
   () => import("@/pages/creator/artists/comments/ArtistsCommentsPage"),
 );
-const CheckoutPage = lazy(
-  () => import("@/pages/creator/checkout/CheckoutPage"),
-);
+const CheckoutPage = lazy(() => import("@/pages/creator/checkout/CheckoutPage"));
+const PaymentPage = lazy(() => import("@/pages/creator/checkout/PaymentPage"));
+const PlanPage = lazy(() => import("@/pages/premium/PlanPage"));
 
 // Not Found
 const NotFound = lazy(() => import("@/pages/not-found/NotFound"));
@@ -186,6 +189,12 @@ export const router = createBrowserRouter([
   {
     element: <LandingLayout />,
     children: [{ path: "/", element: <Lazy component={HomePage} /> }],
+  },
+
+  // 1b. Premium plans
+  {
+    path: "premium",
+    element: <Lazy component={PlanPage} />,
   },
 
   // 2. Guest-only
@@ -221,6 +230,10 @@ export const router = createBrowserRouter([
       {
         path: "discover/personalised/:playlistSlug",
         element: <Lazy component={MoreOfLikeSlugPage} />,
+      },
+      {
+        path: "rythmify/sets/:mixSlug",
+        element: <Lazy component={CuratedForYouSlugPage} />,
       },
       { path: "people", element: <Lazy component={PeoplePage} /> },
       { path: "download", element: <Lazy component={DownloadPage} /> },
@@ -316,11 +329,11 @@ export const router = createBrowserRouter([
                     path: "history",
                     element: <Lazy component={HistoryPage} />,
                   },
+                  {
+                    path: "following",
+                    element: <Lazy component={YouFollowingPage} />,
+                  },
                 ],
-              },
-              {
-                path: "following",
-                element: <Lazy component={FollowingPage} />,
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
@@ -384,6 +397,10 @@ export const router = createBrowserRouter([
           {
             path: "creator/checkout",
             element: <Lazy component={CheckoutPage} />,
+          },
+          {
+            path: "creator/payment",
+            element: <Lazy component={PaymentPage} />,
           },
         ],
       },

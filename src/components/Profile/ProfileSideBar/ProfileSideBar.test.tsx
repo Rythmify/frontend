@@ -1,16 +1,29 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ProfileSideBar from "@/components/Profile/ProfileSideBar/ProfileSideBar";
+import { useAuthStore } from "@/stores/auth.store";
 
 const mockNavigate = vi.fn();
+
+vi.mock("@/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }));
 
 vi.mock("@/components/Profile/FollowButton", () => ({
-  default: ({ username }: { username: string }) => (
-    <button data-test={`follow-button-${username}`}>Follow</button>
+  default: ({
+    username,
+    initialIsFollowing,
+  }: {
+    username: string;
+    initialIsFollowing?: boolean;
+  }) => (
+    <button data-test={`follow-button-${username}`}>
+      {initialIsFollowing ? "Following" : "Follow"}
+    </button>
   ),
 }));
 
@@ -50,6 +63,11 @@ const defaultProps = {
 describe("ProfileSideBar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      user: {
+        following_ids: [],
+      },
+    });
   });
 
   it("renders follower, following and tracks stats", () => {
@@ -189,6 +207,38 @@ describe("ProfileSideBar", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows Following when the viewer already follows that person", () => {
+    (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      user: {
+        following_ids: ["artist-1"],
+      },
+    });
+
+    const following = [
+      {
+        userId: "artist-1",
+        username: "travis-scott",
+        followers: 6000000,
+        tracks: 174,
+        avatar: "",
+        isVerified: true,
+      },
+    ];
+
+    render(
+      <ProfileSideBar
+        {...defaultProps}
+        isOwner={false}
+        following={following}
+        stats={{ followers: 100, following: 1, tracks: 5 }}
+      />,
+    );
+
+    expect(screen.getByTestId("follow-button-travis-scott")).toHaveTextContent(
+      "Following",
+    );
+  });
+
   it("navigates to follower page when followers stat is clicked", () => {
     render(<ProfileSideBar {...defaultProps} />);
     fireEvent.click(screen.getByTestId("followers-stat"));
@@ -211,6 +261,6 @@ describe("ProfileSideBar", () => {
   it("navigates to checkout on Upgrade to Artist Pro click", () => {
     render(<ProfileSideBar {...defaultProps} isOwner={true} />);
     fireEvent.click(screen.getByTestId("upgrade-pro-button"));
-    expect(mockNavigate).toHaveBeenCalledWith("/creator/checkout");
+    expect(mockNavigate).toHaveBeenCalledWith("/premium");
   });
 });

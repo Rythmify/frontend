@@ -165,7 +165,7 @@ describe("UploadQuotaBar", () => {
     consoleSpy.mockRestore();
   });
 
-  it("navigates to checkout when the CTA is clicked", async () => {
+  it("navigates to plan page when the CTA is clicked", async () => {
     mockGetUploadQuota.mockResolvedValue({ usedTracks: 1, trackLimit: 3 });
     renderWithRouter();
     await waitFor(() =>
@@ -175,6 +175,6 @@ describe("UploadQuotaBar", () => {
     );
 
     screen.getByTestId("get-unlimited-uploads-button-quota-bar").click();
-    expect(mockNavigate).toHaveBeenCalledWith("/creator/checkout");
+    expect(mockNavigate).toHaveBeenCalledWith("/premium");
   });
 });

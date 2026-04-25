@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import ArtistToolsCard from "./ArtistToolsCard";
 import TrackItem from "@/components/UI/TrackItem";
 import TrackListSection from "@/components/UI/TrackListSection/TrackListSection";
@@ -17,6 +17,28 @@ import { useHistoryStore } from "@/stores/history.store";
 import type { Track } from "@/types/track";
 
 const DiscoverSidebar = () => {
+  const asideRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const aside = asideRef.current;
+    if (!aside) return;
+
+    const update = () => {
+      aside.style.top = `${window.innerHeight - aside.offsetHeight}px`;
+    };
+
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(aside);
+    window.addEventListener("resize", update, { passive: true });
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   const [suggestedArtists, setSuggestedArtists] = useState<
     ReturnType<typeof mapSuggestedArtistToArtistCard>[]
   >([]);
@@ -59,17 +81,26 @@ const DiscoverSidebar = () => {
     id: String(t.id),
     title: t.title,
     artist: t.artistName,
+    artistUsername: t.artistUsername,
     coverUrl: t.coverUrl,
+    audioUrl: t.audioUrl,
     plays: t.playCount,
     likes: t.likeCount,
     reposts: t.repostCount,
     comments: t.commentCount,
+    genre: t.genre,
+    duration: t.duration,
+    postedAt: t.postedAt,
+    isPrivate: t.isPrivate,
+    trackSlug: t.trackSlug,
+    initialReposted: t.isReposted,
   });
 
   return (
     <aside
+      ref={asideRef}
       data-test="discover-sidebar"
-      className="flex flex-col gap-6 w-full sticky top-[50px]"
+      className="flex flex-col gap-6 w-full sticky"
     >
       <div data-test="discover-sidebar-artist-tools">
         <ArtistToolsCard />

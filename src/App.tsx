@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { HeroUIProvider } from "@heroui/react";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./Router";
-import DevAuthToggle from "./DevAuthToggle";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useAuthStore } from "@/stores/auth.store";
 import { performRefresh } from "@/services/api/axiosInstance";
@@ -87,7 +86,6 @@ function App() {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
     <HeroUIProvider>
       <RouterProvider router={router} />
-      <DevAuthToggle />
     </HeroUIProvider>
     </GoogleOAuthProvider>
   );

@@ -12,6 +12,7 @@ import { fetchConversations, type Conversation } from '@/services/api/messaging/
 import { ChatProfile } from '@/components/MessagingComponents/ChatProfile';
 import { useMessagingStore } from '@/stores/messaging.store';
 import UserAvatar from '@/components/UI/UserAvatar';
+import SearchBar from '@/components/UI/SearchBar'; // adjust path if needed
 
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
@@ -170,17 +171,7 @@ const MainNavbar = () => {
 
         {/* Center: Search Bar — tablet+ */}
         <div className="hidden md:flex flex-1 justify-center">
-          <div className="w-full max-w-[500px] relative">
-            <input
-              data-test="input-search"
-              type="text"
-              placeholder="Search"
-              className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
-            />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <i className="fa-solid fa-magnifying-glass text-lg font-medium" />
-            </button>
-          </div>
+          <SearchBar className="w-full max-w-[500px]" />
         </div>
 
         {/* Spacer — mobile only */}
@@ -190,7 +181,7 @@ const MainNavbar = () => {
         <div className="hidden md:flex items-center gap-2 lg:gap-3 xl:gap-4 shrink-0">
 
           {/* Text links — desktop only */}
-          <Link to="/creator/checkout" className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors">
+          <Link to="/premium" className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors">
             Try Artist Pro
           </Link>
           <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text-hover transition-colors">
@@ -225,7 +216,7 @@ const MainNavbar = () => {
                 <DropdownLink icon="fa-solid fa-tower-broadcast"     label="Stations"         to="/you/stations"            onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-user-plus"           label="Following"        to="/you/following"           onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-users"               label="Who to follow"    to="/people"                  onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-circle-plus"         label="Try Artist Pro"   to="/creator/checkout"        onClick={closeAll} iconClassName="text-accent" />
+                <DropdownLink icon="fa-solid fa-circle-plus"         label="Try Artist Pro"   to="/premium"                  onClick={closeAll} iconClassName="text-accent" />
                 <DropdownLink icon="fa-solid fa-chart-simple"        label="Tracks"           to={`/${user?.username}/tracks`} onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-chart-line"          label="Insights"         to="/you/insights"            onClick={closeAll} />
                 <DropdownLink icon="fa-solid fa-arrow-up-from-bracket" label="Distribute"     to="/artists/distribution"    onClick={closeAll} />
@@ -233,7 +224,7 @@ const MainNavbar = () => {
             )}
           </div>
 
-       {/* Notifications */}
+          {/* Notifications */}
           <div ref={notifRef} className="relative">
             <button
               data-test="btn-notifications"
@@ -286,7 +277,6 @@ const MainNavbar = () => {
                           data-test={`navbar-notification-card-${notification.id}`}
                         />
                       ))}
-
                     </div>
                   )}
                 </div>
@@ -372,7 +362,7 @@ const MainNavbar = () => {
                 <DropdownLink label="Legal"             to="/terms-of-use"           onClick={closeAll} />
                 <DropdownLink label="Copyright"         to="/pages/copyright"        onClick={closeAll} />
                 <DropdownLink label="Mobile apps"       to="/download"               onClick={closeAll} />
-                <DropdownLink label="Artist Membership" to="/creator/checkout"       onClick={closeAll} />
+                <DropdownLink label="Artist Membership" to="/premium"       onClick={closeAll} />
                 <div className="border-t border-border my-1" />
                 <DropdownLink label="Keyboard shortcuts" to="#"                      onClick={closeAll} />
                 <DropdownLink label="Subscription"      to="/settings"               onClick={closeAll} />
@@ -412,21 +402,13 @@ const MainNavbar = () => {
 
       {/* Mobile search row */}
       {isMobileSearchOpen && (
-        <div className="flex md:hidden items-center gap-2 px-4 py-2 border-t border-border">
-          <div className="flex-1 relative">
-            <input
-              autoFocus
-              type="text"
-              placeholder="Search"
-              className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
-            />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <Search size={16} />
-            </button>
-          </div>
-          <button onClick={() => setIsMobileSearchOpen(false)} className="text-text-secondary hover:text-text transition-colors">
-            <X size={20} />
-          </button>
+        <div className="flex md:hidden items-center px-4 py-2 border-t border-border">
+          <SearchBar
+            className="flex-1"
+            autoFocus
+            showClose
+            onClose={() => setIsMobileSearchOpen(false)}
+          />
         </div>
       )}
 
@@ -437,7 +419,7 @@ const MainNavbar = () => {
           <NavLink to="/feed"     className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Feed</NavLink>
           <NavLink to="/you/library" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Library</NavLink>
           <div className="border-t border-border my-1" />
-          <Link to="/creator/checkout" className="block px-4 py-3 text-md font-medium text-accent hover:text-accent-hover transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+          <Link to="/premium" className="block px-4 py-3 text-md font-medium text-accent hover:text-accent-hover transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
             Try Artist Pro
           </Link>
           <Link to="/artists" className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>

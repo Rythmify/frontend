@@ -39,6 +39,7 @@ export default function UsernamePage() {
     followers,
     following,
     isOwner,
+    isFollowing,
     activeUser,
     isLoadingProfile,
     handleTabChange,
@@ -152,10 +153,10 @@ export default function UsernamePage() {
 
     const loadPlaylists = async () => {
       try {
-        const ownerId = isOwner ? activeUser.id : profileData?.id;
+        const ownerId = isOwner ? activeUser?.id : profileData?.id;
         if (!ownerId) return;
 
-        const res = await getPlaylistsByUser(ownerId, activeUser.id, {
+        const res = await getPlaylistsByUser(ownerId, activeUser?.id, {
           limit: 100,
         });
         if (cancelled) return;
@@ -186,7 +187,7 @@ export default function UsernamePage() {
     return () => {
       cancelled = true;
     };
-  }, [isOwner, activeUser.id, profileData?.id]);
+  }, [isOwner, activeUser?.id, profileData?.id]);
 
   // ── Sidebar mappings ──────────────────────────────────────
   const likedTracksMapped = (Array.isArray(likedTracks) ? likedTracks : []).map(
@@ -208,6 +209,7 @@ export default function UsernamePage() {
     followers: u.followers_count,
     tracks: 0,
     isVerified: u.is_verified,
+    isFollowing: u.isFollowing,
   }));
 
   const followersMapped = followers.map((u) => ({
@@ -254,6 +256,7 @@ export default function UsernamePage() {
       <ProfileHeader user={user} isOwner={isOwner} />
       <ProfileTabs
         isOwner={isOwner}
+        isFollowing={isFollowing}
         selectedTab={selectedTab}
         onTabChange={handleTabChangeWrapper}
         onShare={() => setShowShare(true)}
@@ -263,16 +266,16 @@ export default function UsernamePage() {
         tracks={stats.tracks ?? 0}
         onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
         blockDisabled={!profileData}
-        userId={isOwner ? activeUser.id : (profileData?.id ?? "")}
+        userId={isOwner ? activeUser?.id : (profileData?.id ?? "")}
         profilePicture={
           isOwner
-            ? (activeUser.avatar ?? null)
+            ? (activeUser?.avatar ?? null)
             : (profileData?.profile_picture ?? null)
         }
       />
 
-      <div className="flex gap-6 py-6 items-start">
-        <div className="flex-1 min-w-0">
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 py-6 items-start">
+        <div className="flex-1 w-full min-w-0">
           {hasContent ? (
             <div className="flex flex-col gap-8">
               {/* Tracks */}
@@ -362,10 +365,8 @@ export default function UsernamePage() {
             </div>
           )}
         </div>
-
         <div
-          className="sticky top-24 self-start min-w-0 overflow-hidden"
-          style={{ maxWidth: "min-content" }}
+          className="w-full lg:w-auto lg:sticky lg:top-24 self-start min-w-0 overflow-hidden"
         >
           <ProfileSidebar
             user={user}

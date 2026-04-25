@@ -1,8 +1,104 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import LikesPage from "@/pages/you/likes/LikesPage";
+import type { Track } from "@/types/track";
+import { getMyLikedTracks } from "@/services/user.service";
 
-const mockNavigate = vi.fn();
+const { mockNavigate, mockTrack, mockAlbum, mockPlaylistCard, mockLikesState, mockSetState } =
+  vi.hoisted(() => {
+    const mockTrack: Track = {
+      id: "track-1",
+      title: "Track One",
+      artistName: "Artist One",
+      artistUsername: "",
+      trackSlug: "",
+      coverUrl: "",
+      audioUrl: "",
+      duration: "3:12",
+      playCount: 12,
+      likeCount: 4,
+      repostCount: 0,
+      commentCount: 0,
+      genre: "House",
+      waveformData: [],
+      postedAt: "",
+    };
+
+    const mockAlbum = {
+      playlist_id: "album-1",
+      owner_user_id: "me",
+      name: "Liked Album",
+      description: null,
+      is_public: true,
+      created_at: "2026-04-24T00:00:00Z",
+      track_count: 9,
+      like_count: 3,
+      cover_image: null,
+      is_album_view: true,
+    };
+
+    const mockPlaylistCard = {
+      id: "playlist-1",
+      title: "Liked Playlist",
+      owner: "me",
+      ownerUsername: "me",
+      coverUrl: null,
+      isPrivate: false,
+      isLiked: true,
+      isAlbumView: false,
+    };
+
+    const mockLikesState = {
+      likedTracks: [mockTrack],
+      likedPlaylists: [mockPlaylistCard],
+      likedAlbums: [mockAlbum],
+    };
+
+    const mockSetState = vi.fn((updater: any) => {
+      if (typeof updater === "function") {
+        const next = updater(mockLikesState);
+        if (next) Object.assign(mockLikesState, next);
+        return;
+      }
+
+      if (updater && typeof updater === "object") {
+        Object.assign(mockLikesState, updater);
+      }
+    });
+
+    return {
+      mockNavigate: vi.fn(),
+      mockTrack,
+      mockAlbum,
+      mockPlaylistCard,
+      mockLikesState,
+      mockSetState,
+    };
+  });
+
+const mockCurrentUser = {
+  id: "1",
+  username: "me",
+  displayName: "Me",
+  avatar: "",
+};
+
+const defaultLikedTracksResponse = {
+  items: [
+    {
+      id: "track-1",
+      title: "Track One",
+      artist_name: "Artist One",
+      cover_image: null,
+      stream_url: null,
+      duration: 192,
+      play_count: 12,
+      like_count: 4,
+      genre: "House",
+    },
+  ],
+  pagination: { limit: 100, offset: 0, total: 1 },
+};
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -14,18 +110,38 @@ vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock("@/components/Profile/MockData/mock", () => ({
-  mockLikedTracks: [
-    { id: "1", title: "Track One", artist: "Artist One" },
-    { id: "2", title: "Track Two", artist: "Artist Two" },
-  ],
-  mockUserProfiles: {
-    "travis-scott": {
-      displayName: "Travis Scott",
-      avatar: "",
-      likedTracks: [{ id: "3", title: "Track Three", artist: "Travis Scott" }],
+vi.mock("@/stores/likes.store", () => ({
+  useLikesStore: Object.assign(
+    (selector?: (state: typeof mockLikesState) => unknown) =>
+      selector ? selector(mockLikesState) : mockLikesState,
+    {
+      setState: mockSetState,
     },
-  },
+  ),
+}));
+
+vi.mock("@/services/user.service", () => ({
+  getMyLikedTracks: vi.fn().mockResolvedValue({
+    items: [
+      {
+        id: "track-1",
+        title: "Track One",
+        artist_name: "Artist One",
+        cover_image: null,
+        stream_url: null,
+        duration: 192,
+        play_count: 12,
+        like_count: 4,
+        genre: "House",
+      },
+    ],
+    pagination: { limit: 100, offset: 0, total: 1 },
+  }),
+  getUserByUsername: vi.fn().mockResolvedValue({
+    display_name: "Travis Scott",
+    profile_picture: null,
+    username: "travis-scott",
+  }),
 }));
 
 vi.mock("@/components/Profile/ShareModal/ShareModal", () => ({
@@ -38,19 +154,43 @@ vi.mock("@/components/Profile/ShareModal/ShareModal", () => ({
   ),
 }));
 
+vi.mock("@/components/UI/LikesContent/LikesContent", () => ({
+  default: ({ tracks }: { tracks: Track[] }) => (
+    <div data-test="likes-content">
+      {tracks.map((track) => (
+        <span key={track.id}>{track.title}</span>
+      ))}
+    </div>
+  ),
+}));
+
+vi.mock("@/components/UI/PlaylistCard/PlaylistCard", () => ({
+  default: ({ item }: { item: { id: string; title: string } }) => (
+    <div data-test="liked-playlist-card">{item.title}</div>
+  ),
+}));
+
+vi.mock("@/components/playlist/PlaylistCard", () => ({
+  default: ({ playlist }: { playlist: { playlist_id: string; name: string } }) => (
+    <div data-test="liked-album-card">{playlist.name}</div>
+  ),
+}));
+
 import { useAuthStore } from "@/stores/auth.store";
 import { useParams, useLocation } from "react-router-dom";
-
-const mockCurrentUser = {
-  id: "1",
-  username: "me",
-  displayName: "Me",
-  avatar: "",
-};
 
 describe("LikesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.assign(mockLikesState, {
+      likedTracks: [mockTrack],
+      likedPlaylists: [mockPlaylistCard],
+      likedAlbums: [mockAlbum],
+    });
+    vi.mocked(getMyLikedTracks).mockResolvedValue(
+      defaultLikedTracksResponse as any,
+    );
+
     (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       user: mockCurrentUser,
     });
@@ -78,8 +218,10 @@ describe("LikesPage", () => {
     });
 
     render(<LikesPage />);
-    expect(screen.getByTestId("likes-page-title")).toHaveTextContent(
-      "Likes by Travis Scott",
+    return waitFor(() =>
+      expect(screen.getByTestId("likes-page-title")).toHaveTextContent(
+        "Likes by Travis Scott",
+      ),
     );
   });
 
@@ -100,19 +242,19 @@ describe("LikesPage", () => {
   it("navigates to following page on Following tab click", () => {
     render(<LikesPage />);
     fireEvent.click(screen.getByTestId("likes-tab-following"));
-    expect(mockNavigate).toHaveBeenCalledWith("/you/following");
+    expect(mockNavigate).toHaveBeenCalledWith("/me/following");
   });
 
   it("navigates to followers page on Followers tab click", () => {
     render(<LikesPage />);
     fireEvent.click(screen.getByTestId("likes-tab-followers"));
-    expect(mockNavigate).toHaveBeenCalledWith("/you/follower");
+    expect(mockNavigate).toHaveBeenCalledWith("/me/follower");
   });
 
   it("shows owner description text", () => {
     render(<LikesPage />);
     expect(screen.getByTestId("likes-description")).toHaveTextContent(
-      "Hear the tracks you've liked",
+      "Hear the tracks, playlists, and albums you've liked",
     );
   });
 
@@ -125,15 +267,41 @@ describe("LikesPage", () => {
     });
 
     render(<LikesPage />);
-    expect(screen.getByTestId("likes-description")).toHaveTextContent(
-      "Hear the tracks Travis Scott has liked",
+    return waitFor(() =>
+      expect(screen.getByTestId("likes-description")).toHaveTextContent(
+        "Hear the tracks, playlists, and albums Travis Scott has liked",
+      ),
+    );
+  });
+
+  it("renders liked tracks, playlists, and albums for owner", () => {
+    render(<LikesPage />);
+
+    expect(screen.getByTestId("likes-content")).toHaveTextContent("Track One");
+    expect(screen.getByText("Liked playlists")).toBeInTheDocument();
+    expect(screen.getByTestId("liked-playlist-card")).toHaveTextContent(
+      "Liked Playlist",
+    );
+    expect(screen.getByText("Liked albums")).toBeInTheDocument();
+    expect(screen.getByTestId("liked-album-card")).toHaveTextContent(
+      "Liked Album",
     );
   });
 
   it("shows empty state for owner", () => {
+    Object.assign(mockLikesState, {
+      likedTracks: [],
+      likedPlaylists: [],
+      likedAlbums: [],
+    });
+    vi.mocked(getMyLikedTracks).mockResolvedValue({
+      items: [],
+      pagination: { limit: 100, offset: 0, total: 0 },
+    } as any);
+
     render(<LikesPage />);
-    expect(screen.getByTestId("likes-empty-state")).toHaveTextContent(
-      "You have no likes yet.",
+    return waitFor(() =>
+      expect(screen.getByText("You have no likes yet.")).toBeInTheDocument(),
     );
   });
 
@@ -146,8 +314,10 @@ describe("LikesPage", () => {
     });
 
     render(<LikesPage />);
-    expect(screen.getByTestId("likes-empty-state")).toHaveTextContent(
-      "Travis Scott hasn't liked any tracks.",
+    return waitFor(() =>
+      expect(
+        screen.getByText("Travis Scott hasn't liked anything yet."),
+      ).toBeInTheDocument(),
     );
   });
 

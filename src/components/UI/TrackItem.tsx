@@ -2,6 +2,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
+import { useHistoryStore } from "@/stores/history.store";
+import { useAuthStore } from "@/stores/auth.store";
+import * as engagementService from "@/services/engagement.service";
+import { getRelatedTracks } from "@/services/track.service";
+import SharePopup from "@/pages/[username]/[trackSlug]/components/SharePopup";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import type { Track } from "@/types/track";
 
 interface TrackItemProps {
@@ -15,12 +21,14 @@ interface TrackItemProps {
   comments?: number;
   onUnlike?: (id: string) => void;
   initialLiked?: boolean;
+  initialReposted?: boolean;
   artistUsername?: string;
   audioUrl?: string;
   genre?: string;
   duration?: string;
   postedAt?: string;
   isPrivate?: boolean;
+  trackSlug?: string;
 }
 
 const formatCount = (n: number) => {
@@ -40,20 +48,27 @@ const TrackItem: React.FC<TrackItemProps> = ({
   comments,
   onUnlike,
   initialLiked = false,
+  initialReposted = false,
   artistUsername,
   audioUrl,
   genre = "",
   duration = "0:00",
   postedAt = "",
   isPrivate = false,
+  trackSlug,
 }) => {
   const [hovered, setHovered] = useState(false);
   const [coverHovered, setCoverHovered] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [reposted, setReposted] = useState(initialReposted);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
   const navigate = useNavigate();
-  const setTrack = usePlayerStore((state) => state.setTrack);
+  const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const isTrackLiked = useLikesStore((s) => s.isTrackLiked);
   const toggleTrack = useLikesStore((s) => s.toggleTrack);
+  const { addTrack } = useHistoryStore();
+  const { user } = useAuthStore();
 
   const liked = isTrackLiked(id);
 
@@ -65,7 +80,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       artistUsername:
         artistUsername || artist.toLowerCase().replace(/\s+/g, "-"),
       coverUrl: coverUrl || "",
-      audioUrl: audioUrl || "",
+      audioUrl: audioUrl ?? "",
       genre: genre || "",
       likeCount: likes || 0,
       repostCount: reposts || 0,
@@ -80,11 +95,45 @@ const TrackItem: React.FC<TrackItemProps> = ({
     if (liked) onUnlike?.(id);
   };
 
+  const isThisTrackPlaying = currentTrack?.id === id && isPlaying;
+
   const finalArtistSlug =
     artistUsername || artist.toLowerCase().replace(/\s+/g, "-");
 
+  const trackPath = `/discover/personalised/${trackSlug ?? ""}:${id}`;
+
+  const handleRepost = async () => {
+    if (!!user && user.username === finalArtistSlug) {
+      alert("You cannot repost your own track!");
+      return;
+    }
+    const wasReposted = reposted;
+    setReposted(!wasReposted);
+    try {
+      if (wasReposted) {
+        await engagementService.removeRepost(id);
+      } else {
+        await engagementService.repostTrack(id);
+      }
+    } catch (err) {
+      console.error("Repost failed", err);
+      setReposted(wasReposted);
+    }
+  };
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/${finalArtistSlug}/${trackSlug ?? id}`;
+    navigator.clipboard.writeText(url);
+    alert("Link copied!");
+  };
+
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (currentTrack?.id === id) {
+      togglePlay();
+      return;
+    }
 
     const trackForPlayer: Track = {
       id: id,
@@ -92,7 +141,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       artistName: artist,
       artistUsername: finalArtistSlug,
       coverUrl: coverUrl || "",
-      audioUrl: audioUrl || "",
+      audioUrl: audioUrl ?? "",
       genre: genre,
       likeCount: likes || 0,
       repostCount: reposts || 0,
@@ -105,6 +154,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
     };
 
     setTrack(trackForPlayer);
+    addTrack(trackForPlayer);
   };
   return (
     <div
@@ -134,8 +184,8 @@ const TrackItem: React.FC<TrackItemProps> = ({
           <div className="w-full h-full bg-border" />
         )}
 
-        {/* Play Button Overlay - Shows on Cover Hover */}
-        {coverHovered && (
+        {/* Play Button Overlay - Shows on hover or when this track is playing */}
+        {(coverHovered || isThisTrackPlaying) && (
           <div
             className="absolute inset-0 bg-black/40 flex items-center justify-center"
             onClick={handlePlayClick}
@@ -144,7 +194,9 @@ const TrackItem: React.FC<TrackItemProps> = ({
               data-test={`track-play-button-${id}`}
               className="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
             >
-              <i className="fa-solid fa-play text-black text-xs pl-0.5"></i>
+              <i
+                className={`fa-solid ${isThisTrackPlaying ? "fa-pause" : "fa-play"} text-black text-xs ${isThisTrackPlaying ? "" : "pl-0.5"}`}
+              ></i>
             </button>
           </div>
         )}
@@ -161,7 +213,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
         </button>
         <button
           data-test={`track-title-${id}`}
-          onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
+          onClick={() => navigate(trackPath)}
           className="text-sm cursor-pointer font-semibold text-text-hover text-left truncate"
         >
           {title}
@@ -230,15 +282,41 @@ const TrackItem: React.FC<TrackItemProps> = ({
             {showMore && (
               <div className="absolute right-0 top-10 z-50 bg-input-bg border border-border rounded shadow-lg w-48 py-1">
                 {[
-                  { icon: "fa-retweet", label: "Repost" },
-                  { icon: "fa-arrow-up-from-bracket", label: "Share" },
-                  { icon: "fa-copy", label: "Copy Link" },
-                  { icon: "fa-list", label: "Add to Playlist" },
-                  { icon: "fa-tower-broadcast", label: "Station" },
-                ].map(({ icon, label }) => (
+                  {
+                    key: "repost",
+                    icon: "fa-retweet",
+                    label: reposted ? "Unrepost" : "Repost",
+                    onClick: handleRepost,
+                  },
+                  {
+                    key: "share",
+                    icon: "fa-arrow-up-from-bracket",
+                    label: "Share",
+                    onClick: () => {
+                      setShareOpen(true);
+                      setShowMore(false);
+                    },
+                  },
+                  {
+                    key: "copy-link",
+                    icon: "fa-copy",
+                    label: "Copy Link",
+                    onClick: handleCopyLink,
+                  },
+                  {
+                    key: "add-to-playlist",
+                    icon: "fa-list",
+                    label: "Add to Playlist",
+                    onClick: () => {
+                      setPlaylistModalOpen(true);
+                      setShowMore(false);
+                    },
+                  },
+                ].map(({ key, icon, label, onClick }) => (
                   <button
-                    key={label}
-                    data-test={`track-more-${label.toLowerCase().replace(/\s+/g, "-")}-${id}`}
+                    key={key}
+                    data-test={`track-more-${key}-${id}`}
+                    onClick={onClick}
                     className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-text-hover hover:bg-border/50 transition-colors"
                   >
                     <i className={`fa-solid ${icon} text-xs w-4`} />
@@ -249,6 +327,44 @@ const TrackItem: React.FC<TrackItemProps> = ({
             )}
           </div>
         </div>
+      )}
+      {playlistModalOpen && (
+        <AddToPlaylistModal
+          trackTitle={title}
+          trackCoverUrl={coverUrl}
+          fetchTracks={async () => {
+            const { tracks } = await getRelatedTracks(id);
+            return tracks.map((t) => ({
+              id: t.id,
+              title: t.title,
+              artistName: t.artistName,
+              coverUrl: t.coverUrl,
+            }));
+          }}
+          onClose={() => setPlaylistModalOpen(false)}
+        />
+      )}
+      {shareOpen && (
+        <SharePopup
+          track={{
+            id,
+            title,
+            artistName: artist,
+            artistUsername: finalArtistSlug,
+            coverUrl: coverUrl || "",
+            audioUrl: audioUrl ?? "",
+            genre: genre || "",
+            likeCount: likes || 0,
+            repostCount: reposts || 0,
+            playCount: plays || 0,
+            commentCount: comments || 0,
+            duration: duration || "0:00",
+            postedAt: postedAt || "",
+            waveformData: [],
+            isPrivate,
+          }}
+          onClose={() => setShareOpen(false)}
+        />
       )}
     </div>
   );

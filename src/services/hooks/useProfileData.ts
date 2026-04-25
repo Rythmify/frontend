@@ -21,8 +21,11 @@ export interface ProfileStats {
   tracks: number;
 }
 
-// UserSummary enriched with a follower count (used by the "All" tab sidebar)
-export type EnrichedUserSummary = UserSummary & { followers_count: number };
+// UserSummary enriched with sidebar-specific metadata.
+export type EnrichedUserSummary = UserSummary & {
+  followers_count: number;
+  isFollowing?: boolean;
+};
 
 export interface ProfileDataResult {
   // ── Display data ─────────────────────────────────────────
@@ -32,7 +35,7 @@ export interface ProfileDataResult {
   followers: UserSummary[];
   following: EnrichedUserSummary[];
   isOwner: boolean;
-  activeUser: User;
+  activeUser: User | null;
   // ── Social state (non-owner only) ────────────────────────
   isFollowing: boolean;
   isBlocked: boolean;
@@ -60,8 +63,8 @@ export function useProfileData(
 ): ProfileDataResult {
   const { user: currentUser, setUser } = useAuthStore();
 
-  const isOwner = !username || username === currentUser?.username;
-  const activeUser = currentUser!;
+  const isOwner = !!currentUser && (!username || username === currentUser.username);
+  const activeUser = currentUser;
 
   const [profileData, setProfileData] = useState<OwnUser | PublicUser | null>(
     null,
@@ -87,11 +90,19 @@ export function useProfileData(
     const profileResults = await Promise.allSettled(
       res.items.map((u) => getUserById(u.id)),
     );
+    const followStatusResults = await Promise.allSettled(
+      res.items.map((u) => getFollowStatus(u.id)),
+    );
     const enriched: EnrichedUserSummary[] = res.items.map((u, i) => {
       const result = profileResults[i];
+      const followStatus = followStatusResults[i];
       const followers_count =
         result.status === "fulfilled" ? result.value.followers_count : 0;
-      return { ...u, followers_count };
+      const isFollowing =
+        followStatus.status === "fulfilled"
+          ? followStatus.value.is_following
+          : undefined;
+      return { ...u, followers_count, isFollowing };
     });
     return { items: enriched, total: res.meta.total };
   };
@@ -108,8 +119,8 @@ export function useProfileData(
           await Promise.all([
             getMyProfile(),
             getMyTracks(1, 100),
-            getFollowers(activeUser.id, { limit: 100 }),
-            loadFollowingWithCounts(activeUser.id),
+            getFollowers(currentUser.id, { limit: 100 }),
+            loadFollowingWithCounts(currentUser.id),
           ]);
 
         if (cancelled) return;
@@ -286,7 +297,9 @@ export function useProfileData(
       country: data.country,
     }).catch(console.error);
 
-    const latestUser = useAuthStore.getState().user ?? activeUser;
+    const latestUser = useAuthStore.getState().user;
+    if (!latestUser) return;
+
     setUser({
       ...latestUser,
       displayName: data.displayName,
