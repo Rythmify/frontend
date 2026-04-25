@@ -60,7 +60,9 @@ export default function AlbumsPage() {
 
       const ownerIds = Array.from(
         new Set(
-          [...createdList, ...likedList].map((p) => p.owner_user_id).filter(Boolean),
+          [...createdList, ...likedList]
+            .map((p) => p.owner_user_id)
+            .filter(Boolean),
         ),
       );
 
