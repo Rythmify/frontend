@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/stores/auth.store";
 
 type CellValue =
   | { type: "na" }
@@ -172,15 +174,15 @@ function CheckCircle() {
 function Cell({ value }: { value: CellValue }) {
   if (value.type === "na") {
     return (
-      <span className="text-[13px] text-slate-400">
-        Not Available <span className="text-[11px] text-slate-300">↓</span>
+      <span className="text-[15px] font-semibold leading-none text-black/70">
+        Not Available <span className="text-[12px] text-black/35">↓</span>
       </span>
     );
   }
 
   if (value.type === "unlimited") {
     return (
-      <span className="text-[13px] font-semibold text-emerald-600">
+      <span className="text-[15px] font-semibold leading-none text-emerald-600">
         Unlimited
       </span>
     );
@@ -188,7 +190,7 @@ function Cell({ value }: { value: CellValue }) {
 
   if (value.type === "available") {
     return (
-      <span className="inline-flex items-center text-[13px] font-medium text-emerald-600">
+      <span className="inline-flex items-center text-[15px] font-semibold leading-none text-emerald-600">
         Available
         <CheckCircle />
       </span>
@@ -205,43 +207,49 @@ function Cell({ value }: { value: CellValue }) {
 
   if (value.value === "Full access") {
     return (
-      <span className="text-[13px] font-semibold text-emerald-600">
+      <span className="text-[15px] font-semibold leading-none text-emerald-600">
         Full access
       </span>
     );
   }
 
-  return <span className="text-[13px] text-black">{value.value}</span>;
+  return (
+    <span className="text-[15px] font-semibold leading-none text-black">
+      {value.value}
+    </span>
+  );
 }
 
-const COL_W = "w-[200px]";
+const COL_W = "w-[280px]";
 
 function PlanHeaderRow() {
   return (
-    <div className="flex  bg-white py-5">
-      <div className="flex-1" />
+    <div className="flex bg-white py-8">
+      <div className="w-[380px]" />
 
       <div
-        className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-1   px-4`}
+        className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-2 px-4`}
       >
-        <span className="text-[15px] font-extrabold text-black">Free</span>
-        <span className="text-[12px] text-slate-400">Free</span>
-        <span className="mt-1 rounded-full border border-[#e5e7eb] px-3 py-[3px] text-[11px] text-slate-400">
+        <span className="text-[32px] font-black leading-none tracking-[-0.04em] text-black">
+          Free
+        </span>
+        <span className="text-[15px] font-semibold text-black/60">Basic</span>
+        <span className="mt-1 rounded-full border border-[#e5e7eb] px-5 py-[10px] text-[14px] font-semibold text-black/50">
           Current plan
         </span>
       </div>
 
       <div
-        className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-1 px-4`}
+        className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-2 px-4`}
       >
-        <span className="text-[15px] font-extrabold text-black">
+        <span className="text-[32px] font-black leading-none tracking-[-0.04em] text-black">
           Artist Pro
         </span>
-        <p className="m-0 text-[11px] text-center">
-          <span className="font-bold text-[#ff5500]">EGP 74.99 </span>
-          <span className="text-slate-400">/month, billed yearly</span>
+        <p className="m-0 text-center text-[15px] leading-[1.35] text-black/60">
+          <span className="font-bold text-emerald-600">EGP 74.99 </span>
+          <span>/month, billed yearly for EGP 899.88</span>
         </p>
-        <button className="mt-1 rounded-[7px] bg-black px-[18px] py-[7px] text-[11px] font-bold text-white">
+        <button className="mt-2 rounded-full bg-black px-6 py-3 text-[15px] font-bold text-white">
           Get started
         </button>
       </div>
@@ -250,14 +258,13 @@ function PlanHeaderRow() {
 }
 
 export default function CompareTable() {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
 
-  const toggle = (key: string) =>
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
+  const handleSignOut = () => {
+    logout();
+    navigate("/logout");
+  };
 
   return (
     <section className="bg-white px-6 pb-20 md:px-10 lg:px-12 xl:px-16">
@@ -265,57 +272,33 @@ export default function CompareTable() {
         Compare features.
       </h2>
 
-      <div className="w-full bg-white">
+      <div className="mx-auto w-fit max-w-full bg-white">
         <div className="sticky top-0 z-20 bg-white">
           <PlanHeaderRow />
         </div>
 
         {sections.map((section) => (
           <div key={section.title}>
-            <div className=" py-4">
-              <span className="text-[14px] font-bold text-black">
+            <div className="py-6">
+              <span className="text-[18px] font-black tracking-[-0.02em] text-black">
                 {section.title}
               </span>
             </div>
 
             {section.rows.map((row) => {
-              const key = `${section.title}::${row.name}`;
-              const isOpen = expanded.has(key);
-
               return (
                 <div
-                  key={key}
-                  className="flex items-start border-b border-[#f3f4f6] py-[18px]"
+                  key={`${section.title}::${row.name}`}
+                  className="flex items-start border-b border-[#f3f4f6] py-6"
                 >
-                  <div className="flex-1 pr-8">
-                    <button
-                      onClick={() => row.description && toggle(key)}
-                      className={`flex w-full items-center gap-1.5 bg-transparent p-0 text-left text-[14px] font-bold text-black ${
-                        row.description ? "cursor-pointer" : "cursor-default"
-                      } border-none`}
-                    >
+                  <div className="w-[380px] pr-8">
+                    <div className="text-[16px] font-bold leading-[1.35] text-black">
                       {row.name}
-                      {row.description && (
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="#9ca3af"
-                          strokeWidth="2.5"
-                          className={`flex-shrink-0 transition-transform duration-150 ${
-                            isOpen ? "rotate-180" : "rotate-0"
-                          }`}
-                        >
-                          <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                      )}
-                    </button>
-
-                    {isOpen && row.description && (
-                      <p className="mt-1.5 text-[12px] leading-[1.6] text-slate-400">
+                    </div>
+                    {row.description && (
+                      <div className="mt-1.5 text-[13px] leading-[1.55] text-slate-500">
                         {row.description}
-                      </p>
+                      </div>
                     )}
                   </div>
 
@@ -339,10 +322,14 @@ export default function CompareTable() {
 
       <footer className="mt-16 flex flex-col gap-3 border-t border-[#e5e7eb] pt-6 text-[12px] text-slate-400">
         <p className="m-0">
-          Signed in as Rowida Ahmed.{" "}
-          <a href="#" className="text-[#ff5500] no-underline">
+          Signed in as {user?.displayName ?? user?.username ?? "User"}.{" "}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="cursor-pointer border-0 bg-transparent p-0 text-[#ff5500] no-underline"
+          >
             Sign out
-          </a>
+          </button>
         </p>
 
         <nav className="flex flex-wrap gap-5">
