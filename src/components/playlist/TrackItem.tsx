@@ -41,6 +41,8 @@ function TrackItem({
   const [shareOpen, setShareOpen] = useState(false);
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
   const setTrack = usePlayerStore((state) => state.setTrack);
+  const addToQueue = usePlayerStore((state) => state.addToQueue);
+  const [addedToQueue, setAddedToQueue] = useState(false);
 
   const artistName = track.artist_name ?? track.artist_name ?? "Unknown Artist";
   const artistSlug =
@@ -250,8 +252,31 @@ function TrackItem({
                 >
                   <MiniDropItem
                     icon={<LuListEnd />}
-                    label="Add to Next up"
-                    onClick={() => setMoreOpen(false)}
+                    label={addedToQueue ? "Added!" : "Add to Next up"}
+                    onClick={() => {
+                      // Build a Track object from the PlaylistTrackItem
+                      const trackForQueue: Track = {
+                        id: track.track_id,
+                        title: track.title ?? "Untitled track",
+                        artistName,
+                        artistUsername: artistSlug,
+                        coverUrl: coverImage,
+                        genre: "",
+                        likeCount: 0,
+                        repostCount: 0,
+                        playCount,
+                        commentCount: 0,
+                        duration: formatDuration(track.duration),
+                        postedAt: track.added_at ?? "",
+                        waveformData: [],
+                        audioUrl: track.audio_url ?? "",
+                        isPrivate: !track.is_public,
+                      };
+                      addToQueue(trackForQueue);
+                      setAddedToQueue(true);
+                      setTimeout(() => setAddedToQueue(false), 2000);
+                      setMoreOpen(false);
+                    }}
                     data-test={`dropdown-next-up-playlist-${track.track_id}`}
                   />
                   <MiniDropItem

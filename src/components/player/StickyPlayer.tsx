@@ -1,6 +1,7 @@
 // Import audioService so its module-level code runs once and sets up everything (NOT FINISHED)
 import "../../services/audioService";
 import { seekAudio } from "../../services/audioService";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { usePlayerStore } from "../../stores/player.store";
 import { useLikesStore } from "../../stores/likes.store";
@@ -8,6 +9,7 @@ import { useAuthStore } from "../../stores/auth.store";
 import PlayerControls from "./PlayerControls";
 import ProgressBar from "./ProgressBar";
 import VolumeSlider from "./VolumeSlider";
+import QueuePanel from "./QueuePanel";
 import { FaHeart, FaUserPlus, FaUserCheck } from "react-icons/fa";
 import { MdQueueMusic } from "react-icons/md";
 
@@ -24,6 +26,8 @@ export default function StickyPlayer() {
 
   const { isTrackLiked, toggleTrack } = useLikesStore();
   const { user, toggleFollow } = useAuthStore();
+
+  const [queueOpen, setQueueOpen] = useState(false);
 
   const isLiked = currentTrack ? isTrackLiked(currentTrack.id) : false;
   const isFollowing = currentTrack
@@ -109,10 +113,15 @@ export default function StickyPlayer() {
       {/* 6. Queue */}
       <button
         data-test="player-button-queue"
-        className="w-10 h-10 flex items-center justify-center shrink-0 text-white hover:text-text-muted transition-colors duration-150 cursor-pointer text-xl"
+        onClick={() => setQueueOpen((o) => !o)}
+        className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer text-xl
+          ${queueOpen ? "text-accent" : "text-white hover:text-text-muted"}`}
       >
         <MdQueueMusic />
       </button>
+
+      {/* Queue panel */}
+      {queueOpen && <QueuePanel onClose={() => setQueueOpen(false)} />}
 
       
 
