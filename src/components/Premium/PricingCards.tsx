@@ -20,15 +20,18 @@ const UploadIcon = () => (
 );
 
 const DownloadIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
     <path
       d="M13 3H11V12.17L8.41 9.58L7 11L12 16L17 11L15.59 9.58L13 12.17V3Z"
       fill="currentColor"
     />
-    <path
-      d="M5 19H19V21H5V19Z"
-      fill="currentColor"
-    />
+    <path d="M5 19H19V21H5V19Z" fill="currentColor" />
   </svg>
 );
 
@@ -207,15 +210,17 @@ function PlanCard() {
             >
               <span className="flex-shrink-0 text-black">{feature.icon}</span>
               <span className="flex-1">{feature.label}</span>
-              <span
-                className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[0.625rem] font-bold tracking-[0.05em] ${
-                  feature.badgeStyle === "gold"
-                    ? "bg-[rgba(201,168,76,0.18)] text-[#c9a84c]"
-                    : "bg-slate-100 text-slate-500"
-                }`}
-              >
-                {feature.badge}
-              </span>
+              {"badge" in feature && feature.badge ? (
+                <span
+                  className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[0.625rem] font-bold tracking-[0.05em] ${
+                    feature.badgeStyle === "gold"
+                      ? "bg-[rgba(201,168,76,0.18)] text-[#c9a84c]"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {feature.badge}
+                </span>
+              ) : null}
             </li>
           ))}
         </ul>
