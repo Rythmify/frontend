@@ -90,7 +90,7 @@ const TrendingByGenres = ({ genres }: Props) => {
   const items: BuzzingPlaylist[] = genres.map((g) => ({
     id: g.genre_id,
     genre: g.genre_name,
-    cover_image: GENRE_IMAGES[g.genre_name.toLowerCase()] ?? DEFAULT_GENRE_IMAGE,
+    cover_image: GENRE_IMAGES[(g.genre_name || "").toLowerCase()] ?? DEFAULT_GENRE_IMAGE,
     track_count: 0,
     previewTrack: g.preview_track ? mapDiscoveryTrack(g.preview_track) : undefined,
   }));

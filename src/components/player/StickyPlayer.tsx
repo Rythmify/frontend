@@ -12,6 +12,7 @@ import VolumeSlider from "./VolumeSlider";
 import QueuePanel from "./QueuePanel";
 import { FaHeart, FaUserPlus, FaUserCheck } from "react-icons/fa";
 import { MdQueueMusic } from "react-icons/md";
+import { followUser, unfollowUser } from "../../services/user.service";
 
 export default function StickyPlayer() {
   const {
@@ -31,8 +32,41 @@ export default function StickyPlayer() {
 
   const isLiked = currentTrack ? isTrackLiked(currentTrack.id) : false;
   const isFollowing = currentTrack
-    ? (user?.following_ids ?? []).includes(currentTrack.artistUsername)
+    ? (user?.following_ids ?? []).includes(currentTrack.artistId || currentTrack.artistUsername)
     : false;
+
+  const handleFollowClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      alert("Please sign in to follow artists.");
+      return;
+    }
+    
+    if (!currentTrack) return;
+    
+    // Fallback to artistUsername if artistId is missing (though ID is preferred for API)
+    const username = currentTrack.artistUsername;
+    const userId = currentTrack.artistId || currentTrack.artistUsername; 
+    
+    if (!userId) return;
+    
+    const next = !isFollowing;
+
+    // Optimistic update
+    toggleFollow(username, [userId]);
+
+    try {
+      if (next) {
+        await followUser(userId);
+      } else {
+        await unfollowUser(userId);
+      }
+    } catch (err) {
+      console.error("Failed to toggle follow in player:", err);
+      // Revert optimistic update
+      toggleFollow(username, [userId]);
+    }
+  };
 
   if (!currentTrack) return null;
 
@@ -103,8 +137,10 @@ export default function StickyPlayer() {
       {/* 5. Follow */}
       <button
         data-test="player-button-follow"
-        onClick={() => currentTrack && toggleFollow(currentTrack.artistUsername)}
+        onClick={handleFollowClick}
+        title={isFollowing ? "Unfollow" : "Follow"}
         className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer text-base
+          ${!user ? "opacity-30 grayscale" : ""}
           ${isFollowing ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
       >
         {isFollowing ? <FaUserCheck /> : <FaUserPlus />}

@@ -19,6 +19,8 @@ import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup
 import type { Track } from "../../types/track";
 import { usePlayerStore } from "../../stores/player.store";
 import { useAuthStore } from "../../stores/auth.store";
+import { useLikesStore } from "../../stores/likes.store";
+import type { PlaylistCardData } from "../UI/PlaylistCard/PlaylistCard";
 import { audio, seekAudio, setGlobalWaveSurfer, setTrackLoadedLocally } from "../../services/audioService";
 import * as engagementService from "../../services/engagement.service";
 import { getTrackWaveform } from "../../services/track.service";
@@ -322,7 +324,8 @@ export default function PlaylistComponent({
   const isComponentActive = !!activeTrack;
   const componentIsPlaying = isComponentActive && isPlaying;
 
-  const [liked, setLiked] = useState(false);
+  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const liked = isPlaylistLiked(playlist.id);
   const [reposted, setReposted] = useState(false);
   const [likeCount, setLikeCount] = useState(playlist.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(playlist.repostCount ?? 0);
@@ -351,27 +354,20 @@ export default function PlaylistComponent({
 
   const handleLike = async () => {
     const wasLiked = liked;
-    const newLiked = !wasLiked;
-
-    // Optimistic update
-    setLiked(newLiked);
+    // Update local count optimistically
     setLikeCount((p) => (wasLiked ? p - 1 : p + 1));
-
-    try {
-      if (newLiked) {
-        await engagementService.likePlaylist(playlist.id);
-      } else {
-        await engagementService.unlikePlaylist(playlist.id);
-      }
-    } catch (err: any) {
-      // Revert on failure
-      setLiked(wasLiked);
-      setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
-      if (err.response?.status === 401) {
-        alert("Session expired or unauthorized. Please log out and back in.");
-      }
-      console.error("Failed to update playlist like status:", err);
-    }
+    
+    // Map minimal playlist data for the store
+    const playlistData: PlaylistCardData = {
+      id: playlist.id,
+      title: playlist.title,
+      owner: playlist.creatorName,
+      coverUrl: playlist.coverUrl ?? firstTrack?.coverUrl ?? null,
+      isPrivate: !playlist.is_public,
+      isLiked: !wasLiked
+    };
+    
+    togglePlaylist(playlistData);
   };
 
   const handleRepost = async () => {

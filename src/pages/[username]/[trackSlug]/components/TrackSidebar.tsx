@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { Track } from "../../../../types/track";
 import type { MockUser } from "../../../../services/mocks/users";
-import { followUser, unfollowUser } from "../../../../services/mocks/User.service";
+import FollowButton from "../../../UI/FollowButton";
 
 interface TrackSidebarProps {
   track: Track;
@@ -106,31 +106,14 @@ export default function TrackSidebar({ track, featuredArtists, relatedTracks = [
 
 // Artist Card 
 function ArtistCard({ artist }: { artist: MockUser }) {
-  const [following, setFollowing] = useState(artist.isFollowing);
   const [followerCount, setFollowerCount] = useState(artist.followerCount);
 
   const formatCount = (n: number) =>
     n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
   const formatExact = (n: number) => n.toLocaleString();
 
-  // Follow/Unfollow - calls /api/users/:username/follow (POST) and /unfollow (DELETE).
-  // The service is typed as Promise<void> (MSW returns JSON but the wrapper discards it;
-  // the real API returns 201/204 with no body). Either way, we update the count locally.
-  const handleFollow = async () => {
-    try {
-      if (following) {
-        await unfollowUser(artist.username);
-        setFollowing(false);
-        setFollowerCount((c) => Math.max(0, c - 1));
-      } else {
-        await followUser(artist.username);
-        setFollowing(true);
-        setFollowerCount((c) => c + 1);
-      }
-    } catch {
-      // revert optimistic update on failure
-      setFollowing((p) => !p);
-    }
+  const handleFollowChange = (next: boolean) => {
+    setFollowerCount((c) => Math.max(0, c + (next ? 1 : -1)));
   };
 
   return (
@@ -232,39 +215,13 @@ function ArtistCard({ artist }: { artist: MockUser }) {
       </div>
 
       {/* Follow / Following button */}
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>
-          <button
-            data-test={`button-follow-${artist.username}`}
-            onClick={handleFollow}
-            className={`
-              shrink-0 min-w-[80px] px-4 py-1.5
-              rounded-[var(--radius-sm)] text-xs font-semibold
-              border transition-colors duration-150 cursor-pointer
-              ${following
-                ? "bg-[var(--color-input-bg)] border-[var(--color-border-light)] text-[var(--color-text-hover)]"
-                : "bg-white border-white text-black hover:bg-gray-100 hover:border-gray-100"
-              }
-            `}
-          >
-            {following ? "Following" : "Follow"}
-          </button>
-        </Tooltip.Trigger>
-        {following && (
-          <Tooltip.Portal>
-            <Tooltip.Content side="bottom" sideOffset={4} className="
-              bg-[var(--color-input-bg)] border border-[var(--color-border)]
-              text-[var(--color-text-hover)] text-[11px] font-medium
-              px-2.5 py-1.5 rounded-[var(--radius-xs)] shadow-[var(--shadow-md)] z-[100]
-              data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95
-              data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95
-            ">
-              Unfollow
-              <Tooltip.Arrow className="fill-[var(--color-border)]" />
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        )}
-      </Tooltip.Root>
+      <FollowButton 
+        username={artist.username} 
+        userId={artist.id} 
+        initialIsFollowing={artist.isFollowing}
+        onFollowChange={handleFollowChange}
+        className="shrink-0 min-w-[80px]"
+      />
     </div>
   );
 }

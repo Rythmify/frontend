@@ -321,36 +321,28 @@ export const usePlayerStore = create<PlayerState>()(
         }),
 
       loadFromBackend: async () => {
-        const backendState = await getPlayerState();
-        if (!backendState || !backendState.track_id) return;
+        try {
+          const backendState = await getPlayerState();
+          if (!backendState || !backendState.track_id) return;
 
-        const track: Track = {
-          id: backendState.track_id,
-          title: backendState.track_title || "Unknown track",
-          artistName: backendState.artist_name || "Unknown artist",
-          artistUsername: "",
-          audioUrl: backendState.stream_url || "",
-          duration: String(backendState.duration || 0),
-          coverUrl: "",
-          genre: "",
-          likeCount: 0,
-          repostCount: 0,
-          playCount: 0,
-          commentCount: 0,
-          postedAt: new Date().toISOString(),
-          waveformData: [],
-        };
+          // Fetch full track details to ensure we have a working audio URL
+          const { getTrackById } = await import("../services/track.service");
+          const fullTrack = await getTrackById(backendState.track_id);
 
-        set({
-          currentTrack: track,
-          queue: Array.isArray(backendState.queue) && backendState.queue.length > 0 
-            ? backendState.queue 
-            : [track],
-          queueIndex: 0,
-          currentTime: backendState.position_seconds,
-          volume: backendState.volume,
-          isPlaying: false,
-        });
+          set({
+            currentTrack: fullTrack,
+            queue: Array.isArray(backendState.queue) && backendState.queue.length > 0 
+              ? backendState.queue 
+              : [fullTrack],
+            queueIndex: 0,
+            currentTime: backendState.position_seconds || 0,
+            duration: backendState.duration || Number(fullTrack.duration) || 0,
+            volume: backendState.volume ?? 1,
+            isPlaying: false,
+          });
+        } catch (e) {
+          console.error("Failed to rehydrate player from backend", e);
+        }
       },
     }),
     {

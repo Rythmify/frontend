@@ -16,9 +16,9 @@ import { FaRegCopy } from "react-icons/fa";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import { repostTrack } from "@/services/mocks/Track.service";
-import { usePlayerStore } from "@/stores/player.store";
 import type { Track } from "@/types/track";
 import type { PlaylistTrackItem } from "@/services/api/playlist/playlist.service";
+import { useLikesStore } from "@/stores/likes.store";
 
 function TrackItem({
   track,
@@ -36,7 +36,8 @@ function TrackItem({
   onLike: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const { isTrackLiked, toggleTrack: globalToggleTrack } = useLikesStore();
+  const liked = isTrackLiked(track.track_id);
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
@@ -53,7 +54,24 @@ function TrackItem({
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setLiked((prev) => !prev);
+    // Build a minimal Track object for the store
+    const trackObj: Track = {
+      id: track.track_id,
+      title: track.title ?? "Untitled track",
+      artistName: artistName,
+      artistUsername: artistSlug,
+      coverUrl: coverImage,
+      audioUrl: track.audio_url ?? "",
+      duration: formatDuration(track.duration),
+      genre: "",
+      likeCount: 0,
+      repostCount: 0,
+      playCount: playCount,
+      commentCount: 0,
+      postedAt: track.added_at ?? "",
+      waveformData: [],
+    };
+    globalToggleTrack(trackObj);
     onLike();
   };
 
@@ -97,6 +115,7 @@ function TrackItem({
       waveformData: [],
       audioUrl: track.audio_url ?? "",
       isPrivate: !track.is_public,
+      artistId: track.artist_id || track.user_id || "",
     };
 
     setTrack(trackForPlayer);

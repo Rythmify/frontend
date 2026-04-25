@@ -16,6 +16,7 @@ import * as engagementService from "../../../../services/engagement.service";
 import { postComment } from "../../../../services/track.service";
 import { usePlayerStore } from "../../../../stores/player.store";
 import { useAuthStore } from "../../../../stores/auth.store";
+import { useLikesStore } from "../../../../stores/likes.store";
 
 interface TrackActionsProps {
   track: Track;
@@ -34,7 +35,8 @@ export default function TrackActions({
   const { user } = useAuthStore();
   const currentUserAvatar = user?.avatar || "https://picsum.photos/seed/rythmify/100/100";
   
-  const [liked, setLiked] = useState(isLiked);
+  const { isTrackLiked, toggleTrack: globalToggleTrack } = useLikesStore();
+  const liked = isTrackLiked(track.id);
   const [reposted, setReposted] = useState(track.isReposted || false);
   const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(track.repostCount ?? 0);
@@ -47,7 +49,6 @@ export default function TrackActions({
     setRepostCount(track.repostCount ?? 0);
     setPlayCount(track.playCount ?? 0);
     setCommentCount(track.commentCount ?? 0);
-    setLiked(track.isLiked || false);
     setReposted(track.isReposted || false);
   }, [track]);
 
@@ -67,24 +68,11 @@ export default function TrackActions({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Like - calls MSW ( /api/tracks/:id/like )
+  // Like - uses global store
   const handleLike = async () => {
-    try {
-      if (liked) {
-        await engagementService.unlikeTrack(track.id);
-        setLiked(false);
-        setLikeCount((p) => p - 1);
-      } else {
-        await engagementService.likeTrack(track.id);
-        setLiked(true);
-        setLikeCount((p) => p + 1);
-      }
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        alert("Session expired or unauthorized. Please log out and back in.");
-      }
-      setLiked((p) => !p);
-    }
+    const wasLiked = liked;
+    setLikeCount((p) => wasLiked ? Math.max(0, p - 1) : p + 1);
+    globalToggleTrack(track);
   };
 
   const isOwner = !!user && (user.username === track.artistUsername || user.id === track.artistId);

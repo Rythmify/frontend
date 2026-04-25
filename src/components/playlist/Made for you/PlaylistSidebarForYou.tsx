@@ -55,7 +55,7 @@ export default function PlaylistSidebar({
         "Unknown Artist";
       const username =
         track.artist_username?.trim() ||
-        track.artist_name?.trim().toLowerCase().replace(/\s+/g, "-") ||
+        (track.artist_name?.trim() || "").toLowerCase().replace(/\s+/g, "-") ||
         rawKey;
 
       const existing = artists.get(key);

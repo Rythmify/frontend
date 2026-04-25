@@ -18,6 +18,7 @@ import {
 import { MdQueueMusic, MdPlaylistAdd, MdComment } from "react-icons/md";
 import { FaPlay as FaPlayCount } from "react-icons/fa6";
 import { IoSend } from "react-icons/io5";
+import FollowButton from "../UI/FollowButton";
 import type { Track } from "../../types/track";
 import type { Comment } from "../../types/comment";
 import type { TrackCardProps } from "./types";
@@ -472,7 +473,11 @@ export default function TrackCard({
   const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(track.repostCount ?? 0);
   const [playCount, setPlayCount] = useState(track.playCount ?? 0);
-  const [isLiked, setIsLiked] = useState(false); // Initially from backend normalize
+  const isLiked = loves.isTrackLiked(track.id);
+  const setIsLiked = (val: boolean) => {
+    // We don't actually need this as a state setter anymore, but 
+    // we keep the signature for compatibility if needed elsewhere
+  };
   const [isReposted, setIsReposted] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [addedToQueue, setAddedToQueue] = useState(false);
@@ -484,7 +489,7 @@ export default function TrackCard({
 
   // Sync state with track props
   useEffect(() => {
-    setIsLiked(track.isLiked || false);
+    // isLiked is now derived from store
     setIsReposted(track.isReposted || false);
     setLikeCount(track.likeCount || 0);
     setRepostCount(track.repostCount || 0);
@@ -535,17 +540,11 @@ export default function TrackCard({
 
   const handleLike = async () => {
     const wasLiked = isLiked;
-    setIsLiked(!wasLiked);
+    // Update local count optimistically
     setLikeCount(prev => wasLiked ? prev - 1 : prev + 1);
     
-    try {
-      if (wasLiked) await engagementService.unlikeTrack(track.id);
-      else await engagementService.likeTrack(track.id);
-    } catch (err) {
-      setIsLiked(wasLiked);
-      setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
-      console.error("Like toggle failed", err);
-    }
+    // Toggle in global store
+    loves.toggleTrack(track);
   };
 
   const handleRepost = async () => {
@@ -620,9 +619,16 @@ export default function TrackCard({
         <div className="flex items-start justify-between gap-2 sm:gap-4">
           <div className="flex-1 min-w-0">
              <div className="flex items-center gap-2 text-[10px] sm:text-xs text-white/50 mb-0.5 sm:mb-1">
-                <Link to={`/${track.artistUsername}`} className="hover:text-white transition-colors truncate">
-                  {track.artistName}
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link to={`/${track.artistUsername}`} className="hover:text-white transition-colors truncate">
+                    {track.artistName}
+                  </Link>
+                  <FollowButton 
+                    username={track.artistUsername} 
+                    userId={track.artistId} 
+                    className="scale-75 origin-left py-0.5 px-2 h-5 flex items-center" 
+                  />
+                </div>
                 {repostedBy && (
                   <span className="hidden sm:flex items-center gap-1">
                     <BiRepost size={14} className="text-[#f50]" />
