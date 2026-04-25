@@ -538,7 +538,7 @@ export default function CheckoutPage() {
       <div className="mx-auto max-w-[1000px] px-6 pb-20 pt-12 md:px-10">
         {/* Page title */}
         <h1 className="mb-10 text-[28px] font-black tracking-[-0.03em] text-black">
-          Get Artist
+          Get Premium
         </h1>
 
         <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
@@ -622,9 +622,9 @@ export default function CheckoutPage() {
                 }`}
               >
                 <RadioDot selected={payment === "apple"} />
-                  <span className="flex-1 text-[16px] font-semibold text-black">
-                    Apple Pay
-                  </span>
+                <span className="flex-1 text-[16px] font-semibold text-black">
+                  Apple Pay
+                </span>
                 <ApplePayIcon />
               </button>
 
@@ -695,14 +695,14 @@ export default function CheckoutPage() {
 
           {/* ── Right column ── */}
           <div className="w-full lg:w-[340px] lg:flex-shrink-0">
-              <h2 className="mb-4 text-[18px] font-bold text-black">
+            <h2 className="mb-4 text-[18px] font-bold text-black">
               3. Review your purchase
             </h2>
 
             {/* Plan card */}
             <div className="mb-4 flex items-center gap-3">
               <ReviewPlanLogo />
-                <span className="text-[17px] font-bold text-black">Artist</span>
+              <span className="text-[17px] font-bold text-black">Premium</span>
             </div>
 
             {/* Coupon */}
@@ -762,11 +762,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Buy button — label + colour change per payment method */}
-            <button
-              type="button"
-              disabled={!payment}
-              className={ctaClassName}
-            >
+            <button type="button" disabled={!payment} className={ctaClassName}>
               {payment === "apple" ? (
                 <span className="inline-flex items-center justify-center gap-1.5">
                   <span>{ctaLabel}</span>
@@ -783,7 +779,7 @@ export default function CheckoutPage() {
               By submitting your payment information and clicking {ctaLegalVerb}{" "}
               you agree to the{" "}
               <a href="#" className="text-[#0066cc]">
-                Terms of Use for Artist Subscriptions
+                Terms of Use for Premium Subscriptions
               </a>{" "}
               and{" "}
               <a href="#" className="text-[#0066cc]">
