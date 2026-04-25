@@ -96,7 +96,9 @@ usePlayerStore.subscribe((state, prev) => {
     if (globalWaveSurfer && globalWaveSurferTrackId !== state.currentTrack.id) {
       try {
         globalWaveSurfer.destroy();
-      } catch (e) {}
+      } catch (e) {
+        // Ignore destruction errors
+      }
       globalWaveSurfer = null;
       globalWaveSurferTrackId = null;
     }
