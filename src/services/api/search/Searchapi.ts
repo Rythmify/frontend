@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // searchAPI.ts  –  Rythmify Search & Suggestions
 // ─────────────────────────────────────────────────────────────────────────────
-import axiosInstance from '../axiosInstance'; 
+import axiosInstance from '../axiosInstance';
 
 // ─── Literal union types ──────────────────────────────────────────────────────
 
@@ -229,7 +229,7 @@ function cleanParams(
  * const data = await search({ q: 'night', type: 'tracks', tag: 'energetic', time_range: 'past_month' });
  *
  * @example — Users tab with location filter
- * const data = await search({ q: 'saja', type: 'users', location: 'Cairo' });
+ * const data = await search({ q: 'nour', type: 'users', location: 'Cairo' });
  *
  * @example — Overview / everything page
  * const data = await search({ q: 'jaz' });
@@ -238,7 +238,7 @@ export async function search<T extends SearchParams>(
   params: T,
   signal?: AbortSignal,
 ): Promise<SearchResponse<T>> {
-  const { data } = await axiosInstance.get<SearchResponse<T>>('/search', {
+  const { data } = await axiosInstance.get<{ data: SearchResponse<T> }>('/search', {
     params: cleanParams({
       q:          params.q,
       type:       'type' in params ? params.type : undefined,
@@ -252,12 +252,11 @@ export async function search<T extends SearchParams>(
     signal,
   });
 
-  return data;
+  // Backend wraps everything in { data: { ... } }
+  return data.data;
 }
 
 // ─── Convenience wrappers ─────────────────────────────────────────────────────
-// These are optional but keep call sites readable and prevent passing
-// irrelevant filters to the wrong endpoint (e.g. duration on a users search).
 
 export const searchEverything = (
   params: EverythingSearchParams,
@@ -286,14 +285,31 @@ export const searchUsers = (
 
 // ─── Suggestions ──────────────────────────────────────────────────────────────
 
-export interface Suggestion {
+/**
+ * A user suggestion returned by the backend — a person the current user follows.
+ */
+export interface SuggestionUser {
   id: string;
-  label: string;
-  type: SearchType;
+  display_name: string;
+  username: string;
+  profile_picture: string | null;
+  is_following: boolean;
 }
 
+/**
+ * The full response from GET /suggestions?q=...
+ *
+ * Backend shape:
+ * {
+ *   data: {
+ *     users: SuggestionUser[];       // people the authed user follows matching the query
+ *     suggestions: string[];         // plain-text query suggestions
+ *   }
+ * }
+ */
 export interface SuggestionsResponse {
-  suggestions: Suggestion[];
+  users: SuggestionUser[];
+  suggestions: string[];
 }
 
 /**
@@ -305,15 +321,16 @@ export interface SuggestionsResponse {
  *
  * @example
  * const controller = new AbortController();
- * const { suggestions } = await getSuggestions('n', controller.signal);
+ * const { users, suggestions } = await getSuggestions('n', controller.signal);
  */
 export async function getSuggestions(
   q: string,
   signal?: AbortSignal,
 ): Promise<SuggestionsResponse> {
-  const { data } = await axiosInstance.get<SuggestionsResponse>('/suggestions', {
-    params: { q },
-    signal,
-  });
-  return data;
+  const { data } = await axiosInstance.get<{ data: SuggestionsResponse }>(
+    '/suggestions',
+    { params: { q }, signal },
+  );
+  // Unwrap the { data: { users, suggestions } } envelope
+  return data.data;
 }
