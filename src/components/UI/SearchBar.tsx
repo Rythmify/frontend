@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
-import { getSuggestions, type SuggestionUser, type SuggestionsResponse } from "../../../services/api/search/SearchAPI";
-import UserAvatar from "@/components/UI/UserAvatar";
+import { getSuggestions, type SuggestionUser, type SuggestionsResponse } from "@/services/api/search/SearchAPI";
+import UserAvatar from "./UserAvatar";
 
 interface Props {
   className?: string;
