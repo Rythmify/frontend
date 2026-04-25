@@ -158,6 +158,7 @@ const CommentsArtistPage = lazy(
 const CheckoutPage = lazy(
   () => import("@/pages/creator/checkout/CheckoutPage"),
 );
+const PlanPage = lazy(() => import("@/pages/premium/PlanPage"));
 
 // Not Found
 const NotFound = lazy(() => import("@/pages/not-found/NotFound"));
@@ -189,6 +190,12 @@ export const router = createBrowserRouter([
   {
     element: <LandingLayout />,
     children: [{ path: "/", element: <Lazy component={HomePage} /> }],
+  },
+
+  // 1b. Premium plans
+  {
+    path: "premium",
+    element: <Lazy component={PlanPage} />,
   },
 
   // 2. Guest-only

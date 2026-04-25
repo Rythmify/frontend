@@ -7,15 +7,17 @@ import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { usePlayerStore } from "@/stores/player.store";
-import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import CardOverlay, {
+  AddToPlaylistIcon,
+} from "@/components/UI/CardOverlay/CardOverlay";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 
 const BADGE_COLORS: { bg: string; text: string }[] = [
-  { bg: "#333333", text: "#000000" }, // MIX 1 — dark gray
-  { bg: "#1a6de0", text: "#000000" }, // MIX 2 — blue
-  { bg: "#e8e8e8", text: "#000000" }, // MIX 3 — light
-  { bg: "#ff6600", text: "#000000" }, // MIX 4 — orange
-  { bg: "#ff0000", text: "#000000" }, // MIX 5 — red
+  { bg: "#B3A2F2", text: "#000000" }, // MIX 1 — dark gray
+  { bg: "#4D83DB", text: "#000000" }, // MIX 2 — blue
+  { bg: "#ffffff", text: "#000000" }, // MIX 5 — red
+  { bg: "#FE5500", text: "#000000" }, // MIX 3 — light
+  { bg: "#000000", text: "#ffffff" }, // MIX 4 — orange
 ];
 
 function stableColorIndex(id: string): number {
@@ -46,8 +48,12 @@ export default function MixCard({
   index,
 }: MixCardProps) {
   const mixId = mix.mix_id ?? mix.id;
-  const displayLabel = mix.label ?? (index !== undefined ? `MIX ${index + 1}` : "MIX");
-  const badge = BADGE_COLORS[colorIndex(displayLabel, mixId)];
+  const displayLabel =
+    index !== undefined ? `Mix ${index + 1}` : (mix.label ?? "");
+  const badge =
+    BADGE_COLORS[
+      index !== undefined ? index % BADGE_COLORS.length : colorIndex(mix)
+    ];
   const { isMixLiked, toggleMix } = useLikesStore();
   const { addMix } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
@@ -57,8 +63,11 @@ export default function MixCard({
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // Guard against stale persisted history entries that predate the non-null contract
-  const previewTrack = mix.preview_track ? mapDiscoveryTrack(mix.preview_track) : null;
-  const isThisMixPlaying = isPlaying && !!previewTrack && currentTrack?.id === previewTrack.id;
+  const previewTrack = mix.preview_track
+    ? mapDiscoveryTrack(mix.preview_track)
+    : null;
+  const isThisMixPlaying =
+    isPlaying && !!previewTrack && currentTrack?.id === previewTrack.id;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -71,8 +80,7 @@ export default function MixCard({
     }
   };
 
-
- const mixPath = `/discover/sets/${mixId}`;
+  const mixPath = `/discover/sets/${mixId}`;
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleMix(mix);
@@ -97,15 +105,16 @@ export default function MixCard({
 
         {/* MIX badge */}
         <div
-          className="w-[90%] absolute left-2 bottom-2 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-sm flex items-baseline gap-1"
+          className="w-[90%] absolute left-2 bottom-2 px-1.5 py-0.3 sm:px-2 sm:py-0.5 rounded-sm flex items-baseline gap-1"
           style={{ backgroundColor: badge.bg }}
           data-test="mix-card-badge"
         >
           <span
-            className="text-sm sm:text-lg md:text-xl lg:text-2xl tracking-widest uppercase leading-none"
+            className="text-sm sm:text-md md:text-lg lg:text-xl tracking-tighter uppercase leading-none"
             style={{
               color: badge.text,
-              fontFamily: "'Barlow Condensed', sans-serif",
+              fontFamily:
+                "Söhne, system-ui, -apple-system, Roboto, Ubuntu, Cantarell, sans-serif, Roboto, sans-serif",
               fontWeight: 900,
             }}
           >
