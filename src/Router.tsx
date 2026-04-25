@@ -155,9 +155,8 @@ const VinylPage = lazy(() => import("@/pages/creator/artists/vinyl/VinylPage"));
 const CommentsArtistPage = lazy(
   () => import("@/pages/creator/artists/comments/ArtistsCommentsPage"),
 );
-const CheckoutPage = lazy(
-  () => import("@/pages/creator/checkout/CheckoutPage"),
-);
+const CheckoutPage = lazy(() => import("@/pages/creator/checkout/CheckoutPage"));
+const PaymentPage = lazy(() => import("@/pages/creator/checkout/PaymentPage"));
 const PlanPage = lazy(() => import("@/pages/premium/PlanPage"));
 
 // Not Found
@@ -398,6 +397,10 @@ export const router = createBrowserRouter([
           {
             path: "creator/checkout",
             element: <Lazy component={CheckoutPage} />,
+          },
+          {
+            path: "creator/payment",
+            element: <Lazy component={PaymentPage} />,
           },
         ],
       },
