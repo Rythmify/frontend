@@ -302,6 +302,7 @@ function MoreOfLikeSlugPage() {
           undefined
         }
         moreOfLike={true}
+        moreOfLikeTitle={seedTrack?.title}
       />
 
       <div className="container mx-auto">
