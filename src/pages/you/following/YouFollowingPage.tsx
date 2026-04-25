@@ -86,7 +86,7 @@ export default function YouFollowingPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-6 gap-6">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 sm:gap-6">
           {displayed.map((u) => (
             <div key={u.id} className="flex flex-col items-center gap-2 group">
               <UserAvatar
@@ -118,11 +118,6 @@ export default function YouFollowingPage() {
                 </div>
               </div>
             </div>
-          ))}
-          {Array.from({
-            length: displayed.length % 6 === 0 ? 0 : 6 - (displayed.length % 6),
-          }).map((_, i) => (
-            <div key={`empty-${i}`} className="w-full aspect-square rounded-sm bg-input-bg" />
           ))}
         </div>
       )}
