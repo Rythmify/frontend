@@ -31,3 +31,4 @@ CLAUDE.md
 *.sln
 *.sw?
 src/openapi.yaml
+src/feed-discovery.md

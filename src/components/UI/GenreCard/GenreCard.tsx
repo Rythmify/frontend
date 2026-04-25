@@ -45,11 +45,11 @@ export default function GenreCard({
 }: GenreCardProps) {
   const badge = BADGE_COLORS[index % BADGE_COLORS.length];
   const navigate = useNavigate();
-  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const { isGenreLiked, toggleGenre } = useLikesStore();
   const { addGenre } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const liked = isPlaylistLiked(item.id);
+  const liked = isGenreLiked(item.id);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const isThisPlaying =
     isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
@@ -102,12 +102,7 @@ export default function GenreCard({
       navigate("/signin");
       return;
     }
-    togglePlaylist({
-      id: item.id,
-      title: item.genre,
-      owner: `${item.track_count} tracks`,
-      coverUrl: item.cover_image,
-    });
+    toggleGenre({ id: item.id, genre: item.genre, cover_image: item.cover_image });
   };
 
   return (
