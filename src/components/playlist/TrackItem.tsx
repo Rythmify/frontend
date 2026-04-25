@@ -19,6 +19,7 @@ import { repostTrack } from "@/services/mocks/Track.service";
 import type { Track } from "@/types/track";
 import type { PlaylistTrackItem } from "@/services/api/playlist/playlist.service";
 import { useLikesStore } from "@/stores/likes.store";
+import { usePlayerStore } from "@/stores/player.store";
 
 function TrackItem({
   track,

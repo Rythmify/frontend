@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { Track } from "../../../../types/track";
 import type { MockUser } from "../../../../services/mocks/users";
-import FollowButton from "../../../UI/FollowButton";
+import FollowButton from "@/components/UI/FollowButton";
 
 interface TrackSidebarProps {
   track: Track;
