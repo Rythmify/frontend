@@ -323,11 +323,11 @@ export const router = createBrowserRouter([
                     path: "history",
                     element: <Lazy component={HistoryPage} />,
                   },
+                  {
+                    path: "following",
+                    element: <Lazy component={YouFollowingPage} />,
+                  },
                 ],
-              },
-              {
-                path: "following",
-                element: <Lazy component={YouFollowingPage} />,
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
