@@ -203,9 +203,12 @@ export default function QueuePanel({ onClose }: QueuePanelProps) {
     queue,
     queueIndex,
     currentTrack,
+    isAutoplay,
+    toggleAutoplay,
     setTrack,
     removeFromQueue,
     reorderQueue,
+    clearQueue,
   } = usePlayerStore();
 
   // Tracks after the currently playing one
@@ -299,17 +302,10 @@ export default function QueuePanel({ onClose }: QueuePanelProps) {
           Next up
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {queue.length > 0 && (
+          {queue.length > 1 && (
             <button
               data-test="queue-clear-btn"
-              onClick={() => {
-                // Keep only the currently playing track
-                if (currentTrack) {
-                  usePlayerStore.setState({ queue: [currentTrack], queueIndex: 0 });
-                } else {
-                  usePlayerStore.setState({ queue: [], queueIndex: 0 });
-                }
-              }}
+              onClick={clearQueue}
               style={{
                 background: "none",
                 border: "none",
@@ -476,6 +472,50 @@ export default function QueuePanel({ onClose }: QueuePanelProps) {
             No more tracks in queue.
           </div>
         )}
+      </div>
+
+      {/* ── Footer / Autoplay ── */}
+      <div
+        style={{
+          padding: "12px 16px",
+          borderTop: "1px solid #2a2a2a",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexShrink: 0,
+          background: "#1a1a1a",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Autoplay station</span>
+          <span style={{ fontSize: 11, color: "#666" }}>Related tracks will be added to queue</span>
+        </div>
+        <button
+          onClick={toggleAutoplay}
+          style={{
+            width: 36,
+            height: 20,
+            borderRadius: 10,
+            background: isAutoplay ? "#eb4926" : "#333",
+            border: "none",
+            cursor: "pointer",
+            position: "relative",
+            transition: "background 0.2s",
+          }}
+        >
+          <div
+            style={{
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              background: "#fff",
+              position: "absolute",
+              top: 2,
+              left: isAutoplay ? 18 : 2,
+              transition: "left 0.2s",
+            }}
+          />
+        </button>
       </div>
     </div>
   );

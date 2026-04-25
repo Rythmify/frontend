@@ -42,3 +42,20 @@ export const savePlayerState = async (state: {
     return null;
   }
 };
+
+export interface QueueContextParams {
+  interaction_type: "play" | "next_up";
+  source_type: string;
+  source_id: string | null;
+  target_user_id: string | null;
+}
+
+export const postQueueContext = async (params: QueueContextParams): Promise<PlayerStateResponse | null> => {
+  try {
+    const res = await axiosInstance.post("/me/player/queue/context", params);
+    return res.data?.data || res.data;
+  } catch (err) {
+    console.error("Failed to post queue context:", err);
+    throw err;
+  }
+};

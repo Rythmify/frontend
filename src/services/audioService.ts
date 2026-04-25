@@ -9,6 +9,51 @@ let loadedAudioTrackId: string | null = null;
 export let globalWaveSurfer: any = null;
 export let globalWaveSurferTrackId: string | null = null;
 
+// Cross-tab synchronization: Only one tab should play at a time.
+// We use the 'storage' event which is highly reliable across all browsers.
+window.addEventListener("storage", (event) => {
+  if (event.key === "rythmify_playing_tab") {
+    const state = usePlayerStore.getState();
+    if (state.isPlaying) {
+      // If we receive this event, it means another tab just started playing.
+      // We should pause this tab.
+      usePlayerStore.getState().pause();
+    }
+  }
+});
+
+function notifyOtherTabs() {
+  // Update a localStorage key with a unique value to trigger 'storage' events in other tabs.
+  localStorage.setItem("rythmify_playing_tab", Date.now().toString());
+}
+
+// ─── Sync Current Time to Storage (Only if playing) ──────────────────────
+// This allows other tabs to "follow" the active player without constant persistence writes.
+setInterval(() => {
+  const state = usePlayerStore.getState();
+  if (state.isPlaying) {
+    // We update a lightweight key instead of the whole bulky store state
+    localStorage.setItem("rythmify_sync_time", JSON.stringify({
+      trackId: state.currentTrack?.id,
+      time: audio.currentTime,
+      ts: Date.now()
+    }));
+  }
+}, 1000);
+
+window.addEventListener("storage", (event) => {
+  if (event.key === "rythmify_sync_time") {
+    const data = JSON.parse(event.newValue || "{}");
+    const state = usePlayerStore.getState();
+    if (!state.isPlaying && data.trackId === state.currentTrack?.id) {
+       // Only sync if the gap is large enough to be a seek or a fresh load
+       if (Math.abs(state.currentTime - data.time) > 2) {
+         usePlayerStore.getState().setCurrentTime(data.time);
+       }
+    }
+  }
+});
+
 // When a direct seek is in progress (audio.currentTime set externally by WaveSurfer
 // or the progress bar), we suppress the isPlaying -> audio.play() branch in the
 // subscriber so the seek isn't interrupted. The flag is cleared after a short
@@ -49,7 +94,9 @@ usePlayerStore.subscribe((state, prev) => {
     // Kill the old WaveSurfer instance synchronously before we change audio.src.
     // ONLY if the global instance belongs to a different track.
     if (globalWaveSurfer && globalWaveSurferTrackId !== state.currentTrack.id) {
-      globalWaveSurfer.destroy();
+      try {
+        globalWaveSurfer.destroy();
+      } catch (e) {}
       globalWaveSurfer = null;
       globalWaveSurferTrackId = null;
     }
@@ -68,20 +115,23 @@ usePlayerStore.subscribe((state, prev) => {
       }
       audio.removeEventListener("loadedmetadata", onLoaded);
     };
-    audio.addEventListener("loadedmetadata", onLoaded);
+
+    if (audio.readyState >= 1) {
+      onLoaded();
+    } else {
+      audio.addEventListener("loadedmetadata", onLoaded);
+    }
 
     if (state.isPlaying) {
+      notifyOtherTabs();
       audio.play().catch(() => { });
     }
     return;
   }
 
-  // Play / pause toggled 
-  // Guard: if a seek is in progress, skip calling audio.play() here.
-  // The seek was already done directly on audio.currentTime; calling play()
-  // immediately after would interrupt the browser's seek and restart the track.
   if (state.isPlaying !== prev.isPlaying) {
     if (state.isPlaying) {
+      notifyOtherTabs();
       if (!seekInProgress) {
         audio.play().catch(() => { });
       }
@@ -90,9 +140,29 @@ usePlayerStore.subscribe((state, prev) => {
     }
   }
 
+  // Handle same-track restarts (e.g. next() called on 1-track queue)
+  // If track is same, isPlaying is true, but currentTime was reset to 0
+  // and we didn't just load this track (loadedAudioTrackId was already this track).
+  const isSameTrack = state.currentTrack && state.currentTrack.id === loadedAudioTrackId;
+  const isFreshTrackLoad = state.currentTrack?.id !== prev.currentTrack?.id;
+
+  if (isSameTrack && !isFreshTrackLoad && !seekInProgress &&
+      state.isPlaying && state.currentTime === 0 && prev.currentTime > 0) {
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
+
   // Volume / mute changed
   if (state.volume !== prev.volume || state.isMuted !== prev.isMuted) {
     audio.volume = state.isMuted ? 0 : Math.max(0, Math.min(1, state.volume));
+  }
+
+  // Cross-tab time sync (significant jumps only)
+  // CRITICAL: We only sync FROM the storage IF we are not the one currently playing.
+  // This prevents the "Time War" where two tabs fight over the position.
+  if (!state.isPlaying && state.currentTrack?.id === loadedAudioTrackId && 
+      Math.abs(state.currentTime - audio.currentTime) > 2) {
+     audio.currentTime = state.currentTime;
   }
 });
 
