@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, configure } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import GenreCard from "./GenreCard";
+import GenreCard, { type BuzzingPlaylist } from "./GenreCard";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { useAuthStore } from "@/stores/auth.store";
@@ -39,7 +39,7 @@ vi.mock("@heroui/react", () => ({
 
 // ─── Fixtures ─────────────────────────────────────────────
 
-const mockItem = {
+const mockItem: BuzzingPlaylist = {
   id: "genre-hip-hop-0001",
   genre: "Hip-Hop",
   cover_image: "https://example.com/hiphop.jpg",
