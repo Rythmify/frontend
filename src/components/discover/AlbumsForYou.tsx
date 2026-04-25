@@ -4,17 +4,22 @@ import type { DiscoveryAlbum } from "@/services/api/discover.service";
 import { getAlbumsForYou } from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import AlbumCard from "../UI/AlbumCard";
+import { useLikesStore } from "@/stores/likes.store";
 
 const AlbumsForYou = () => {
   const [albums, setAlbums] = useState<DiscoveryAlbum[]>([]);
+  const seedAlbums = useLikesStore((s) => s.seedAlbums);
 
   useEffect(() => {
     getAlbumsForYou()
       .then((res) => {
-        if (res.data.length > 0) setAlbums(res.data);
+        if (res.data.length > 0) {
+          setAlbums(res.data);
+          seedAlbums(res.data);
+        }
       })
       .catch();
-  }, []);
+  }, [seedAlbums]);
 
   return (
     <div data-test="section-albums-for-you">
@@ -27,9 +32,11 @@ const AlbumsForYou = () => {
               id: album.id,
               title: album.name,
               owner: album.owner_name,
-              slug: null,
+              ownerId: album.owner_id,
               coverUrl: album.cover_image ?? null,
-              isAlbumView: true,
+              trackCount: album.track_count,
+              likeCount: album.like_count,
+              createdAt: album.created_at,
               previewTrack: album.preview_track
                 ? mapDiscoveryTrack(album.preview_track)
                 : undefined,

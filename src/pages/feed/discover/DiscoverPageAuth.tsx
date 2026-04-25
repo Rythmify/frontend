@@ -10,18 +10,20 @@ import MadeForYou from "@/components/discover/MadeForYou/MadeForYou";
 import MoreOfWhatYouLike from "@/components/discover/MoreOfWhatYouLike";
 import { getHome } from "@/services/api/discover.service";
 import type { HomeData } from "@/services/api/discover.service";
+import { useLikesStore } from "@/stores/likes.store";
 import Spinner from "@/components/UI/Spinner";
 
 const DiscoverPageAuth = () => {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [homeError, setHomeError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const seedFromHomeData = useLikesStore((s) => s.seedFromHomeData);
 
   useEffect(() => {
     getHome()
-      .then((data) => { setHomeData(data); setIsLoading(false); })
+      .then((data) => { setHomeData(data); seedFromHomeData(data); setIsLoading(false); })
       .catch((err: Error) => { setHomeError(err.message); setIsLoading(false); });
-  }, []);
+  }, [seedFromHomeData]);
 
   if (isLoading) return <Spinner />;
 

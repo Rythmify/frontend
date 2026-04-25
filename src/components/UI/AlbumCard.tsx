@@ -2,66 +2,59 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
-import { useAuthStore } from "@/stores/auth.store";
-import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { useHistoryStore } from "@/stores/history.store";
-import CardOverlay, {
-  AddToPlaylistIcon,
-} from "@/components/UI/CardOverlay/CardOverlay";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
 import type { Track } from "@/types/track";
+import type { Playlist } from "@/services/api/playlist/playlist.service";
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export type PlaylistCardData = {
+export interface AlbumCardItem {
   id: string;
   title: string;
   owner: string;
-  ownerUsername?: string;
+  ownerId: string;
+  ownerUsername?: string | null;
   slug?: string | null;
   coverUrl: string | null;
-  isPrivate?: boolean;
-  isLiked?: boolean;
-  isAlbumView?: boolean;
+  trackCount: number;
+  likeCount: number;
+  createdAt?: string;
   previewTrack?: Track;
-};
+}
 
-interface PlaylistCardProps {
-  item: PlaylistCardData;
+interface AlbumCardProps {
+  item: AlbumCardItem;
   widthClassName?: string;
 }
 
-// ─── Component ────────────────────────────────────────────
-
-export default function PlaylistCard({
+export default function AlbumCard({
   item,
   widthClassName = "w-[200px]",
-}: PlaylistCardProps) {
+}: AlbumCardProps) {
   const navigate = useNavigate();
-  const { isPlaylistLiked, togglePlaylist, isAlbumLiked, toggleAlbum } =
-    useLikesStore();
+  const { isAlbumLiked, toggleAlbum } = useLikesStore();
   const { currentTrack, isPlaying, togglePlay, setTrack } = usePlayerStore();
-  const { user } = useAuthStore();
   const { addPlaylist } = useHistoryStore();
-
-  // Local State
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
-  // Derived State
-  const liked = item.isAlbumView
-    ? isAlbumLiked(item.id)
-    : isPlaylistLiked(item.id);
+  const liked = isAlbumLiked(item.id);
   const isThisPlaying =
     isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
 
-  const ownerDisplay = UUID_RE.test(item.owner)
-    ? (user?.displayName ?? user?.username ?? item.owner)
-    : (item.ownerUsername ?? item.owner);
+  const albumPath = `/${item.ownerUsername || item.ownerId}/album/${item.slug || item.id}`;
 
-  // SoundCloud navigation format: /[username]/sets/[slug]
-  const playlistPath = item.isAlbumView
-    ? `/${item.ownerUsername || item.owner}/album/${item.slug || item.id}`
-    : `/${item.ownerUsername || item.owner}/sets/${item.slug || item.id}`;
+  const buildPayload = (): Playlist => ({
+    playlist_id: item.id,
+    owner_user_id: item.ownerId,
+    name: item.title,
+    description: null,
+    is_public: true,
+    cover_image: item.coverUrl,
+    subtype: "album",
+    track_count: item.trackCount,
+    like_count: item.likeCount,
+    created_at: item.createdAt ?? new Date().toISOString(),
+  });
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -70,15 +63,20 @@ export default function PlaylistCard({
       togglePlay();
     } else {
       setTrack(item.previewTrack);
-      addPlaylist(item);
+      addPlaylist({ id: item.id, title: item.title, owner: item.owner, coverUrl: item.coverUrl, isAlbumView: true });
     }
+  };
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleAlbum(buildPayload());
   };
 
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
-      onClick={() => navigate(playlistPath)}
-      data-test="playlist-card"
+      onClick={() => navigate(albumPath)}
+      data-test="album-card"
     >
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
         {item.coverUrl ? (
@@ -97,18 +95,7 @@ export default function PlaylistCard({
           isPlaying={isThisPlaying}
           onPlay={handlePlayClick}
           isLiked={liked}
-          onLike={(e) => {
-            e.stopPropagation();
-            if (item.isAlbumView) {
-              toggleAlbum({
-                playlist_id: item.id,
-                name: item.title,
-                cover_image: item.coverUrl,
-              } as any);
-            } else {
-              togglePlaylist(item);
-            }
-          }}
+          onLike={handleLike}
           moreMenuItems={[
             {
               label: "Add to playlist",
@@ -119,18 +106,9 @@ export default function PlaylistCard({
         />
       </div>
 
-      {/* Title & Metadata */}
       <div>
-        <p className="text-white text-sm font-semibold truncate w-full flex items-center gap-1">
-          {item.isPrivate && (
-            <i className="fa-solid fa-lock text-[10px] text-gray-400 shrink-0" />
-          )}
-          {item.isLiked && (
-            <i className="fa-solid fa-heart text-[10px] text-white shrink-0" />
-          )}
-          <span className="truncate">{item.title}</span>
-        </p>
-        <p className="text-gray-400 text-xs truncate w-full">{ownerDisplay}</p>
+        <p className="text-white text-sm font-semibold truncate w-full">{item.title}</p>
+        <p className="text-gray-400 text-xs truncate w-full">{item.owner}</p>
       </div>
 
       {showPlaylistModal && (

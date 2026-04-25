@@ -54,28 +54,47 @@ export default function ProgressBar({ currentTime, duration, onSeek }: ProgressB
   return (
     <div
       data-test="player-progress-bar"
-      className="flex items-center w-full select-none"
+      className="flex items-center gap-3 w-full select-none"
     >
+      {/* Current time */}
+      <span
+        data-test="player-current-time"
+        className="text-text-hover text-[13px] tabular-nums shrink-0 w-8 text-right"
+      >
+        {formatTime(currentTime)}
+      </span>
+
+      {/* Seekable track */}
       <div
         ref={trackRef}
         data-test="player-seek-track"
         onMouseDown={handleMouseDown}
-        className="flex-1 h-[2px] cursor-pointer relative group bg-[#333] hover:h-[3px] transition-all"
+        className="flex-1 h-[3px] rounded-full cursor-pointer relative group bg-[#333]"
       >
+        {/* Played — orange */}
         <div
-          className="absolute left-0 top-0 h-full bg-[#f50] pointer-events-none"
+          className="absolute left-0 top-0 h-full rounded-full bg-[var(--color-accent)] pointer-events-none"
           style={{ width: `${pct}%` }}
         />
+        {/* Thumb — appears on hover */}
         <div
           className="
             absolute top-1/2 -translate-y-1/2 -translate-x-1/2
-            w-3 h-3 rounded-full bg-[#f50] shadow-md
+            w-4 h-4 rounded-full bg-white shadow
             opacity-0 group-hover:opacity-100
             transition-opacity duration-150 pointer-events-none
           "
           style={{ left: `${pct}%` }}
         />
       </div>
+
+      {/* Duration */}
+      <span
+        data-test="player-duration"
+        className="text-text-hover text-[13px] tabular-nums shrink-0 w-8"
+      >
+        {formatTime(duration)}
+      </span>
     </div>
   );
 }

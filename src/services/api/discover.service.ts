@@ -1,5 +1,4 @@
 ﻿import axiosInstance from "./axiosInstance";
-import type { Playlist } from "./playlist/playlist.service";
 
 // =============================================================================
 // TYPES — API response shapes (aligned to OpenAPI spec)
@@ -18,6 +17,7 @@ export interface DiscoveryTrack {
   artist_name: string | null; // flat string now, not a nested object
   stream_url: string | null;
   created_at: string;
+  is_liked_by_me?: boolean;
 }
 
 export interface PersonalMix {
@@ -30,6 +30,7 @@ export interface PersonalMix {
   track_count: number;
   generated_at: string;
   preview_track: DiscoveryTrack;
+  is_liked_by_me?: boolean;
 }
 
 export interface CuratedMixSummary {
@@ -40,6 +41,7 @@ export interface CuratedMixSummary {
   refreshes_at: string;
   cover_url: string | null;
   preview_track: DiscoveryTrack;
+  is_liked_by_me?: boolean;
 }
 
 export interface DiscoveryStation {
@@ -53,6 +55,7 @@ export interface DiscoveryStation {
   };
   preview_track: DiscoveryTrack;
   track_count: number;
+  is_saved?: boolean;
 }
 
 export interface EmergingArtist {
@@ -69,6 +72,7 @@ export interface CuratedHomeMixPreview {
   title: string;
   cover_url: string | null;
   preview_track: DiscoveryTrack;
+  is_liked_by_me?: boolean;
 }
 
 export interface CuratedHomeSection {
@@ -82,7 +86,7 @@ export interface HomeData {
     source: "personalized" | "trending_fallback";
   } | null;
   trending_by_genre: {
-    genres: { genre_id: string; genre_name: string; preview_track: DiscoveryTrack }[];
+    genres: { genre_id: string; genre_name: string; preview_track: DiscoveryTrack; is_liked?: boolean }[];
     initial_tab: {
       genre_id: string;
       genre_name: string;
@@ -170,6 +174,7 @@ export interface DiscoveryAlbum {
   like_count: number;
   created_at?: string;
   preview_track?: DiscoveryTrack | null;
+  is_liked_by_me?: boolean;
 }
 
 export type MixDetailsTrack = DiscoveryTrack;
