@@ -32,7 +32,7 @@ export default function MessageIdPage() {
   const [error, setError]                         = useState<string | null>(null);
   const [isTyping, setIsTyping]                   = useState(false);
   const [showMobileChat, setShowMobileChat]       = useState(false);
-
+const activeConvIdRef = useRef<string | null>(null);
   const { refreshUnreadCount } = useMessagingStore();
 
   // Ref to the scrollable message container
@@ -92,57 +92,61 @@ export default function MessageIdPage() {
     setHasMorePages(false);
     setLoadingMsgs(true);
 
-    // Fetch page 1 to get total_pages, then jump to last page if needed
-    fetchConversation(conv.id, 1, PAGE_SIZE)
-      .then(async (res) => {
-        const { messages, pagination } = res.data;
-        const { total_pages } = pagination;
+   // ── Load a conversation ──────────────────────────────────────
+const loadConversation = (conv: Conversation) => {
+  setActiveConvId(conv.id);
+  setActiveMessages([]);
+  setOldestPageFetched(1);
+  setHasMorePages(false);
+  setLoadingMsgs(true);
 
-        if (total_pages <= 1) {
-          // Everything fits on one page — we're done
-          setActiveMessages(messages);
-          setOldestPageFetched(1);
-          setHasMorePages(false);
-          requestAnimationFrame(scrollToBottom);
-          markConversationRead(conv, messages);
-        } else {
-          // Fetch the last page so the user sees the most recent messages
-          const lastRes = await fetchConversation(conv.id, total_pages, PAGE_SIZE);
-          setActiveMessages(lastRes.data.messages);
-          setOldestPageFetched(total_pages);
-          // There are pages before the last one still to load upward
-          setHasMorePages(total_pages > 1);
-          requestAnimationFrame(scrollToBottom);
-          markConversationRead(conv, lastRes.data.messages);
-        }
-      })
-      .catch(() => setError("Could not load messages."))
-      .finally(() => setLoadingMsgs(false));
-  };
+  fetchConversation(conv.id, 1, PAGE_SIZE)
+    .then(async (res) => {
+      const { messages, pagination } = res.data;
+      const { total_pages } = pagination;
+
+      if (total_pages <= 1) {
+        setActiveMessages(messages);
+        setOldestPageFetched(1);
+        setHasMorePages(false);
+        requestAnimationFrame(scrollToBottom);
+        markConversationRead(conv, messages);
+      } else {
+        const lastRes = await fetchConversation(conv.id, total_pages, PAGE_SIZE);
+        setActiveMessages(lastRes.data.messages);
+        setOldestPageFetched(total_pages);
+        // Pages before the last one exist and can be loaded upward
+        setHasMorePages(total_pages > 1); // ← correct here: there ARE older pages
+        requestAnimationFrame(scrollToBottom);
+        markConversationRead(conv, lastRes.data.messages);
+      }
+    })
+    .catch(() => setError("Could not load messages."))
+    .finally(() => setLoadingMsgs(false));
+};
 
   // ── Load an older page when the user scrolls to the top ────────────────────
 
-  const loadOlderMessages = useCallback(() => {
-    if (!activeConvId || loadingMore || !hasMorePages) return;
+const loadOlderMessages = useCallback(() => {
+  if (!activeConvId || loadingMore || !hasMorePages) return;
 
-    const pageToFetch = oldestPageFetched - 1;
-    if (pageToFetch < 1) { setHasMorePages(false); return; }
+  const pageToFetch = oldestPageFetched - 1;
+  if (pageToFetch < 1) { setHasMorePages(false); return; }
 
-    setLoadingMore(true);
+  setLoadingMore(true);
 
-    fetchConversation(activeConvId, pageToFetch, PAGE_SIZE)
-      .then((res) => {
-        const { messages: olderMessages } = res.data;
-        setOldestPageFetched(pageToFetch);
-        setHasMorePages(pageToFetch > 1);
-        // Prepend and keep viewport anchored
-        preserveScrollAfter(() => {
-          setActiveMessages((prev) => [...olderMessages, ...prev]);
-        });
-      })
-      .catch(() => {/* silently ignore — user can scroll again */})
-      .finally(() => setLoadingMore(false));
-  }, [activeConvId, loadingMore, hasMorePages, oldestPageFetched]);
+  fetchConversation(activeConvId, pageToFetch, PAGE_SIZE)
+    .then((res) => {
+      const { messages: olderMessages } = res.data;
+      setOldestPageFetched(pageToFetch);
+      setHasMorePages(pageToFetch > 1); // ← only more pages if we haven't reached page 1
+      preserveScrollAfter(() => {
+        setActiveMessages((prev) => [...olderMessages, ...prev]);
+      });
+    })
+    .catch(() => {})
+    .finally(() => setLoadingMore(false));
+}, [activeConvId, loadingMore, hasMorePages, oldestPageFetched]);
 
   // ── Scroll-to-top detection ─────────────────────────────────────────────────
 
