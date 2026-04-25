@@ -100,7 +100,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
   const isThisTrackPlaying = currentTrack?.id === id && isPlaying;
 
   const finalArtistSlug =
-    artistUsername || artist.toLowerCase().replace(/\s+/g, "-");
+    artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-");
 
   const trackPath = `/discover/personalised/${trackSlug ?? ""}:${id}`;
 
