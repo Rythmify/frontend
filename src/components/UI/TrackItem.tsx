@@ -82,7 +82,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       title,
       artistName: artist,
       artistUsername:
-        artistUsername || (artist ? artist.toLowerCase().replace(/\s+/g, "-") : ""),
+        artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-"),
       coverUrl: coverUrl || "",
       audioUrl: audioUrl ?? "",
       genre: genre || "",
@@ -102,7 +102,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
   const isThisTrackPlaying = currentTrack?.id === id && isPlaying;
 
   const finalArtistSlug =
-    artistUsername || (artist ? artist.toLowerCase().replace(/\s+/g, "-") : "");
+    artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-");
 
   const trackPath = `/discover/personalised/${trackSlug ?? ""}:${id}`;
 
