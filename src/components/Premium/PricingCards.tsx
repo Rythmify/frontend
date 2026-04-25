@@ -2,105 +2,159 @@ import React from "react";
 
 const UploadIcon = () => (
   <svg
-    width="18"
-    height="18"
+    width="24"
+    height="24"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
+    aria-hidden="true"
   >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="17 8 12 3 7 8" />
-    <line x1="12" y1="3" x2="12" y2="15" />
+    <path
+      fill="currentColor"
+      d="M13.883 4.25c-1.848 0-3.444 1.026-4.451 2.541a4.046 4.046 0 0 0-1.116-.157c-1.81 0-3.306 1.182-4.064 2.805-1.777.118-3.002 1.824-3.002 3.652 0 1.895 1.317 3.659 3.2 3.659H7v-1.5H4.45c-.824 0-1.7-.84-1.7-2.159 0-1.318.876-2.159 1.7-2.159.064 0 .128.005.19.014a.75.75 0 0 0 .815-.493c.505-1.43 1.645-2.319 2.86-2.319.393 0 .769.09 1.118.256a.75.75 0 0 0 .985-.326c.76-1.437 2.058-2.314 3.465-2.314 1.81 0 3.464 1.472 3.97 3.68a.75.75 0 0 0 .9.564c.125-.029.253-.044.384-.044 1.051 0 2.113 1.06 2.113 2.65 0 1.59-1.062 2.65-2.113 2.65H19v1.5h.137c2.111 0 3.613-1.984 3.613-4.15 0-2.166-1.502-4.15-3.613-4.15h-.003c-.788-2.392-2.785-4.2-5.25-4.2Z"
+    ></path>
+    <path
+      fill="currentColor"
+      d="M13.75 12.81V19h-1.5v-6.19l-1.72 1.72-1.06-1.06 3-3a.75.75 0 0 1 1.06 0l3 3-1.06 1.06-1.72-1.72Z"
+    ></path>
   </svg>
 );
 
 const BoostIcon = () => (
   <svg
-    width="18"
-    height="18"
+    width="24"
+    height="24"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
+    aria-hidden="true"
   >
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    <path
+      d="M20.25 8.75H13.25V2.5L3.75 15.25H10.75V21.5L20.25 8.75Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    ></path>
   </svg>
 );
 
 const MoneyIcon = () => (
   <svg
-    width="18"
-    height="18"
+    width="24"
+    height="24"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
+    aria-hidden="true"
   >
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    <path
+      d="M3 6.37476C3 4.51079 4.51104 2.99976 6.375 2.99976C8.23896 2.99976 9.75 4.51079 9.75 6.37476C9.75 7.98095 8.62799 9.32508 7.125 9.66612V11.25H16.875V9.66612C15.372 9.32508 14.25 7.98095 14.25 6.37476C14.25 4.51079 15.761 2.99976 17.625 2.99976C19.489 2.99976 21 4.51079 21 6.37476C21 7.98095 19.878 9.32508 18.375 9.66612V12C18.375 12.4142 18.0392 12.75 17.625 12.75H12.7502L12.7501 14.3336C14.253 14.6747 15.375 16.0188 15.375 17.625C15.375 19.489 13.864 21 12 21C10.136 21 8.625 19.489 8.625 17.625C8.625 16.0188 9.74703 14.6746 11.2501 14.3336L11.2502 12.75H6.375C5.96079 12.75 5.625 12.4142 5.625 12V9.66612C4.12201 9.32508 3 7.98095 3 6.37476ZM6.375 4.49976C5.33947 4.49976 4.5 5.33922 4.5 6.37476C4.5 7.41029 5.33947 8.24976 6.375 8.24976C7.41053 8.24976 8.25 7.41029 8.25 6.37476C8.25 5.33922 7.41053 4.49976 6.375 4.49976ZM15.75 6.37476C15.75 7.41029 16.5895 8.24976 17.625 8.24976C18.6605 8.24976 19.5 7.41029 19.5 6.37476C19.5 5.33922 18.6605 4.49976 17.625 4.49976C16.5895 4.49976 15.75 5.33922 15.75 6.37476ZM12 15.75C10.9645 15.75 10.125 16.5895 10.125 17.625C10.125 18.6605 10.9645 19.5 12 19.5C13.0355 19.5 13.875 18.6605 13.875 17.625C13.875 16.5895 13.0355 15.75 12 15.75Z"
+      fill="currentColor"
+    ></path>
   </svg>
 );
 
 const ReplaceIcon = () => (
   <svg
-    width="18"
-    height="18"
+    width="24"
+    height="24"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
+    aria-hidden="true"
   >
-    <polyline points="17 1 21 5 17 9" />
-    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-    <polyline points="7 23 3 19 7 15" />
-    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    <path
+      d="M16.5 13.5L19.5 16.5L16.5 19.5"
+      stroke="black"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    ></path>
+    <path
+      d="M4.5 16.5H19.5"
+      stroke="black"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    ></path>
+    <path
+      d="M7.5 10.5L4.5 7.5L7.5 4.5"
+      stroke="black"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    ></path>
+    <path
+      d="M19.5 7.5H4.5"
+      stroke="black"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    ></path>
   </svg>
 );
 
 const AIIcon = () => (
   <svg
-    width="18"
-    height="18"
+    width="24"
+    height="24"
     viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
+    fill="currentColor"
+    aria-hidden="true"
   >
-    <rect x="3" y="3" width="7" height="7" rx="1" />
-    <rect x="14" y="3" width="7" height="7" rx="1" />
-    <rect x="3" y="14" width="7" height="7" rx="1" />
-    <rect x="14" y="14" width="7" height="7" rx="1" />
+    <path d="M5.75 7.25L5.75 3.25H4.25L4.25 7.25H3.25V8.75H6.75V7.25H5.75Z"></path>
+    <path d="M17.25 7.25H18.25V3.25H19.75V7.25H20.75V8.75H17.25V7.25Z"></path>
+    <path d="M10.25 13.25H11.25V3.25H12.75V13.25H13.75V14.75H10.25V13.25Z"></path>
+    <path d="M5.75 20.75L5.75 10.25H4.25L4.25 20.75H5.75Z"></path>
+    <path d="M19.75 20.75V10.25H18.25L18.25 20.75H19.75Z"></path>
+    <path d="M12.75 20.75L12.75 16.25H11.25L11.25 20.75H12.75Z"></path>
+  </svg>
+);
+
+const ProBadgeIcon = () => (
+  <svg
+    width="30"
+    height="30"
+    viewBox="0 0 16 16"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M9.50386 0.55107C8.64601 -0.183691 7.35399 -0.18369 6.49615 0.551072L6.4558 0.585631C5.98395 0.989776 5.35867 1.18572 4.73063 1.12625L4.67693 1.12116C3.53512 1.01303 2.48985 1.74548 2.24364 2.82622L2.23206 2.87705C2.09663 3.4715 1.71019 3.98449 1.16585 4.29241L1.1193 4.31874C0.129663 4.87854 -0.269594 6.06366 0.189869 7.07757L0.211479 7.12526C0.464201 7.68295 0.464201 8.31705 0.211479 8.87474L0.189869 8.92243C-0.269594 9.93634 0.129663 11.1215 1.1193 11.6813L1.16585 11.7076C1.71019 12.0155 2.09663 12.5285 2.23206 13.123L2.24364 13.1738C2.48985 14.2545 3.53512 14.987 4.67693 14.8788L4.73063 14.8738C5.35867 14.8143 5.98395 15.0102 6.4558 15.4144L6.49615 15.4489C7.35399 16.1837 8.64601 16.1837 9.50386 15.4489L9.54421 15.4144C10.0161 15.0102 10.6413 14.8143 11.2694 14.8738L11.3231 14.8788C12.4649 14.987 13.5101 14.2545 13.7564 13.1738L13.7679 13.1229C13.9034 12.5285 14.2898 12.0155 14.8342 11.7076L14.8807 11.6813C15.8703 11.1215 16.2696 9.93634 15.8101 8.92243L15.7885 8.87474C15.5358 8.31705 15.5358 7.68295 15.7885 7.12526L15.8101 7.07757C16.2696 6.06366 15.8703 4.87854 14.8807 4.31874L14.8342 4.29241C14.2898 3.98449 13.9034 3.4715 13.7679 2.87705L13.7564 2.82622C13.5101 1.74548 12.4649 1.01303 11.3231 1.12116L11.2694 1.12625C10.6413 1.18572 10.016 0.989776 9.5442 0.585631L9.50386 0.55107ZM12.4016 6.50673C12.5101 6.59463 12.5905 6.7145 12.6322 6.85062C12.6755 6.98851 12.6781 7.13671 12.6395 7.27611C12.6009 7.41551 12.5229 7.53972 12.4156 7.63272L10.5327 9.25741L11.1284 11.7679C11.1558 11.8731 11.1595 11.9835 11.1394 12.0905C11.1192 12.1974 11.0757 12.2982 11.0121 12.385C10.9486 12.4718 10.8667 12.5423 10.7727 12.5911C10.6788 12.64 10.5753 12.6658 10.4702 12.6667C10.3415 12.6661 10.2157 12.6271 10.1078 12.5543L8.00417 11.1759H7.99584L6.04215 12.4593C5.91594 12.5419 5.76885 12.5835 5.61969 12.5789C5.47053 12.5743 5.32609 12.5236 5.20486 12.4333C5.07996 12.3388 4.98536 12.2075 4.93336 12.0564C4.88136 11.9054 4.87436 11.7416 4.91326 11.5864L5.47562 9.29198L3.58443 7.63272C3.47713 7.53972 3.39915 7.41551 3.36054 7.27611C3.32193 7.13671 3.32447 6.98851 3.36781 6.85062C3.41002 6.71481 3.49055 6.59526 3.59898 6.50744C3.7074 6.41962 3.83874 6.36757 3.976 6.35802L6.43372 6.19383L7.36682 3.78272C7.41687 3.65067 7.50397 3.53724 7.61686 3.45712C7.72974 3.377 7.86322 3.33388 8 3.33333C8.13678 3.33388 8.27026 3.377 8.38315 3.45712C8.49603 3.53724 8.58314 3.65067 8.63318 3.78272L9.54962 6.18086L12.024 6.35802C12.1614 6.36699 12.293 6.41882 12.4016 6.50673Z"
+      fill="#CFB25D"
+      fillRule="evenodd"
+      clipRule="evenodd"
+    />
   </svg>
 );
 
 const plan = {
   name: "Artist Pro",
   subtitle: "Tailored access to essential artist tools",
-  price: "EGP 74.99",
-  priceNote: "/ month, billed yearly for EGP 899.88",
+  price: "EGP 29.99",
+  priceNote: "/ month, billed yearly for EGP 359.88",
   cta: "Get started",
   features: [
     { icon: <UploadIcon />, label: "Unlimited uploads" },
     {
       icon: <BoostIcon />,
       label: "Boost tracks and get 100+ listeners",
-      badge: "UNLIMITED",
+      badge: "2X MONTH",
       badgeStyle: "gold" as const,
     },
     {
       icon: <MoneyIcon />,
       label: "Distribute & monetize tracks",
-      badge: "UNLIMITED",
+      badge: "2X MONTH",
       badgeStyle: "gold" as const,
     },
     {
       icon: <ReplaceIcon />,
       label: "Replace tracks without losing stats",
-      badge: "UNLIMITED",
+      badge: "3X MONTH",
       badgeStyle: "gold" as const,
     },
-    { icon: <AIIcon />, label: "AI Mastering", badge: "3X MONTH", badgeStyle: "gold" as const },
+    {
+      icon: <AIIcon />,
+      label: "AI Mastering",
+      badge: "1X MONTH",
+      badgeStyle: "gold" as const,
+    },
   ],
 };
 
@@ -109,19 +163,20 @@ function PlanCard() {
     <div className="w-full max-w-3xl rounded-[28px] border-2 border-black bg-white p-10 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
       <div className="space-y-6">
         <div>
-          <h2 className="m-0 text-[2.15rem] font-black leading-[1.05] tracking-tight text-black md:text-[2.45rem]">
+          <h2 className="m-0 inline-flex items-center gap-2 text-[2.15rem] font-black leading-[1.05] tracking-tight text-black md:text-[2.45rem]">
             {plan.name}
+            <ProBadgeIcon />
           </h2>
-          <p className="mt-3 text-base leading-6 text-slate-500 md:text-[1.05rem]">
+          <p className="mt-3 text-base leading-7 text-black md:text-[1.05rem]">
             {plan.subtitle}
           </p>
         </div>
 
         <div className="flex flex-wrap items-baseline gap-3">
-          <span className="text-[1.6rem] font-black text-[#ff5500] md:text-[1.75rem]">
+          <span className="text-[1.6rem] font-black text-[#cfb25d] md:text-[1.75rem]">
             {plan.price}
           </span>
-          <span className="text-sm text-slate-500 md:text-[0.95rem]">
+          <span className="text-sm leading-7 text-black md:text-[0.95rem]">
             {plan.priceNote}
           </span>
         </div>
@@ -132,7 +187,10 @@ function PlanCard() {
 
         <ul className="space-y-5">
           {plan.features.map((feature) => (
-            <li key={feature.label} className="flex items-center gap-4 text-base font-bold text-black">
+            <li
+              key={feature.label}
+              className="flex items-center gap-4 text-base font-bold leading-7 text-black"
+            >
               <span className="flex-shrink-0 text-black">{feature.icon}</span>
               <span className="flex-1">{feature.label}</span>
               <span
