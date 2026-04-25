@@ -49,7 +49,7 @@ export default function GenreCard({
   const { addGenre } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const liked = isGenreLiked(item.id);
+  const liked = isAuthenticated && isGenreLiked(item.id);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const isThisPlaying =
     isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;

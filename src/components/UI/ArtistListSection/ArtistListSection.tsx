@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FollowButton from "../FollowButton";
 import UserAvatar from "../UserAvatar";
@@ -50,6 +51,7 @@ const ArtistListSection = ({
   maxDisplay = 3,
 }: ArtistListSectionProps) => {
   const navigate = useNavigate();
+  const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
 
   if (artists.length === 0) return null;
 
@@ -142,7 +144,7 @@ const ArtistListSection = ({
                     className={styles.stat}
                   >
                     <i className={`${styles.statIcon} fa-user`} />
-                    {formatCount(artist.followers)}
+                    {formatCount(followerCounts[artist.username] ?? artist.followers)}
                   </button>
                   {artist.tracks !== undefined && artist.tracks > 0 && (
                     <button
@@ -160,7 +162,16 @@ const ArtistListSection = ({
 
             {/* Follow Button */}
             <div data-test={`artist-follow-button-${artist.username}`}>
-              <FollowButton username={artist.username} userId={artist.id} />
+              <FollowButton
+                username={artist.username}
+                userId={artist.id}
+                onFollowChange={(next) =>
+                  setFollowerCounts((prev) => ({
+                    ...prev,
+                    [artist.username]: (prev[artist.username] ?? artist.followers) + (next ? 1 : -1),
+                  }))
+                }
+              />
             </div>
           </div>
         ))}

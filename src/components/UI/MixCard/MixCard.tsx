@@ -24,10 +24,10 @@ function stableColorIndex(id: string): number {
   return h % BADGE_COLORS.length;
 }
 
-function colorIndex(mix: PersonalMix): number {
-  const match = (mix.label ?? "").match(/\d+/);
+function colorIndex(label: string, id: string): number {
+  const match = label.match(/\d+/);
   if (match) return (parseInt(match[0], 10) - 1) % BADGE_COLORS.length;
-  return stableColorIndex(mix.id);
+  return stableColorIndex(id);
 }
 
 // ─── Props ────────────────────────────────────────────────
@@ -35,6 +35,7 @@ function colorIndex(mix: PersonalMix): number {
 interface MixCardProps {
   mix: PersonalMix;
   widthClassName?: string;
+  index?: number;
 }
 
 // ─── Component ────────────────────────────────────────────
@@ -42,9 +43,11 @@ interface MixCardProps {
 export default function MixCard({
   mix,
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
+  index,
 }: MixCardProps) {
   const mixId = mix.mix_id ?? mix.id;
-  const badge = BADGE_COLORS[colorIndex(mix)];
+  const displayLabel = mix.label ?? (index !== undefined ? `MIX ${index + 1}` : "MIX");
+  const badge = BADGE_COLORS[colorIndex(displayLabel, mixId)];
   const { isMixLiked, toggleMix } = useLikesStore();
   const { addMix } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
@@ -106,7 +109,7 @@ export default function MixCard({
               fontWeight: 900,
             }}
           >
-            {mix.label ?? ""}
+            {displayLabel}
           </span>
         </div>
 
