@@ -73,10 +73,10 @@ describe("UploadSuccessView", () => {
     expect(window.location.href).toBe("/track/xyz999");
   });
 
-  it("calls navigate to checkout when unlock artist pro is clicked", async () => {
+  it("calls navigate to plan page when unlock artist pro is clicked", async () => {
     renderSuccess("abc123");
     await userEvent.click(screen.getByTestId("unlock-artist-pro-button"));
-    expect(mockNavigate).toHaveBeenCalledWith("creator/checkout");
+    expect(mockNavigate).toHaveBeenCalledWith("/premium");
   });
 
   // ── Corner cases ───────────────────────────────────────────────────────────

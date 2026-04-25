@@ -500,7 +500,7 @@ function PageFooter() {
   );
 }
 
-export default function CheckoutPage() {
+export default function PaymentPage() {
   const [billing, setBilling] = useState<BillingCycle>("yearly");
   const [payment, setPayment] = useState<PaymentMethod>(null);
   const [couponOpen, setCouponOpen] = useState(false);

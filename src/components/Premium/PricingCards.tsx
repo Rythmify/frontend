@@ -89,7 +89,7 @@ function PlanCard() {
         </div>
 
         <Link
-          to="/creator/checkout"
+          to="/creator/payment"
           className="block w-full rounded-full bg-black px-6 py-4 text-center text-[0.98rem] font-bold text-white transition-opacity hover:opacity-90"
         >
           {plan.cta}

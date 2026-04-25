@@ -82,7 +82,7 @@ export default function HeroSection() {
           </p>
           <div className="flex gap-6 flex-wrap">
             <Link
-              to="/creator/checkout"
+              to="/creator/payment"
               className="bg-white text-black font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:opacity-85 transition-opacity cursor-pointer"
             >
               Get Premium

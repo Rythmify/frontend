@@ -4,7 +4,7 @@ const UploadSuccessView = ({ trackId }: { trackId: string | null }) => {
   const navigate = useNavigate();
 
   const handleArtistProClick = () => {
-    navigate("creator/checkout");
+    navigate("/premium");
   };
 
   return (
