@@ -156,7 +156,7 @@ const CommentsArtistPage = lazy(
   () => import("@/pages/creator/artists/comments/ArtistsCommentsPage"),
 );
 const CheckoutPage = lazy(
-  () => import("@/pages/creator/checkout/CheckoutPage"),
+  () => import("@/pages/premium/PlanPage"),
 );
 const PlanPage = lazy(() => import("@/pages/premium/PlanPage"));
 
