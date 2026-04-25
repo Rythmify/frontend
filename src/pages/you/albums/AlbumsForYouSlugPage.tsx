@@ -62,6 +62,18 @@ function albumToPlaylistDetails(
   };
 }
 
+function getTopArtistTrackCounts(tracks: Track[]): [string, number][] {
+  const counts = new Map<string, number>();
+
+  for (const track of tracks) {
+    const artistId = track.artistId?.trim();
+    if (!artistId) continue;
+    counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries());
+}
+
 function AlbumsForYouSlugPage() {
   const { username, albumSlug } = useParams<{
     username: string;
@@ -80,6 +92,17 @@ function AlbumsForYouSlugPage() {
     isPlaying,
     currentTrack,
   } = usePlayerStore();
+
+  const toFeaturedArtist = (user: PublicUser, trackCount: number): MockUser => ({
+    id: user.id as unknown as number,
+    username: user.username ?? user.display_name,
+    displayName: user.display_name,
+    avatarUrl:
+      user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
+    followerCount: user.followers_count ?? 0,
+    trackCount,
+    isFollowing: false,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -120,7 +143,18 @@ function AlbumsForYouSlugPage() {
         if (cancelled) return;
 
         setPlaylist(albumToPlaylistDetails(album, referenceTrack, tracks));
-        setFeaturedArtists([]);
+
+        const artistIds = getTopArtistTrackCounts(tracks);
+        const artists = await Promise.all(
+          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
+            const user = await getUserById(artistId).catch(() => null);
+            return user ? toFeaturedArtist(user, trackCount) : null;
+          }),
+        );
+
+        if (cancelled) return;
+
+        setFeaturedArtists(artists.filter((artist): artist is MockUser => !!artist));
 
         const owner = await getUserById(album.owner_id).catch(() => null);
         if (cancelled) return;
