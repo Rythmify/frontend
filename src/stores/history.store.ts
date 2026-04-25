@@ -34,7 +34,7 @@ const MAX_ENTRIES = 50;
 
 function dedupeAndPrepend(entries: HistoryEntry[], entry: HistoryEntry): HistoryEntry[] {
   const filtered = entries.filter(
-    (e) => !(e.type === entry.type && e.item.id === entry.item.id),
+    (e) => !(e.type === entry.type && String(e.item.id) === String(entry.item.id)),
   );
   return [entry, ...filtered].slice(0, MAX_ENTRIES);
 }
@@ -133,10 +133,18 @@ export const useHistoryStore = create<HistoryStore>()(
               // Merge local non-track entries with backend track entries
               const localNonTracks = s.entries.filter(e => e.type !== "track");
               const merged = [...backendEntries, ...localNonTracks]
-                .sort((a, b) => new Date(b.playedAt).getTime() - new Date(a.playedAt).getTime())
-                .slice(0, MAX_ENTRIES);
+                .sort((a, b) => new Date(b.playedAt).getTime() - new Date(a.playedAt).getTime());
               
-              return { entries: merged };
+              // Deduplicate merged list (keep newest)
+              const seen = new Set<string>();
+              const unique = merged.filter((e) => {
+                const key = `${e.type}-${e.item.id}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+
+              return { entries: unique.slice(0, MAX_ENTRIES) };
             });
           }
         } catch (e) {

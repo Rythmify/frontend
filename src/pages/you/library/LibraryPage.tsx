@@ -245,13 +245,23 @@ export default function LibraryPage() {
   }, []);
 
   // History entries (all types) take priority; fall back to API/mock tracks
-  const recentEntries =
-    entries.length > 0
-      ? entries
-      : (recentlyPlayedApi.length > 0
-          ? recentlyPlayedApi
-          : mockRecentlyPlayedTracks
-        ).map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
+  const recentEntries = (() => {
+    const list =
+      entries.length > 0
+        ? entries
+        : (recentlyPlayedApi.length > 0
+            ? recentlyPlayedApi
+            : mockRecentlyPlayedTracks
+          ).map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
+
+    const seen = new Set<string>();
+    return list.filter((e) => {
+      const key = `${e.type}-${e.item.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
 
   const likesDisplay = likedTracks;
   const stationsDisplay = likedStations;
