@@ -10,9 +10,90 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ── Types ─────────────────────────────────────────────────────
+
+type Transaction = {
+  id: string;
+  date: string;
+  description: string;
+  amount: string;
+  status: "completed" | "refunded" | "failed";
+};
+
+type Subscription = {
+  planName: string;
+  renewsOn: string;
+  price: string;
+  paymentMethod: string;
+};
+
 // ── Sections ──────────────────────────────────────────────────
 
-function CurrentPlans() {
+function StatusBadge({ status }: { status: Transaction["status"] }) {
+  if (status === "completed")
+    return (
+      <span className="text-xs font-semibold text-[var(--color-success)]">
+        Completed
+      </span>
+    );
+  if (status === "refunded")
+    return (
+      <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+        Refunded
+      </span>
+    );
+  return (
+    <span className="text-xs font-semibold text-[var(--color-error)]">
+      Failed
+    </span>
+  );
+}
+
+function CurrentPlans({
+  subscription,
+  onCancel,
+}: {
+  subscription: Subscription | null;
+  onCancel: () => void;
+}) {
+  // ── Premium state ──
+  if (subscription) {
+    return (
+      <div>
+        <SectionTitle>Current plans</SectionTitle>
+
+        <div className="rounded-[var(--radius-md)] bg-[var(--color-input-bg)] p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h4 className="text-[var(--color-text-hover)] font-bold">
+                {subscription.planName}
+              </h4>
+              <p className="text-sm text-white mt-1">
+                Renews on {subscription.renewsOn} · {subscription.price} / month
+              </p>
+            </div>
+            <button
+              onClick={onCancel}
+              className="flex-shrink-0 cursor-pointer px-4 py-2 text-sm font-semibold text-[var(--color-error)] border border-[var(--color-border)] rounded-[var(--radius-sm)] hover:brightness-110 transition-all duration-150 whitespace-nowrap"
+            >
+              Cancel plan
+            </button>
+          </div>
+
+          <div className="border-t border-[var(--color-border)] mt-4 pt-3 flex flex-col gap-1">
+            <p className="text-xs text-white">
+              Payment method · {subscription.paymentMethod}
+            </p>
+            <a className="cursor-pointer text-xs text-[var(--color-text)] hover:text-[var(--color-text-hover)] transition-colors self-start">
+              Change your credit card or payment details
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Basic state ──
   return (
     <div>
       <SectionTitle>Current plans</SectionTitle>
@@ -21,7 +102,7 @@ function CurrentPlans() {
       <div className="rounded-[var(--radius-md)] bg-[var(--color-input-bg)] p-5 mb-3">
         <h4 className="text-[var(--color-text-hover)] font-bold mb-4">Basic</h4>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-[var(--color-text)]">
+          <p className="text-sm text-white">
             Premium plans include unlimited upload space and advanced features.
           </p>
           <Link
@@ -35,7 +116,7 @@ function CurrentPlans() {
 
       {/* Student banner */}
       <div className="rounded-[var(--radius-md)] bg-[var(--color-input-bg)] px-5 py-4 flex items-center justify-center gap-2">
-        <p className="text-sm text-[var(--color-text)]">
+        <p className="text-sm text-white">
           Are you a student?{" "}
           <a className="cursor-pointer text-[var(--color-text-link)] hover:text-[var(--color-text-link-hover)] transition-colors font-semibold">
             Get Rythmify Go+ for 50% off
@@ -46,11 +127,51 @@ function CurrentPlans() {
   );
 }
 
-function PurchaseHistory() {
+function PurchaseHistory({ transactions }: { transactions: Transaction[] }) {
   return (
     <div>
       <SectionTitle>Purchase history</SectionTitle>
-      {/* Empty — no purchase history to show */}
+
+      {transactions.length > 0 && (
+        <div className="flex flex-col">
+          {/* Header */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-8 px-3 pb-2 border-b border-[var(--color-border)]">
+            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              Description
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-right">
+              Date
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-right">
+              Amount
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-right">
+              Status
+            </span>
+          </div>
+
+          {/* Rows */}
+          {transactions.map((txn) => (
+            <div
+              key={txn.id}
+              className="grid grid-cols-[1fr_auto_auto_auto] gap-x-8 px-3 py-3 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input-bg)] transition-colors rounded-[var(--radius-sm)]"
+            >
+              <span className="text-sm text-white">
+                {txn.description}
+              </span>
+              <span className="text-sm text-white text-right whitespace-nowrap">
+                {txn.date}
+              </span>
+              <span className="text-sm font-semibold text-[var(--color-text-hover)] text-right">
+                {txn.amount}
+              </span>
+              <div className="flex justify-end">
+                <StatusBadge status={txn.status} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -85,7 +206,7 @@ function HelpfulLinks() {
         {links.map((link) => (
           <a
             key={link}
-            className="cursor-pointer text-sm leading-snug break-words text-[var(--color-text-link)] hover:text-[var(--color-text-link-hover)] transition-colors"
+            className="cursor-pointer text-sm leading-snug break-words text-[var(--color-text)] hover:text-[var(--color-text-hover)] transition-colors"
           >
             {link}
           </a>
@@ -105,7 +226,7 @@ function HelpfulLinks() {
         ))}
       </div>
 
-      <p className="text-xs text-[var(--color-text)]">
+        <p className="text-xs text-white">
         Language:{" "}
         <a className="cursor-pointer text-[var(--color-text-link)] hover:text-[var(--color-text-link-hover)] transition-colors">
           English (US)
@@ -118,14 +239,22 @@ function HelpfulLinks() {
 // ── Subscriptions Page ────────────────────────────────────────
 
 export default function SubscriptionsPage() {
+  const subscription: Subscription | null = null;
+
+  const transactions: Transaction[] = [];
+
+  const handleCancel = () => {
+    // call your cancellation API here
+  };
+
   return (
     <div className="bg-[var(--color-bg)]">
       <div className="container flex w-full gap-16 px-4 py-10 md:px-8 lg:px-20">
         {/* Main column */}
         <main className="flex min-w-0 flex-1 flex-col gap-10">
           <h1 className="text-[var(--color-text-hover)]">Subscriptions</h1>
-          <CurrentPlans />
-          <PurchaseHistory />
+          <CurrentPlans subscription={subscription} onCancel={handleCancel} />
+          <PurchaseHistory transactions={transactions} />
         </main>
 
         {/* Sidebar */}
