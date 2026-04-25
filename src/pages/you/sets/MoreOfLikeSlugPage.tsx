@@ -43,7 +43,20 @@ function toPlaylistTrackItem(
     artist_name: track.artistName || null,
     artist_username: track.artistUsername || null,
     audio_url: track.audioUrl || null,
+    play_count: track.playCount ?? 0,
   };
+}
+
+function getTopArtistTrackCounts(tracks: Track[]): [string, number][] {
+  const counts = new Map<string, number>();
+
+  for (const track of tracks) {
+    const artistId = track.artistId?.trim();
+    if (!artistId) continue;
+    counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries());
 }
 
 function buildPlaylist(
@@ -125,7 +138,32 @@ function MoreOfLikeSlugPage() {
           ),
         );
         setPlaylist(buildPlaylist(referenceTrack, tracks));
-        setFeaturedArtists([]);
+
+        const artistIds = getTopArtistTrackCounts(tracks);
+        const artists = await Promise.all(
+          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
+            const user = await getUserById(artistId).catch(() => null);
+            return user
+              ? {
+                  id: user.id as unknown as number,
+                  username: user.username ?? user.display_name,
+                  displayName: user.display_name,
+                  avatarUrl:
+                    user.profile_picture ??
+                    "https://picsum.photos/seed/default/100/100",
+                  followerCount: user.followers_count ?? 0,
+                  trackCount,
+                  isFollowing: false,
+                }
+              : null;
+          }),
+        );
+
+        if (!cancelled) {
+          setFeaturedArtists(
+            artists.filter((artist): artist is MockUser => !!artist),
+          );
+        }
 
         try {
           if (UUID_RE.test(referenceTrack.artistUsername)) {
