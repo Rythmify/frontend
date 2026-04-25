@@ -179,7 +179,11 @@ function Cell({ value }: { value: CellValue }) {
   }
 
   if (value.type === "unlimited") {
-    return <span className="text-[13px] font-semibold text-emerald-600">Unlimited</span>;
+    return (
+      <span className="text-[13px] font-semibold text-emerald-600">
+        Unlimited
+      </span>
+    );
   }
 
   if (value.type === "available") {
@@ -200,7 +204,11 @@ function Cell({ value }: { value: CellValue }) {
   }
 
   if (value.value === "Full access") {
-    return <span className="text-[13px] font-semibold text-emerald-600">Full access</span>;
+    return (
+      <span className="text-[13px] font-semibold text-emerald-600">
+        Full access
+      </span>
+    );
   }
 
   return <span className="text-[13px] text-black">{value.value}</span>;
@@ -210,10 +218,12 @@ const COL_W = "w-[200px]";
 
 function PlanHeaderRow() {
   return (
-    <div className="flex border-b border-[#e5e7eb] bg-white py-5">
+    <div className="flex  bg-white py-5">
       <div className="flex-1" />
 
-      <div className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-1 border-l border-[#e5e7eb] px-4`}>
+      <div
+        className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-1   px-4`}
+      >
         <span className="text-[15px] font-extrabold text-black">Free</span>
         <span className="text-[12px] text-slate-400">Free</span>
         <span className="mt-1 rounded-full border border-[#e5e7eb] px-3 py-[3px] text-[11px] text-slate-400">
@@ -221,8 +231,12 @@ function PlanHeaderRow() {
         </span>
       </div>
 
-      <div className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-1 border-l border-[#e5e7eb] px-4`}>
-        <span className="text-[15px] font-extrabold text-black">Artist Pro</span>
+      <div
+        className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-1 px-4`}
+      >
+        <span className="text-[15px] font-extrabold text-black">
+          Artist Pro
+        </span>
         <p className="m-0 text-[11px] text-center">
           <span className="font-bold text-[#ff5500]">EGP 74.99 </span>
           <span className="text-slate-400">/month, billed yearly</span>
@@ -246,84 +260,86 @@ export default function CompareTable() {
     });
 
   return (
-    <section className="bg-white px-6 pb-20 md:px-10 lg:px-20">
+    <section className="bg-white px-6 pb-20 md:px-10 lg:px-12 xl:px-16">
       <h2 className="mb-8 pt-14 text-center text-[2.25rem] font-extrabold tracking-[-0.03em] text-black">
         Compare features.
       </h2>
 
-      <div className="sticky top-0 z-20 bg-white">
-        <PlanHeaderRow />
-      </div>
-
-      {sections.map((section) => (
-        <div key={section.title}>
+      <div className="w-full bg-white">
+        <div className="sticky top-0 z-20 bg-white">
           <PlanHeaderRow />
-
-          <div className="border-b border-[#f3f4f6] py-4">
-            <span className="text-[14px] font-bold text-black">{section.title}</span>
-          </div>
-
-          {section.rows.map((row) => {
-            const key = `${section.title}::${row.name}`;
-            const isOpen = expanded.has(key);
-
-            return (
-              <div
-                key={key}
-                className="flex items-start border-b border-[#f3f4f6] py-[18px]"
-              >
-                <div className="flex-1 pr-8">
-                  <button
-                    onClick={() => row.description && toggle(key)}
-                    className={`flex w-full items-center gap-1.5 bg-transparent p-0 text-left text-[14px] font-bold text-black ${
-                      row.description ? "cursor-pointer" : "cursor-default"
-                    } border-none`}
-                  >
-                    {row.name}
-                    {row.description && (
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#9ca3af"
-                        strokeWidth="2.5"
-                        className={`flex-shrink-0 transition-transform duration-150 ${
-                          isOpen ? "rotate-180" : "rotate-0"
-                        }`}
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    )}
-                  </button>
-
-                  {isOpen && row.description && (
-                    <p className="mt-1.5 text-[12px] leading-[1.6] text-slate-400">
-                      {row.description}
-                    </p>
-                  )}
-                </div>
-
-                <div
-                  className={`flex ${COL_W} flex-shrink-0 items-center justify-center border-l border-[#f3f4f6] px-4`}
-                >
-                  <Cell value={row.free} />
-                </div>
-
-                <div
-                  className={`flex ${COL_W} flex-shrink-0 items-center justify-center border-l border-[#f3f4f6] px-4`}
-                >
-                  <Cell value={row.artistPro} />
-                </div>
-              </div>
-            );
-          })}
         </div>
-      ))}
+
+        {sections.map((section) => (
+          <div key={section.title}>
+            <div className=" py-4">
+              <span className="text-[14px] font-bold text-black">
+                {section.title}
+              </span>
+            </div>
+
+            {section.rows.map((row) => {
+              const key = `${section.title}::${row.name}`;
+              const isOpen = expanded.has(key);
+
+              return (
+                <div
+                  key={key}
+                  className="flex items-start border-b border-[#f3f4f6] py-[18px]"
+                >
+                  <div className="flex-1 pr-8">
+                    <button
+                      onClick={() => row.description && toggle(key)}
+                      className={`flex w-full items-center gap-1.5 bg-transparent p-0 text-left text-[14px] font-bold text-black ${
+                        row.description ? "cursor-pointer" : "cursor-default"
+                      } border-none`}
+                    >
+                      {row.name}
+                      {row.description && (
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#9ca3af"
+                          strokeWidth="2.5"
+                          className={`flex-shrink-0 transition-transform duration-150 ${
+                            isOpen ? "rotate-180" : "rotate-0"
+                          }`}
+                        >
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      )}
+                    </button>
+
+                    {isOpen && row.description && (
+                      <p className="mt-1.5 text-[12px] leading-[1.6] text-slate-400">
+                        {row.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div
+                    className={`flex ${COL_W} flex-shrink-0 items-center justify-center px-4`}
+                  >
+                    <Cell value={row.free} />
+                  </div>
+
+                  <div
+                    className={`flex ${COL_W} flex-shrink-0 items-center justify-center px-4`}
+                  >
+                    <Cell value={row.artistPro} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
 
       <footer className="mt-16 flex flex-col gap-3 border-t border-[#e5e7eb] pt-6 text-[12px] text-slate-400">
         <p className="m-0">
-          Signed in as Roweda Ahmed.{" "}
+          Signed in as Rowida Ahmed.{" "}
           <a href="#" className="text-[#ff5500] no-underline">
             Sign out
           </a>

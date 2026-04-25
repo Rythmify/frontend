@@ -19,6 +19,19 @@ const UploadIcon = () => (
   </svg>
 );
 
+const DownloadIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M13 3H11V12.17L8.41 9.58L7 11L12 16L17 11L15.59 9.58L13 12.17V3Z"
+      fill="currentColor"
+    />
+    <path
+      d="M5 19H19V21H5V19Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
 const BoostIcon = () => (
   <svg
     width="24"
@@ -131,6 +144,7 @@ const plan = {
   cta: "Get started",
   features: [
     { icon: <UploadIcon />, label: "Unlimited uploads" },
+    { icon: <DownloadIcon />, label: "Offline listening downloads" },
     {
       icon: <BoostIcon />,
       label: "Boost tracks and get 100+ listeners",
