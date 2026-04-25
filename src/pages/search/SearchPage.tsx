@@ -6,7 +6,7 @@ import { Outlet } from "react-router-dom";
  */
 export default function SearchPage() {
   return (
-    <div data-test="search-page" style={{ padding: "20px 24px" }}>
+    <div data-test="search-page" style={{ padding: "20px 25px" }}>
       <Outlet />
     </div>
   );
