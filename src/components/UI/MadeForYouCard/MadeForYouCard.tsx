@@ -38,10 +38,10 @@ export default function MadeForYouCard({
 }: MadeForYouCardProps) {
   const bg = item.badgeBg ?? "#1a237e";
   const navigate = useNavigate();
-  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const { isMixLiked, toggleMix } = useLikesStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { addMadeForYou } = useHistoryStore();
-  const liked = isPlaylistLiked(item.id);
+  const liked = isMixLiked(item.id);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const isThisPlaying =
     isPlaying &&
@@ -65,12 +65,7 @@ export default function MadeForYouCard({
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    togglePlaylist({
-      id: item.id,
-      title: item.title,
-      owner: item.subtitle,
-      coverUrl: item.coverUrl,
-    });
+    toggleMix({ id: item.id });
   };
 
   return (
