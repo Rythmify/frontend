@@ -17,7 +17,7 @@ const MixedForYou = ({ mixes }: Props) => {
         title={`Mixed for ${user?.displayName ?? user?.username ?? "You"}`}
       >
         {items.map((mix, i) => (
-          <MixCard key={mix.id} mix={mix} />
+          <MixCard key={mix.id} mix={mix} index={i} />
         ))}
       </HorizontalCarousel>
     </div>

@@ -11,11 +11,12 @@ import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/Card
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 
 const BADGE_COLORS: { bg: string; text: string }[] = [
-  { bg: "#333333", text: "#000000" }, // MIX 1 — dark gray
-  { bg: "#1a6de0", text: "#000000" }, // MIX 2 — blue
-  { bg: "#e8e8e8", text: "#000000" }, // MIX 3 — light
-  { bg: "#ff6600", text: "#000000" }, // MIX 4 — orange
-  { bg: "#ff0000", text: "#000000" }, // MIX 5 — red
+  { bg: "#B3A2F2", text: "#000000" }, // MIX 1 — dark gray
+  { bg: "#4D83DB", text: "#000000" }, // MIX 2 — blue
+  { bg: "#ffffff", text: "#000000" }, // MIX 5 — red
+  { bg: "#FE5500", text: "#000000" }, // MIX 3 — light
+  { bg: "#000000", text: "#ffffff" }, // MIX 4 — orange
+  
 ];
 
 function stableColorIndex(id: string): number {
@@ -34,6 +35,7 @@ function colorIndex(mix: PersonalMix): number {
 
 interface MixCardProps {
   mix: PersonalMix;
+  index?: number;
   widthClassName?: string;
 }
 
@@ -41,10 +43,12 @@ interface MixCardProps {
 
 export default function MixCard({
   mix,
+  index,
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: MixCardProps) {
   const mixId = mix.mix_id ?? mix.id;
-  const badge = BADGE_COLORS[colorIndex(mix)];
+  const displayLabel = index !== undefined ? `Mix ${index + 1}` : (mix.label ?? "");
+  const badge = BADGE_COLORS[index !== undefined ? index % BADGE_COLORS.length : colorIndex(mix)];
   const { isMixLiked, toggleMix } = useLikesStore();
   const { addMix } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
@@ -94,19 +98,20 @@ export default function MixCard({
 
         {/* MIX badge */}
         <div
-          className="w-[90%] absolute left-2 bottom-2 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-sm flex items-baseline gap-1"
+          className="w-[90%] absolute left-2 bottom-2 px-1.5 py-0.3 sm:px-2 sm:py-0.5 rounded-sm flex items-baseline gap-1"
           style={{ backgroundColor: badge.bg }}
           data-test="mix-card-badge"
         >
           <span
-            className="text-sm sm:text-lg md:text-xl lg:text-2xl tracking-widest uppercase leading-none"
+            className="text-sm sm:text-md md:text-lg lg:text-xl tracking-tighter uppercase leading-none"
             style={{
               color: badge.text,
-              fontFamily: "'Barlow Condensed', sans-serif",
+              fontFamily: "Söhne, system-ui, -apple-system, Roboto, Ubuntu, Cantarell, sans-serif, Roboto, sans-serif",
               fontWeight: 900,
+            
             }}
           >
-            {mix.label ?? ""}
+            {displayLabel}
           </span>
         </div>
 
