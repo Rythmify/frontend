@@ -158,8 +158,9 @@ const CommentsArtistPage = lazy(
   () => import("@/pages/creator/artists/comments/ArtistsCommentsPage"),
 );
 const CheckoutPage = lazy(
-  () => import("@/pages/creator/checkout/CheckoutPage"),
+  () => import("@/pages/premium/PlanPage"),
 );
+const PlanPage = lazy(() => import("@/pages/premium/PlanPage"));
 
 // Not Found
 const NotFound = lazy(() => import("@/pages/not-found/NotFound"));
@@ -191,6 +192,12 @@ export const router = createBrowserRouter([
   {
     element: <LandingLayout />,
     children: [{ path: "/", element: <Lazy component={HomePage} /> }],
+  },
+
+  // 1b. Premium plans
+  {
+    path: "premium",
+    element: <Lazy component={PlanPage} />,
   },
 
   // 2. Guest-only
