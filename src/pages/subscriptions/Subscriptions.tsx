@@ -66,10 +66,10 @@ function CurrentPlans({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h4 className="text-[var(--color-text-hover)] font-bold">
-                {subscription.planName}
+                Premium
               </h4>
               <p className="text-sm text-white mt-1">
-                Renews on {subscription.renewsOn} · {subscription.price} / month
+                Renews on {subscription.renewsOn} · EGP 29.99 / month
               </p>
             </div>
             <button
@@ -119,7 +119,7 @@ function CurrentPlans({
         <p className="text-sm text-white">
           Are you a student?{" "}
           <a className="cursor-pointer text-[var(--color-text-link)] hover:text-[var(--color-text-link-hover)] transition-colors font-semibold">
-            Get Rythmify Go+ for 50% off
+            Get Premium for 50% off
           </a>
         </p>
       </div>
@@ -135,17 +135,17 @@ function PurchaseHistory({ transactions }: { transactions: Transaction[] }) {
       {transactions.length > 0 && (
         <div className="flex flex-col">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-8 px-3 pb-2 border-b border-[var(--color-border)]">
-            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+          <div className="grid grid-cols-[minmax(0,1fr)_96px_120px_92px] gap-x-6 px-3 pb-2 border-b border-[var(--color-border)]">
+            <span className="justify-self-start text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
               Description
             </span>
-            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-right">
+            <span className="justify-self-end text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-right">
               Date
             </span>
-            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-right">
+            <span className="justify-self-end text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-right">
               Amount
             </span>
-            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-right">
+            <span className="justify-self-end text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-right">
               Status
             </span>
           </div>
@@ -154,15 +154,15 @@ function PurchaseHistory({ transactions }: { transactions: Transaction[] }) {
           {transactions.map((txn) => (
             <div
               key={txn.id}
-              className="grid grid-cols-[1fr_auto_auto_auto] gap-x-8 px-3 py-3 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input-bg)] transition-colors rounded-[var(--radius-sm)]"
+              className="grid grid-cols-[minmax(0,1fr)_96px_120px_92px] gap-x-6 px-3 py-3 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input-bg)] transition-colors rounded-[var(--radius-sm)]"
             >
-              <span className="text-sm text-white">
+              <span className="justify-self-start text-sm text-white">
                 {txn.description}
               </span>
-              <span className="text-sm text-white text-right whitespace-nowrap">
+              <span className="justify-self-end text-sm text-white text-right whitespace-nowrap">
                 {txn.date}
               </span>
-              <span className="text-sm font-semibold text-[var(--color-text-hover)] text-right">
+              <span className="justify-self-end text-sm font-semibold text-[var(--color-text-hover)] text-right">
                 {txn.amount}
               </span>
               <div className="flex justify-end">
@@ -226,7 +226,7 @@ function HelpfulLinks() {
         ))}
       </div>
 
-        <p className="text-xs text-white">
+      <p className="text-xs text-white">
         Language:{" "}
         <a className="cursor-pointer text-[var(--color-text-link)] hover:text-[var(--color-text-link-hover)] transition-colors">
           English (US)
@@ -242,6 +242,39 @@ export default function SubscriptionsPage() {
   const subscription: Subscription | null = null;
 
   const transactions: Transaction[] = [];
+
+  //for testing how the ui looks
+
+  //   const subscription: Subscription | null = {
+  //     planName: "Premium",
+  //     renewsOn: "May 25, 2026",
+  //     price: "$29.99",
+  //     paymentMethod: "Visa ending in 4242",
+  //   };
+
+  //   const transactions: Transaction[] = [
+  //     {
+  //       id: "1",
+  //       date: "Apr 25, 2026",
+  //       description: "Premium · Monthly",
+  //       amount: "EGP 29.99",
+  //       status: "completed",
+  //     },
+  //     {
+  //       id: "2",
+  //       date: "Mar 25, 2026",
+  //       description: "Premium · Monthly",
+  //       amount: "EGP 29.99",
+  //       status: "completed",
+  //     },
+  //     {
+  //       id: "3",
+  //       date: "Feb 25, 2026",
+  //       description: "Premium · Monthly",
+  //       amount: "EGP 29.99",
+  //       status: "refunded",
+  //     },
+  //   ];
 
   const handleCancel = () => {
     // call your cancellation API here
