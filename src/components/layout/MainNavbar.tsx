@@ -362,7 +362,7 @@ const MainNavbar = () => {
                 <DropdownLink label="Legal"             to="/terms-of-use"           onClick={closeAll} />
                 <DropdownLink label="Copyright"         to="/pages/copyright"        onClick={closeAll} />
                 <DropdownLink label="Mobile apps"       to="/download"               onClick={closeAll} />
-                <DropdownLink label="Artist Membership" to="/creator/checkout"       onClick={closeAll} />
+                <DropdownLink label="Artist Membership" to="/premium"       onClick={closeAll} />
                 <div className="border-t border-border my-1" />
                 <DropdownLink label="Keyboard shortcuts" to="#"                      onClick={closeAll} />
                 <DropdownLink label="Subscription"      to="/settings"               onClick={closeAll} />

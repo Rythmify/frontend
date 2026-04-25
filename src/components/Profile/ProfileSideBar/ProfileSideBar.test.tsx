@@ -261,6 +261,6 @@ describe("ProfileSideBar", () => {
   it("navigates to checkout on Upgrade to Artist Pro click", () => {
     render(<ProfileSideBar {...defaultProps} isOwner={true} />);
     fireEvent.click(screen.getByTestId("upgrade-pro-button"));
-    expect(mockNavigate).toHaveBeenCalledWith("/creator/checkout");
+    expect(mockNavigate).toHaveBeenCalledWith("/premium");
   });
 });

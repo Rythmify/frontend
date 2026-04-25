@@ -289,6 +289,10 @@ export default function LibraryPage() {
 
   const displayedFollowing = followingUsers;
 
+  const recentTracks = recentEntries
+    .filter((e) => e.type === "track")
+    .map((e) => e.item as Track);
+
   return (
     <div className="flex flex-col gap-8 sm:gap-10 md:gap-12">
       {/* Recently Played */}
@@ -300,6 +304,7 @@ export default function LibraryPage() {
                 key={`track-${entry.item.id}`}
                 track={entry.item}
                 widthClassName={CARD_WIDTH}
+                contextQueue={recentTracks}
               />
             );
           if (entry.type === "station")
