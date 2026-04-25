@@ -66,6 +66,7 @@ export type SearchParams =
 
 // ─── Response shapes ──────────────────────────────────────────────────────────
 
+
 export interface Pagination {
   limit: number;
   offset: number;
