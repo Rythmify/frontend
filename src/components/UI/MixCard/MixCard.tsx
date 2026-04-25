@@ -2,6 +2,7 @@ import type React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PersonalMix } from "@/services/api/discover.service";
+import { getMixTracks } from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
@@ -134,8 +135,16 @@ export default function MixCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          playlistId={mixId}
           trackTitle={mix.label ?? ""}
+          fetchTracks={async () => {
+            const data = await getMixTracks(mixId);
+            return data.tracks.map((t) => ({
+              id: t.id,
+              title: t.title,
+              artistName: t.artist_name ?? undefined,
+              coverUrl: t.cover_image ?? undefined,
+            }));
+          }}
           onClose={() => setShowPlaylistModal(false)}
         />
       )}

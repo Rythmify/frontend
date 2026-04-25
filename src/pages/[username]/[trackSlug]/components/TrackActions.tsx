@@ -54,6 +54,7 @@ export default function TrackActions({
   const [shareOpen, setShareOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [comment, setComment] = useState("");
+  const [addedToQueue, setAddedToQueue] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -217,9 +218,11 @@ export default function TrackActions({
                 data-test="button-add-next-up"
                 onClick={() => {
                   onAddToNextUp?.();
-                  alert("Added to Next up!");
+                  setAddedToQueue(true);
+                  setTimeout(() => setAddedToQueue(false), 2000);
                 }}
-                tooltip="Add to Next up"
+                active={addedToQueue}
+                tooltip={addedToQueue ? "Added to queue!" : "Add to Next up"}
               >
                 <LuListEnd className="text-[18px]" />
               </IconButton>

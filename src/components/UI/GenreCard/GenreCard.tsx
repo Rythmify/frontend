@@ -1,9 +1,11 @@
 import type React from "react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useHistoryStore } from "@/stores/history.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { usePlayerStore } from "@/stores/player.store";
-import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import { useAuthStore } from "@/stores/auth.store";
+import CardOverlay from "@/components/UI/CardOverlay/CardOverlay";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { getTrendingByGenre } from "@/services/api/discover.service";
 import type { Track } from "@/types/track";
@@ -42,10 +44,12 @@ export default function GenreCard({
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: GenreCardProps) {
   const badge = BADGE_COLORS[index % BADGE_COLORS.length];
-  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const navigate = useNavigate();
+  const { isGenreLiked, toggleGenre } = useLikesStore();
   const { addGenre } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const liked = isPlaylistLiked(item.id);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const liked = isGenreLiked(item.id);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const isThisPlaying =
     isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
@@ -61,14 +65,44 @@ export default function GenreCard({
     }
   };
 
+  const guestMenuItems = [
+    {
+      label: "Repost",
+      iconNode: <i className="fa-solid fa-retweet text-xs w-4" />,
+      onClick: () => navigate("/signin"),
+    },
+    {
+      label: "Share",
+      iconNode: <i className="fa-solid fa-arrow-up-from-bracket text-xs w-4" />,
+      onClick: () => navigate("/signin"),
+    },
+    {
+      label: "Copy Link",
+      iconNode: <i className="fa-solid fa-copy text-xs w-4" />,
+      onClick: () => navigate("/signin"),
+    },
+    {
+      label: "Add to playlist",
+      iconNode: <i className="fa-solid fa-list text-xs w-4" />,
+      onClick: () => navigate("/signin"),
+    },
+  ];
+
+  const authMenuItems = [
+    {
+      label: "Add to playlist",
+      iconNode: <i className="fa-solid fa-list text-xs w-4" />,
+      onClick: () => setShowPlaylistModal(true),
+    },
+  ];
+
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    togglePlaylist({
-      id: item.id,
-      title: item.genre,
-      owner: `${item.track_count} tracks`,
-      coverUrl: item.cover_image,
-    });
+    if (!isAuthenticated) {
+      navigate("/signin");
+      return;
+    }
+    toggleGenre({ id: item.id, genre: item.genre, cover_image: item.cover_image });
   };
 
   return (
@@ -110,13 +144,7 @@ export default function GenreCard({
           onPlay={handlePlay}
           isLiked={liked}
           onLike={handleLike}
-          moreMenuItems={[
-            {
-              label: "Add to playlist",
-              iconNode: AddToPlaylistIcon,
-              onClick: () => setShowPlaylistModal(true),
-            },
-          ]}
+          moreMenuItems={isAuthenticated ? authMenuItems : guestMenuItems}
         />
       </div>
 

@@ -461,7 +461,7 @@ export default function TrackCard({
   onReplaceFile,
   onDistribute,
 }: TrackCardProps) {
-  const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore();
+  const { currentTrack, isPlaying, setTrack, togglePlay, addToQueue } = usePlayerStore();
   const { user } = useAuthStore();
   const loves = useLikesStore();
 
@@ -474,6 +474,7 @@ export default function TrackCard({
   const [isLiked, setIsLiked] = useState(false); // Initially from backend normalize
   const [isReposted, setIsReposted] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [addedToQueue, setAddedToQueue] = useState(false);
 
   const [commentText, setCommentText] = useState("");
   const [showCommentBar, setShowCommentBar] = useState(false);
@@ -691,6 +692,16 @@ export default function TrackCard({
             />
             <ScBtn icon={<HiArrowUpOnSquare size={16} />} tooltip="Share" onClick={() => setShowShare(true)} />
             <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} />
+            <ScBtn
+              icon={<MdQueueMusic size={16} />}
+              tooltip={addedToQueue ? "Added!" : "Add to Next up"}
+              active={addedToQueue}
+              onClick={() => {
+                addToQueue(track);
+                setAddedToQueue(true);
+                setTimeout(() => setAddedToQueue(false), 2000);
+              }}
+            />
             <button 
                onClick={() => setShowDiscussion(!showDiscussion)}
                className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${showDiscussion ? 'text-[#f50]' : 'text-white/60 hover:text-white'}`}

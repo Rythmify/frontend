@@ -12,6 +12,7 @@ import { fetchConversations, type Conversation } from '@/services/api/messaging/
 import { ChatProfile } from '@/components/MessagingComponents/ChatProfile';
 import { useMessagingStore } from '@/stores/messaging.store';
 import UserAvatar from '@/components/UI/UserAvatar';
+import SearchBar from '@/components/UI/SearchBar'; // adjust path if needed
 
 const MainNavbar = () => {
   const { user, logout } = useAuthStore();
@@ -170,17 +171,7 @@ const MainNavbar = () => {
 
         {/* Center: Search Bar — tablet+ */}
         <div className="hidden md:flex flex-1 justify-center">
-          <div className="w-full max-w-[500px] relative">
-            <input
-              data-test="input-search"
-              type="text"
-              placeholder="Search"
-              className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
-            />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <i className="fa-solid fa-magnifying-glass text-lg font-medium" />
-            </button>
-          </div>
+          <SearchBar className="w-full max-w-[500px]" />
         </div>
 
         {/* Spacer — mobile only */}
@@ -233,7 +224,7 @@ const MainNavbar = () => {
             )}
           </div>
 
-       {/* Notifications */}
+          {/* Notifications */}
           <div ref={notifRef} className="relative">
             <button
               data-test="btn-notifications"
@@ -286,7 +277,6 @@ const MainNavbar = () => {
                           data-test={`navbar-notification-card-${notification.id}`}
                         />
                       ))}
-
                     </div>
                   )}
                 </div>
@@ -412,21 +402,13 @@ const MainNavbar = () => {
 
       {/* Mobile search row */}
       {isMobileSearchOpen && (
-        <div className="flex md:hidden items-center gap-2 px-4 py-2 border-t border-border">
-          <div className="flex-1 relative">
-            <input
-              autoFocus
-              type="text"
-              placeholder="Search"
-              className="w-full bg-input-bg text-text text-md rounded-sm px-3 py-[6px] pr-9 border border-transparent focus:border-text-secondary outline-none placeholder:text-text-muted"
-            />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
-              <Search size={16} />
-            </button>
-          </div>
-          <button onClick={() => setIsMobileSearchOpen(false)} className="text-text-secondary hover:text-text transition-colors">
-            <X size={20} />
-          </button>
+        <div className="flex md:hidden items-center px-4 py-2 border-t border-border">
+          <SearchBar
+            className="flex-1"
+            autoFocus
+            showClose
+            onClose={() => setIsMobileSearchOpen(false)}
+          />
         </div>
       )}
 
