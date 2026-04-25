@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 
 type CellValue =
@@ -127,15 +127,18 @@ function PlanHeaderRow() {
         className={`flex ${COL_W} flex-shrink-0 flex-col items-center gap-2 px-4`}
       >
         <span className="text-[32px] font-black leading-none tracking-[-0.04em] text-black">
-          Artist Pro
+          Premium
         </span>
         <p className="m-0 text-center text-[15px] leading-[1.35] text-black/60">
-          <span className="font-bold text-emerald-600">EGP 74.99 </span>
-          <span>/month, billed yearly for EGP 899.88</span>
+          <span className="font-bold text-emerald-600">EGP 29.99 </span>
+          <span>/month, billed yearly for EGP 359.88</span>
         </p>
-        <button className="mt-2 rounded-full bg-black px-6 py-3 text-[15px] font-bold text-white">
+        <Link
+          to="/creator/checkout"
+          className="mt-2 rounded-full bg-black px-6 py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90"
+        >
           Get started
-        </button>
+        </Link>
       </div>
     </div>
   );

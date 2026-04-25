@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const UploadIcon = () => (
   <svg
@@ -53,7 +54,7 @@ const ProBadgeIcon = () => (
 );
 
 const plan = {
-  name: "Artist Pro",
+  name: "Premium",
   subtitle: "Tailored access to essential artist tools",
   price: "EGP 29.99",
   priceNote: "/ month, billed yearly for EGP 359.88",
@@ -87,9 +88,12 @@ function PlanCard() {
           </span>
         </div>
 
-        <button className="w-full rounded-full bg-black px-6 py-4 text-[0.98rem] font-bold text-white transition-opacity hover:opacity-90">
+        <Link
+          to="/creator/checkout"
+          className="block w-full rounded-full bg-black px-6 py-4 text-center text-[0.98rem] font-bold text-white transition-opacity hover:opacity-90"
+        >
           {plan.cta}
-        </button>
+        </Link>
 
         <ul className="space-y-5">
           {plan.features.map((feature) => (
@@ -109,7 +113,7 @@ function PlanCard() {
 
 export default function PricingCards() {
   return (
-    <section className="bg-white px-6 py-32 md:px-10 lg:px-24">
+    <section id="pricing-cards" className="bg-white px-6 py-32 md:px-10 lg:px-24">
       <h2 className="mb-16 text-center text-5xl font-black tracking-tight text-black md:text-[3.35rem]">
         Available plan.
       </h2>

@@ -1,4 +1,5 @@
 import heroBackground from "../../assets/hero-background-image-speakers.svg";
+import { Link } from "react-router-dom";
 
 const features = [
   {
@@ -13,7 +14,7 @@ const features = [
       </svg>
     ),
     title: "Grow your audience",
-    desc: "Artist Pro subscribers get on average 400% more listens, thanks to our audio algorithm and featured playlists.",
+    desc: "Premium subscribers get on average 400% more listens, thanks to our audio algorithm and featured playlists.",
   },
   {
     icon: (
@@ -55,7 +56,7 @@ const features = [
       </svg>
     ),
     title: "Distribution is included",
-    desc: "Distribute and get paid on SoundCloud and 60+ platforms including Spotify, Apple Music, and TikTok.",
+    desc: "Distribute and get paid on Rythmify and 60+ platforms including Spotify, Apple Music, and TikTok.",
   },
 ];
 
@@ -77,15 +78,21 @@ export default function HeroSection() {
             Reach more listeners.
           </h1>
           <p className="text-white font-black text-lg md:text-[1.45rem] lg:text-[1.55rem] leading-none mb-12 max-w-[760px] whitespace-nowrap">
-            Join millions of artists that use SoundCloud to get heard.
+            Join millions of artists that use Rythmify to get heard.
           </p>
           <div className="flex gap-6 flex-wrap">
-            <button className="bg-white text-black font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:opacity-85 transition-opacity cursor-pointer">
-              Get Artist Pro
-            </button>
-            <button className="bg-transparent text-white border border-white/50 font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:border-white transition-colors cursor-pointer">
+            <Link
+              to="/creator/checkout"
+              className="bg-white text-black font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:opacity-85 transition-opacity cursor-pointer"
+            >
+              Get Premium
+            </Link>
+            <a
+              href="#pricing-cards"
+              className="bg-transparent text-white border border-white/50 font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:border-white transition-colors cursor-pointer"
+            >
               See plan
-            </button>
+            </a>
           </div>
         </div>
 
