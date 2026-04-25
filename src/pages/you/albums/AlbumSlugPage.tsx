@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "@/components/playlist/Made for you/PlaylistSidebarForYou";
 import PlaylistActions from "@/components/playlist/Album/PlaylistActionsAlbum";
-import AlbumOwnerInfo from "@/components/playlist/Album/AlbumOwnerInfo";
+import OwnerInfo from "@/components/playlist/OwnerInfo";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   getPlaylist,
@@ -47,10 +47,9 @@ function AlbumSlugPage() {
       setError(null);
 
       try {
-        const playlistId =
-          albumSlug.includes(":")
-            ? albumSlug.split(":").pop() ?? albumSlug
-            : albumSlug;
+        const playlistId = albumSlug.includes(":")
+          ? (albumSlug.split(":").pop() ?? albumSlug)
+          : albumSlug;
 
         const resolvedPlaylistId = UUID_RE.test(playlistId)
           ? playlistId
@@ -206,7 +205,8 @@ function AlbumSlugPage() {
             />
 
             <div className="flex flex-1 gap-6 mt-8">
-              <AlbumOwnerInfo
+              <OwnerInfo
+                ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}
                 followers={albumOwner?.followers_count ?? 0}
                 username={

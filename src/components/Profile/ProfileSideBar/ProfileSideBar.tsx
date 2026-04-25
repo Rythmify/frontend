@@ -3,15 +3,17 @@ import type { User } from "@/stores/auth.store";
 import { useNavigate } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 import TrackItem from "@/components/UI/TrackItem";
-import { useLikesStore } from "@/stores/likes.store";
+import UserAvatar from "@/components/UI/UserAvatar";
 
 interface FollowingUser {
   userId?: string;
   username: string;
+  displayName?: string;
   followers: number;
   tracks?: number;
   avatar?: string;
   isVerified?: boolean;
+  isFollowing?: boolean;
 }
 
 interface FollowerUser {
@@ -19,7 +21,7 @@ interface FollowerUser {
   avatar?: string;
 }
 
-interface LikedTracks {
+interface LikedTrack {
   id: string;
   title: string;
   artist: string;
@@ -28,6 +30,7 @@ interface LikedTracks {
   likes?: number;
   reposts?: number;
   comments?: number;
+  audioUrl?: string;
 }
 
 interface ProfileSideBarProps {
@@ -40,7 +43,8 @@ interface ProfileSideBarProps {
     albums?: number;
     playlists?: number;
   };
-  likedTracks?: LikedTracks[];
+  likedTracks?: LikedTrack[];
+  likedTracksCount?: number;
   following?: FollowingUser[];
   followers?: FollowerUser[];
   onTabChange?: (tab: string) => void;
@@ -60,6 +64,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   isOwner = false,
   stats = { followers: 0, following: 0, tracks: 0 },
   likedTracks = [],
+  likedTracksCount = 0,
   following = [],
   followers = [],
   onTabChange,
@@ -67,53 +72,8 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 }) => {
   const navigate = useNavigate();
   const [bioExpanded, setBioExpanded] = useState(false);
-  const storedLikedTracks = useLikesStore((state) => state.likedTracks);
-  const storedLikedTracksMapped: LikedTracks[] = storedLikedTracks.map(
-    (track) => ({
-      id: track.id,
-      title: track.title,
-      artist: track.artistName,
-      coverUrl: track.coverUrl,
-      plays: track.playCount,
-      likes: track.likeCount,
-      reposts: track.repostCount,
-      comments: track.commentCount,
-    }),
-  );
-  const removeLikedTrack = (trackId: string) => {
-    const track = resolvedLikedTracks.find((item) => item.id === trackId);
-    if (!track) {
-      onUnlike?.(trackId);
-      return;
-    }
-
-    useLikesStore.getState().toggleTrack({
-      id: track.id,
-      title: track.title,
-      artistName: track.artist,
-      artistUsername: track.artist.toLowerCase().replace(/\s+/g, "-"),
-      coverUrl: track.coverUrl ?? "",
-      audioUrl: "",
-      genre: "",
-      likeCount: track.likes ?? 0,
-      repostCount: track.reposts ?? 0,
-      playCount: track.plays ?? 0,
-      commentCount: track.comments ?? 0,
-      duration: "0:00",
-      postedAt: "",
-      waveformData: [],
-    });
-
-    onUnlike?.(trackId);
-  };
-  const resolvedLikedTracks = Array.from(
-    new Map(
-      [...likedTracks, ...storedLikedTracksMapped].map((track) => [
-        track.id,
-        track,
-      ]),
-    ).values(),
-  );
+  const displayedLikedTracksCount =
+    likedTracksCount > 0 ? likedTracksCount : likedTracks.length;
 
   const bio = user.bio ?? "";
   const isBioLong = bio.length > BIO_CHAR_LIMIT;
@@ -121,7 +81,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
     isBioLong && !bioExpanded ? bio.slice(0, BIO_CHAR_LIMIT) + "…" : bio;
 
   return (
-    <div className="w-full flex-shrink-0 flex flex-col gap-9 pt-1">
+    <div className="  flex-shrink-0 flex flex-col gap-9 pt-1 overflow-hidden min-w-0">
       {/* Stats */}
       <div className="flex gap-13">
         <button
@@ -185,8 +145,8 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       )}
 
-      {/* Liked tracks */}
-      {resolvedLikedTracks.length > 0 && (
+      {/* Liked tracks — sourced from the profile being viewed, passed in as props */}
+      {displayedLikedTracksCount > 0 && (
         <div>
           <div className="flex items-center justify-between w-full hover:opacity-70 transition-opacity">
             <button
@@ -194,7 +154,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               onClick={() => navigate(`/${user.username}/likes`)}
               className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
             >
-              {resolvedLikedTracks.length} LIKES
+              {displayedLikedTracksCount} LIKES
             </button>
             <button
               data-test="likes-view-all"
@@ -207,13 +167,13 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col gap-4">
-        {resolvedLikedTracks.slice(0, 3).map((track) => (
+      <div className="flex flex-col gap-4 w-[320px] overflow-hidden">
+        {likedTracks.slice(0, 3).map((track) => (
           <TrackItem
             key={track.id}
             {...track}
-            initialLiked
-            onUnlike={removeLikedTrack}
+            initialLiked={isOwner}
+            onUnlike={isOwner ? onUnlike : undefined}
           />
         ))}
       </div>
@@ -259,26 +219,22 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               View all
             </button>
           </div>
-          <div className="flex items-center">
+          <div className="flex max-w-full items-center flex-nowrap overflow-hidden pl-1 pr-1">
             {followers.slice(0, 9).map((follower, index) => (
-              <button
+              <UserAvatar
                 key={follower.username}
-                data-test="follower-avatar"
+                dataTest="follower-avatar"
+                src={follower.avatar}
+                name={follower.username}
+                alt={follower.username}
+                wrapperClassName="w-10 h-10 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
                 onClick={() => navigate(`/${follower.username}`)}
-                className="w-12 h-12 rounded-full overflow-hidden bg-border flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
-                style={{ marginLeft: index === 0 ? 0 : "-8px", zIndex: index }}
-                title={follower.username}
-              >
-                {follower.avatar ? (
-                  <img
-                    src={follower.avatar}
-                    alt={follower.username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-border" />
-                )}
-              </button>
+                style={{
+                  marginLeft: index === 0 ? 0 : -8,
+                  zIndex: 9 - index,
+                }}
+              />
             ))}
           </div>
         </div>
@@ -311,21 +267,15 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               className="flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
-                <div
-                  data-test="following-avatar"
+                <UserAvatar
+                  dataTest="following-avatar"
+                  src={u.avatar}
+                  name={u.displayName || u.username}
+                  alt={u.displayName || u.username}
+                  wrapperClassName="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-zinc-800 flex-shrink-0"
+                  initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
                   onClick={() => navigate(`/${u.username}`)}
-                  className="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-border flex-shrink-0"
-                >
-                  {u.avatar ? (
-                    <img
-                      src={u.avatar}
-                      alt={u.username}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-border" />
-                  )}
-                </div>
+                />
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1">
                     <button
@@ -368,7 +318,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
               <FollowButton
                 username={u.username}
                 userId={u.userId}
-                initialIsFollowing={true}
+                initialIsFollowing={u.isFollowing}
               />
             </div>
           ))}

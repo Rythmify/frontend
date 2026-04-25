@@ -6,6 +6,7 @@ import { Modal } from '@/components/UI/Modal'
 import { BlockUserModal } from '@/components/UI/BlockModal'
 import { ReportModal } from '@/components/UI/ReportModal'
 import { SpamModal } from '@/components/UI/SpamModal'
+import UserAvatar from '@/components/UI/UserAvatar'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,8 +45,7 @@ const styles = {
   avatarWrapper:  `relative w-11 h-11 flex-shrink-0 overflow-visible`,
   avatar:         `w-full h-full rounded-full bg-[#EEEEEE] overflow-hidden`,
   avatarImg:      `w-full h-full object-cover`,
-  avatarFallback: `w-full h-full flex items-end justify-center `,
-  fallbackIcon:   `fa-solid fa-user text-[#CCCCCC] text-4xl`,
+  avatarFallback: `w-full h-full flex items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold`,
   unreadDotOverlay:`absolute -top-1 -left-1 w-2 h-2 rounded-full bg-red-500 z-10`,
   content:        `flex-1 min-w-0`,
   textRow:        `text-sm text-white leading-snug`,
@@ -107,20 +107,16 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
           {/* Unread dot */}
           {!n.is_read && <div className={styles.unreadDotOverlay} />}
 
-          <div className={styles.avatar}>
-            {n.actor?.avatar ? (
-              <img
-                data-test={`notification-avatar-img-${n.id}`}
-                src={n.actor.avatar}
-                alt={n.actor.display_name}
-                className={styles.avatarImg}
-              />
-            ) : (
-              <div data-test={`notification-avatar-fallback-${n.id}`} className={styles.avatarFallback}>
-                <i className={styles.fallbackIcon} />
-              </div>
-            )}
-          </div>
+          <UserAvatar
+            src={n.actor?.avatar}
+            name={n.actor?.display_name ?? n.actor?.username ?? ""}
+            alt={n.actor?.display_name ?? n.actor?.username ?? "User"}
+            imageDataTest={`notification-avatar-img-${n.id}`}
+            fallbackDataTest={`notification-avatar-fallback-${n.id}`}
+            wrapperClassName={styles.avatar}
+            imageClassName={styles.avatarImg}
+            initialsClassName={styles.avatarFallback}
+          />
         </div>
 
         {/* Text */}

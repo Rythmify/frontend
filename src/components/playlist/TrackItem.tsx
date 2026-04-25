@@ -47,7 +47,7 @@ function TrackItem({
     track.artist_username ?? track.artist_username ?? "unknown";
   const coverImage =
     track.cover_image ?? track.cover_image ?? "https://via.placeholder.com/150";
-  const playCount = track.play_count ?? track.play_count ?? 0;
+  const playCount = track.play_count ?? 0;
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -120,11 +120,11 @@ function TrackItem({
         className={`
           flex items-center gap-0 py-2 rounded min-w-0 w-full
           transition-colors duration-100 cursor-pointer relative group
-          border-b border-[var(--color-border)] last:border-b-0
-          ${isCurrent ? "bg-[#303030]" : "hover:bg-[#303030]"}
+           last:border-b-0
+          ${isCurrent ? "bg-bg" : "hover:bg-[#303030]/50"}
         `}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => {
+        onMouseLeave={() => { 
           setHovered(false);
           setMoreOpen(false);
         }}
@@ -169,7 +169,7 @@ function TrackItem({
           <Link
             to={`/${artistSlug}`}
             onClick={(e) => e.stopPropagation()}
-            className={`text-sm shrink-0 max-w-[30%] truncate font-bold transition-colors ${playbackTextClass}`}
+            className={`text-sm shrink-0 max-w-[30%] truncate font-bold transition-colors ${playbackTextClass} hover:text-text-muted/60`}
           >
             {artistName}
           </Link>
@@ -179,7 +179,7 @@ function TrackItem({
           <Link
             to={`/${artistSlug}/${track.trackSlug ?? track.track_id}`}
             onClick={(e) => e.stopPropagation()}
-            className={`text-sm font-bold truncate transition-colors ${playbackTitleClass}`}
+            className={`text-sm font-bold truncate transition-colors ${playbackTitleClass} hover:text-text-muted/60`}
             data-test={`link-track-title-${track.track_id}`}
           >
             {track.title ?? "Untitled track"}
@@ -336,7 +336,7 @@ function TipBtn({
             ${
               active
                 ? "text-[var(--color-accent)]"
-                : "text-white hover:text-[var(--color-text-muted)]"
+                : "text-text-upload hover:text-[var(--color-text-muted)]"
             }
           `}
         >

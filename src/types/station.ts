@@ -1,3 +1,5 @@
+import type { Track } from "@/types/track";
+
 export interface Station {
   id: string;
   name: string;
@@ -10,4 +12,5 @@ export interface Station {
   artists?: { avatarUrl?: string; displayName?: string }[];
   coverUrl: string | null;
   trackCount: number;
+  previewTrack?: Track;
 }

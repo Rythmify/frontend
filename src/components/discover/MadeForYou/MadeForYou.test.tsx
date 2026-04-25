@@ -27,6 +27,7 @@ vi.mock("@/components/UI/MadeForYouCard/MadeForYouCard", () => ({
       data-title={item.title}
       data-subtitle={item.subtitle}
       data-cover={item.coverUrl ?? ""}
+      data-made-kind={item.madeKind ?? ""}
       data-badge-0={item.badgeWords[0]}
       data-badge-1={item.badgeWords[1]}
     />
@@ -117,6 +118,7 @@ describe("MadeForYou", () => {
     const card = screen.getByTestId("made-for-you-card-daily-drops");
     expect(card).toHaveAttribute("data-badge-0", "DAILY");
     expect(card).toHaveAttribute("data-badge-1", "DROPS");
+    expect(card).toHaveAttribute("data-made-kind", "daily");
   });
 
   it("fallback weekly card has correct badge words", () => {
@@ -124,6 +126,7 @@ describe("MadeForYou", () => {
     const card = screen.getByTestId("made-for-you-card-weekly-wave");
     expect(card).toHaveAttribute("data-badge-0", "WEEKLY");
     expect(card).toHaveAttribute("data-badge-1", "WAVE");
+    expect(card).toHaveAttribute("data-made-kind", "weekly");
   });
 
   // ── API data ─────────────────────────────────────────────
@@ -185,6 +188,17 @@ describe("MadeForYou", () => {
     expect(
       screen.getByTestId("made-for-you-card-mix-daily-001"),
     ).toHaveAttribute("data-cover", "https://example.com/daily.jpg");
+  });
+
+  it("passes the daily slug to the card", () => {
+    render(
+      <MadeForYou
+        madeForYou={{ daily_mix: mockDailyMix, weekly_mix: mockWeeklyMix }}
+      />,
+    );
+    expect(
+      screen.getByTestId("made-for-you-card-mix-daily-001"),
+    ).toHaveAttribute("data-made-kind", "daily");
   });
 
   it("falls back to the fallback coverUrl when mix.cover_url is null", () => {

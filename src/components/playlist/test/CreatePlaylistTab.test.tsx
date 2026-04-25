@@ -47,6 +47,9 @@ const defaultProps = {
   privacy: "public" as const,
   setPrivacy: vi.fn(),
   creating: false,
+  success: false,
+  error: null,
+  moreOfLike: false,
   tracksToAdd,
   setTracksToAdd: vi.fn(),
   isPlaylist: false,
@@ -83,9 +86,28 @@ describe("CreatePlaylistTab", () => {
     expect(defaultProps.onCreate).toHaveBeenCalled();
   });
 
+  it("shows Saved! when success is true", () => {
+    render(<CreatePlaylistTab {...defaultProps} success={true} />);
+    expect(screen.getByTestId("button-save-playlist")).toHaveTextContent(
+      "Saved!",
+    );
+  });
+
   it("disables Save when creating is true", () => {
     render(<CreatePlaylistTab {...defaultProps} creating={true} />);
     expect(screen.getByTestId("button-save-playlist")).toBeDisabled();
+  });
+
+  it("shows an error message when create fails", () => {
+    render(
+      <CreatePlaylistTab
+        {...defaultProps}
+        error="Failed to create playlist. Please try again."
+      />,
+    );
+    expect(screen.getByTestId("create-playlist-error")).toHaveTextContent(
+      "Failed to create playlist. Please try again.",
+    );
   });
 
   it("renders suggested liked tracks section", () => {

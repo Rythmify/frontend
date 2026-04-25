@@ -8,10 +8,13 @@ import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup
 import type {
   Playlist,
   PlaylistDetails,
+  PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { useLikesStore } from "@/stores/likes.store";
+import { usePlayerStore } from "@/stores/player.store";
 import EditPlaylistModal from "./EditPlaylistModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
+import type { Track } from "@/types/track";
 
 interface PlaylistActionsProps {
   playlist: PlaylistDetails;
@@ -24,11 +27,48 @@ export default function PlaylistActions({
 }: PlaylistActionsProps) {
   const navigate = useNavigate();
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const { addToQueue, queue } = usePlayerStore();
   const liked = isPlaylistLiked(playlist.playlist_id);
+  const isQueued =
+    playlist.tracks.length > 0 &&
+    playlist.tracks.some((track) =>
+      queue.some((queuedTrack) => queuedTrack.id === track.track_id),
+    );
 
   const [shareOpen, setShareOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const parseDuration = (duration?: number | null): string => {
+    if (typeof duration !== "number" || Number.isNaN(duration)) return "0:00";
+    const minutes = Math.floor(duration / 60);
+    const seconds = Math.floor(duration % 60);
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  };
+
+  const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
+    id: track.track_id,
+    title: track.title ?? "Untitled track",
+    artistName: track.artist_name ?? "Unknown Artist",
+    artistUsername: track.artist_username ?? "",
+    coverUrl: track.cover_image ?? "",
+    genre: "",
+    likeCount: 0,
+    repostCount: 0,
+    playCount: track.play_count ?? 0,
+    commentCount: 0,
+    duration: parseDuration(track.duration),
+    postedAt: track.added_at ?? "",
+    waveformData: [],
+    audioUrl: track.audio_url ?? "",
+    isPrivate: !track.is_public,
+  });
+
+  const handleAddToNextUp = () => {
+    const tracks = playlist.tracks.map(toPlayerTrack);
+    if (!tracks.length) return;
+    tracks.forEach((track) => addToQueue(track));
+  };
 
   return (
     <>
@@ -88,7 +128,12 @@ export default function PlaylistActions({
         </ActionButton>
 
         {/* Add to Next Up */}
-        <ActionButton tooltip="Add to Next Up" data-test="button-add-next-up">
+        <ActionButton
+          tooltip="Add to Next Up"
+          data-test="button-add-next-up"
+          onClick={handleAddToNextUp}
+          active={isQueued}
+        >
           <LuListEnd className="text-[18px]" />
         </ActionButton>
 
@@ -158,13 +203,13 @@ function ActionButton({
       <button
         data-test={dataTest}
         onClick={onClick}
-        className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-[#303030] transition-all duration-150 cursor-pointer group"
+        className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] bg-bg-actionbutton transition-all duration-150 cursor-pointer group"
       >
         <span
           className={`transition-colors duration-150 ${
             active
               ? "text-[var(--color-accent)]"
-              : "text-white group-hover:text-[#717171]"
+              : "text-text-upload group-hover:text-[#717171]"
           }`}
         >
           {children}

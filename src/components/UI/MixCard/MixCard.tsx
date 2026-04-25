@@ -1,10 +1,13 @@
 import type React from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PersonalMix } from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { usePlayerStore } from "@/stores/player.store";
+import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 
 const BADGE_COLORS: { bg: string; text: string }[] = [
   { bg: "#333333", text: "#000000" }, // MIX 1 — dark gray
@@ -39,12 +42,15 @@ export default function MixCard({
   mix,
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: MixCardProps) {
+  const mixId = mix.mix_id ?? mix.id;
   const badge = BADGE_COLORS[colorIndex(mix)];
-  const { isMixLiked, toggleMix, togglePlaylist } = useLikesStore();
+  const { isMixLiked, toggleMix } = useLikesStore();
   const { addMix } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const navigate = useNavigate();
-  const liked = isMixLiked(mix.id);
+  // API sends mix_id; the TypeScript interface says id — coalesce both
+  const liked = isMixLiked(mixId);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // Guard against stale persisted history entries that predate the non-null contract
   const previewTrack = mix.preview_track ? mapDiscoveryTrack(mix.preview_track) : null;
@@ -57,33 +63,21 @@ export default function MixCard({
       togglePlay();
     } else {
       setTrack(previewTrack);
-      addMix(mix);
+      addMix({ ...mix, id: mixId });
     }
   };
 
-  const mixSlug = (mix.label ?? "")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
 
-  const mixPath = `/discover/sets/${mixSlug}:${mix.id}`;
-
+ const mixPath = `/discover/sets/${mixId}`;
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleMix(mix);
-    togglePlaylist({
-      id: mix.id,
-      title: mix.label ?? "",
-      owner: `${mix.track_count} tracks`,
-      coverUrl: mix.cover_image ?? mix.preview_track.cover_image ?? null,
-    });
   };
 
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
-      data-test={`mix-card-${mix.id}`}
+      data-test={`mix-card-${mixId}`}
       onClick={() => navigate(mixPath)}
     >
       {/* Cover */}
@@ -115,40 +109,19 @@ export default function MixCard({
           </span>
         </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-          <div />
-          <div className="flex items-center justify-center flex-1">
-            <button
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
-              onClick={handlePlay}
-              data-test="button-play"
-            >
-              <i
-                className={`fa-solid ${isThisMixPlaying ? "fa-pause" : "fa-play"} text-black text-[20px] sm:text-[24px] md:text-[28px] lg:text-[32px] ${!isThisMixPlaying ? "ml-0.5" : ""}`}
-              />
-            </button>
-          </div>
-          <div className="flex items-center justify-end gap-2 px-2 pb-2">
-            <button
-              className="flex flex-col items-center gap-0.5 group/btn"
-              onClick={handleLike}
-              data-test="button-like"
-            >
-              <i
-                className={`fa-sharp ${liked ? "fa-solid fa-heart text-[#e74c3c]" : "fa-regular fa-heart text-white"} text-[12px] group-hover/btn:opacity-50 transition-opacity duration-150`}
-              />
-            </button>
-            <button
-              className="flex flex-col items-center gap-0.5 group/btn"
-              onClick={(e) => e.stopPropagation()}
-              data-test="button-more"
-            >
-              <i className="fa-solid fa-ellipsis text-[12px] text-white group-hover/btn:opacity-50 transition-opacity duration-150" />
-            </button>
-          </div>
-        </div>
+        <CardOverlay
+          isPlaying={isThisMixPlaying}
+          onPlay={handlePlay}
+          isLiked={liked}
+          onLike={handleLike}
+          moreMenuItems={[
+            {
+              label: "Add to playlist",
+              iconNode: AddToPlaylistIcon,
+              onClick: () => setShowPlaylistModal(true),
+            },
+          ]}
+        />
       </div>
 
       {/* Subtitle */}
@@ -158,6 +131,14 @@ export default function MixCard({
       >
         {mix.track_count} tracks
       </p>
+
+      {showPlaylistModal && (
+        <AddToPlaylistModal
+          playlistId={mixId}
+          trackTitle={mix.label ?? ""}
+          onClose={() => setShowPlaylistModal(false)}
+        />
+      )}
     </div>
   );
 }

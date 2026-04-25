@@ -1,67 +1,24 @@
-import { useState } from "react";
 import HorizontalCarousel from "../HorizontalCarousel";
 import GenreCard from "@/components/UI/GenreCard/GenreCard";
+import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
+import type { DiscoveryTrack } from "@/services/api/discover.service";
+import type { Track } from "@/types/track";
 
 interface BuzzingPlaylist {
   id: string;
   genre: string;
   cover_image: string | null;
   track_count: number;
+  previewTrack?: Track;
 }
 interface Props {
-  genres: { genre_id: string; genre_name: string }[];
+  genres: {
+    genre_id: string;
+    genre_name: string;
+    preview_track?: DiscoveryTrack;
+  }[];
 }
 
-const mockGenres: BuzzingPlaylist[] = [
-  {
-    id: "genre-1",
-    genre: "Hip-Hop",
-    cover_image: "https://picsum.photos/200/200?random=601",
-    track_count: 1240,
-  },
-  {
-    id: "genre-2",
-    genre: "Pop",
-    cover_image: "https://picsum.photos/200/200?random=602",
-    track_count: 980,
-  },
-  {
-    id: "genre-3",
-    genre: "R&B",
-    cover_image: "https://picsum.photos/200/200?random=603",
-    track_count: 760,
-  },
-  {
-    id: "genre-4",
-    genre: "Electronic",
-    cover_image: "https://picsum.photos/200/200?random=604",
-    track_count: 850,
-  },
-  {
-    id: "genre-5",
-    genre: "Synthwave",
-    cover_image: "https://picsum.photos/200/200?random=605",
-    track_count: 430,
-  },
-  {
-    id: "genre-6",
-    genre: "Ambient",
-    cover_image: "https://picsum.photos/200/200?random=606",
-    track_count: 520,
-  },
-  {
-    id: "genre-7",
-    genre: "House",
-    cover_image: "https://picsum.photos/200/200?random=607",
-    track_count: 670,
-  },
-  {
-    id: "genre-8",
-    genre: "Trance",
-    cover_image: "https://picsum.photos/200/200?random=608",
-    track_count: 390,
-  },
-];
 
 const GENRE_IMAGES: Record<string, string> = {
   "hip-hop":
@@ -128,15 +85,16 @@ const DEFAULT_GENRE_IMAGE =
   "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&q=80";
 
 const TrendingByGenres = ({ genres }: Props) => {
-  const items: BuzzingPlaylist[] = genres.length
-    ? genres.map((g) => ({
-        id: g.genre_id,
-        genre: g.genre_name,
-        cover_image:
-          GENRE_IMAGES[g.genre_name.toLowerCase()] ?? DEFAULT_GENRE_IMAGE,
-        track_count: 0,
-      }))
-    : mockGenres;
+  if (!genres.length) return null;
+
+  const items: BuzzingPlaylist[] = genres.map((g) => ({
+    id: g.genre_id,
+    genre: g.genre_name,
+    cover_image: GENRE_IMAGES[g.genre_name.toLowerCase()] ?? DEFAULT_GENRE_IMAGE,
+    track_count: 0,
+    previewTrack: g.preview_track ? mapDiscoveryTrack(g.preview_track) : undefined,
+  }));
+
   return (
     <div data-test="section-trending-by-genres">
       <HorizontalCarousel

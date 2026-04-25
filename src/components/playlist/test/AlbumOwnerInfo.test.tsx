@@ -1,21 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import AlbumOwnerInfo from "@/components/playlist/Album/AlbumOwnerInfo";
+import { render, screen } from "@testing-library/react";
+import OwnerInfo from "@/components/playlist/OwnerInfo";
 import { useAuthStore } from "@/stores/auth.store";
 
 const mockToggleFollow = vi.fn();
-const mockFollowUser = vi.fn();
-const mockUnfollowUser = vi.fn();
 const mockedUseAuthStore = vi.mocked(useAuthStore);
 
 vi.mock("@/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
 }));
 
-vi.mock("../../../services/mocks/User.service", () => ({
-  followUser: (...args: unknown[]) => mockFollowUser(...args),
-  unfollowUser: (...args: unknown[]) => mockUnfollowUser(...args),
+vi.mock("@/components/UI/FollowButton", () => ({
+  default: ({ username }: { username: string }) => (
+    <button data-test={`follow-button-${username}`}>Follow</button>
+  ),
 }));
 
 describe("AlbumOwnerInfo", () => {
@@ -35,7 +34,8 @@ describe("AlbumOwnerInfo", () => {
 
     render(
       <MemoryRouter>
-        <AlbumOwnerInfo
+        <OwnerInfo
+          ownerUserId="owner-id"
           username="ghaliaa"
           displayName="Ghaliaa"
           avatarUrl="https://example.com/avatar.jpg"
@@ -49,15 +49,13 @@ describe("AlbumOwnerInfo", () => {
       "src",
       "https://example.com/avatar.jpg",
     );
-    expect(screen.getByTestId("album-owner-name")).toHaveTextContent(
-      "Ghaliaa",
-    );
+    expect(screen.getByTestId("album-owner-name")).toHaveTextContent("Ghaliaa");
     expect(screen.getByText("31,500")).toBeInTheDocument();
     expect(screen.getByText("22")).toBeInTheDocument();
-    expect(screen.getByTestId("album-owner-follow-button")).toBeInTheDocument();
+    expect(screen.getByTestId("follow-button-ghaliaa")).toBeInTheDocument();
   });
 
-  it("calls followUser and toggleFollow when following a user", async () => {
+  it("shows the follow button for a non-owner", async () => {
     mockedUseAuthStore.mockReturnValue({
       user: {
         id: "me",
@@ -69,47 +67,19 @@ describe("AlbumOwnerInfo", () => {
 
     render(
       <MemoryRouter>
-        <AlbumOwnerInfo username="ghaliaa" followers={0} trackNum={0} />
+        <OwnerInfo
+          ownerUserId="owner-id"
+          username="ghaliaa"
+          followers={0}
+          trackNum={0}
+        />
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByTestId("album-owner-follow-button"));
-
-    await waitFor(() => {
-      expect(mockFollowUser).toHaveBeenCalledWith("ghaliaa");
-      expect(mockToggleFollow).toHaveBeenCalledWith("ghaliaa");
-    });
+    expect(screen.getByTestId("follow-button-ghaliaa")).toBeInTheDocument();
   });
 
-  it("calls unfollowUser when already following", async () => {
-    mockedUseAuthStore.mockReturnValue({
-      user: {
-        id: "me",
-        username: "me",
-        following_ids: ["ghaliaa"],
-      },
-      toggleFollow: mockToggleFollow,
-    } as any);
-
-    render(
-      <MemoryRouter>
-        <AlbumOwnerInfo username="ghaliaa" followers={0} trackNum={0} />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByTestId("album-owner-follow-button")).toHaveTextContent(
-      "Following",
-    );
-
-    fireEvent.click(screen.getByTestId("album-owner-follow-button"));
-
-    await waitFor(() => {
-      expect(mockUnfollowUser).toHaveBeenCalledWith("ghaliaa");
-      expect(mockToggleFollow).toHaveBeenCalledWith("ghaliaa");
-    });
-  });
-
-  it("hides the follow button for the owner", () => {
+  it("hides the follow button for the owner id", async () => {
     mockedUseAuthStore.mockReturnValue({
       user: {
         id: "owner-id",
@@ -121,12 +91,17 @@ describe("AlbumOwnerInfo", () => {
 
     render(
       <MemoryRouter>
-        <AlbumOwnerInfo username="ghaliaa" followers={0} trackNum={0} />
+        <OwnerInfo
+          ownerUserId="owner-id"
+          username="ghaliaa"
+          followers={0}
+          trackNum={0}
+        />
       </MemoryRouter>,
     );
 
     expect(
-      screen.queryByTestId("album-owner-follow-button"),
+      screen.queryByTestId("follow-button-ghaliaa"),
     ).not.toBeInTheDocument();
   });
 });

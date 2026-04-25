@@ -40,6 +40,9 @@
   /* Upload Page Specific */
   --color-text-upload: #000000de;
 
+  /**Sets pages specific*/
+  --color-bg-actionbutton: #f3f3f3;
+
   /*  Semantic  */
   --color-error: #cf4a4a;
   --color-success: #2d8f4e;
@@ -73,6 +76,10 @@
 
     /*Artist and upload page specific*/
     --color-bg-upload: #212121;
+
+    
+  /**Sets pages specific*/
+  --color-bg-actionbutton: #303030;
 
     --color-border: #333333;
     --color-border-light: #444444;

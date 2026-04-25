@@ -7,7 +7,6 @@ import {
   type Playlist,
 } from "@/services/api/playlist/playlist.service";
 import { Modal } from "../MessagingComponents/Modal";
-import type { Track } from "@/types/track";
 import { useLikesStore } from "@/stores/likes.store";
 import PlaylistList from "./PlaylistList";
 import CreatePlaylistTab from "./CreatePlaylistTab";
@@ -19,11 +18,41 @@ interface DisplayTrack {
   coverUrl?: string;
 }
 
+function getPlaylistErrorMessage(err: unknown) {
+  const fallback = "Failed to create playlist. Please try again.";
+
+  if (typeof err !== "object" || err === null) {
+    return fallback;
+  }
+
+  const response = (
+    err as {
+      response?: {
+        data?: {
+          error?: { message?: string };
+          message?: string;
+        };
+      };
+      message?: string;
+    }
+  ).response;
+
+  return (
+    response?.data?.error?.message ??
+    response?.data?.message ??
+    (err as { message?: string }).message ??
+    fallback
+  );
+}
+
 interface AddToPlaylistModalProps {
   trackId?: string;
   trackTitle: string;
   trackCoverUrl?: string;
-  playlistId?: string; // if adding whole playlist
+  playlistId?: string;
+  initialTracks?: DisplayTrack[];
+  fetchTracks?: () => Promise<DisplayTrack[]>;
+  moreOfLike?: boolean;
   artistName?: string;
   onClose: () => void;
 }
@@ -34,6 +63,9 @@ const AddToPlaylistModal = ({
   trackCoverUrl,
   onClose,
   playlistId,
+  initialTracks,
+  fetchTracks,
+  moreOfLike = false,
   artistName,
 }: AddToPlaylistModalProps) => {
   const [activeTab, setActiveTab] = useState<"add" | "create">("add");
@@ -55,6 +87,20 @@ const AddToPlaylistModal = ({
   );
   const [privacy, setPrivacy] = useState<"public" | "private">("public");
   const [creating, setCreating] = useState(false);
+  const [createSuccess, setCreateSuccess] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const handlePlaylistTitleChange = (val: string) => {
+    setCreateError(null);
+    setCreateSuccess(false);
+    setPlaylistTitle(val);
+  };
+
+  const handlePrivacyChange = (val: "public" | "private") => {
+    setCreateError(null);
+    setCreateSuccess(false);
+    setPrivacy(val);
+  };
 
   // Consolidated Initial Fetch
   useEffect(() => {
@@ -66,7 +112,12 @@ const AddToPlaylistModal = ({
         setPlaylists(items);
         if (items.length === 0) setActiveTab("create");
 
-        if (playlistId) {
+        if (initialTracks?.length) {
+          setTracksToAdd(initialTracks);
+        } else if (fetchTracks) {
+          const tracks = await fetchTracks();
+          setTracksToAdd(tracks);
+        } else if (playlistId) {
           const playlistRes = await getPlaylist(playlistId);
           const tracks: DisplayTrack[] = (playlistRes.data.tracks || []).map(
             (t) => ({
@@ -95,7 +146,15 @@ const AddToPlaylistModal = ({
     };
 
     initializeData();
-  }, [trackId, playlistId, trackTitle, artistName, trackCoverUrl]);
+  }, [
+    initialTracks,
+    fetchTracks,
+    trackId,
+    playlistId,
+    trackTitle,
+    artistName,
+    trackCoverUrl,
+  ]);
 
   // Update track count helper
   const updateLocalPlaylistCount = (pid: string, countToAdd: number) => {
@@ -128,43 +187,51 @@ const AddToPlaylistModal = ({
     }
   };
 
-  const handleCreate = async () => {
+  const handleCreate = async (isMoreOfLike: boolean) => {
     if (!playlistTitle.trim()) return;
     setCreating(true);
+    setCreateError(null);
+    setCreateSuccess(false);
     try {
       const slug = playlistTitle
         .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "") 
-        .replace(/\s+/g, "-") 
-        .replace(/-+/g, "-"); 
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
 
       const res = await createPlaylist({
         name: playlistTitle.trim(),
-        slug, 
+        slug,
         is_public: privacy === "public",
       });
 
       const newPlaylistId = res.data.playlist_id;
 
-      for (const t of tracksToAdd) {
+      const tracksForNewPlaylist = isMoreOfLike
+        ? (initialTracks ?? tracksToAdd)
+        : tracksToAdd;
+
+      for (const t of tracksForNewPlaylist) {
         await addTrackToPlaylist(newPlaylistId, String(t.id));
       }
 
       const newPlaylist: Playlist = {
         ...res.data,
-        track_count: tracksToAdd.length,
+        track_count: tracksForNewPlaylist.length,
       };
 
       setPlaylists((prev) => [...prev, newPlaylist]);
       setActiveTab("add");
       setSuccess(newPlaylistId);
+      setCreateSuccess(true);
 
       // Reset Create Form
       setPlaylistTitle(`Related tracks: ${trackTitle}`);
       setPrivacy("public");
     } catch (err) {
       console.error(err);
+      setCreateError(getPlaylistErrorMessage(err));
     } finally {
       setCreating(false);
     }
@@ -176,6 +243,12 @@ const AddToPlaylistModal = ({
   return (
     <Modal isOpen={true} onClose={onClose}>
       <div className="w-[550px] bg-bg">
+        {!loading && !hasPlaylists && (
+          <div className="flex items-center px-2 py-2 text-[22px] font-bold text-text-upload">
+            Create a playlist
+          </div>
+        )}
+
         {!loading && hasPlaylists && (
           <div className="flex text-[22px] font-bold items-center">
             <button
@@ -224,10 +297,13 @@ const AddToPlaylistModal = ({
         ) : (
           <CreatePlaylistTab
             playlistTitle={playlistTitle}
-            setPlaylistTitle={setPlaylistTitle}
+            setPlaylistTitle={handlePlaylistTitleChange}
             privacy={privacy}
-            setPrivacy={setPrivacy}
+            setPrivacy={handlePrivacyChange}
             creating={creating}
+            success={createSuccess}
+            error={createError}
+            moreOfLike={moreOfLike}
             tracksToAdd={tracksToAdd}
             setTracksToAdd={setTracksToAdd}
             isPlaylist={isPlaylist}

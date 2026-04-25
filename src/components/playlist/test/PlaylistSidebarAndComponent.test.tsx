@@ -102,6 +102,18 @@ describe("PlaylistSidebar", () => {
     expect(screen.getByText("View all")).toBeInTheDocument();
   });
 
+  it("navigates 'View all' to the user's sets page", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistSidebar playlist={mockPlaylistDetails as any} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: "View all" })).toHaveAttribute(
+      "href",
+      "/u-1/sets",
+    );
+  });
+
   it("renders other playlists after load", async () => {
     render(
       <MemoryRouter>
