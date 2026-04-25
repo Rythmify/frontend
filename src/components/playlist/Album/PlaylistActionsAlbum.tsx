@@ -18,7 +18,7 @@ interface PlaylistActionsProps {
   onPlaylistUpdated?: (updated: Playlist) => void;
 }
 
-export default function PlaylistActions({
+export default function PlaylistActionsAlbum({
   playlist,
   onAddToNextUp,
   onPlaylistUpdated,
@@ -31,24 +31,48 @@ export default function PlaylistActions({
 
   const [reposted, setReposted] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [addedToQueue, setAddedToQueue] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleRepost = async () => {
     if (isOwner) {
-      alert("You cannot repost your own playlist."); 
+      alert("You cannot repost your own playlist.");
       return;
     }
     try {
       if (reposted) {
-        await removePlaylistRepost(playlist.playlist_id); 
+        await removePlaylistRepost(playlist.playlist_id);
       } else {
-        await repostPlaylist(playlist.playlist_id); 
+        await repostPlaylist(playlist.playlist_id);
       }
       setReposted(!reposted);
     } catch (err) {
       console.error("Failed to update repost status:", err);
     }
   };
+
+  const handleAddToNextUp = () => {
+    if (!onAddToNextUp) return;
+
+    onAddToNextUp();
+    setAddedToQueue(true);
+
+    if (queueTimerRef.current) {
+      clearTimeout(queueTimerRef.current);
+    }
+
+    queueTimerRef.current = setTimeout(() => {
+      setAddedToQueue(false);
+      queueTimerRef.current = null;
+    }, 3000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+    };
+  }, []);
 
   return (
     <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
@@ -73,7 +97,6 @@ export default function PlaylistActions({
           <FaHeart
             className={`text-[14px] ${liked ? "text-accent" : "text-white"}`}
           />
-          
         </ActionButton>
 
         {/* Repost Button toggles POST/DELETE */}
@@ -98,7 +121,7 @@ export default function PlaylistActions({
         >
           <LuShare className="text-[16px]" />
         </ActionButton>
-        
+
         {/*Copy */}
         <ActionButton
           onClick={() => navigator.clipboard.writeText(window.location.href)}
@@ -110,7 +133,8 @@ export default function PlaylistActions({
 
         {/* Add to Next up */}
         <ActionButton
-          onClick={onAddToNextUp}
+          onClick={handleAddToNextUp}
+          active={addedToQueue}
           label="Add to Next up"
           dataTest="album-action-add-to-next-up"
         >
@@ -132,14 +156,14 @@ function ActionButton({
   onClick,
   active = false,
   className = "",
-  label, 
+  label,
   dataTest,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
   className?: string;
-  label?: string; 
+  label?: string;
   dataTest?: string;
 }) {
   return (

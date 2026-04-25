@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import ShareLayout from "../../[username]/shareLayout";
@@ -34,7 +34,7 @@ export default function AlbumsPage() {
     handleSave,
   } = useProfileData(username);
 
-  useEffect(() => {
+  const fetchAlbums = useCallback(() => {
     const ownerId = isOwner ? activeUser?.id : profileData?.id;
     if (!ownerId) return;
 
@@ -43,6 +43,7 @@ export default function AlbumsPage() {
       title: playlist.name,
       owner: profileData?.display_name || user.displayName,
       ownerUsername: profileData?.username || user.username,
+      ownerDisplayName: profileData?.display_name || user.displayName,
       slug: playlist.slug ?? undefined,
       coverUrl: playlist.cover_image ?? null,
       isPrivate: !playlist.is_public,
@@ -69,6 +70,19 @@ export default function AlbumsPage() {
     user.displayName,
     user.username,
   ]);
+
+  useEffect(() => {
+    fetchAlbums();
+
+    const handlePlaylistUpdated = () => {
+      fetchAlbums();
+    };
+
+    window.addEventListener("playlist-updated", handlePlaylistUpdated);
+    return () => {
+      window.removeEventListener("playlist-updated", handlePlaylistUpdated);
+    };
+  }, [fetchAlbums]);
 
   if (!currentUser) return null;
 

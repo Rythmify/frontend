@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "../../../components/playlist/Made for you/PlaylistSidebarForYou";
-import PlaylistActions from "../../../components/playlist/Album/PlaylistActionsAlbum";
+import PlaylistActionsAlbum from "../../../components/playlist/Album/PlaylistActionsAlbum";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import type {
   PlaylistDetails,
@@ -93,7 +93,10 @@ function AlbumsForYouSlugPage() {
     currentTrack,
   } = usePlayerStore();
 
-  const toFeaturedArtist = (user: PublicUser, trackCount: number): MockUser => ({
+  const toFeaturedArtist = (
+    user: PublicUser,
+    trackCount: number,
+  ): MockUser => ({
     id: user.id as unknown as number,
     username: user.username ?? user.display_name,
     displayName: user.display_name,
@@ -132,9 +135,8 @@ function AlbumsForYouSlugPage() {
           throw new Error("Album preview track not found.");
         }
 
-        const { referenceTrack, tracks } = await getRelatedTracks(
-          previewTrackId,
-        );
+        const { referenceTrack, tracks } =
+          await getRelatedTracks(previewTrackId);
 
         if (!tracks.length) {
           throw new Error("Album not found.");
@@ -154,7 +156,9 @@ function AlbumsForYouSlugPage() {
 
         if (cancelled) return;
 
-        setFeaturedArtists(artists.filter((artist): artist is MockUser => !!artist));
+        setFeaturedArtists(
+          artists.filter((artist): artist is MockUser => !!artist),
+        );
 
         const owner = await getUserById(album.owner_id).catch(() => null);
         if (cancelled) return;
@@ -290,7 +294,7 @@ function AlbumsForYouSlugPage() {
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           <div className="flex-1 min-w-0">
-            <PlaylistActions
+            <PlaylistActionsAlbum
               playlist={playlist}
               onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                 setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))

@@ -86,6 +86,7 @@ export interface UpdatePlaylistPayload {
   genre_id?: string | null;
   /** Replaces all existing playlist tags when provided */
   tags?: string[];
+  is_album_view?: boolean;
 }
 
 export interface PlaylistTracksPage {
@@ -245,6 +246,8 @@ export async function updatePlaylist(
     formData.append("release_date", payload.release_date ?? "");
   if (payload.genre_id !== undefined)
     formData.append("genre_id", payload.genre_id ?? "");
+  if (payload.is_album_view !== undefined)
+    formData.append("is_album_view", String(payload.is_album_view));
   if (payload.tags?.length)
     payload.tags.forEach((id) => formData.append("tags[]", id));
 
