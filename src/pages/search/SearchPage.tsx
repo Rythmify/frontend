@@ -1,16 +1,23 @@
-import { Outlet } from "react-router-dom";
-import SearchSidebar from "@/components/SearchComponents/Searchsidebar";
-/**
- * SearchPage – wrapper layout for all /search/* child routes.
- * Renders the active child route via <Outlet />.
- */
+import { Outlet, useSearchParams, useLocation } from "react-router-dom";
+import SearchSidebar from "@/components/SearchComponents/SearchSidebar";
+
 export default function SearchPage() {
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
+  const location = useLocation();
+
+  const isEverything = location.pathname === "/search";
+
   return (
-    <div data-test="search-page" style={{ padding: "20px 25px", flexDirection: "row", display: "flex" }}>
-    <SearchSidebar query={new URLSearchParams(window.location.search).get("q") ?? ""} />
-        <div className="flex-1">
-          tracks albums playlists users display part
-          </div>
+    <div data-test="search-page" className="flex flex-row gap-8 px-6 py-5">
+      <SearchSidebar query={q} />
+      <div className="flex-1">
+        {isEverything ? (
+          <div>Everything results for "{q}" go here</div>
+        ) : (
+          <Outlet />
+        )}
+      </div>
     </div>
   );
 }
