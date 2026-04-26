@@ -1,5 +1,5 @@
 import { Outlet, useSearchParams, useLocation } from "react-router-dom";
-import SearchSidebar from "@/components/SearchComponents/SearchSidebar";
+import SearchSidebar from "@/components/SearchComponents/Searchsidebar";
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
