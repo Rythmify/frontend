@@ -27,9 +27,7 @@ export type Duration = 'short' | 'medium' | 'long' | 'extra';
 // ─── Request param types ──────────────────────────────────────────────────────
 
 interface BaseSearchParams {
-  /** The search query string */
   q: string;
-  /** Sort order. All three values are valid for typed searches. */
   sort?: SortOrder;
   limit?: number;
   offset?: number;
@@ -59,10 +57,6 @@ interface UsersSearchParams extends BaseSearchParams {
 
 interface EverythingSearchParams extends BaseSearchParams {
   type?: never;
-  /**
-   * Only `relevance` and `newest` are supported when type is omitted.
-   * `plays` is not available for the blended "everything" feed.
-   */
   sort?: 'relevance' | 'newest';
 }
 
@@ -81,15 +75,13 @@ export interface Pagination {
   total: number;
 }
 
-// ── Entity shapes ─────────────────────────────────────────────────────────────
-
 export interface Track {
   id: string;
   title: string;
-  duration: number; // seconds
+  duration: number;
   coverUrl: string | null;
   tags: string[];
-  uploadedAt: string; // ISO-8601
+  uploadedAt: string;
   artist: {
     id: string;
     name: string;
@@ -134,8 +126,6 @@ export interface User {
   followersCount: number;
 }
 
-// ── Filter shapes ─────────────────────────────────────────────────────────────
-
 export interface TrackFilters {
   available: {
     tags: string[];
@@ -167,21 +157,13 @@ export interface UserFilters {
   };
 }
 
-// ── Search response shapes ────────────────────────────────────────────────────
-
-/**
- * [FIX-6][FIX-7] Each resource type carries its own pagination object so
- * consumers can paginate tracks, playlists, albums, and users independently.
- */
 export interface EverythingSearchResponse {
   tracks: Track[];
   playlists: Playlist[];
   albums: Album[];
   users: User[];
-  tracksPagination: Pagination;
-  playlistsPagination: Pagination;
-  albumsPagination: Pagination;
-  usersPagination: Pagination;
+  pagination: Pagination;
+  filters: null;
 }
 
 export interface TracksSearchResponse {
@@ -208,8 +190,6 @@ export interface UsersSearchResponse {
   filters: UserFilters;
 }
 
-// ── Narrow return type based on SearchParams discriminant ─────────────────────
-
 export type SearchResponse<T extends SearchParams> =
   T extends EverythingSearchParams
     ? EverythingSearchResponse
@@ -223,7 +203,7 @@ export type SearchResponse<T extends SearchParams> =
     ? UsersSearchResponse
     : never;
 
-// ─── Helper: strip undefined values from params object ───────────────────────
+// ─── Helper ───────────────────────────────────────────────────────────────────
 
 function cleanParams(
   obj: Record<string, string | number | undefined>,
@@ -234,27 +214,26 @@ function cleanParams(
 }
 
 // ─── Core search function ─────────────────────────────────────────────────────
+//
+// Backend response envelope:
+// {
+//   data:       { tracks, users, playlists, albums },  ← resource arrays
+//   pagination: { limit, offset, total },              ← TOP LEVEL
+//   filters:    { available, active } | null,          ← TOP LEVEL
+// }
+//
+// We merge data.data (the arrays) with the top-level pagination + filters
+// so every SearchResponse has a flat { tracks/playlists/..., pagination, filters }.
 
-/**
- * Universal search function. Pass `type` to search a specific tab; omit it
- * for the "everything" overview page.
- *
- * Token attachment, refresh, and error handling are all managed by axiosInstance.
- *
- * @example — Tracks tab with filters
- * const data = await search({ q: 'night', type: 'tracks', tag: 'energetic', time_range: 'past_month', sort: 'newest' });
- *
- * @example — Users tab with location filter
- * const data = await search({ q: 'nour', type: 'users', location: 'Cairo' });
- *
- * @example — Overview / everything page
- * const data = await search({ q: 'jaz', sort: 'relevance' });
- */
 export async function search<T extends SearchParams>(
   params: T,
   signal?: AbortSignal,
 ): Promise<SearchResponse<T>> {
-  const { data } = await axiosInstance.get<{ data: SearchResponse<T> }>('/search', {
+  const { data } = await axiosInstance.get<{
+    data: Record<string, any>;
+    pagination: Pagination;
+    filters: any;
+  }>('/search', {
     params: cleanParams({
       q:          params.q,
       type:       'type' in params ? params.type : undefined,
@@ -269,8 +248,12 @@ export async function search<T extends SearchParams>(
     signal,
   });
 
-  // Backend wraps everything in { data: { ... } }
-  return data.data;
+  // Flatten: spread the resource arrays + attach top-level pagination & filters
+  return {
+    ...data.data,
+    pagination: data.pagination,
+    filters: data.filters,
+  } as SearchResponse<T>;
 }
 
 // ─── Convenience wrappers ─────────────────────────────────────────────────────
@@ -302,9 +285,6 @@ export const searchUsers = (
 
 // ─── Suggestions ──────────────────────────────────────────────────────────────
 
-/**
- * A user suggestion returned by the backend — a person the current user follows.
- */
 export interface SuggestionUser {
   id: string;
   display_name: string;
@@ -313,33 +293,11 @@ export interface SuggestionUser {
   is_following: boolean;
 }
 
-/**
- * The full response from GET /suggestions?q=...
- *
- * Backend shape:
- * {
- *   data: {
- *     users: SuggestionUser[];       // people the authed user follows matching the query
- *     suggestions: string[];         // plain-text query suggestions
- *   }
- * }
- */
 export interface SuggestionsResponse {
   users: SuggestionUser[];
   suggestions: string[];
 }
 
-/**
- * Typeahead suggestions — call on every keystroke after >= 1 character.
- * Requires the user to be authenticated (token handled by axiosInstance).
- *
- * Always pass an AbortSignal so stale in-flight requests are cancelled
- * when the user keeps typing.
- *
- * @example
- * const controller = new AbortController();
- * const { users, suggestions } = await getSuggestions('n', controller.signal);
- */
 export async function getSuggestions(
   q: string,
   signal?: AbortSignal,
@@ -348,6 +306,5 @@ export async function getSuggestions(
     '/suggestions',
     { params: { q }, signal },
   );
-  // Unwrap the { data: { users, suggestions } } envelope
   return data.data;
 }
