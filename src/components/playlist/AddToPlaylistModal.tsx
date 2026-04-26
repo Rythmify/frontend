@@ -322,6 +322,7 @@ const AddToPlaylistModal = ({
             setTracksToAdd={setTracksToAdd}
             isPlaylist={isPlaylist}
             defaultPlaylistId={defaultPlaylistId}
+            hasPlaylists={hasPlaylists}
             onAdd={handleAdd}
             likedTracks={likedTracks}
             onCreate={handleCreate}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "@/components/playlist/Made for you/PlaylistSidebarForYou";
-import PlaylistActions from "@/components/playlist/Album/PlaylistActionsAlbum";
+import PlaylistActionsAlbum from "@/components/playlist/Album/PlaylistActionsAlbum";
+import PlaylistActions from "@/components/playlist/PlaylistActions";
 import OwnerInfo from "@/components/playlist/OwnerInfo";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
@@ -15,9 +16,24 @@ import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+import { useAuthStore } from "@/stores/auth.store";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function getTopArtistTrackCounts(
+  tracks: PlaylistTrackItem[],
+): [string, number][] {
+  const counts = new Map<string, number>();
+
+  for (const track of tracks) {
+    const artistId = track.artist_id?.trim();
+    if (!artistId) continue;
+    counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries());
+}
 
 function AlbumSlugPage() {
   const { username, albumSlug } = useParams<{
@@ -37,6 +53,7 @@ function AlbumSlugPage() {
     isPlaying,
     currentTrack,
   } = usePlayerStore();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -62,13 +79,38 @@ function AlbumSlugPage() {
         if (cancelled) return;
 
         setPlaylist(playlistRes.data);
-        setFeaturedArtists([]);
 
         try {
           const owner = await getUserById(playlistRes.data.owner_user_id);
           if (!cancelled) setAlbumOwner(owner);
         } catch {
           if (!cancelled) setAlbumOwner(null);
+        }
+
+        const artistIds = getTopArtistTrackCounts(playlistRes.data.tracks);
+        const artists = await Promise.all(
+          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
+            const user = await getUserById(artistId).catch(() => null);
+            return user
+              ? ({
+                  id: user.id as unknown as number,
+                  username: user.username ?? user.display_name,
+                  displayName: user.display_name,
+                  avatarUrl:
+                    user.profile_picture ??
+                    "https://picsum.photos/seed/default/100/100",
+                  followerCount: user.followers_count ?? 0,
+                  trackCount,
+                  isFollowing: false,
+                } as MockUser)
+              : null;
+          }),
+        );
+
+        if (!cancelled) {
+          setFeaturedArtists(
+            artists.filter((artist): artist is MockUser => !!artist),
+          );
         }
       } catch (err) {
         console.error(err);
@@ -159,10 +201,18 @@ function AlbumSlugPage() {
     );
   };
 
+  const handleAddToNextUp = () => {
+    if (!playlist?.tracks.length) return;
+    const queue = playlist.tracks.map(toPlayerTrack);
+    const playerState = usePlayerStore.getState();
+    queue.forEach((track) => playerState.addToQueue(track));
+  };
+
   const isAlbumActive =
     isPlaying &&
     !!playlist &&
     playlist.tracks.some((track) => track.track_id === currentTrack?.id);
+  const isOwner = user?.id === playlist?.owner_user_id;
 
   if (loading)
     return (
@@ -197,12 +247,22 @@ function AlbumSlugPage() {
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           {/* Left Column: Actions and Track List */}
           <div className="flex-1 min-w-0">
-            <PlaylistActions
-              playlist={playlist}
-              onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
-                setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
-              }
-            />
+            {isOwner ? (
+              <PlaylistActions
+                playlist={playlist}
+                onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
+                  setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
+                }
+              />
+            ) : (
+              <PlaylistActionsAlbum
+                playlist={playlist}
+                onAddToNextUp={handleAddToNextUp}
+                onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
+                  setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
+                }
+              />
+            )}
 
             <div className="flex flex-1 gap-6 mt-8">
               <OwnerInfo

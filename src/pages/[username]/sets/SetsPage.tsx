@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import ShareLayout from "../../[username]/shareLayout";
@@ -34,7 +34,7 @@ export default function SetsPage() {
     handleSave,
   } = useProfileData(username);
 
-  useEffect(() => {
+  const fetchPlaylists = useCallback(() => {
     const ownerId = isOwner ? activeUser?.id : profileData?.id;
     if (!ownerId) return;
 
@@ -69,6 +69,19 @@ export default function SetsPage() {
     user.displayName,
     user.username,
   ]);
+
+  useEffect(() => {
+    fetchPlaylists();
+
+    const handlePlaylistUpdated = () => {
+      fetchPlaylists();
+    };
+
+    window.addEventListener("playlist-updated", handlePlaylistUpdated);
+    return () => {
+      window.removeEventListener("playlist-updated", handlePlaylistUpdated);
+    };
+  }, [fetchPlaylists]);
 
   if (!currentUser) return null;
 
