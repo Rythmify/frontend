@@ -1,0 +1,339 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import PlaylistSidebar from "../../../components/playlist/Made for you/PlaylistSidebarForYou";
+import PlaylistActionsAlbum from "../../../components/playlist/Album/PlaylistActionsAlbum";
+import PlaylistHero from "../../../components/playlist/PlaylistHero";
+import type {
+  PlaylistDetails,
+  PlaylistTrackItem,
+} from "@/services/api/playlist/playlist.service";
+import {
+  getAlbumsForYou,
+  getAlbumPreviewTrackId,
+  type DiscoveryAlbum,
+} from "@/services/api/discover.service";
+import { usePlayerStore } from "../../../stores/player.store";
+import type { MockUser } from "../../../services/mocks/users";
+import TrackList from "../../../components/playlist/TrackList";
+import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+import { getUserById, type PublicUser } from "@/services/user.service";
+import { getRelatedTracks } from "@/services/track.service";
+import type { Track } from "@/types/track";
+import OwnerInfo from "@/components/playlist/OwnerInfo";
+
+function albumToPlaylistDetails(
+  album: DiscoveryAlbum,
+  seedTrack: Track,
+  tracks: Track[],
+): PlaylistDetails {
+  return {
+    playlist_id: album.id,
+    owner_user_id: album.owner_id,
+    name: album.name ?? seedTrack.title ?? "Album",
+    description: seedTrack.title
+      ? `Related tracks: ${seedTrack.title}`
+      : "Related tracks picked for you",
+    is_public: true,
+    cover_image: album.cover_image ?? seedTrack.coverUrl ?? null,
+    subtype: "album",
+    created_at: album.created_at,
+    updated_at: null,
+    track_count: tracks.length,
+    like_count: album.like_count,
+    repost_count: 0,
+    is_album_view: true,
+    tracks: tracks.map(
+      (track, index) =>
+        ({
+          track_id: track.id,
+          position: index + 1,
+          added_at: track.postedAt,
+          title: track.title,
+          duration: null,
+          cover_image: track.coverUrl || null,
+          artist_name: track.artistName,
+          artist_id: track.artistId || track.artistUsername,
+          is_public: !track.isPrivate,
+          deleted_at: null,
+          audio_url: track.audioUrl,
+          play_count: track.playCount,
+        }) as PlaylistTrackItem & { audio_url?: string; play_count?: number },
+    ),
+  };
+}
+
+function getTopArtistTrackCounts(tracks: Track[]): [string, number][] {
+  const counts = new Map<string, number>();
+
+  for (const track of tracks) {
+    const artistId = track.artistId?.trim();
+    if (!artistId) continue;
+    counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries());
+}
+
+function AlbumsForYouSlugPage() {
+  const { username, albumSlug } = useParams<{
+    username: string;
+    albumSlug: string;
+  }>();
+
+  const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
+  const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
+
+  const {
+    setTrack: setPlayerTrack,
+    togglePlay,
+    isPlaying,
+    currentTrack,
+  } = usePlayerStore();
+
+  const toFeaturedArtist = (
+    user: PublicUser,
+    trackCount: number,
+  ): MockUser => ({
+    id: user.id as unknown as number,
+    username: user.username ?? user.display_name,
+    displayName: user.display_name,
+    avatarUrl:
+      user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
+    followerCount: user.followers_count ?? 0,
+    trackCount,
+    isFollowing: false,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchData() {
+      if (!albumSlug) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const resolvedAlbumId = albumSlug.includes(":")
+          ? (albumSlug.split(":").pop() ?? albumSlug)
+          : albumSlug;
+
+        const albumsRes = await getAlbumsForYou({ limit: 100, offset: 0 });
+        const album =
+          albumsRes.data.find((item) => item.id === resolvedAlbumId) ??
+          albumsRes.data.find((item) => item.name === resolvedAlbumId);
+
+        if (!album) {
+          throw new Error("Album not found.");
+        }
+
+        const previewTrackId = getAlbumPreviewTrackId(album);
+        if (!previewTrackId) {
+          throw new Error("Album preview track not found.");
+        }
+
+        const { referenceTrack, tracks } =
+          await getRelatedTracks(previewTrackId);
+
+        if (!tracks.length) {
+          throw new Error("Album not found.");
+        }
+
+        if (cancelled) return;
+
+        setPlaylist(albumToPlaylistDetails(album, referenceTrack, tracks));
+
+        const artistIds = getTopArtistTrackCounts(tracks);
+        const artists = await Promise.all(
+          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
+            const user = await getUserById(artistId).catch(() => null);
+            return user ? toFeaturedArtist(user, trackCount) : null;
+          }),
+        );
+
+        if (cancelled) return;
+
+        setFeaturedArtists(
+          artists.filter((artist): artist is MockUser => !!artist),
+        );
+
+        const owner = await getUserById(album.owner_id).catch(() => null);
+        if (cancelled) return;
+        setAlbumOwner(owner);
+      } catch (err) {
+        console.error(err);
+
+        if (!cancelled) {
+          setError("Album not found.");
+          setFeaturedArtists([]);
+          setAlbumOwner(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [albumSlug]);
+
+  const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
+    id: track.track_id,
+    title: track.title ?? "Untitled track",
+    artistName: track.artist_name ?? "Unknown Artist",
+    artistUsername: track.artist_username ?? username ?? "",
+    coverUrl: track.cover_image ?? "",
+    genre: "",
+    likeCount: 0,
+    repostCount: 0,
+    playCount: track.play_count ?? 0,
+    commentCount: 0,
+    duration:
+      typeof track.duration === "number"
+        ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}`
+        : "0:00",
+    postedAt: track.added_at ?? "",
+    waveformData: [],
+    audioUrl: track.audio_url ?? "",
+    isPrivate: !track.is_public,
+  });
+
+  const handleHeroPlayPause = () => {
+    if (!playlist || !playlist.tracks.length) return;
+
+    const tracks = playlist.tracks as Array<
+      PlaylistTrackItem & { audio_url?: string; play_count?: number }
+    >;
+    const firstTrack = tracks[0];
+    const playerTrack = toPlayerTrack(firstTrack);
+    const queue = tracks.map(toPlayerTrack);
+    const isThisAlbumPlaying =
+      (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
+
+    if (isThisAlbumPlaying) {
+      togglePlay();
+    } else {
+      setPlayerTrack(
+        {
+          ...playerTrack,
+          context: {
+            type: "playlist",
+            playlist_id: playlist.playlist_id,
+            queue: tracks.map((t) => t.track_id),
+          },
+        } as any,
+        queue,
+      );
+    }
+  };
+
+  const handleTrackPlay = (track: PlaylistTrackItem) => {
+    if (!playlist) return;
+
+    const tracks = playlist.tracks;
+    const playerTrack = toPlayerTrack(track);
+
+    if (currentTrack?.id === playerTrack.id) {
+      togglePlay();
+      return;
+    }
+
+    setPlayerTrack(
+      {
+        ...playerTrack,
+        context: {
+          type: "playlist",
+          playlist_id: playlist.playlist_id,
+          queue: tracks.map((t) => t.track_id),
+        },
+      } as any,
+      tracks.map(toPlayerTrack),
+    );
+  };
+
+  const isAlbumActive =
+    isPlaying &&
+    !!playlist &&
+    playlist.tracks.some((track) => track.track_id === currentTrack?.id);
+
+  if (loading)
+    return (
+      <div className="animate-pulse p-20 text-center text-white">
+        Loading album...
+      </div>
+    );
+
+  if (error || !playlist)
+    return (
+      <div className="p-20 text-center text-red-500">
+        {error || "Album not found."}
+      </div>
+    );
+
+  return (
+    <div
+      data-test="album-slug-page"
+      className="flex-1 w-full bg-bg min-h-screen"
+    >
+      <PlaylistHero
+        key={playlist.playlist_id}
+        playlist={playlist}
+        isPlaying={isAlbumActive}
+        activeTrackId={currentTrack?.id}
+        onPlayPause={handleHeroPlayPause}
+        showUploadButton={false}
+        ownerUsername={albumOwner?.username}
+      />
+
+      <div className="container mx-auto">
+        <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
+          <div className="flex-1 min-w-0">
+            <PlaylistActionsAlbum
+              playlist={playlist}
+              onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
+                setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
+              }
+            />
+
+            <div className="flex flex-1 gap-6 mt-8">
+              <OwnerInfo
+                ownerUserId={playlist.owner_user_id}
+                trackNum={playlist.tracks.length}
+                followers={albumOwner?.followers_count ?? 0}
+                username={
+                  albumOwner?.username ?? username ?? playlist.owner_user_id
+                }
+                displayName={albumOwner?.display_name ?? undefined}
+                avatarUrl={albumOwner?.profile_picture}
+              />
+              <TrackList
+                tracks={playlist.tracks}
+                currentTrackId={currentTrack?.id}
+                isPlaying={isPlaying}
+                onTrackPlay={handleTrackPlay}
+              />
+            </div>
+          </div>
+
+          <div className="w-full lg:w-[280px] shrink-0">
+            <PlaylistSidebar
+              featuredArtists={featuredArtists}
+              playlist={playlist}
+              showLikes={true}
+              showReposts={true}
+            />
+            <GuestPageFooter />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default AlbumsForYouSlugPage;

@@ -452,6 +452,7 @@ function ScBtn({ icon, label, tooltip, onClick, active = false, "data-test": dat
 
 export default function TrackCard({
   track,
+  contextQueue,
   repostedBy,
   disableComments,
   onCopyLink,
@@ -507,7 +508,11 @@ export default function TrackCard({
     if (isActive) {
       togglePlay();
     } else {
-      setTrack(track);
+      if (contextQueue) {
+        setTrack(track, contextQueue);
+      } else {
+        usePlayerStore.getState().playContext("track", track.id, track);
+      }
       setPlayCount(prev => prev + 1); // Optimistic increment
     }
   };
@@ -519,7 +524,11 @@ export default function TrackCard({
     if (!isActive) {
       const dur = parseDur(track.duration);
       const startTime = dur * ratio;
-      setTrack(track, undefined, startTime);
+      if (contextQueue) {
+        setTrack(track, contextQueue, startTime);
+      } else {
+        usePlayerStore.getState().playContext("track", track.id, track, startTime);
+      }
       setPlayCount(prev => prev + 1); // Optimistic increment
     }
   };

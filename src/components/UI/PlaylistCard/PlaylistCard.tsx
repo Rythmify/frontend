@@ -14,6 +14,7 @@ export type PlaylistCardData = {
   id: string;
   title: string;
   owner: string;
+  ownerDisplayName?: string;
   ownerUsername?: string;
   slug?: string | null;
   coverUrl: string | null;
@@ -49,9 +50,11 @@ export default function PlaylistCard({
     (currentTrack as any)?.context?.type === "playlist" &&
     (currentTrack as any)?.context?.playlist_id === item.id;
 
-  const ownerDisplay = UUID_RE.test(item.owner)
-    ? (user?.displayName ?? user?.username ?? item.owner)
-    : item.ownerUsername?? item.owner;
+  const ownerDisplay =
+    item.ownerDisplayName ??
+    (UUID_RE.test(item.owner)
+      ? (user?.displayName ?? user?.username ?? item.owner)
+      : item.ownerUsername ?? item.owner);
     
 
   // SoundCloud navigation format: /[username]/sets/[slug]

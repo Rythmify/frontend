@@ -12,6 +12,7 @@ interface TrackCardProps {
   track: Track;
   widthClassName?: string;
   addToPlaylistTracks?: Track[];
+  contextQueue?: Track[];
 }
 
 function buildSourcePlaylist(track: Track, relatedTracks: Track[]) {
@@ -127,6 +128,7 @@ const TrackCard = ({
   track,
   widthClassName,
   addToPlaylistTracks,
+  contextQueue,
 }: TrackCardProps) => {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const navigate = useNavigate();
@@ -155,8 +157,11 @@ const TrackCard = ({
     if (currentTrack?.id === track.id) {
       togglePlay();
     } else {
-      setTrack(track);
-      addTrack(track);
+      if (contextQueue) {
+        setTrack(track, contextQueue);
+      } else {
+        usePlayerStore.getState().playContext("track", track.id, track);
+      }
     }
   };
 

@@ -131,6 +131,15 @@ export const trackHandlers = [
           track_limit: 3,
           playlist_limit: 2,
         },
+        usage: {
+          tracks_uploaded: 0,
+          track_limit: 3,
+          playlists_created: 0,
+          playlist_limit: 2,
+          can_upload_track: true,
+          can_create_playlist: true,
+          offline_listening_enabled: false,
+        },
       },
       message: "Current subscription fetched successfully.",
     });

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 
 type CellValue =
@@ -106,7 +106,15 @@ function Cell({ value }: { value: CellValue }) {
 
 const COL_W = "w-[280px]";
 
-function PlanHeaderRow() {
+interface PlanHeaderRowProps {
+  onGetStarted: () => void;
+  isStarting: boolean;
+  disabled: boolean;
+}
+
+function PlanHeaderRow({ onGetStarted, isStarting, disabled }: PlanHeaderRowProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="flex bg-white py-8">
       <div className="w-[380px]" />
@@ -118,9 +126,13 @@ function PlanHeaderRow() {
           Free
         </span>
         <span className="text-[15px] font-semibold text-black/60">Basic</span>
-        <span className="mt-1 rounded-full border border-[#e5e7eb] px-5 py-[10px] text-[14px] font-semibold text-black/50">
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="mt-1 cursor-pointer rounded-full border border-[#e5e7eb] px-5 py-[10px] text-[14px] font-semibold text-black/50 transition-colors hover:border-black/30"
+        >
           Current plan
-        </span>
+        </button>
       </div>
 
       <div
@@ -133,18 +145,20 @@ function PlanHeaderRow() {
           <span className="font-bold text-emerald-600">EGP 29.99 </span>
           <span>/month, billed yearly for EGP 359.88</span>
         </p>
-        <Link
-          to="/creator/checkout"
-          className="mt-2 rounded-full bg-black px-6 py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90"
+        <button
+          type="button"
+          onClick={onGetStarted}
+          disabled={isStarting || disabled}
+          className="mt-2 cursor-pointer rounded-full bg-black px-6 py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          Get started
-        </Link>
+          {isStarting ? "Loading…" : "Get started"}
+        </button>
       </div>
     </div>
   );
 }
 
-export default function CompareTable() {
+export default function CompareTable({ onGetStarted, isStarting, disabled }: PlanHeaderRowProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
@@ -161,7 +175,7 @@ export default function CompareTable() {
 
       <div className="mx-auto w-fit max-w-full bg-white">
         <div className="sticky top-0 z-20 bg-white">
-          <PlanHeaderRow />
+          <PlanHeaderRow onGetStarted={onGetStarted} isStarting={isStarting} disabled={disabled} />
         </div>
 
         {sections.map((section) => (

@@ -192,7 +192,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           </p>
           <button
             data-test="upgrade-pro-button"
-            onClick={() => navigate("/creator/checkout")}
+            onClick={() => navigate("/premium")}
             className="w-[320px] py-3 bg-white text-black font-semibold text-sm rounded-full hover:bg-gray-200 transition-colors"
           >
             Upgrade to Artist Pro
