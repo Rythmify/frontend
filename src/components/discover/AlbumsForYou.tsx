@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import HorizontalCarousel from "./HorizontalCarousel";
 import type { DiscoveryAlbum } from "@/services/api/discover.service";
-import { getAlbumsForYou } from "@/services/api/discover.service";
+import {
+  getAlbumsForYou,
+  getAlbumPreviewTrackId,
+} from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import AlbumCard from "../UI/AlbumCard";
 import { useLikesStore } from "@/stores/likes.store";
@@ -37,6 +40,7 @@ const AlbumsForYou = () => {
               trackCount: album.track_count,
               likeCount: album.like_count,
               createdAt: album.created_at,
+              previewTrackId: getAlbumPreviewTrackId(album),
               previewTrack: album.preview_track
                 ? mapDiscoveryTrack(album.preview_track)
                 : undefined,

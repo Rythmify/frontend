@@ -35,18 +35,15 @@ export default function PlaylistActions({
   isStation = false,
 }: PlaylistActionsProps) {
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
-  const { addToQueue, queue } = usePlayerStore();
+  const { addToQueue } = usePlayerStore();
   const liked = isPlaylistLiked(playlist.playlist_id);
-  const isQueued =
-    (playlist.tracks ?? []).length > 0 &&
-    (playlist.tracks ?? []).some((track) =>
-      queue.some((queuedTrack) => queuedTrack.id === track.track_id),
-    );
 
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [addedToQueue, setAddedToQueue] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -100,7 +97,20 @@ export default function PlaylistActions({
     if (!tracks.length) return;
     tracks.forEach((track) => addToQueue(track));
     onAddToNextUp?.();
+
+    setAddedToQueue(true);
+    if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+    queueTimerRef.current = setTimeout(() => {
+      setAddedToQueue(false);
+      queueTimerRef.current = null;
+    }, 3000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+    };
+  }, []);
 
   return (
     <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
@@ -133,7 +143,7 @@ export default function PlaylistActions({
         </ActionButton>
 
         {/* Add to Next up Button */}
-        <ActionButton onClick={handleAddToNextUp} active={isQueued}>
+        <ActionButton onClick={handleAddToNextUp} active={addedToQueue}>
           <LuListEnd className="text-[18px]" />
           Add to Next up
         </ActionButton>
