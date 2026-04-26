@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Chats } from "@/components/MessagingComponents/Chats";
 import MessagingHeader from "@/components/MessagingComponents/MessagingHeader";
@@ -11,22 +11,28 @@ import {
 } from "@/services/api/messaging/conversationApi";
 import ConversationHeader from "@/components/MessagingComponents/ConversationHeader";
 import SendMessageForm from "@/components/MessagingComponents/SendMessageForm";
-import { joinConversation, leaveConversation, getSocket } from '@/services/api/messaging/socketService';
-import { useMessagingStore } from '@/stores/messaging.store';
+import { joinConversation, leaveConversation, getSocket } from "@/services/api/messaging/socketService";
+import { useMessagingStore } from "@/stores/messaging.store";
+
+const MSG_LIMIT = 50;
 
 export default function MessageIdPage() {
   const navigate = useNavigate();
-  const { conversationId } = useParams()  
+  const { conversationId } = useParams();
 
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [conversations, setConversations]   = useState<Conversation[]>([]);
+  const [activeConvId, setActiveConvId]     = useState<string | null>(null);
   const [activeMessages, setActiveMessages] = useState<Message[]>([]);
-  const [loadingConvs, setLoadingConvs] = useState(true);
-  const [loadingMsgs, setLoadingMsgs] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
+  const [loadingConvs, setLoadingConvs]     = useState(true);
+  const [loadingMsgs, setLoadingMsgs]       = useState(false);
+  const [hasMoreMsgs, setHasMoreMsgs]       = useState(false);
+  const [msgOffset, setMsgOffset]           = useState(0);
+  const [error, setError]                   = useState<string | null>(null);
+  const [isTyping, setIsTyping]             = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
+
   const { refreshUnreadCount } = useMessagingStore();
+
   const activeConv = conversations.find((c) => c.id === activeConvId) ?? null;
 
   const lastReceivedMessage = activeConv
@@ -35,54 +41,78 @@ export default function MessageIdPage() {
         .at(-1) ?? null)
     : null;
 
-  const loadConversation = (conv: Conversation) => {
-    setActiveConvId(conv.id);
-    setActiveMessages([]);
+  // ─── Load a conversation from scratch (offset 0) ─────────────────────────
+  const loadConversation = useCallback(
+    (conv: Conversation) => {
+      setActiveConvId(conv.id);
+      setActiveMessages([]);
+      setMsgOffset(0);
+      setHasMoreMsgs(false);
+      setLoadingMsgs(true);
+
+      fetchConversation(conv.id, MSG_LIMIT, 0)
+        .then((res) => {
+          const { messages, pagination } = res.data;
+
+          setActiveMessages(messages);
+          setMsgOffset(messages.length);
+          setHasMoreMsgs(pagination.has_next);
+
+          const unread = messages.filter(
+            (msg) => msg.sender_id === conv.participant.id && !msg.is_read,
+          );
+          unread.forEach((msg) => {
+            markMessageReadState(conv.id, msg.id, true).catch(() => {});
+          });
+
+          setConversations((prev) =>
+            prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
+          );
+          refreshUnreadCount();
+        })
+        .catch(() => setError("Could not load messages."))
+        .finally(() => setLoadingMsgs(false));
+    },
+    [refreshUnreadCount],
+  );
+
+  // ─── Load more (older) messages via offset ────────────────────────────────
+  const loadMoreMessages = useCallback(() => {
+    if (!activeConvId || loadingMsgs || !hasMoreMsgs) return;
     setLoadingMsgs(true);
 
-    fetchConversation(conv.id)
+    fetchConversation(activeConvId, MSG_LIMIT, msgOffset)
       .then((res) => {
-        const messages = res.data.messages;
-        setActiveMessages(messages);
-
-        const unreadMessages = messages.filter(
-          (msg) =>
-            msg.sender_id === conv.participant.id && msg.is_read === false,
-        );
-        unreadMessages.forEach((msg) => {
-          markMessageReadState(conv.id, msg.id, true).catch(() => {});
-        });
-
-        setConversations((prev) =>
-          prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
-        );
-        refreshUnreadCount();
+        const { messages, pagination } = res.data;
+        setActiveMessages((prev) => [...messages, ...prev]);
+        setMsgOffset((prev) => prev + messages.length);
+        setHasMoreMsgs(pagination.has_next);
       })
-      .catch(() => setError("Could not load messages."))
+      .catch(() => setError("Could not load more messages."))
       .finally(() => setLoadingMsgs(false));
-  };
+  }, [activeConvId, loadingMsgs, hasMoreMsgs, msgOffset]);
 
-  // 1. Fetch all conversations, open the one from URL param or fallback to first
+  // ─── 1. Initial fetch: all conversations + open from URL or first ─────────
   useEffect(() => {
     setLoadingConvs(true);
     fetchConversations()
       .then((res) => {
         const items = res.data.items;
         setConversations(items);
-
         if (items.length === 0) return;
 
-        // 👇 open conversation matching URL param, fallback to first
         const target = conversationId
-          ? items.find((c) => c.id === conversationId) ?? items[0]
+          ? (items.find((c) => c.id === conversationId) ?? items[0])
           : items[0];
 
         loadConversation(target);
       })
       .catch(() => setError("Could not load conversations."))
       .finally(() => setLoadingConvs(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ─── 2. Socket room management ────────────────────────────────────────────
   useEffect(() => {
     if (!activeConvId) return;
     joinConversation(activeConvId);
@@ -91,30 +121,54 @@ export default function MessageIdPage() {
     };
   }, [activeConvId]);
 
+  // ─── 3. Socket event listeners ────────────────────────────────────────────
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
 
-    const onReceived = ({ conversationId, message }: { conversationId: string; message: Message }) => {
+    const onReceived = ({
+      conversationId,
+      message,
+    }: {
+      conversationId: string;
+      message: Message;
+    }) => {
       if (conversationId === activeConvId) {
         setActiveMessages((prev) => [...prev, message]);
       }
       setConversations((prev) =>
         prev.map((c) =>
           c.id === conversationId
-            ? { ...c, last_message: message, unread_count: c.unread_count + 1, updated_at: message.created_at }
+            ? {
+                ...c,
+                last_message: message,
+                unread_count: c.unread_count + 1,
+                updated_at: message.created_at,
+              }
             : c,
         ),
       );
     };
 
-    const onRemoved = ({ conversationId, messageId }: { conversationId: string; messageId: string }) => {
+    const onRemoved = ({
+      conversationId,
+      messageId,
+    }: {
+      conversationId: string;
+      messageId: string;
+    }) => {
       if (conversationId === activeConvId) {
         setActiveMessages((prev) => prev.filter((m) => m.id !== messageId));
       }
     };
 
-    const onReadUpdated = ({ conversationId, conversationUnreadCount }: { conversationId: string; conversationUnreadCount: number }) => {
+    const onReadUpdated = ({
+      conversationId,
+      conversationUnreadCount,
+    }: {
+      conversationId: string;
+      conversationUnreadCount: number;
+    }) => {
       setConversations((prev) =>
         prev.map((c) =>
           c.id === conversationId
@@ -132,22 +186,22 @@ export default function MessageIdPage() {
       if (conversationId === activeConvId) setIsTyping(false);
     };
 
-    socket.on('message:received', onReceived);
-    socket.on('message:removed', onRemoved);
-    socket.on('message:read_updated', onReadUpdated);
-    socket.on('message:typing', onTyping);
-    socket.on('message:stop_typing', onStopTyping);
+    socket.on("message:received", onReceived);
+    socket.on("message:removed", onRemoved);
+    socket.on("message:read_updated", onReadUpdated);
+    socket.on("message:typing", onTyping);
+    socket.on("message:stop_typing", onStopTyping);
 
     return () => {
-      socket.off('message:received', onReceived);
-      socket.off('message:removed', onRemoved);
-      socket.off('message:read_updated', onReadUpdated);
-      socket.off('message:typing', onTyping);
-      socket.off('message:stop_typing', onStopTyping);
+      socket.off("message:received", onReceived);
+      socket.off("message:removed", onRemoved);
+      socket.off("message:read_updated", onReadUpdated);
+      socket.off("message:typing", onTyping);
+      socket.off("message:stop_typing", onStopTyping);
     };
   }, [activeConvId]);
 
-  // 2. On message sent
+  // ─── 4. Message sent ──────────────────────────────────────────────────────
   const handleMessageSent = (msg: Message) => {
     setActiveMessages((prev) => [...prev, msg]);
     setConversations((prev) =>
@@ -159,13 +213,13 @@ export default function MessageIdPage() {
     );
   };
 
-  // 3. On conversation deleted
+  // ─── 5. Conversation deleted ──────────────────────────────────────────────
   const handleConversationDeleted = (deletedId: string) => {
     setConversations((prev) => {
       const remaining = prev.filter((c) => c.id !== deletedId);
       if (remaining.length > 0) {
         const next = remaining[0];
-        navigate(`/messages/${next.id}`); 
+        navigate(`/messages/${next.id}`);
         loadConversation(next);
       } else {
         setActiveConvId(null);
@@ -176,14 +230,14 @@ export default function MessageIdPage() {
     });
   };
 
-  // 4. On conversation selected from list
+  // ─── 6. Conversation selected from list ───────────────────────────────────
   const handleSelectConversation = (conv: Conversation) => {
-    navigate(`/messages/${conv.id}`); 
+    navigate(`/messages/${conv.id}`);
     loadConversation(conv);
     setShowMobileChat(true);
   };
 
-  // 5. On read state toggled
+  // ─── 7. Read state toggled ────────────────────────────────────────────────
   const handleReadStateChange = (isUnread: boolean) => {
     setConversations((prev) =>
       prev.map((c) =>
@@ -192,12 +246,18 @@ export default function MessageIdPage() {
     );
   };
 
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div
       data-test="message-id-page"
       className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overflow-hidden"
     >
-      <div className={`${showMobileChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-85 shrink-0 sticky top-0 h-[calc(100vh-64px)]`}>
+      {/* Conversation list sidebar */}
+      <div
+        className={`${
+          showMobileChat ? "hidden md:flex" : "flex"
+        } flex-col w-full md:w-85 shrink-0 sticky top-0 h-[calc(100vh-64px)]`}
+      >
         <MessagingHeader />
         <div className="flex-1 min-h-0 overflow-y-auto">
           <Chats
@@ -210,7 +270,12 @@ export default function MessageIdPage() {
         </div>
       </div>
 
-      <div className={`${showMobileChat ? 'flex' : 'hidden md:flex'} flex-col flex-1 md:ml-6 min-w-0`}>
+      {/* Active conversation panel */}
+      <div
+        className={`${
+          showMobileChat ? "flex" : "hidden md:flex"
+        } flex-col flex-1 md:ml-6 min-w-0 min-h-0`}
+      >
         {activeConv ? (
           <>
             <div className="shrink-0 bg-bg z-10">
@@ -225,11 +290,14 @@ export default function MessageIdPage() {
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            {/* SendMessageForm owns the scroll container — must be flex-1 min-h-0 */}
+            <div className="flex-1 min-h-0">
               <SendMessageForm
                 conversationId={activeConv.id}
                 existingMessages={activeMessages}
                 loadingMessages={loadingMsgs}
+                hasMoreMessages={hasMoreMsgs}
+                onLoadMore={loadMoreMessages}
                 onMessageSent={handleMessageSent}
                 isTyping={isTyping}
                 ParticipantInfo={{
