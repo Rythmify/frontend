@@ -5,7 +5,7 @@ let socket: Socket | null = null;
 export function connectSocket(token: string): void {
   if (socket?.connected) return; // already connected, do nothing
    console.log('[Socket] connectSocket called with token:', token);
-  socket = io('https://rythmify-backend-dev.livelypebble-6b7965ef.uaenorth.azurecontainerapps.io', {
+  socket = io(import.meta.env.VITE_API_BASE_URL, {
     auth: { token: `Bearer ${token}` },
     transports: ['websocket'],              // skip the HTTP polling fallback
     reconnection: true,
