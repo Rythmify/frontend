@@ -1,5 +1,6 @@
 import { useState, useImperativeHandle, forwardRef } from "react";
 import { useAuthStore } from "@/stores/auth.store";
+import { useNavigate } from "react-router-dom";
 import { uploadTrack } from "@/services/api/upload/track.service";
 import HelpIcon from "../../../components/Upload/HelpIcon";
 import UploadCoverImage from "../../../components/Upload/UploadCoverImage";
@@ -12,6 +13,7 @@ interface Props {
   onSuccess?: (trackId: string) => void;
   setIsLoadingParent: (loading: boolean) => void;
   onProgress?: (percent: number) => void;
+  limitReached?: boolean;
 }
 
 export interface UploadFormHandle {
@@ -20,8 +22,9 @@ export interface UploadFormHandle {
 }
 
 const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
-  ({ audioData, onSuccess, setIsLoadingParent, onProgress }: Props, ref) => {
+  ({ audioData, onSuccess, setIsLoadingParent, onProgress, limitReached: limitReachedProp = false }: Props, ref) => {
     const { user } = useAuthStore();
+    const navigate = useNavigate();
     const username = user?.username || "username";
 
     const initialTitle =
@@ -42,6 +45,7 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [limitReached, setLimitReached] = useState(limitReachedProp);
 
     const setGlobalLoading = (val: boolean) => {
       setIsLoading(val);
@@ -92,9 +96,14 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
       } catch (err: any) {
         onProgress?.(0);
         console.error("Upload failed:", err);
-        setError(
-          err.response?.data?.message || err.message || "Upload failed.",
-        );
+        if (
+          err.response?.status === 403 &&
+          err.response?.data?.error?.code === "SUBSCRIPTION_LIMIT_REACHED"
+        ) {
+          setLimitReached(true);
+        } else {
+          setError(err.response?.data?.message || err.message || "Upload failed.");
+        }
         setGlobalLoading(false);
       }
     };
@@ -214,6 +223,25 @@ const UploadDetailsForm = forwardRef<UploadFormHandle, Props>(
               Track Privacy
             </label>
             <PrivacyToggle value={privacy} onChange={setPrivacy} />
+
+            {/* Limit reached banner */}
+            {limitReached && (
+              <div
+                data-test="upload-limit-reached"
+                className="flex items-center justify-between rounded-sm bg-[#FB2C36]/10 border border-[#FB2C36]/30 px-4 py-3"
+              >
+                <span className="text-sm font-bold text-[#FB2C36]">
+                  You've reached your 3-track limit.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigate("/premium")}
+                  className="ml-4 shrink-0 rounded-full bg-[#FB2C36] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90 cursor-pointer"
+                >
+                  Upgrade to Premium
+                </button>
+              </div>
+            )}
 
             {/* Error Display */}
             {error && (
