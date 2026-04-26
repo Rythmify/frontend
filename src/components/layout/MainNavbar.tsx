@@ -36,7 +36,7 @@ const MainNavbar = () => {
   const {
     unreadCount: unreadMessages,
     fetchUnreadCount: fetchUnreadMessages,
-    refreshUnreadMessages: refreshUnreadMessages,
+    refreshUnreadCount: refreshUnreadMessages,
     setupSocketListeners,
   } = useMessagingStore();
   const navigate = useNavigate();
