@@ -72,3 +72,28 @@ export async function checkoutSubscription(planId: string): Promise<CheckoutResp
 export async function confirmMockPayment(transactionId: string): Promise<void> {
   await axiosInstance.post(`/subscriptions/mock-confirm/${transactionId}`);
 }
+
+/** POST /subscriptions/cancel — disable auto-renew on the active subscription */
+export async function cancelSubscription(): Promise<void> {
+  await axiosInstance.post("/subscriptions/cancel");
+}
+
+export interface SubscriptionTransaction {
+  transaction_id: string;
+  user_subscription_id: string;
+  amount: string;
+  payment_method: string;
+  payment_status: "pending" | "paid" | "failed";
+  paid_at: string | null;
+  created_at: string;
+}
+
+/** GET /subscriptions/transactions — list the authenticated user's payment transactions */
+export async function getMyTransactions(): Promise<SubscriptionTransaction[]> {
+  const res = await axiosInstance.get<{
+    data: SubscriptionTransaction[];
+    message: string;
+    pagination: { limit: number; offset: number; total: number };
+  }>("/subscriptions/transactions");
+  return res.data.data;
+}
