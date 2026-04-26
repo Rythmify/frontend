@@ -5,6 +5,7 @@ import { getSocket, connectSocket } from '@/services/api/messaging/socketService
 interface MessagingStore {
   unreadCount: number
   isLoadingCount: boolean
+  activeConversationId: string | null
   fetchUnreadCount: () => Promise<void>
   refreshUnreadCount: () => Promise<void>
   setupSocketListeners: () => void
@@ -15,11 +16,12 @@ const UNREAD_COUNT_CACHE_TTL = 15 * 60 * 1000
 let lastUnreadCountFetchAt = 0
 
 // stable reference so socket.off() only removes our listener, not MessageIdPage's
-let onMessageReceived: (() => void) | null = null
+let onMessageReceived: ((data: { conversationId: string; message: any }) => void) | null = null
 
 export const useMessagingStore = create<MessagingStore>((set, get) => ({
   unreadCount: 0,
   isLoadingCount: false,
+  activeConversationId: null,
 
   // respects 15-min cache — use on app mount
   fetchUnreadCount: async () => {
@@ -55,8 +57,11 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
 
     if (onMessageReceived) socket.off('message:received', onMessageReceived)
 
-    onMessageReceived = () => {
-      set(state => ({ unreadCount: state.unreadCount + 1 }))
+    onMessageReceived = (data: { conversationId: string; message: any }) => {
+      const state = get()
+      if (data.conversationId !== state.activeConversationId) {
+        set(state => ({ unreadCount: state.unreadCount + 1 }))
+      }
     }
 
     socket.on('message:received', onMessageReceived)

@@ -41,52 +41,64 @@ export default function MessageIdPage() {
         .at(-1) ?? null)
     : null;
 
-  // ─── Load a conversation from scratch (offset 0) ─────────────────────────
+  // ─── Load a conversation from scratch (latest messages first) ─────────────────────────
   const loadConversation = useCallback(
-    (conv: Conversation) => {
+    async (conv: Conversation) => {
       setActiveConvId(conv.id);
+      useMessagingStore.setState({ activeConversationId: conv.id });
       setActiveMessages([]);
       setMsgOffset(0);
       setHasMoreMsgs(false);
       setLoadingMsgs(true);
 
-      fetchConversation(conv.id, MSG_LIMIT, 0)
-        .then((res) => {
-          const { messages, pagination } = res.data;
+      try {
+        // First, get total count to calculate offset for latest messages
+        const totalRes = await fetchConversation(conv.id, 1, 0);
+        const total = totalRes.data.pagination.total_items;
+        const initialOffset = Math.max(0, total - MSG_LIMIT);
 
-          setActiveMessages(messages);
-          setMsgOffset(messages.length);
-          setHasMoreMsgs(pagination.has_next);
+        // Now load the latest messages
+        const res = await fetchConversation(conv.id, MSG_LIMIT, initialOffset);
+        const { messages, pagination } = res.data;
 
-          const unread = messages.filter(
-            (msg) => msg.sender_id === conv.participant.id && !msg.is_read,
-          );
-          unread.forEach((msg) => {
-            markMessageReadState(conv.id, msg.id, true).catch(() => {});
-          });
+        setActiveMessages(messages);
+        setMsgOffset(initialOffset);
+        setHasMoreMsgs(initialOffset > 0); // Has more if there are older messages
 
-          setConversations((prev) =>
-            prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
-          );
-          refreshUnreadCount();
-        })
-        .catch(() => setError("Could not load messages."))
-        .finally(() => setLoadingMsgs(false));
+        const unread = messages.filter(
+          (msg) => msg.sender_id === conv.participant.id && !msg.is_read,
+        );
+        unread.forEach((msg) => {
+          markMessageReadState(conv.id, msg.id, true).catch(() => {});
+        });
+
+        setConversations((prev) =>
+          prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
+        );
+        refreshUnreadCount();
+      } catch {
+        setError("Could not load messages.");
+      } finally {
+        setLoadingMsgs(false);
+      }
     },
     [refreshUnreadCount],
   );
 
-  // ─── Load more (older) messages via offset ────────────────────────────────
+  // ─── Load more (older) messages by prepending ────────────────────────────────
   const loadMoreMessages = useCallback(() => {
     if (!activeConvId || loadingMsgs || !hasMoreMsgs) return;
     setLoadingMsgs(true);
 
-    fetchConversation(activeConvId, MSG_LIMIT, msgOffset)
+    const newOffset = Math.max(0, msgOffset - MSG_LIMIT);
+    const loadCount = msgOffset - newOffset; // In case newOffset is 0
+
+    fetchConversation(activeConvId, loadCount, newOffset)
       .then((res) => {
-        const { messages, pagination } = res.data;
-        setActiveMessages((prev) => [...messages, ...prev]);
-        setMsgOffset((prev) => prev + messages.length);
-        setHasMoreMsgs(pagination.has_next);
+        const { messages } = res.data;
+        setActiveMessages((prev) => [...messages, ...prev]); // Prepend older messages
+        setMsgOffset(newOffset);
+        setHasMoreMsgs(newOffset > 0);
       })
       .catch(() => setError("Could not load more messages."))
       .finally(() => setLoadingMsgs(false));
@@ -142,7 +154,7 @@ export default function MessageIdPage() {
             ? {
                 ...c,
                 last_message: message,
-                unread_count: c.unread_count + 1,
+                unread_count: conversationId === activeConvId ? c.unread_count : c.unread_count + 1,
                 updated_at: message.created_at,
               }
             : c,
@@ -223,6 +235,7 @@ export default function MessageIdPage() {
         loadConversation(next);
       } else {
         setActiveConvId(null);
+        useMessagingStore.setState({ activeConversationId: null });
         setActiveMessages([]);
         navigate("/messages");
       }
