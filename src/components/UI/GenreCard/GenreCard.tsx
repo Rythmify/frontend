@@ -52,7 +52,9 @@ export default function GenreCard({
   const liked = isAuthenticated && isGenreLiked(item.id);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const isThisPlaying =
-    isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
+    isPlaying &&
+    !!item.previewTrack &&
+    currentTrack?.id === item.previewTrack.id;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -102,7 +104,11 @@ export default function GenreCard({
       navigate("/signin");
       return;
     }
-    toggleGenre({ id: item.id, genre: item.genre, cover_image: item.cover_image });
+    toggleGenre({
+      id: item.id,
+      genre: item.genre,
+      cover_image: item.cover_image,
+    });
   };
 
   return (
