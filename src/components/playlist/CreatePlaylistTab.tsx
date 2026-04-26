@@ -1,6 +1,7 @@
 import PrivacyToggle from "@/components/Upload/PrivacyToggle";
 import TracksToAddList from "./TracksToAddList";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface DisplayTrack {
   id: string;
@@ -17,6 +18,7 @@ interface CreatePlaylistTabProps {
   creating: boolean;
   success: boolean;
   error: string | null;
+  limitReached?: boolean;
   moreOfLike: boolean;
   tracksToAdd: DisplayTrack[];
   setTracksToAdd: React.Dispatch<React.SetStateAction<DisplayTrack[]>>;
@@ -41,6 +43,7 @@ const CreatePlaylistTab = ({
   creating,
   success,
   error,
+  limitReached = false,
   moreOfLike,
   tracksToAdd,
   setTracksToAdd,
@@ -52,6 +55,8 @@ const CreatePlaylistTab = ({
   onCreate,
 }: CreatePlaylistTabProps) => {
   const [recentlyAddedIds, setRecentlyAddedIds] = useState<string[]>([]);
+
+  const navigate = useNavigate();
 
   const handleRemove = (id: string) => {
     setTracksToAdd((prev) => prev.filter((x) => x.id !== id));
@@ -124,19 +129,40 @@ const CreatePlaylistTab = ({
           </label>
           <PrivacyToggle value={privacy} onChange={setPrivacy} />
         </div>
-        
+
         <button
           type="button"
           data-test="button-save-playlist"
           onClick={() => onCreate(moreOfLike)}
           disabled={
-            creating || !playlistTitle.trim() || tracksToAdd.length === 0
+            creating ||
+            !playlistTitle.trim() ||
+            tracksToAdd.length === 0 ||
+            limitReached
           }
           className="bg-bg-inverted text-bg text-sm font-bold px-3 py-1.5 rounded-sm hover:text-[#a0a0a0] transition-colors disabled:opacity-40 cursor-pointer"
         >
           {creating ? "Saving..." : success ? "Saved!" : "Save"}
         </button>
       </div>
+
+      {limitReached && (
+        <div
+          data-test="playlist-limit-reached"
+          className="flex items-center justify-between rounded-sm bg-[#FB2C36]/10 border border-[#FB2C36]/30 px-4 py-3"
+        >
+          <span className="text-sm font-bold text-[#FB2C36]">
+            You've reached your 2-playlist limit.
+          </span>
+          <button
+            type="button"
+            onClick={() => navigate("/premium")}
+            className="ml-4 shrink-0 rounded-full bg-[#FB2C36] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90 cursor-pointer"
+          >
+            Upgrade to Premium
+          </button>
+        </div>
+      )}
 
       {error && (
         <p

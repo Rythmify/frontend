@@ -1,5 +1,4 @@
 import heroBackground from "../../assets/hero-background-image-speakers.svg";
-import { Link } from "react-router-dom";
 
 const features = [
   {
@@ -60,7 +59,13 @@ const features = [
   },
 ];
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  onGetStarted: () => void;
+  isStarting: boolean;
+  disabled: boolean;
+}
+
+export default function HeroSection({ onGetStarted, isStarting, disabled }: HeroSectionProps) {
   return (
     <section className="w-full bg-[#111111]">
       <div className="relative flex min-h-[760px] flex-col overflow-hidden px-6 md:px-10 lg:px-16 pt-18 pb-14">
@@ -81,12 +86,14 @@ export default function HeroSection() {
             Join millions of artists that use Rythmify to get heard.
           </p>
           <div className="flex gap-6 flex-wrap">
-            <Link
-              to="/creator/payment"
-              className="bg-white text-black font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:opacity-85 transition-opacity cursor-pointer"
+            <button
+              type="button"
+              onClick={onGetStarted}
+              disabled={isStarting || disabled}
+              className="bg-white text-black font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:opacity-85 transition-opacity cursor-pointer disabled:opacity-50"
             >
-              Get Premium
-            </Link>
+              {isStarting ? "Loading…" : "Get Premium"}
+            </button>
             <a
               href="#pricing-cards"
               className="bg-transparent text-white border border-white/50 font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:border-white transition-colors cursor-pointer"

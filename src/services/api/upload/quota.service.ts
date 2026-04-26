@@ -1,23 +1,24 @@
-import { getMyTracks } from "./track.service";
 import { getMySubscription } from "./subscription.service";
 
 export interface QuotaData {
   usedTracks: number;
   trackLimit: number | null; // null = unlimited
+  canUpload: boolean;
+  usedPlaylists: number;
+  playlistLimit: number | null; // null = unlimited
+  canCreatePlaylist: boolean;
 }
 
-/** Fetches upload quota by combining GET /tracks/me + GET /subscriptions/me */
+/** GET /subscriptions/me — single call returns both plan limits and current usage */
 export async function getUploadQuota(): Promise<QuotaData> {
-  const [tracksRes, subRes] = await Promise.all([
-    getMyTracks({ limit: 1 }),
-    getMySubscription(),
-  ]);
-
-  console.log("tracksRes:", tracksRes);
-  console.log("subRes:", subRes);
-
+  const { data } = await getMySubscription();
+  const { usage } = data;
   return {
-    usedTracks: tracksRes.pagination?.total ?? tracksRes.data.length,
-    trackLimit: subRes.data.plan.track_limit ?? null,
+    usedTracks: usage.tracks_uploaded,
+    trackLimit: usage.track_limit,
+    canUpload: usage.can_upload_track,
+    usedPlaylists: usage.playlists_created,
+    playlistLimit: usage.playlist_limit,
+    canCreatePlaylist: usage.can_create_playlist,
   };
 }
