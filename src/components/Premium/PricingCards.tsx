@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { useAuthStore } from "@/stores/auth.store";
 
 const UploadIcon = () => (
   <svg
@@ -65,7 +65,17 @@ const plan = {
   ],
 };
 
-function PlanCard() {
+interface PlanCardProps {
+  onGetStarted: () => void;
+  isStarting: boolean;
+  startError: string | null;
+  disabled: boolean;
+}
+
+function PlanCard({ onGetStarted, isStarting, startError, disabled }: PlanCardProps) {
+  const { user } = useAuthStore();
+  const isPro = user?.isPro ?? false;
+
   return (
     <div className="w-full max-w-3xl rounded-[28px] border-2 border-black bg-white p-10 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
       <div className="space-y-6">
@@ -88,12 +98,25 @@ function PlanCard() {
           </span>
         </div>
 
-        <Link
-          to="/creator/payment"
-          className="block w-full rounded-full bg-black px-6 py-4 text-center text-[0.98rem] font-bold text-white transition-opacity hover:opacity-90"
-        >
-          {plan.cta}
-        </Link>
+        {isPro ? (
+          <div className="flex w-full items-center justify-center rounded-full border-2 border-[#cfb25d] px-6 py-4 text-[0.98rem] font-bold text-[#cfb25d]">
+            Current plan
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onGetStarted}
+              disabled={isStarting || disabled}
+              className="block w-full cursor-pointer rounded-full bg-black px-6 py-4 text-center text-[0.98rem] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {isStarting ? "Loading…" : plan.cta}
+            </button>
+            {startError && (
+              <p className="text-sm font-semibold text-[#c0392b]">{startError}</p>
+            )}
+          </>
+        )}
 
         <ul className="space-y-5">
           {plan.features.map((feature) => (
@@ -111,14 +134,14 @@ function PlanCard() {
   );
 }
 
-export default function PricingCards() {
+export default function PricingCards(props: PlanCardProps) {
   return (
     <section id="pricing-cards" className="bg-white px-6 py-32 md:px-10 lg:px-24">
       <h2 className="mb-16 text-center text-5xl font-black tracking-tight text-black md:text-[3.35rem]">
         Available plan.
       </h2>
       <div className="mx-auto flex max-w-4xl justify-center">
-        <PlanCard />
+        <PlanCard {...props} />
       </div>
     </section>
   );

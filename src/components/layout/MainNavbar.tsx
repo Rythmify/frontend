@@ -1,24 +1,45 @@
 import { useState, useRef, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
-import { useNotificationStore } from '@/stores/notification.store';
-import { Bell, Mail, ChevronDown, MoreHorizontal, Menu, X, Search } from "lucide-react";
-import { disconnectSocket } from '@/services/api/messaging/socketService';
-import { usePlayerStore } from '@/stores/player.store';
-import { audio } from '@/services/audioService';
-import NotificationCard from '@/components/notificationsComponents/notificationCard';
-import { fetchNotifications, type Notification } from '@/services/api/notifications/notificationsAPI';
-import { fetchConversations, type Conversation } from '@/services/api/messaging/conversationApi';
-import { ChatProfile } from '@/components/MessagingComponents/ChatProfile';
-import { useMessagingStore } from '@/stores/messaging.store';
-import UserAvatar from '@/components/UI/UserAvatar';
-import SearchBar from '@/components/UI/SearchBar'; // adjust path if needed
+import { getMySubscription } from "@/services/api/upload/subscription.service";
+import { useNotificationStore } from "@/stores/notification.store";
+import {
+  Bell,
+  Mail,
+  ChevronDown,
+  MoreHorizontal,
+  Menu,
+  X,
+  Search,
+} from "lucide-react";
+import { disconnectSocket } from "@/services/api/messaging/socketService";
+import { usePlayerStore } from "@/stores/player.store";
+import { audio } from "@/services/audioService";
+import NotificationCard from "@/components/notificationsComponents/notificationCard";
+import {
+  fetchNotifications,
+  type Notification,
+} from "@/services/api/notifications/notificationsAPI";
+import {
+  fetchConversations,
+  type Conversation,
+} from "@/services/api/messaging/conversationApi";
+import { ChatProfile } from "@/components/MessagingComponents/ChatProfile";
+import { useMessagingStore } from "@/stores/messaging.store";
+import UserAvatar from "@/components/UI/UserAvatar";
+import SearchBar from "@/components/UI/SearchBar"; // adjust path if needed
 
 const MainNavbar = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, setUser } = useAuthStore();
   const resetPlayer = usePlayerStore((s) => s.reset);
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
-  const { unreadCount: unreadMessages, fetchUnreadCount: fetchUnreadMessages, refreshUnreadCount: refreshUnreadMessages, setupSocketListeners, teardownSocketListeners } = useMessagingStore();
+  const {
+    unreadCount: unreadMessages,
+    fetchUnreadCount: fetchUnreadMessages,
+    refreshUnreadCount: refreshUnreadMessages,
+    setupSocketListeners,
+    teardownSocketListeners,
+  } = useMessagingStore();
   const navigate = useNavigate();
 
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
@@ -34,9 +55,9 @@ const MainNavbar = () => {
   const [conversationsLoading, setConversationsLoading] = useState(false);
 
   const avatarRef = useRef<HTMLDivElement>(null);
-  const notifRef  = useRef<HTMLDivElement>(null);
-  const msgRef    = useRef<HTMLDivElement>(null);
-  const moreRef   = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const msgRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
   const notifListRef = useRef<HTMLDivElement>(null);
 
   const closeAll = () => {
@@ -91,6 +112,16 @@ const MainNavbar = () => {
   };
 
   useEffect(() => {
+    if (!user) return;
+    getMySubscription()
+      .then(({ data }) => {
+        const isPro = data.user_subscription_id !== null;
+        if (user.isPro !== isPro) setUser({ ...user, isPro });
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     fetchUnreadCount();
     fetchUnreadMessages();
   }, [fetchUnreadCount, fetchUnreadMessages]);
@@ -104,11 +135,13 @@ const MainNavbar = () => {
   useEffect(() => {
     const poll = () => refreshUnreadMessages();
     const interval = setInterval(poll, 30_000);
-    const onVisible = () => { if (document.visibilityState === 'visible') poll(); };
-    document.addEventListener('visibilitychange', onVisible);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") poll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [refreshUnreadMessages]);
 
@@ -116,10 +149,14 @@ const MainNavbar = () => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
       if (
-        avatarRef.current && !avatarRef.current.contains(target) &&
-        notifRef.current  && !notifRef.current.contains(target)  &&
-        msgRef.current    && !msgRef.current.contains(target)    &&
-        moreRef.current   && !moreRef.current.contains(target)
+        avatarRef.current &&
+        !avatarRef.current.contains(target) &&
+        notifRef.current &&
+        !notifRef.current.contains(target) &&
+        msgRef.current &&
+        !msgRef.current.contains(target) &&
+        moreRef.current &&
+        !moreRef.current.contains(target)
       ) {
         closeAll();
       }
@@ -151,21 +188,29 @@ const MainNavbar = () => {
 
   return (
     <nav className="sticky top-0 z-100 flex h-[50px] w-full items-center bg-bg">
-
       {/* Main navbar row */}
       <div className="container px-4 md:px-8 lg:px-12 xl:px-20 grid grid-cols-[auto_1fr_auto] items-center h-13">
-
         {/* Left: Logo + Nav Links */}
         <div className="flex items-center gap-6 shrink-0">
-          <Link data-test="link-logo" to="/discover" className="flex items-center gap-1 text-4xl">
+          <Link
+            data-test="link-logo"
+            to="/discover"
+            className="flex items-center gap-1 text-4xl"
+          >
             <i className="fa-brands fa-soundcloud text-text-hover" />
           </Link>
 
           {/* Nav links — tablet+ */}
           <div className="hidden md:flex items-center gap-3 lg:gap-4 xl:gap-6">
-            <NavLink to="/discover" className={navLinkClass}>Home</NavLink>
-            <NavLink to="/feed" className={navLinkClass}>Feed</NavLink>
-            <NavLink to="/you/library" className={navLinkClass}>Library</NavLink>
+            <NavLink to="/discover" className={navLinkClass}>
+              Home
+            </NavLink>
+            <NavLink to="/feed" className={navLinkClass}>
+              Feed
+            </NavLink>
+            <NavLink to="/you/library" className={navLinkClass}>
+              Library
+            </NavLink>
           </div>
         </div>
 
@@ -179,15 +224,24 @@ const MainNavbar = () => {
 
         {/* Right: Actions — tablet+ */}
         <div className="hidden md:flex items-center gap-2 lg:gap-3 xl:gap-4 shrink-0">
-
           {/* Text links — desktop only */}
-          <Link to="/premium" className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors">
-            Try Artist Pro
+          <Link
+            to={user?.isPro ? "/subscriptions" : "/premium"}
+            className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors"
+          >
+            {user?.isPro ? "Manage Premium" : "Try Artist Pro"}
           </Link>
-          <Link to="/artists" className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text-hover transition-colors">
+          <Link
+            to="/artists"
+            className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text-hover transition-colors"
+          >
             For Artists
           </Link>
-          <Link data-test="link-upload" to="/upload" className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text-hover transition-colors">
+          <Link
+            data-test="link-upload"
+            to="/upload"
+            className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text-hover transition-colors"
+          >
             Upload
           </Link>
 
@@ -205,21 +259,75 @@ const MainNavbar = () => {
                 wrapperClassName="w-[30px] h-[30px] rounded-full overflow-hidden"
                 initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
               />
-              <ChevronDown size={25} className="mx-2 text-text-secondary hover:text-text-hover" />
+              <ChevronDown
+                size={25}
+                className="mx-2 text-text-secondary hover:text-text-hover"
+              />
             </button>
 
             {showAvatarMenu && (
               <div className="absolute right-0 top-full mt-2 w-[200px] bg-bg border border-border rounded-sm shadow-md py-1 z-50">
-                <DropdownLink icon="fa-solid fa-user"                label="Profile"         to={`/${user?.username}`}     onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-heart"               label="Likes"            to="/you/likes"               onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-list"                label="Playlists"        to="/you/sets"                onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-tower-broadcast"     label="Stations"         to="/you/stations"            onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-user-plus"           label="Following"        to="/you/following"           onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-users"               label="Who to follow"    to="/people"                  onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-circle-plus"         label="Try Artist Pro"   to="/premium"                  onClick={closeAll} iconClassName="text-accent" />
-                <DropdownLink icon="fa-solid fa-chart-simple"        label="Tracks"           to={`/${user?.username}/tracks`} onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-chart-line"          label="Insights"         to="/you/insights"            onClick={closeAll} />
-                <DropdownLink icon="fa-solid fa-arrow-up-from-bracket" label="Distribute"     to="/artists/distribution"    onClick={closeAll} />
+                <DropdownLink
+                  icon="fa-solid fa-user"
+                  label="Profile"
+                  to={`/${user?.username}`}
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  icon="fa-solid fa-heart"
+                  label="Likes"
+                  to="/you/likes"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  icon="fa-solid fa-list"
+                  label="Playlists"
+                  to="/you/sets"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  icon="fa-solid fa-tower-broadcast"
+                  label="Stations"
+                  to="/you/stations"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  icon="fa-solid fa-user-plus"
+                  label="Following"
+                  to="/you/following"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  icon="fa-solid fa-users"
+                  label="Who to follow"
+                  to="/people"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  icon="fa-solid fa-circle-plus"
+                  label={user?.isPro ? "Manage Premium" : "Try Artist Pro"}
+                  to={user?.isPro ? "/subscriptions" : "/premium"}
+                  onClick={closeAll}
+                  iconClassName="text-accent"
+                />
+                <DropdownLink
+                  icon="fa-solid fa-chart-simple"
+                  label="Tracks"
+                  to={`/${user?.username}/tracks`}
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  icon="fa-solid fa-chart-line"
+                  label="Insights"
+                  to="/you/insights"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  icon="fa-solid fa-arrow-up-from-bracket"
+                  label="Distribute"
+                  to="/artists/distribution"
+                  onClick={closeAll}
+                />
               </div>
             )}
           </div>
@@ -237,18 +345,30 @@ const MainNavbar = () => {
                   data-test="notification-unread-badge"
                   className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
                 >
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </button>
 
             {showNotifications && (
-              <div data-test="notifications-dropdown" className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50">
-
+              <div
+                data-test="notifications-dropdown"
+                className="absolute right-0 top-full mt-2 w-[360px] bg-bg border border-border rounded-sm shadow-md z-50"
+              >
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <h3 data-test="notifications-dropdown-title" className="text-md font-medium text-text">Notifications</h3>
-                  <Link data-test="notifications-settings-link" to="/settings/notifications" className="text-xs text-text-secondary hover:text-text" onClick={closeAll}>
+                  <h3
+                    data-test="notifications-dropdown-title"
+                    className="text-md font-medium text-text"
+                  >
+                    Notifications
+                  </h3>
+                  <Link
+                    data-test="notifications-settings-link"
+                    to="/settings/notifications"
+                    className="text-xs text-text-secondary hover:text-text"
+                    onClick={closeAll}
+                  >
                     Settings
                   </Link>
                 </div>
@@ -260,15 +380,24 @@ const MainNavbar = () => {
                   className="py-2 max-h-[400px] overflow-y-auto"
                 >
                   {notificationsLoading ? (
-                    <div data-test="notifications-dropdown-loading" className="px-4 py-3 text-md text-text-muted text-center">
+                    <div
+                      data-test="notifications-dropdown-loading"
+                      className="px-4 py-3 text-md text-text-muted text-center"
+                    >
                       Loading notifications...
                     </div>
                   ) : notifications.length === 0 ? (
-                    <div data-test="notifications-dropdown-empty" className="px-4 py-3 text-md text-text-muted text-center">
+                    <div
+                      data-test="notifications-dropdown-empty"
+                      className="px-4 py-3 text-md text-text-muted text-center"
+                    >
                       No new notifications
                     </div>
                   ) : (
-                    <div data-test="notifications-dropdown-list" className="flex flex-col">
+                    <div
+                      data-test="notifications-dropdown-list"
+                      className="flex flex-col"
+                    >
                       {notifications.map((notification) => (
                         <NotificationCard
                           key={notification.id}
@@ -292,7 +421,6 @@ const MainNavbar = () => {
                     View all notifications
                   </Link>
                 </div>
-
               </div>
             )}
           </div>
@@ -307,7 +435,7 @@ const MainNavbar = () => {
               <Mail size={22} className="mt-2 hover:text-text-hover" />
               {unreadMessages > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">
-                  {unreadMessages > 99 ? '99+' : unreadMessages}
+                  {unreadMessages > 99 ? "99+" : unreadMessages}
                 </span>
               )}
             </button>
@@ -319,23 +447,34 @@ const MainNavbar = () => {
                 </div>
                 <div className="py-2 max-h-[300px] overflow-y-auto">
                   {conversationsLoading ? (
-                    <div className="px-4 py-3 text-md text-text-muted text-center">Loading messages...</div>
+                    <div className="px-4 py-3 text-md text-text-muted text-center">
+                      Loading messages...
+                    </div>
                   ) : conversations.length === 0 ? (
-                    <div className="px-4 py-3 text-md text-text-muted text-center">No new messages</div>
+                    <div className="px-4 py-3 text-md text-text-muted text-center">
+                      No new messages
+                    </div>
                   ) : (
                     <div className="flex flex-col">
                       {conversations.map((conversation) => (
                         <ChatProfile
                           key={conversation.id}
                           conversation={conversation}
-                          onClick={() => { navigate(`/messages/${conversation.id}`); closeAll(); }}
+                          onClick={() => {
+                            navigate(`/messages/${conversation.id}`);
+                            closeAll();
+                          }}
                         />
                       ))}
                     </div>
                   )}
                 </div>
                 <div className="border-t border-border px-4 py-2">
-                  <Link to="/messages" className="text-xs font-medium text-text hover:text-text-secondary block text-center" onClick={closeAll}>
+                  <Link
+                    to="/messages"
+                    className="text-xs font-medium text-text hover:text-text-secondary block text-center"
+                    onClick={closeAll}
+                  >
                     View all messages
                   </Link>
                 </div>
@@ -349,24 +488,63 @@ const MainNavbar = () => {
               onClick={() => toggle(setShowMoreMenu)}
               className="text-text-secondary hover:text-text transition-colors"
             >
-              <MoreHorizontal size={22} className="mt-2 hover:text-text-hover" />
+              <MoreHorizontal
+                size={22}
+                className="mt-2 hover:text-text-hover"
+              />
             </button>
 
             {showMoreMenu && (
               <div className="absolute right-0 top-full mt-2 w-[200px] bg-bg border border-border rounded-sm shadow-md py-1 z-50 max-h-[400px] overflow-y-auto">
                 <div className="lg:hidden">
-                  <DropdownLink label="Upload" to="/upload" onClick={closeAll} />
+                  <DropdownLink
+                    label="Upload"
+                    to="/upload"
+                    onClick={closeAll}
+                  />
                   <div className="border-t border-border my-1" />
                 </div>
-                <DropdownLink label="About us"          to="/pages/contact"          onClick={closeAll} />
-                <DropdownLink label="Legal"             to="/terms-of-use"           onClick={closeAll} />
-                <DropdownLink label="Copyright"         to="/pages/copyright"        onClick={closeAll} />
-                <DropdownLink label="Mobile apps"       to="/download"               onClick={closeAll} />
-                <DropdownLink label="Artist Membership" to="/premium"       onClick={closeAll} />
+                <DropdownLink
+                  label="About us"
+                  to="/pages/contact"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  label="Legal"
+                  to="/terms-of-use"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  label="Copyright"
+                  to="/pages/copyright"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  label="Mobile apps"
+                  to="/download"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  label="Artist Membership"
+                  to="/premium"
+                  onClick={closeAll}
+                />
                 <div className="border-t border-border my-1" />
-                <DropdownLink label="Keyboard shortcuts" to="#"                      onClick={closeAll} />
-                <DropdownLink label="Subscription"      to="/settings"               onClick={closeAll} />
-                <DropdownLink label="Settings"          to="/settings"               onClick={closeAll} />
+                <DropdownLink
+                  label="Keyboard shortcuts"
+                  to="#"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  label="Subscriptions"
+                  to="/subscriptions"
+                  onClick={closeAll}
+                />
+                <DropdownLink
+                  label="Settings"
+                  to="/settings"
+                  onClick={closeAll}
+                />
                 <div className="border-t border-border my-1" />
                 <button
                   data-test="btn-signout"
@@ -397,7 +575,6 @@ const MainNavbar = () => {
             {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
-
       </div>
 
       {/* Mobile search row */}
@@ -415,17 +592,47 @@ const MainNavbar = () => {
       {/* Mobile menu drawer */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-bg border-t border-border">
-          <NavLink to="/discover" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Home</NavLink>
-          <NavLink to="/feed"     className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Feed</NavLink>
-          <NavLink to="/you/library" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Library</NavLink>
+          <NavLink
+            to="/discover"
+            className={mobileNavLinkClass}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Home
+          </NavLink>
+          <NavLink
+            to="/feed"
+            className={mobileNavLinkClass}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Feed
+          </NavLink>
+          <NavLink
+            to="/you/library"
+            className={mobileNavLinkClass}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Library
+          </NavLink>
           <div className="border-t border-border my-1" />
-          <Link to="/premium" className="block px-4 py-3 text-md font-medium text-accent hover:text-accent-hover transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-            Try Artist Pro
+          <Link
+            to={user?.isPro ? "/subscriptions" : "/premium"}
+            className="block px-4 py-3 text-md font-medium text-accent hover:text-accent-hover transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            {user?.isPro ? "Manage Premium" : "Try Artist Pro"}
           </Link>
-          <Link to="/artists" className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+          <Link
+            to="/artists"
+            className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
             For Artists
           </Link>
-          <Link to="/upload" className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+          <Link
+            to="/upload"
+            className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
             Upload
           </Link>
           <div className="border-t border-border my-1" />
@@ -437,7 +644,6 @@ const MainNavbar = () => {
           </button>
         </div>
       )}
-
     </nav>
   );
 };
@@ -460,7 +666,11 @@ const DropdownLink = ({
     onClick={onClick}
     className="flex items-center gap-3 px-4 py-2 text-md text-text-hover hover:text-text-secondary transition-colors"
   >
-    {icon && <i className={`${icon} w-4 text-center text-base ${iconClassName ?? ""}`} />}
+    {icon && (
+      <i
+        className={`${icon} w-4 text-center text-base ${iconClassName ?? ""}`}
+      />
+    )}
     <span>{label}</span>
   </Link>
 );

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
+import { confirmMockPayment } from "@/services/api/upload/subscription.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -501,12 +502,22 @@ function PageFooter() {
 }
 
 export default function PaymentPage() {
+  const { user, setUser } = useAuthStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const transactionId =
+    (location.state as { transaction_id?: string } | null)?.transaction_id ?? null;
+
   const [billing, setBilling] = useState<BillingCycle>("yearly");
   const [payment, setPayment] = useState<PaymentMethod>(null);
   const [couponOpen, setCouponOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
 
-  // NEW: card form state
+  // Payment submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // card form state
   const [cardForm, setCardForm] = useState<CardFormState>({
     firstName: "",
     lastName: "",
@@ -518,9 +529,9 @@ export default function PaymentPage() {
     postcode: "",
     addBillingAddress: false,
   });
-  const [cardErrors] = useState<CardFieldErrors>({});
+  const [cardErrors, setCardErrors] = useState<CardFieldErrors>({});
 
-  // NEW: paypal billing extra state
+  // paypal billing extra state
   const [paypalBilling, setPaypalBilling] = useState<BillingExtra>({
     country: "EG",
     postcode: "",
@@ -559,6 +570,43 @@ export default function PaymentPage() {
           ? "bg-[#6b7280] cursor-pointer hover:opacity-80"
           : "bg-[#9ca3af] cursor-not-allowed",
   ].join(" ");
+
+  function validateCardForm(): boolean {
+    const errs: CardFieldErrors = {};
+    if (!cardForm.firstName.trim()) errs.firstName = "Required";
+    if (!cardForm.lastName.trim()) errs.lastName = "Required";
+    if (cardForm.cardNumber.length !== 16) errs.cardNumber = "Enter a valid 16-digit card number";
+    if (!cardForm.expiryMonth || Number(cardForm.expiryMonth) < 1 || Number(cardForm.expiryMonth) > 12)
+      errs.expiryMonth = "Invalid month";
+    if (!cardForm.expiryYear || cardForm.expiryYear.length !== 4)
+      errs.expiryYear = "Invalid year";
+    if (!cardForm.cvv) errs.cvv = "Required";
+    setCardErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  async function handleSubmit() {
+    if (!payment || !user) return;
+    if (payment === "card" && !validateCardForm()) return;
+    if (!transactionId) {
+      setSubmitError("No active checkout session. Please go back and select a plan.");
+      return;
+    }
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await confirmMockPayment(transactionId);
+      sessionStorage.removeItem("pending_transaction_id");
+      setUser({ ...user, isPro: true });
+      navigate("/upload", { state: { premiumActivated: true } });
+    } catch (err: any) {
+      setSubmitError(
+        err.response?.data?.message ?? err.message ?? "Payment failed. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -799,8 +847,15 @@ export default function PaymentPage() {
             </div>
 
             {/* Buy button — label + colour change per payment method */}
-            <button type="button" disabled={!payment} className={ctaClassName}>
-              {payment === "apple" ? (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!payment || isSubmitting}
+              className={ctaClassName}
+            >
+              {isSubmitting ? (
+                <span>Processing…</span>
+              ) : payment === "apple" ? (
                 <span className="inline-flex items-center justify-center gap-1.5">
                   <span>{ctaLabel}</span>
                   <AppleContinueIcon />
@@ -810,6 +865,12 @@ export default function PaymentPage() {
                 <span>{ctaLabel}</span>
               )}
             </button>
+
+            {submitError && (
+              <p className="mt-2 text-[13px] font-semibold text-[#c0392b]">
+                {submitError}
+              </p>
+            )}
 
             {/* Legal — verb matches button label */}
             <p className="mt-3 text-[12px] leading-[1.6] text-black/40">
