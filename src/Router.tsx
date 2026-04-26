@@ -355,11 +355,11 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // Settings
-          {
-            path: "settings",
-            element: <Lazy component={SettingsPage} />,
-            children: [
+            // Settings
+            {
+              path: "settings",
+              element: <Lazy component={SettingsPage} />,
+              children: [
               { index: true, element: <Navigate to="content" replace /> },
               { path: "content", element: <Lazy component={ContentPage} /> },
               {
@@ -374,6 +374,7 @@ export const router = createBrowserRouter([
                 path: "advertising",
                 element: <Lazy component={AdvertisingPage} />,
               },
+<<<<<<< HEAD
               {
                 path: "two-factor",
                 element: <Lazy component={TwoFactorPage} />,
@@ -390,6 +391,24 @@ export const router = createBrowserRouter([
       },
     ],
   },
+=======
+                {
+                  path: "two-factor",
+                  element: <Lazy component={TwoFactorPage} />,
+                },
+              ],
+            },
+
+            // Subscriptions
+            {
+              path: "subscriptions",
+              element: <Lazy component={SubscriptionsPage} />,
+            },
+          ],
+        },
+      ],
+    },
+>>>>>>> 258a33b0cca2d1736077df35c0c1d4a2ccf52bd3
 
   // 5. Upload
   {

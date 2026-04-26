@@ -29,6 +29,7 @@ interface TrackItemProps {
   postedAt?: string;
   isPrivate?: boolean;
   trackSlug?: string;
+  contextQueue?: Track[];
 }
 
 const formatCount = (n: number) => {
@@ -56,6 +57,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
   postedAt = "",
   isPrivate = false,
   trackSlug,
+  contextQueue,
 }) => {
   const [hovered, setHovered] = useState(false);
   const [coverHovered, setCoverHovered] = useState(false);
@@ -78,7 +80,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       title,
       artistName: artist,
       artistUsername:
-        artistUsername || artist.toLowerCase().replace(/\s+/g, "-"),
+        artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-"),
       coverUrl: coverUrl || "",
       audioUrl: audioUrl ?? "",
       genre: genre || "",
@@ -98,7 +100,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
   const isThisTrackPlaying = currentTrack?.id === id && isPlaying;
 
   const finalArtistSlug =
-    artistUsername || artist.toLowerCase().replace(/\s+/g, "-");
+    artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-");
 
   const trackPath = `/discover/personalised/${trackSlug ?? ""}:${id}`;
 
@@ -134,7 +136,6 @@ const TrackItem: React.FC<TrackItemProps> = ({
       togglePlay();
       return;
     }
-
     const trackForPlayer: Track = {
       id: id,
       title,
@@ -153,9 +154,13 @@ const TrackItem: React.FC<TrackItemProps> = ({
       isPrivate: isPrivate,
     };
 
-    setTrack(trackForPlayer);
-    addTrack(trackForPlayer);
+    if (contextQueue) {
+      setTrack(trackForPlayer, contextQueue);
+    } else {
+      usePlayerStore.getState().playContext("track", id, trackForPlayer);
+    }
   };
+
   return (
     <div
       data-test={`track-item-${id}`}

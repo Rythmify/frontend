@@ -106,6 +106,7 @@ export default function HistoryPage() {
                     key={`track-${entry.item.id}`}
                     track={entry.item}
                     widthClassName={CARD_WIDTH}
+                    contextQueue={tracksFiltered}
                   />
                 );
               if (entry.type === "station")
@@ -148,7 +149,7 @@ export default function HistoryPage() {
             data-test="history-tracks-played-list"
           >
             {tracksFiltered.map((track) => (
-              <WaveformTrackCard key={track.id} track={track} />
+              <WaveformTrackCard key={track.id} track={track} contextQueue={tracksFiltered} />
             ))}
           </div>
         </div>
