@@ -27,7 +27,7 @@ import {
 import { ChatProfile } from "@/components/MessagingComponents/ChatProfile";
 import { useMessagingStore } from "@/stores/messaging.store";
 import UserAvatar from "@/components/UI/UserAvatar";
-import SearchBar from "@/components/UI/SearchBar"; // adjust path if needed
+import SearchBar from "@/components/UI/SearchBar";
 
 const MainNavbar = () => {
   const { user, logout, setUser } = useAuthStore();
@@ -38,7 +38,6 @@ const MainNavbar = () => {
     fetchUnreadCount: fetchUnreadMessages,
     refreshUnreadCount: refreshUnreadMessages,
     setupSocketListeners,
-    teardownSocketListeners,
   } = useMessagingStore();
   const navigate = useNavigate();
 
@@ -72,7 +71,7 @@ const MainNavbar = () => {
     setter((prev) => !prev);
   };
 
-  // ── Fetch last 9 notifications ──────────────────────────────────────────────
+  // ── Fetch last 9 notifications ───────────────────────────────────────────
   const handleNotificationsToggle = async () => {
     const willOpen = !showNotifications;
     closeAll();
@@ -126,12 +125,18 @@ const MainNavbar = () => {
     fetchUnreadMessages();
   }, [fetchUnreadCount, fetchUnreadMessages]);
 
+  // ── Set up the global unread-badge socket listener once on mount ─────────
+  //
+  // We intentionally do NOT tear it down on Navbar unmount — this listener
+  // is global app-level state that must survive route changes.  Calling
+  // teardownSocketListeners here would kill the listener for the lifetime
+  // of the session whenever the user navigates away and back.
   useEffect(() => {
     setupSocketListeners();
-    return () => teardownSocketListeners();
-  }, [setupSocketListeners, teardownSocketListeners]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Poll every 30s + refresh on tab focus as fallback for missed socket events
+  // ── Poll every 30s + refresh on tab focus as fallback ───────────────────
   useEffect(() => {
     const poll = () => refreshUnreadMessages();
     const interval = setInterval(poll, 30_000);
@@ -427,10 +432,12 @@ const MainNavbar = () => {
 
           {/* Messages */}
           <div ref={msgRef} className="relative">
+            {/* FIX: added `relative` on the button itself so the badge is
+                positioned relative to the button, not the outer div */}
             <button
               data-test="btn-messages"
               onClick={handleMessagesToggle}
-              className="text-text-secondary hover:text-text transition-colors"
+              className="relative text-text-secondary hover:text-text transition-colors"
             >
               <Mail size={22} className="mt-2 hover:text-text-hover" />
               {unreadMessages > 0 && (
