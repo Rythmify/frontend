@@ -1,7 +1,9 @@
 import type { Track } from "@/types/track";
 import type { Playlist } from "@/types/playlist";
 
-function durationToString(duration: any): string {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+export function durationToString(duration: any): string {
   if (!duration) return "0:00";
   if (typeof duration === "string") return duration;
   if (typeof duration === "number") {
@@ -11,14 +13,27 @@ function durationToString(duration: any): string {
   }
   return "0:00";
 }
- 
+
+// ─── Track mapper ─────────────────────────────────────────────────────────────
+// Handles two backend shapes:
+//   Search results  → flat fields: artist_name, cover_image, stream_url, play_count …
+//   Other contexts  → nested user object: user.display_name, user.username …
+
 export function mapTrack(t: any): Track {
   return {
     id: String(t.id ?? ""),
     title: t.title ?? "Untitled",
-    artistName: t.artist_name ?? t.user?.display_name ?? t.user?.username ?? "Unknown",
+    // Search backend returns flat artist_name; other contexts return user object
+    artistName:
+      t.artist_name ??
+      t.user?.display_name ??
+      t.user?.displayName ??
+      t.user?.username ??
+      "Unknown",
     artistUsername: t.user?.username ?? "unknown",
+    // Search backend returns cover_image; other contexts return coverUrl
     coverUrl: t.cover_image ?? t.coverUrl ?? "",
+    // Search backend returns stream_url; other contexts return audioUrl
     audioUrl: t.stream_url ?? t.audioUrl ?? "",
     genre: t.genre_name ?? t.genre ?? "",
     likeCount: t.like_count ?? t.likeCount ?? 0,
@@ -28,28 +43,29 @@ export function mapTrack(t: any): Track {
     duration: durationToString(t.duration),
     postedAt: t.created_at ?? t.postedAt ?? "",
     waveformData: [],
-    isPrivate: t.isPrivate ?? false,
+    isPrivate: t.is_private ?? t.isPrivate ?? false,
     trackSlug: t.slug ?? t.track_slug ?? t.trackSlug ?? String(t.id ?? ""),
   };
 }
- 
+
+// ─── Playlist mapper ──────────────────────────────────────────────────────────
+// Backend shape (formatPlaylistResult):
+// { id, title, cover_image, owner: { id, display_name }, track_count,
+//   created_at, score, preview_tracks: Track[] }
+
 export function mapPlaylist(pl: any): Playlist {
   return {
     id: pl.id,
     title: pl.title ?? "Untitled Playlist",
-    // Backend returns owner.display_name, not creatorName
     creatorName: pl.owner?.display_name ?? pl.creatorName ?? "",
     creatorUsername: pl.owner?.username ?? pl.creatorUsername ?? "",
-    // Backend returns cover_image, not coverUrl
     coverUrl: pl.cover_image ?? pl.coverUrl ?? "",
     postedAt: pl.created_at ?? pl.postedAt ?? "",
-    // Backend returns track_count, not trackCount
     trackCount: pl.track_count ?? pl.trackCount ?? 0,
     likeCount: pl.like_count ?? pl.likeCount ?? 0,
     repostCount: pl.repost_count ?? pl.repostCount ?? 0,
     playlistSlug: pl.playlist_slug ?? pl.playlistSlug ?? String(pl.id),
     isPrivate: pl.is_private ?? pl.isPrivate ?? false,
-    // Backend returns preview_tracks (up to ~3), not full tracks array
     tracks: (pl.preview_tracks ?? pl.tracks ?? []).map(mapTrack),
   };
 }
