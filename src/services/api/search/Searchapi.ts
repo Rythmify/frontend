@@ -7,6 +7,8 @@ import axiosInstance from '../axiosInstance';
 
 export type SearchType = 'tracks' | 'playlists' | 'albums' | 'users';
 
+export type SortOrder = 'relevance' | 'newest' | 'plays';
+
 export type TimeRange =
   | 'past_hour'
   | 'past_day'
@@ -27,6 +29,8 @@ export type Duration = 'short' | 'medium' | 'long' | 'extra';
 interface BaseSearchParams {
   /** The search query string */
   q: string;
+  /** Sort order. All three values are valid for typed searches. */
+  sort?: SortOrder;
   limit?: number;
   offset?: number;
 }
@@ -55,6 +59,11 @@ interface UsersSearchParams extends BaseSearchParams {
 
 interface EverythingSearchParams extends BaseSearchParams {
   type?: never;
+  /**
+   * Only `relevance` and `newest` are supported when type is omitted.
+   * `plays` is not available for the blended "everything" feed.
+   */
+  sort?: 'relevance' | 'newest';
 }
 
 export type SearchParams =
@@ -65,7 +74,6 @@ export type SearchParams =
   | UsersSearchParams;
 
 // ─── Response shapes ──────────────────────────────────────────────────────────
-
 
 export interface Pagination {
   limit: number;
@@ -161,12 +169,19 @@ export interface UserFilters {
 
 // ── Search response shapes ────────────────────────────────────────────────────
 
+/**
+ * [FIX-6][FIX-7] Each resource type carries its own pagination object so
+ * consumers can paginate tracks, playlists, albums, and users independently.
+ */
 export interface EverythingSearchResponse {
   tracks: Track[];
   playlists: Playlist[];
   albums: Album[];
   users: User[];
-  pagination: Pagination;
+  tracksPagination: Pagination;
+  playlistsPagination: Pagination;
+  albumsPagination: Pagination;
+  usersPagination: Pagination;
 }
 
 export interface TracksSearchResponse {
@@ -227,13 +242,13 @@ function cleanParams(
  * Token attachment, refresh, and error handling are all managed by axiosInstance.
  *
  * @example — Tracks tab with filters
- * const data = await search({ q: 'night', type: 'tracks', tag: 'energetic', time_range: 'past_month' });
+ * const data = await search({ q: 'night', type: 'tracks', tag: 'energetic', time_range: 'past_month', sort: 'newest' });
  *
  * @example — Users tab with location filter
  * const data = await search({ q: 'nour', type: 'users', location: 'Cairo' });
  *
  * @example — Overview / everything page
- * const data = await search({ q: 'jaz' });
+ * const data = await search({ q: 'jaz', sort: 'relevance' });
  */
 export async function search<T extends SearchParams>(
   params: T,
@@ -243,6 +258,7 @@ export async function search<T extends SearchParams>(
     params: cleanParams({
       q:          params.q,
       type:       'type' in params ? params.type : undefined,
+      sort:       params.sort,
       tag:        'tag' in params ? params.tag : undefined,
       location:   'location' in params ? params.location : undefined,
       time_range: 'time_range' in params ? params.time_range : undefined,
