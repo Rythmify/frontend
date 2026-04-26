@@ -54,6 +54,7 @@ const defaultProps = {
   setTracksToAdd: vi.fn(),
   isPlaylist: false,
   defaultPlaylistId: "pl-1",
+  hasPlaylists: true,
   onAdd: vi.fn(),
   likedTracks,
   onCreate: vi.fn(),
@@ -120,5 +121,12 @@ describe("CreatePlaylistTab", () => {
     render(<CreatePlaylistTab {...defaultProps} />);
     fireEvent.click(screen.getByTestId("button-add-liked-track-lt-1"));
     expect(defaultProps.onAdd).toHaveBeenCalledWith("pl-1", expect.any(Array));
+  });
+
+  it("hides liked track suggestions when the user has no playlists yet", () => {
+    render(<CreatePlaylistTab {...defaultProps} hasPlaylists={false} />);
+    expect(
+      screen.queryByText(/Looking for more tracks\?/),
+    ).not.toBeInTheDocument();
   });
 });
