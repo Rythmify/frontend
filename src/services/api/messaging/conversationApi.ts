@@ -289,15 +289,14 @@ export const fetchConversations = async (
   return response.data;
 };
 
-// GET /messages/conversations/:conversationId
 export const fetchConversation = async (
   conversationId: string,
-  page: number = 1,
-  limit: number = 50
+  limit: number = 50,
+  offset: number = 0
 ): Promise<ConversationDetailResponse> => {
   const response = await axiosInstance.get<ConversationDetailResponse>(
     `/messages/conversations/${conversationId}`,
-    { params: { page, limit } }
+    { params: { limit, offset } }
   );
   return response.data;
 };
