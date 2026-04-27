@@ -5,9 +5,10 @@ import { BiRepost } from "react-icons/bi";
 import { LuListEnd, LuShare, LuCopy } from "react-icons/lu";
 import SharePopup from "../../../pages/[username]/[trackSlug]/components/SharePopup";
 import {
+  convertPlaylist,
+  type Playlist,
   repostPlaylist,
   removePlaylistRepost,
-  type Playlist,
 } from "@/services/api/playlist/playlist.service";
 import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
@@ -16,17 +17,29 @@ interface PlaylistActionsProps {
   playlist: Playlist;
   onAddToNextUp?: () => void;
   onPlaylistUpdated?: (updated: Playlist) => void;
+  engagementKind?: "album" | "genre";
+  backendPlaylistExists?: boolean;
 }
 
 export default function PlaylistActionsAlbum({
   playlist,
   onAddToNextUp,
   onPlaylistUpdated,
+  engagementKind = "album",
+  backendPlaylistExists = false,
 }: PlaylistActionsProps) {
-  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const {
+    isAlbumLiked,
+    isGenreLiked,
+    toggleAlbum,
+    toggleGenre,
+  } = useLikesStore();
   const { user } = useAuthStore(); // Current logged-in user
 
-  const liked = isPlaylistLiked(playlist.playlist_id);
+  const liked =
+    engagementKind === "genre"
+      ? isGenreLiked(playlist.playlist_id)
+      : isAlbumLiked(playlist.playlist_id);
   const isOwner = user?.id === playlist.owner_user_id;
 
   const [reposted, setReposted] = useState(false);
@@ -38,7 +51,7 @@ export default function PlaylistActionsAlbum({
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleRepost = async () => {
-    if (isOwner) {
+    if (engagementKind === "genre" || isOwner) {
       alert("You cannot repost your own playlist.");
       return;
     }
@@ -85,6 +98,35 @@ export default function PlaylistActionsAlbum({
     }
   };
 
+  const handleLike = async () => {
+    try {
+      if (engagementKind === "genre") {
+        await toggleGenre({
+          id: playlist.playlist_id,
+          genre: playlist.name,
+          cover_image: playlist.cover_image ?? null,
+        });
+        return;
+      }
+
+      if (!backendPlaylistExists) {
+        if (!playlist.playlist_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          console.warn("Skipping convert for non-UUID album id:", playlist.playlist_id);
+          return;
+        }
+
+        await convertPlaylist(playlist.playlist_id, {
+          name: playlist.name,
+          is_public: playlist.is_public,
+        });
+      }
+
+      await toggleAlbum(playlist);
+    } catch (err) {
+      console.error("Failed to toggle playlist like:", err);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
@@ -100,16 +142,9 @@ export default function PlaylistActionsAlbum({
       >
         {/* Like Button */}
         <ActionButton
-          onClick={() =>
-            togglePlaylist({
-              id: playlist.playlist_id,
-              title: playlist.name,
-              owner: playlist.owner_user_id,
-              coverUrl: playlist.cover_image || null,
-            })
-          }
+          onClick={handleLike}
           active={liked}
-          label="Like"
+          label={liked ? "Unlike" : "Like"}
           dataTest="album-action-like"
         >
           <FaHeart
@@ -118,17 +153,19 @@ export default function PlaylistActionsAlbum({
         </ActionButton>
 
         {/* Repost Button toggles POST/DELETE */}
-        <ActionButton
-          onClick={handleRepost}
-          active={reposted}
-          className={isOwner ? "opacity-50 cursor-not-allowed" : ""}
-          label="Repost"
-          dataTest="album-action-repost"
-        >
-          <BiRepost
-            className={`text-[20px] ${reposted ? "text-accent" : "text-white"}`}
-          />
-        </ActionButton>
+        {engagementKind !== "genre" && (
+          <ActionButton
+            onClick={handleRepost}
+            active={reposted}
+            className={isOwner ? "opacity-50 cursor-not-allowed" : ""}
+            label="Repost"
+            dataTest="album-action-repost"
+          >
+            <BiRepost
+              className={`text-[20px] ${reposted ? "text-accent" : "text-white"}`}
+            />
+          </ActionButton>
+        )}
 
         {/* Share Button */}
         <ActionButton

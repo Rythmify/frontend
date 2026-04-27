@@ -44,7 +44,7 @@ interface LikesStore {
 
   toggleTrack: (track: Track) => void;
   toggleStation: (station: Station) => void;
-  togglePlaylist: (playlist: PlaylistCardData) => void;
+  togglePlaylist: (playlist: PlaylistCardData) => Promise<void>;
   toggleAlbum: (album: Playlist) => void;
   toggleMix: (mix: LikedMix) => void;
   toggleGenre: (genre: LikedGenre) => void;
@@ -121,7 +121,17 @@ export const useLikesStore = create<LikesStore>()(
         const call = isLiked
           ? unlikePlaylist(playlist.id)
           : likePlaylist(playlist.id);
-        call.catch(() => {});
+        return call.catch((err) => {
+          const status = err?.response?.status;
+          if (isLiked && status === 404) return;
+          if (!isLiked && status === 409) return;
+          set((s) => ({
+            likedPlaylists: isLiked
+              ? [playlist, ...s.likedPlaylists]
+              : s.likedPlaylists.filter((p) => p.id !== playlist.id),
+          }));
+          throw err;
+        });
       },
 
       toggleMix: (mix) => {

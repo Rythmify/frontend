@@ -20,6 +20,7 @@ import { getUserById, type PublicUser } from "@/services/user.service";
 import { getRelatedTracks } from "@/services/track.service";
 import type { Track } from "@/types/track";
 import OwnerInfo from "@/components/playlist/OwnerInfo";
+import { playlistExists } from "@/services/api/playlist/playlist.service";
 
 function albumToPlaylistDetails(
   album: DiscoveryAlbum,
@@ -85,6 +86,7 @@ function AlbumsForYouSlugPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
+  const [backendPlaylistExists, setBackendPlaylistExists] = useState(false);
 
   const {
     setTrack: setPlayerTrack,
@@ -145,6 +147,10 @@ function AlbumsForYouSlugPage() {
         if (cancelled) return;
 
         setPlaylist(albumToPlaylistDetails(album, referenceTrack, tracks));
+        const existing = await playlistExists(album.id);
+        if (!cancelled) {
+          setBackendPlaylistExists(existing);
+        }
 
         const artistIds = getTopArtistTrackCounts(tracks);
         const artists = await Promise.all(
@@ -170,6 +176,7 @@ function AlbumsForYouSlugPage() {
           setError("Album not found.");
           setFeaturedArtists([]);
           setAlbumOwner(null);
+          setBackendPlaylistExists(false);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -296,6 +303,8 @@ function AlbumsForYouSlugPage() {
           <div data-test="albums-for-you-slug-main" className="flex-1 min-w-0">
             <PlaylistActionsAlbum
               playlist={playlist}
+              engagementKind="album"
+              backendPlaylistExists={backendPlaylistExists}
               onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                 setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
               }

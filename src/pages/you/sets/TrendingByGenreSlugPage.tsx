@@ -316,6 +316,7 @@ function TrendingByGenreSlugPage() {
             {isAuthenticated ? (
               <PlaylistActionsAlbum
                 playlist={playlist}
+                engagementKind="genre"
                 onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                   setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
                 }

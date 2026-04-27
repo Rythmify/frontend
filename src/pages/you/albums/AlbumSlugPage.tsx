@@ -17,6 +17,7 @@ import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { useAuthStore } from "@/stores/auth.store";
+import { playlistExists } from "@/services/api/playlist/playlist.service";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -46,6 +47,7 @@ function AlbumSlugPage() {
   const [error, setError] = useState<string | null>(null);
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
   const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
+  const [backendPlaylistExists, setBackendPlaylistExists] = useState(false);
 
   const {
     setTrack: setPlayerTrack,
@@ -79,6 +81,10 @@ function AlbumSlugPage() {
         if (cancelled) return;
 
         setPlaylist(playlistRes.data);
+        const existing = await playlistExists(playlistRes.data.playlist_id);
+        if (!cancelled) {
+          setBackendPlaylistExists(existing);
+        }
 
         try {
           const owner = await getUserById(playlistRes.data.owner_user_id);
@@ -119,6 +125,7 @@ function AlbumSlugPage() {
           setError("Failed to load playlist.");
           setFeaturedArtists([]);
           setAlbumOwner(null);
+          setBackendPlaylistExists(false);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -257,6 +264,8 @@ function AlbumSlugPage() {
             ) : (
               <PlaylistActionsAlbum
                 playlist={playlist}
+                engagementKind="album"
+                backendPlaylistExists={backendPlaylistExists}
                 onAddToNextUp={handleAddToNextUp}
                 onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                   setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
