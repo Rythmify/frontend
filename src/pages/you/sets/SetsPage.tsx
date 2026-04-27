@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
+import MixCard from "@/components/UI/MixCard/MixCard";
+import GenreCard from "@/components/UI/GenreCard/GenreCard";
+import MadeForYouCard, {
+  type MadeForYouItem,
+} from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import PlaylistCard, {
   type PlaylistCardData,
 } from "@/components/UI/PlaylistCard/PlaylistCard";
+import { getHome, type HomeData } from "@/services/api/discover.service";
 import {
   getMyPlaylists,
   getLikedPlaylists,
@@ -10,6 +16,9 @@ import {
 } from "@/services/api/playlist/playlist.service";
 import SetsHeader from "@/components/playlist/SetsHeader";
 import { useAuthStore } from "@/stores/auth.store";
+import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
+import { useLikesStore } from "@/stores/likes.store";
+import type { BuzzingPlaylist } from "@/components/UI/GenreCard/GenreCard";
 
 // Responsive width to match your skeleton and UI requirements
 const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
@@ -31,9 +40,11 @@ export default function SetsPage() {
   // Data State
   const [createdPlaylists, setCreatedPlaylists] = useState<Playlist[]>([]);
   const [likedPlaylists, setLikedPlaylists] = useState<Playlist[]>([]);
+  const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuthStore();
+  const seedFromHomeData = useLikesStore((s) => s.seedFromHomeData);
 
   const filterOptions = ["All", "Created", "Liked"];
 
@@ -41,10 +52,13 @@ export default function SetsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [created, liked] = await Promise.all([
+      const [home, created, liked] = await Promise.all([
+        getHome(),
         getMyPlaylists({ limit: 50 }),
         getLikedPlaylists({ limit: 50 }),
       ]);
+      setHomeData(home);
+      seedFromHomeData(home);
       setCreatedPlaylists(created.data.items.filter((p) => !p.is_album_view));
       setLikedPlaylists(liked.data.items.filter((p) => !p.is_album_view));
     } catch (err) {
@@ -53,7 +67,7 @@ export default function SetsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [seedFromHomeData]);
 
   // Fetch data on mount and refresh after playlist edits
   useEffect(() => {
@@ -104,9 +118,97 @@ export default function SetsPage() {
     isLiked: likedPlaylists.some((lp) => lp.playlist_id === p.playlist_id),
   });
 
+  const madeForYouItems: MadeForYouItem[] = useMemo(() => {
+    if (!homeData?.made_for_you) return [];
+
+    const daily = homeData.made_for_you.daily_mix.is_liked_by_me
+      ? {
+          id: homeData.made_for_you.daily_mix.id,
+          title: homeData.made_for_you.daily_mix.label,
+          subtitle: homeData.made_for_you.daily_mix.description,
+          coverUrl: homeData.made_for_you.daily_mix.cover_url ?? "",
+          madeKind: "daily" as const,
+          badgeWords: ["DAILY", "DROPS"] as [string, string],
+          badgeBg: "#1a237e",
+          previewTrack: mapDiscoveryTrack(homeData.made_for_you.daily_mix.preview_track),
+        }
+      : null;
+
+    const weekly = homeData.made_for_you.weekly_mix.is_liked_by_me
+      ? {
+          id: homeData.made_for_you.weekly_mix.id,
+          title: homeData.made_for_you.weekly_mix.label,
+          subtitle: homeData.made_for_you.weekly_mix.description,
+          coverUrl: homeData.made_for_you.weekly_mix.cover_url ?? "",
+          madeKind: "weekly" as const,
+          badgeWords: ["WEEKLY", "WAVE"] as [string, string],
+          badgeBg: "#1b5e20",
+          previewTrack: mapDiscoveryTrack(homeData.made_for_you.weekly_mix.preview_track),
+        }
+      : null;
+
+    return [daily, weekly].filter((item): item is MadeForYouItem => !!item);
+  }, [homeData]);
+
+  const mixItems = useMemo(() => {
+    const mixedForYou =
+      homeData?.mixed_for_you
+        ?.filter((mix) => mix.is_liked_by_me)
+        .map((mix) => ({
+          id: mix.mix_id ?? mix.id,
+          mix_id: mix.mix_id ?? mix.id,
+          title: mix.label ?? "",
+          subtitle:
+            mix.flavor === "listening_history"
+              ? "Based on listening history"
+              : "Based on your taste",
+          cover_image: mix.cover_image ?? mix.preview_track.cover_image ?? null,
+          madeKind: undefined,
+          badgeWords: ["MIX", ""] as [string, string],
+          badgeBg: mix.flavor === "listening_history" ? "#1a237e" : "#1b5e20",
+          previewTrack: mapDiscoveryTrack(mix.preview_track),
+          label: mix.label ?? "",
+          flavor: mix.flavor,
+          genre_name: mix.genre_name,
+          track_count: mix.track_count,
+          generated_at: mix.generated_at,
+          preview_track: mix.preview_track,
+          is_liked_by_me: mix.is_liked_by_me,
+        })) ?? [];
+
+    return [...mixedForYou, ...madeForYouItems];
+  }, [homeData, madeForYouItems]);
+
+  const visibleMixItems = useMemo(() => {
+    if (activeFilter === "Created") return [];
+    return mixItems.filter((mix) => mix.title.toLowerCase().includes(filterText.toLowerCase()));
+  }, [activeFilter, filterText, mixItems]);
+
+  const genreItems = useMemo(() => {
+    const items =
+      homeData?.trending_by_genre.genres
+        ?.filter((genre) => genre.is_liked)
+        .map((genre) => ({
+          id: genre.genre_id,
+          genre: genre.genre_name,
+          cover_image: genre.preview_track.cover_image,
+          track_count: 0,
+          previewTrack: mapDiscoveryTrack(genre.preview_track),
+        })) ?? [];
+
+    if (activeFilter === "Created") return [];
+
+    return items.filter((genre) =>
+      genre.genre.toLowerCase().includes(filterText.toLowerCase()),
+    );
+  }, [activeFilter, filterText, homeData]);
+
   const skeletons = Array.from({ length: 6 }).map((_, i) => (
     <SkeletonCard key={i} />
   ));
+
+  const hasVisibleContent =
+    visiblePlaylists.length > 0 || visibleMixItems.length > 0 || genreItems.length > 0;
 
   return (
     <div className="container min-h-screen flex flex-col">
@@ -128,15 +230,62 @@ export default function SetsPage() {
 
         {loading ? (
           <HorizontalCarousel title=" ">{skeletons}</HorizontalCarousel>
-        ) : visiblePlaylists.length > 0 ? (
+        ) : hasVisibleContent ? (
           <HorizontalCarousel title=" ">
-            {visiblePlaylists.map((p) => (
-              <PlaylistCard
-                key={p.playlist_id}
-                item={mapToCardData(p)}
-                widthClassName={CARD_WIDTH}
-              />
-            ))}
+            <>
+              {visiblePlaylists.map((p) => (
+                <PlaylistCard
+                  key={p.playlist_id}
+                  item={mapToCardData(p)}
+                  widthClassName={CARD_WIDTH}
+                />
+              ))}
+              {visibleMixItems.map((mix) =>
+                mix.madeKind ? (
+                  <MadeForYouCard
+                    key={mix.id}
+                    item={mix}
+                    widthClassName={CARD_WIDTH}
+                  />
+                ) : (
+                  <MixCard
+                    key={mix.id}
+                    mix={{
+                      id: mix.id,
+                      mix_id: mix.id,
+                      label: mix.title,
+                      flavor: "listening_history",
+                      genre_name: null,
+                      cover_image: mix.cover_image ?? null,
+                      track_count: 0,
+                      generated_at: new Date().toISOString(),
+                      preview_track: {
+                        id: mix.previewTrack?.id ?? mix.id,
+                        title: mix.previewTrack?.title ?? mix.title,
+                        cover_image: mix.previewTrack?.coverUrl ?? mix.cover_image ?? null,
+                        duration: null,
+                        genre_name: null,
+                        play_count: 0,
+                        like_count: 0,
+                        repost_count: 0,
+                        user_id: "",
+                        artist_name: mix.previewTrack?.artistName ?? "",
+                        stream_url: mix.previewTrack?.audioUrl ?? "",
+                        created_at: mix.previewTrack?.postedAt ?? new Date().toISOString(),
+                      },
+                    } as any}
+                    widthClassName={CARD_WIDTH}
+                  />
+                ),
+              )}
+              {genreItems.map((genre) => (
+                <GenreCard
+                  key={genre.id}
+                  item={genre as BuzzingPlaylist}
+                  widthClassName={CARD_WIDTH}
+                />
+              ))}
+            </>
           </HorizontalCarousel>
         ) : (
           <div data-test="sets-page-empty" className="flex flex-1 justify-center items-center py-20">
