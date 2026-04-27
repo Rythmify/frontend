@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
-import AddToPlaylistModal from "@/components/Playlist/AddToPlaylistModal";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { useHistoryStore } from "@/stores/history.store";
 import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
 

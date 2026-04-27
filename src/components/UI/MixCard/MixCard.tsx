@@ -10,7 +10,7 @@ import { usePlayerStore } from "@/stores/player.store";
 import CardOverlay, {
   AddToPlaylistIcon,
 } from "@/components/UI/CardOverlay/CardOverlay";
-import AddToPlaylistModal from "@/components/Playlist/AddToPlaylistModal";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 
 const BADGE_COLORS: { bg: string; text: string }[] = [
   { bg: "#B3A2F2", text: "#000000" }, // MIX 1 — dark gray
