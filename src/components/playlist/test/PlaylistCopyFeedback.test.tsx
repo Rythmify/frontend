@@ -59,7 +59,11 @@ describe("Playlist copy feedback", () => {
     mockWriteText.mockResolvedValue(undefined);
     vi.mocked(useLikesStore).mockReturnValue({
       isPlaylistLiked: vi.fn(() => false),
+      isAlbumLiked: vi.fn(() => false),
+      isGenreLiked: vi.fn(() => false),
       togglePlaylist: vi.fn(),
+      toggleAlbum: vi.fn(),
+      toggleGenre: vi.fn(),
     } as any);
     vi.mocked(useAuthStore).mockReturnValue({
       user: null,

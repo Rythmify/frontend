@@ -46,7 +46,8 @@ export default function PlaylistActions({
   } = useLikesStore();
   const { addToQueue } = usePlayerStore();
   const resolvedEngagementKind =
-    engagementKind ?? (isStation ? "station" : isGeneratedPlaylist ? "mix" : "playlist");
+    engagementKind ??
+    (isStation ? "station" : isGeneratedPlaylist ? "mix" : "playlist");
   const liked =
     resolvedEngagementKind === "mix"
       ? isMixLiked(playlist.playlist_id)
@@ -229,7 +230,7 @@ export default function PlaylistActions({
 
               {moreOpen && (
                 <div
-                  className="fixed z-[2000] bg-bg w-44 border font-bold border-[#353535] rounded shadow-xl overflow-hidden"
+                  className="absolute right-0 mt-2 z-[2000] bg-bg w-44 border font-bold border-[#353535] rounded shadow-xl overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <DropdownItem
@@ -262,7 +263,9 @@ export default function PlaylistActions({
         {showPlaylistModal && (
           <AddToPlaylistModal
             playlistId={
-              isStation || isGeneratedPlaylist ? undefined : playlist.playlist_id
+              isStation || isGeneratedPlaylist
+                ? undefined
+                : playlist.playlist_id
             }
             trackTitle={
               generatedPlaylistTitle ??

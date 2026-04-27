@@ -17,9 +17,9 @@ import AddToPlaylistModal from "./AddToPlaylistModal";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import { repostTrack } from "@/services/mocks/Track.service";
 import { usePlayerStore } from "@/stores/player.store";
+import { useLikesStore } from "@/stores/likes.store";
 import type { Track } from "@/types/track";
 import type { PlaylistTrackItem } from "@/services/api/playlist/playlist.service";
-
 function TrackItem({
   track,
   index,
@@ -34,14 +34,14 @@ function TrackItem({
   isPlaying: boolean;
   onPlay?: () => void;
   onLike: () => void;
-}) {
+  }) {
   const [hovered, setHovered] = useState(false);
-  const [liked, setLiked] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
   const setTrack = usePlayerStore((state) => state.setTrack);
   const addToQueue = usePlayerStore((state) => state.addToQueue);
+  const { isTrackLiked, toggleTrack } = useLikesStore();
   const [addedToQueue, setAddedToQueue] = useState(false);
 
   const artistName = track.artist_name ?? track.artist_name ?? "Unknown Artist";
@@ -50,10 +50,27 @@ function TrackItem({
   const coverImage =
     track.cover_image ?? track.cover_image ?? "https://via.placeholder.com/150";
   const playCount = track.play_count ?? 0;
+  const liked = isTrackLiked(track.track_id);
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setLiked((prev) => !prev);
+    toggleTrack({
+      id: track.track_id,
+      title: track.title ?? "Untitled track",
+      artistName,
+      artistUsername: artistSlug,
+      coverUrl: coverImage,
+      genre: "",
+      likeCount: 0,
+      repostCount: 0,
+      playCount,
+      commentCount: 0,
+      duration: formatDuration(track.duration),
+      postedAt: track.added_at ?? "",
+      waveformData: [],
+      audioUrl: track.audio_url ?? "",
+      isPrivate: !track.is_public,
+    });
     onLike();
   };
 

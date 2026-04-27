@@ -7,14 +7,17 @@ import SharePopup from "../../../pages/[username]/[trackSlug]/components/SharePo
 import {
   convertPlaylist,
   type Playlist,
+  type PlaylistTrackItem,
   repostPlaylist,
   removePlaylistRepost,
 } from "@/services/api/playlist/playlist.service";
 import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { usePlayerStore } from "@/stores/player.store";
+import type { Track } from "@/types/track";
 
 interface PlaylistActionsProps {
-  playlist: Playlist;
+  playlist: Playlist & { tracks?: PlaylistTrackItem[] };
   onAddToNextUp?: () => void;
   onPlaylistUpdated?: (updated: Playlist) => void;
   engagementKind?: "album" | "genre";
@@ -34,6 +37,7 @@ export default function PlaylistActionsAlbum({
     toggleAlbum,
     toggleGenre,
   } = useLikesStore();
+  const { addToQueue } = usePlayerStore();
   const { user } = useAuthStore(); // Current logged-in user
 
   const liked =
@@ -49,6 +53,31 @@ export default function PlaylistActionsAlbum({
   const moreRef = useRef<HTMLDivElement>(null);
   const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const parseDuration = (duration?: number | null): string => {
+    if (typeof duration !== "number" || Number.isNaN(duration)) return "0:00";
+    const minutes = Math.floor(duration / 60);
+    const seconds = Math.floor(duration % 60);
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  };
+
+  const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
+    id: track.track_id,
+    title: track.title ?? "Untitled track",
+    artistName: track.artist_name ?? "Unknown Artist",
+    artistUsername: track.artist_username ?? "",
+    coverUrl: track.cover_image ?? "",
+    genre: "",
+    likeCount: 0,
+    repostCount: 0,
+    playCount: track.play_count ?? 0,
+    commentCount: 0,
+    duration: parseDuration(track.duration),
+    postedAt: track.added_at ?? "",
+    waveformData: [],
+    audioUrl: track.audio_url ?? "",
+    isPrivate: !track.is_public,
+  });
 
   const handleRepost = async () => {
     if (engagementKind === "genre" || isOwner) {
@@ -68,9 +97,11 @@ export default function PlaylistActionsAlbum({
   };
 
   const handleAddToNextUp = () => {
-    if (!onAddToNextUp) return;
+    const tracks = playlist.tracks?.map(toPlayerTrack) ?? [];
+    if (!tracks.length && !onAddToNextUp) return;
 
-    onAddToNextUp();
+    tracks.forEach((track) => addToQueue(track));
+    onAddToNextUp?.();
     setAddedToQueue(true);
 
     if (queueTimerRef.current) {

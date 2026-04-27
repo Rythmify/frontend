@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import TrackItem from "@/components/playlist/TrackItem";
+import { useLikesStore } from "@/stores/likes.store";
 
 const mockSetTrack = vi.fn();
 const mockRepostTrack = vi.fn();
@@ -11,6 +12,10 @@ vi.mock("@/stores/player.store", () => ({
   usePlayerStore: vi.fn((selector: (state: { setTrack: typeof mockSetTrack }) => unknown) =>
     selector({ setTrack: mockSetTrack }),
   ),
+}));
+
+vi.mock("@/stores/likes.store", () => ({
+  useLikesStore: vi.fn(),
 }));
 
 vi.mock("@/services/mocks/Track.service", () => ({
@@ -40,6 +45,10 @@ const mockTrack = {
 describe("Playlist TrackItem", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useLikesStore).mockReturnValue({
+      isTrackLiked: vi.fn(() => false),
+      toggleTrack: vi.fn(),
+    } as any);
   });
 
   it("renders the track metadata and cover", () => {
@@ -146,5 +155,38 @@ describe("Playlist TrackItem", () => {
     expect(screen.getByText("Add to Next up")).toBeInTheDocument();
     expect(screen.getByText("Add to Playlist")).toBeInTheDocument();
     expect(screen.getByText("Station")).toBeInTheDocument();
+  });
+
+  it("toggles track likes from the shared store", () => {
+    const toggleTrack = vi.fn();
+    vi.mocked(useLikesStore).mockReturnValue({
+      isTrackLiked: vi.fn(() => false),
+      toggleTrack,
+    } as any);
+
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
+    fireEvent.click(screen.getByTestId("button-like-track-t1"));
+
+    expect(toggleTrack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "t1",
+        title: "Alpha",
+        artistName: "ArtA",
+      }),
+    );
   });
 });
