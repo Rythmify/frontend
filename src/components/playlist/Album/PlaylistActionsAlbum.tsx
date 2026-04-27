@@ -32,8 +32,10 @@ export default function PlaylistActionsAlbum({
   const [reposted, setReposted] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [addedToQueue, setAddedToQueue] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
   const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleRepost = async () => {
     if (isOwner) {
@@ -68,9 +70,25 @@ export default function PlaylistActionsAlbum({
     }, 3000);
   };
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopySuccess(true);
+
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => {
+        setCopySuccess(false);
+        copyTimerRef.current = null;
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy playlist link:", err);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
   }, []);
 
@@ -124,7 +142,7 @@ export default function PlaylistActionsAlbum({
 
         {/*Copy */}
         <ActionButton
-          onClick={() => navigator.clipboard.writeText(window.location.href)}
+          onClick={handleCopyLink}
           label="Copy link"
           dataTest="album-action-copy-link"
         >
@@ -143,6 +161,16 @@ export default function PlaylistActionsAlbum({
 
         {shareOpen && (
           <SharePopup playlist={playlist} onClose={() => setShareOpen(false)} />
+        )}
+
+        {copySuccess && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-6 left-1/2 z-[9999] -translate-x-1/2 rounded-md bg-black/90 px-3 py-2 text-xs font-semibold text-white shadow-lg"
+          >
+            Link copied
+          </div>
         )}
       </div>
     </Tooltip.Provider>

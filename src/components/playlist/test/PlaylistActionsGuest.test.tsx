@@ -72,6 +72,22 @@ describe("PlaylistActionsGuest", () => {
     expect(mockNavigate).not.toHaveBeenCalledWith("/signin");
   });
 
+  it("shows copy success feedback when Copy link is clicked", async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    render(
+      <MemoryRouter>
+        <PlaylistActionsGuest playlist={mockPlaylist} />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByTestId("album-action-copy-link"));
+
+    expect(writeText).toHaveBeenCalledWith(window.location.href);
+    expect(await screen.findByText("Link copied")).toBeInTheDocument();
+  });
+
   it("navigates to sign in when Repost is clicked", () => {
     render(
       <MemoryRouter>
