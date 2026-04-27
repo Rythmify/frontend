@@ -15,6 +15,8 @@ import {
   type TrendingByGenreTrack,
 } from "@/services/api/playlist/playlist.service";
 import PlaylistActionsAlbum from "@/components/playlist/Album/PlaylistActionsAlbum";
+import PlaylistActionsGuest from "@/components/playlist/PlaylistActionsGuest";
+import { useAuthStore } from "@/stores/auth.store";
 
 function formatDuration(seconds: number | null | undefined) {
   if (typeof seconds !== "number" || Number.isNaN(seconds)) return "0:00";
@@ -108,6 +110,7 @@ function getGenreCreatedAt(tracks: TrendingByGenreTrack[]) {
 
 function TrendingByGenreSlugPage() {
   const { playlistSlug } = useParams<{ playlistSlug: string }>();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [genreName, setGenreName] = useState<string>("");
@@ -277,7 +280,7 @@ function TrendingByGenreSlugPage() {
 
   if (loading) {
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div data-test="trending-by-genre-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading genre...
       </div>
     );
@@ -285,7 +288,7 @@ function TrendingByGenreSlugPage() {
 
   if (error || !playlist) {
     return (
-      <div className="p-20 text-center text-red-500">
+      <div data-test="trending-by-genre-slug-error" className="p-20 text-center text-red-500">
         {error || "Genre not found."}
       </div>
     );
@@ -294,7 +297,7 @@ function TrendingByGenreSlugPage() {
   return (
     <div
       data-test="trending-by-genre-slug-page"
-      className="flex-1 w-full bg-bg min-h-screen"
+      className="flex-1 bg-bg min-h-screen px-4 md:px-8 lg:px-12 xl:px-20 mx-auto w-full"
     >
       <PlaylistHero
         key={playlist.playlist_id}
@@ -309,13 +312,18 @@ function TrendingByGenreSlugPage() {
 
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div className="flex-1 min-w-0">
-            <PlaylistActionsAlbum
-              playlist={playlist}
-              onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
-                setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
-              }
-            />
+          <div data-test="trending-by-genre-slug-main" className="flex-1 min-w-0">
+            {isAuthenticated ? (
+              <PlaylistActionsAlbum
+                playlist={playlist}
+                engagementKind="genre"
+                onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
+                  setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
+                }
+              />
+            ) : (
+              <PlaylistActionsGuest playlist={playlist} />
+            )}
 
             <div className="flex flex-1 gap-6 mt-8">
               <TrackList
@@ -327,7 +335,7 @@ function TrendingByGenreSlugPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-[280px] shrink-0">
+          <div data-test="trending-by-genre-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar
               featuredArtists={featuredArtists}
               playlist={playlist}

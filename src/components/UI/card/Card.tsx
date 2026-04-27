@@ -1,11 +1,13 @@
 import type { Track } from "@/types/track";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
-import { useHistoryStore } from "@/stores/history.store";
+import { getRelatedTracks } from "@/services/track.service";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
-import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import CardOverlay, {
+  AddToPlaylistIcon,
+} from "@/components/UI/CardOverlay/CardOverlay";
 
 // ─── Props ────────────────────────────────────────────────
 interface TrackCardProps {
@@ -13,30 +15,6 @@ interface TrackCardProps {
   widthClassName?: string;
   addToPlaylistTracks?: Track[];
   contextQueue?: Track[];
-}
-
-function buildSourcePlaylist(track: Track, relatedTracks: Track[]) {
-  return {
-    playlist_id: track.id,
-    name: "More of what you like",
-    description: track.title
-      ? `Related tracks inspired by ${track.title}`
-      : "Related tracks picked for you",
-    is_public: true,
-    cover_image: track.coverUrl || null,
-    created_at: track.postedAt || new Date().toISOString(),
-    track_count: relatedTracks.length,
-    like_count: 0,
-    repost_count: 0,
-    tracks: relatedTracks.map((t, index) => ({
-      id: t.id,
-      title: t.title,
-      artistName: t.artistName,
-      coverUrl: t.coverUrl,
-      track_id: t.id,
-      position: index + 1,
-    })),
-  };
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -134,12 +112,28 @@ const TrackCard = ({
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { isTrackLiked, toggleTrack } = useLikesStore();
-  const { addTrack } = useHistoryStore();
+
+  const fetchTracksForModal = useCallback(async () => {
+    if (addToPlaylistTracks?.length) {
+      const { tracks } = await getRelatedTracks(String(track.id));
+      return tracks.map((t) => ({
+        id: String(t.id),
+        title: t.title,
+        artistName: t.artistName ?? "",
+        coverUrl: t.coverUrl ?? undefined,
+      }));
+    }
+    return [
+      {
+        id: String(track.id),
+        title: track.title,
+        artistName: track.artistName,
+        coverUrl: track.coverUrl ?? undefined,
+      },
+    ];
+  }, [track.id, track.title, track.artistName, track.coverUrl, addToPlaylistTracks]);
 
   const liked = isTrackLiked(track.id);
-  const sourcePlaylist = addToPlaylistTracks?.length
-    ? buildSourcePlaylist(track, addToPlaylistTracks)
-    : null;
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
@@ -182,7 +176,10 @@ const TrackCard = ({
           isPlaying={isThisTrackPlaying}
           onPlay={handlePlayClick}
           isLiked={liked}
-          onLike={(e) => { e.stopPropagation(); toggleTrack(track); }}
+          onLike={(e) => {
+            e.stopPropagation();
+            toggleTrack(track);
+          }}
           moreMenuItems={[
             {
               label: "Add to playlist",
@@ -201,15 +198,11 @@ const TrackCard = ({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          trackTitle={sourcePlaylist?.name ?? track.title}
-          //playlistId={sourcePlaylist?.playlist_id}
-          initialTracks={sourcePlaylist?.tracks.map((t) => ({
-            id: t.track_id,
-            title: t.title ?? "",
-            artistName: t.artistName,
-            coverUrl: t.coverUrl,
-          }))}
-          moreOfLike={true}
+          trackTitle={
+            addToPlaylistTracks?.length ? "More of what you like" : track.title
+          }
+          fetchTracks={fetchTracksForModal}
+          moreOfLike={!!addToPlaylistTracks?.length}
           onClose={() => setShowPlaylistModal(false)}
         />
       )}
