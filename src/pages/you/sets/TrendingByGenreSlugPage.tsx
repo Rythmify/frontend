@@ -15,6 +15,8 @@ import {
   type TrendingByGenreTrack,
 } from "@/services/api/playlist/playlist.service";
 import PlaylistActionsAlbum from "@/components/playlist/Album/PlaylistActionsAlbum";
+import PlaylistActionsGuest from "@/components/playlist/PlaylistActionsGuest";
+import { useAuthStore } from "@/stores/auth.store";
 
 function formatDuration(seconds: number | null | undefined) {
   if (typeof seconds !== "number" || Number.isNaN(seconds)) return "0:00";
@@ -108,6 +110,7 @@ function getGenreCreatedAt(tracks: TrendingByGenreTrack[]) {
 
 function TrendingByGenreSlugPage() {
   const { playlistSlug } = useParams<{ playlistSlug: string }>();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [genreName, setGenreName] = useState<string>("");
@@ -310,12 +313,16 @@ function TrendingByGenreSlugPage() {
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           <div className="flex-1 min-w-0">
-            <PlaylistActionsAlbum
-              playlist={playlist}
-              onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
-                setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
-              }
-            />
+            {isAuthenticated ? (
+              <PlaylistActionsAlbum
+                playlist={playlist}
+                onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
+                  setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
+                }
+              />
+            ) : (
+              <PlaylistActionsGuest playlist={playlist} />
+            )}
 
             <div className="flex flex-1 gap-6 mt-8">
               <TrackList

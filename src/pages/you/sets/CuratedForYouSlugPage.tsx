@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "../../../components/playlist/Made for you/PlaylistSidebarForYou";
-import PlaylistActions from "../../../components/playlist/Made for you/PlaylistActionsForYou";
+import PlaylistActionsGuest from "@/components/playlist/PlaylistActionsGuest";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   type PlaylistDetails,
@@ -258,7 +258,7 @@ function CuratedForYouSlugPage() {
       <div className=" mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           <div className="flex-1 min-w-0">
-            <PlaylistActions playlist={playlist} />
+            <PlaylistActionsGuest playlist={playlist} />
             <div className="mt-8">
               <TrackList
                 tracks={playlist.tracks}
