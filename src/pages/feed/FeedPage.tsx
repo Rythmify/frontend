@@ -56,11 +56,11 @@ const FeedPage = () => {
               Hear the latest posts from the people you're following:
             </h1>
             <div
-              data-test="button-feed-reposts-toggle"
               className="flex items-center gap-2 shrink-0"
             >
               <span className="text-sm text-white/50">Reposts</span>
               <button
+                data-test="button-feed-reposts-toggle"
                 onClick={() => setShowReposts((prev) => !prev)}
                 className={`relative inline-flex items-center w-10.5 h-6.5 rounded-full transition-colors duration-200 ${
                   showReposts ? "bg-[#f50]" : "bg-zinc-600"

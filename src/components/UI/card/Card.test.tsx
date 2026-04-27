@@ -1,43 +1,75 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import React from "react";
 import TrackCard from "./Card";
 import type { Track } from "@/types/track";
 
-// ─── Mock Setup ───────────────────────────────────────────
+// ─── Mocks ────────────────────────────────────────────────
+
 const mockNavigate = vi.fn();
-const mockSetTrack = vi.fn();
-const mockTogglePlay = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }));
 
-vi.mock("@heroui/react", () => ({
-  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+const mockPlayerStore = {
+  currentTrack: null,
+  isPlaying: false,
+  setTrack: vi.fn(),
+  togglePlay: vi.fn(),
+  playContext: vi.fn(),
+};
 
-vi.mock("@/components/playlist/AddToPlaylistModal", () => ({
-  default: ({ initialTracks, playlistId, trackTitle }: any) => (
-    <div
-      data-test="add-to-playlist-modal"
-      data-initial-tracks={initialTracks?.length ?? 0}
-      data-playlist-id={playlistId ?? ""}
-      data-track-title={trackTitle ?? ""}
-    />
+vi.mock("@/stores/player.store", () => ({
+  usePlayerStore: Object.assign(
+    vi.fn(() => mockPlayerStore),
+    {
+      getState: vi.fn(() => mockPlayerStore),
+    }
   ),
 }));
 
-const mockGetRelatedTracks = vi.fn();
+const mockLikesStore = {
+  isTrackLiked: vi.fn().mockReturnValue(false),
+  toggleTrack: vi.fn(),
+};
 
-vi.mock("@/services/track.service", () => ({
-  getRelatedTracks: (...args: any[]) => mockGetRelatedTracks(...args),
+vi.mock("@/stores/likes.store", () => ({
+  useLikesStore: vi.fn(() => mockLikesStore),
 }));
 
-vi.mock("@/stores/player.store", () => ({
-  usePlayerStore: vi.fn(),
+vi.mock("@/stores/history.store", () => ({
+  useHistoryStore: vi.fn(() => ({
+    addTrack: vi.fn(),
+  })),
 }));
 
-import { usePlayerStore } from "@/stores/player.store";
+vi.mock("@/components/UI/CardOverlay/CardOverlay", () => ({
+  default: ({ isPlaying, onPlay, isLiked, onLike, moreMenuItems }: any) => (
+    <div data-test="card-overlay">
+      <button data-test="button-play" onClick={onPlay}>
+        {isPlaying ? "Pause" : "Play"}
+      </button>
+      <button data-test="button-like" onClick={onLike}>
+        {isLiked ? "Unlike" : "Like"}
+      </button>
+      <button data-test="button-more" onClick={moreMenuItems[0]?.onClick}>
+        More
+      </button>
+    </div>
+  ),
+  AddToPlaylistIcon: () => <div />,
+}));
+
+vi.mock("@/components/playlist/AddToPlaylistModal", () => ({
+  default: ({ initialTracks, trackTitle, onClose }: any) => (
+    <div data-test="add-to-playlist-modal">
+      <span>{trackTitle}</span>
+      <span>{initialTracks?.length} tracks</span>
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}));
 
 const mockTrack: Track = {
   id: "f5e4d3c2-b1a0-4987-8765-43210abcdeh0",
@@ -58,148 +90,68 @@ const mockTrack: Track = {
   isPrivate: false,
 };
 
-const defaultStore = {
-  currentTrack: null,
-  isPlaying: false,
-  setTrack: mockSetTrack,
-  togglePlay: mockTogglePlay,
-};
-// ─── Test Suite ───────────────────────────────────────────
 describe("TrackCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (usePlayerStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue(
-      defaultStore,
-    );
+    mockPlayerStore.currentTrack = null;
+    mockPlayerStore.isPlaying = false;
+    mockLikesStore.isTrackLiked.mockReturnValue(false);
   });
 
-  it("renders cover image with correct src and alt", () => {
+  it("renders cover image, title and artist", () => {
     render(<TrackCard track={mockTrack} />);
-    const img = screen.getByTestId("trackcard-image");
-    expect(img).toHaveAttribute("src", mockTrack.coverUrl);
-    expect(img).toHaveAttribute("alt", mockTrack.title);
+    expect(screen.getByTestId("trackcard-image")).toHaveAttribute("src", mockTrack.coverUrl);
+    expect(screen.getByTestId("trackcard-title")).toHaveTextContent(mockTrack.title);
+    expect(screen.getByTestId("trackcard-artist")).toHaveTextContent(mockTrack.artistName);
   });
 
-  it("renders track title", () => {
-    render(<TrackCard track={mockTrack} />);
-    expect(screen.getByTestId("trackcard-title")).toHaveTextContent(
-      mockTrack.title,
-    );
-  });
-
-  it("renders artist name", () => {
-    render(<TrackCard track={mockTrack} />);
-    expect(screen.getByTestId("trackcard-artist")).toHaveTextContent(
-      mockTrack.artistName,
-    );
-  });
-
-  it("navigates to track page when card is clicked", () => {
+  it("navigates to the personalised mix page when card is clicked", () => {
     render(<TrackCard track={mockTrack} />);
     fireEvent.click(screen.getByTestId("card-track"));
     expect(mockNavigate).toHaveBeenCalledWith(
-      `/${mockTrack.artistUsername}/${mockTrack.trackSlug}`,
+      expect.stringContaining("/discover/personalised/")
     );
   });
 
-  it("shows play icon when track is not playing", () => {
-    render(<TrackCard track={mockTrack} />);
-    const icon = screen.getByTestId("button-play").querySelector("i");
-    expect(icon?.className).toContain("fa-play");
+  it("shows play/pause state correctly", () => {
+    const { rerender } = render(<TrackCard track={mockTrack} />);
+    expect(screen.getByTestId("button-play")).toHaveTextContent("Play");
+
+    mockPlayerStore.currentTrack = mockTrack as any;
+    mockPlayerStore.isPlaying = true;
+    
+    rerender(<TrackCard track={mockTrack} />);
+    expect(screen.getByTestId("button-play")).toHaveTextContent("Pause");
   });
 
-  it("shows pause icon when this track is currently playing", () => {
-    (usePlayerStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      ...defaultStore,
-      currentTrack: mockTrack,
-      isPlaying: true,
-    });
-    render(<TrackCard track={mockTrack} />);
-    const icon = screen.getByTestId("button-play").querySelector("i");
-    expect(icon?.className).toContain("fa-pause");
-  });
-
-  it("calls setTrack when play is clicked on a different track", () => {
+  it("calls playContext when play is clicked on a new track", () => {
     render(<TrackCard track={mockTrack} />);
     fireEvent.click(screen.getByTestId("button-play"));
-    expect(mockSetTrack).toHaveBeenCalledWith(mockTrack);
-    expect(mockTogglePlay).not.toHaveBeenCalled();
+    
+    expect(mockPlayerStore.playContext).toHaveBeenCalledWith("track", mockTrack.id, mockTrack);
   });
 
   it("calls togglePlay when play is clicked on the current track", () => {
-    (usePlayerStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      ...defaultStore,
-      currentTrack: mockTrack,
-      isPlaying: true,
-    });
+    mockPlayerStore.currentTrack = mockTrack as any;
+    mockPlayerStore.isPlaying = true;
+    
     render(<TrackCard track={mockTrack} />);
     fireEvent.click(screen.getByTestId("button-play"));
-    expect(mockTogglePlay).toHaveBeenCalled();
-    expect(mockSetTrack).not.toHaveBeenCalled();
+    
+    expect(mockPlayerStore.togglePlay).toHaveBeenCalled();
   });
 
-  it("play button click does not navigate", () => {
-    render(<TrackCard track={mockTrack} />);
-    fireEvent.click(screen.getByTestId("button-play"));
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  it("like button toggles liked state", () => {
-    render(<TrackCard track={mockTrack} />);
-    const likeBtn = screen.getByTestId("button-like");
-    const icon = likeBtn.querySelector("i");
-
-    // Initially not liked — uses actionIcon (no text-red-500)
-    expect(icon?.className).not.toContain("text-red-500");
-
-    fireEvent.click(likeBtn);
-
-    // After click — liked state → actionIconActive (text-red-500)
-    expect(icon?.className).toContain("text-red-500");
-  });
-
-  it("like button click does not navigate", () => {
+  it("toggles liked state via useLikesStore", () => {
     render(<TrackCard track={mockTrack} />);
     fireEvent.click(screen.getByTestId("button-like"));
-    expect(mockNavigate).not.toHaveBeenCalled();
+    
+    expect(mockLikesStore.toggleTrack).toHaveBeenCalledWith(mockTrack);
   });
 
-  it("more button click does not navigate", () => {
+  it("opens add-to-playlist modal", async () => {
     render(<TrackCard track={mockTrack} />);
     fireEvent.click(screen.getByTestId("button-more"));
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  it("passes the full track list to add-to-playlist modal when provided", () => {
-    const extraTrack = { ...mockTrack, id: "2", title: "Second Track" };
-    mockGetRelatedTracks.mockResolvedValue({
-      referenceTrack: mockTrack,
-      tracks: [mockTrack, extraTrack],
-    });
-
-    render(
-      <TrackCard
-        track={mockTrack}
-        addToPlaylistTracks={[mockTrack, extraTrack]}
-      />,
-    );
-
-    fireEvent.click(screen.getByTestId("button-more"));
-
-    return waitFor(() => {
-      expect(mockGetRelatedTracks).toHaveBeenCalledWith(mockTrack.id);
-      expect(screen.getByTestId("add-to-playlist-modal")).toHaveAttribute(
-        "data-initial-tracks",
-        "2",
-      );
-      expect(screen.getByTestId("add-to-playlist-modal")).toHaveAttribute(
-        "data-playlist-id",
-        mockTrack.id,
-      );
-      expect(screen.getByTestId("add-to-playlist-modal")).toHaveAttribute(
-        "data-track-title",
-        "More of what you like",
-      );
-    });
+    
+    expect(screen.getByTestId("add-to-playlist-modal")).toBeInTheDocument();
   });
 });

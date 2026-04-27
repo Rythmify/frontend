@@ -17,6 +17,8 @@ function getJwtExpiryMs(token: string): number | null {
   }
 }
 
+import { Toaster } from "sonner";
+
 function App() {
   // Log out cleanly when the token refresh fails (401 after retry)
   useEffect(() => {
@@ -24,6 +26,14 @@ function App() {
       useAuthStore.getState().logout();
     };
     window.addEventListener("auth:session-expired", handleSessionExpired);
+
+    // Initial hydration if already authenticated
+    if (useAuthStore.getState().isAuthenticated) {
+      import("@/stores/player.store").then((m) => m.usePlayerStore.getState().loadFromBackend());
+      import("@/stores/likes.store").then((m) => m.useLikesStore.getState().hydrateFromApi());
+      import("@/stores/history.store").then((m) => m.useHistoryStore.getState().hydrateFromBackend());
+    }
+
     return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
   }, []);
 
@@ -86,6 +96,23 @@ function App() {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
     <HeroUIProvider>
       <RouterProvider router={router} />
+      <Toaster 
+        position="bottom-right" 
+        expand={false} 
+        richColors 
+        theme="dark"
+        toastOptions={{
+          style: {
+            background: 'rgba(18, 18, 18, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#fff',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+            maxWidth: '350px',
+          },
+        }}
+      />
     </HeroUIProvider>
     </GoogleOAuthProvider>
   );

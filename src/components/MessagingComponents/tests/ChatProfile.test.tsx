@@ -83,12 +83,12 @@ describe("ChatProfile", () => {
 
   it("applies active class when isActive is true", () => {
     const { container } = renderProfile({}, { isActive: true });
-    expect(container.querySelector(".bg-black")).toBeInTheDocument();
+    expect(container.querySelector(".bg-\\[\\#303030\\]")).toBeInTheDocument();
   });
 
-  it("does not apply active bg-black class when isActive is false", () => {
+  it("does not apply active bg-[#303030] class when isActive is false", () => {
     const { container } = renderProfile({}, { isActive: false });
-    expect(container.querySelector(".bg-black")).not.toBeInTheDocument();
+    expect(container.querySelector(".bg-\\[\\#303030\\]")).not.toBeInTheDocument();
   });
 
   // ── Click ──────────────────────────────────────────────────────────────────
@@ -144,6 +144,6 @@ describe("ChatProfile", () => {
     renderProfile({
       updated_at: new Date(Date.now() - 400 * 86400 * 1000).toISOString(),
     });
-    expect(screen.getByText(/years ago/i)).toBeInTheDocument();
+    expect(screen.getByText(/year(s)? ago/i)).toBeInTheDocument();
   });
 });

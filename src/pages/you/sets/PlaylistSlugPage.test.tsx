@@ -7,7 +7,7 @@ import {
   getPlaylist,
   updatePlaylist,
 } from "@/services/api/playlist/playlist.service";
-import { getUsers } from "@/services/mocks/User.service";
+import { getUserById } from "@/services/user.service";
 import { usePlayerStore } from "@/stores/player.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
@@ -17,8 +17,8 @@ vi.mock("@/services/api/playlist/playlist.service", () => ({
   updatePlaylist: vi.fn(),
 }));
 
-vi.mock("@/services/mocks/User.service", () => ({
-  getUsers: vi.fn(),
+vi.mock("@/services/user.service", () => ({
+  getUserById: vi.fn(),
 }));
 
 vi.mock("@/stores/player.store", () => ({
@@ -89,6 +89,7 @@ vi.mock("../../../components/playlist/TrackList", () => ({
 const mockPlaylistData = {
   playlist_id: "pl-abc",
   name: "Test Playlist",
+  owner_user_id: "owner-1",
   tracks: [{ track_id: "t-1", title: "Track 1" }],
 };
 
@@ -106,12 +107,17 @@ describe("PlaylistSlugPage", () => {
         id: "owner-1",
         username: "testuser",
         displayName: "Test User",
+        following_ids: [],
       },
     } as any);
     vi.mocked(useLikesStore).mockReturnValue({
       likedPlaylists: [],
     } as any);
-    vi.mocked(getUsers).mockResolvedValue([] as any);
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "owner-1",
+      username: "testuser",
+      display_name: "Test User",
+    } as any);
   });
 
   const renderPage = () =>
@@ -161,7 +167,9 @@ describe("PlaylistSlugPage", () => {
     vi.mocked(useLikesStore).mockReturnValue({
       likedPlaylists: [{ id: "pl-abc" }],
     } as any);
-    vi.mocked(getPlaylist).mockResolvedValue({ data: mockPlaylistData } as any);
+    vi.mocked(getPlaylist).mockResolvedValue({
+      data: { ...mockPlaylistData, owner_user_id: "other-user" },
+    } as any);
 
     renderPage();
 
