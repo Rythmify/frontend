@@ -39,7 +39,7 @@ export default function SearchSidebar({ query, filters }: SearchSidebarProps) {
   };
 
   return (
-    <aside className="flex flex-col gap-6 w-[220px] shrink-0">
+    <div className=" flex flex-col gap-6 w-[220px] shrink-0">
 
       {/* ── Heading ── */}
       {query.trim() && (
@@ -84,6 +84,6 @@ export default function SearchSidebar({ query, filters }: SearchSidebarProps) {
       {/* ── Go Mobile + Footer ── */}
       <GoMobileSection showFooter />
 
-    </aside>
+    </div>
   );
 }

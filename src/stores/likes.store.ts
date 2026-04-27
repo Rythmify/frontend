@@ -20,12 +20,18 @@ import {
   unlikeStation as unlikeStationApi,
   getMyLikedTracks,
   getMyLikedPlaylistsApi,
+  getMyLikedMixes as getMyLikedMixesApi,
+  getMyLikedGenres as getMyLikedGenresApi,
 } from "@/services/engagement.service";
 import { mapTrackSummaryToTrack } from "@/services/api/discover.mapper";
 
 export interface LikedMix {
   id: string;
   mix_id?: string;
+  title?: string;
+  cover_image?: string | null;
+  link_to?: string;
+  kind?: "personal" | "daily" | "weekly";
 }
 
 export interface LikedGenre {
@@ -370,18 +376,53 @@ export const useLikesStore = create<LikesStore>()(
 
       seedFromHomeData: (data) => {
         set((s) => {
+          // ── Build a fresh metadata map from home data ──────────────────────
+          const freshMeta = new Map<string, Omit<LikedMix, "id" | "mix_id">>();
+          for (const m of data.mixed_for_you ?? []) {
+            const key = m.mix_id ?? m.id;
+            freshMeta.set(key, {
+              title: m.label ?? "",
+              cover_image: m.cover_image ?? m.preview_track?.cover_image ?? null,
+              link_to: `/discover/sets/${key}`,
+              kind: "personal",
+            });
+          }
+          for (const [kind, m] of [
+            ["daily", data.made_for_you?.daily_mix],
+            ["weekly", data.made_for_you?.weekly_mix],
+          ] as const) {
+            if (!m) continue;
+            freshMeta.set(m.id, {
+              title: m.label ?? "",
+              cover_image: m.cover_url ?? null,
+              link_to: `/discover/sets/new-for-you/${kind}/${m.id}`,
+              kind,
+            });
+          }
+
           // ── Mixes (mixed_for_you + made_for_you daily/weekly) ──────────────
-          const existingMixIds = new Set(s.likedMixes.map((m) => m.mix_id ?? m.id));
-          const newMixes: LikedMix[] = [
-            ...(data.mixed_for_you ?? [])
-              .filter((m) => m.is_liked_by_me && !existingMixIds.has(m.mix_id ?? m.id))
-              .map((m) => ({ id: m.id, mix_id: m.mix_id })),
-            ...[data.made_for_you?.daily_mix, data.made_for_you?.weekly_mix]
-              .filter((m): m is NonNullable<typeof m> =>
-                !!m && !!m.is_liked_by_me && !existingMixIds.has(m.id),
-              )
-              .map((m) => ({ id: m.id })),
-          ];
+          // Update existing mixes with enriched metadata
+          const updatedMixes = s.likedMixes.map((m) => {
+            const meta = freshMeta.get(m.mix_id ?? m.id);
+            return meta ? { ...m, ...meta } : m;
+          });
+          const existingMixIds = new Set(updatedMixes.map((m) => m.mix_id ?? m.id));
+
+          // Add newly liked mixes not yet in the store
+          const newMixes: LikedMix[] = [];
+          for (const m of data.mixed_for_you ?? []) {
+            const key = m.mix_id ?? m.id;
+            if (m.is_liked_by_me && !existingMixIds.has(key)) {
+              newMixes.push({ id: m.id, mix_id: m.mix_id, ...freshMeta.get(key) });
+            }
+          }
+          for (const [, m] of [
+            ["daily", data.made_for_you?.daily_mix],
+            ["weekly", data.made_for_you?.weekly_mix],
+          ] as const) {
+            if (!m || !m.is_liked_by_me || existingMixIds.has(m.id)) continue;
+            newMixes.push({ id: m.id, ...freshMeta.get(m.id) });
+          }
 
           // ── Genres ────────────────────────────────────────────────────────
           const existingGenreIds = new Set(s.likedGenres.map((g) => g.id));
@@ -402,7 +443,7 @@ export const useLikesStore = create<LikesStore>()(
             }));
 
           return {
-            likedMixes: [...s.likedMixes, ...newMixes],
+            likedMixes: [...updatedMixes, ...newMixes],
             likedGenres: [...s.likedGenres, ...newGenres],
             likedStations: [...s.likedStations, ...newStations],
           };
@@ -432,15 +473,16 @@ export const useLikesStore = create<LikesStore>()(
 
       hydrateFromApi: async () => {
         try {
-          const [tracksRes, playlistsRes] = await Promise.allSettled([
+          const [tracksRes, playlistsRes, mixesRes, genresRes] = await Promise.allSettled([
             getMyLikedTracks({ limit: 50 }),
             getMyLikedPlaylistsApi({ limit: 50 }),
+            getMyLikedMixesApi({ limit: 50 }),
+            getMyLikedGenresApi({ limit: 50 }),
           ]);
 
           if (tracksRes.status === "fulfilled") {
             const fetchedTracks = tracksRes.value.data.map(mapTrackSummaryToTrack);
             set((s) => {
-              // Merge local tracks that aren't in the API response yet
               const fetchedIds = new Set(fetchedTracks.map(t => String(t.id)));
               const localOnly = s.likedTracks.filter(t => !fetchedIds.has(String(t.id)));
               return { likedTracks: [...localOnly, ...fetchedTracks] };
@@ -460,6 +502,41 @@ export const useLikesStore = create<LikesStore>()(
               const fetchedIds = new Set(fetchedPlaylists.map(p => String(p.id)));
               const localOnly = s.likedPlaylists.filter(p => !fetchedIds.has(String(p.id)));
               return { likedPlaylists: [...localOnly, ...fetchedPlaylists] };
+            });
+          }
+
+          if (mixesRes.status === "fulfilled") {
+            const typeToKind = (t: string): LikedMix["kind"] =>
+              t === "curated_daily" ? "daily" : t === "curated_weekly" ? "weekly" : "personal";
+            const typeToLink = (t: string, id: string) =>
+              t === "curated_daily" ? `/discover/sets/new-for-you/daily/${id}`
+              : t === "curated_weekly" ? `/discover/sets/new-for-you/weekly/${id}`
+              : `/discover/sets/${id}`;
+            const fetchedMixes: LikedMix[] = mixesRes.value.items.map((m) => ({
+              id: m.playlist_id,
+              mix_id: m.playlist_id,
+              title: m.title,
+              cover_image: m.cover_image,
+              kind: typeToKind(m.type),
+              link_to: typeToLink(m.type, m.playlist_id),
+            }));
+            set((s) => {
+              const fetchedIds = new Set(fetchedMixes.map(m => m.mix_id ?? m.id));
+              const localOnly = s.likedMixes.filter(m => !fetchedIds.has(m.mix_id ?? m.id));
+              return { likedMixes: [...localOnly, ...fetchedMixes] };
+            });
+          }
+
+          if (genresRes.status === "fulfilled") {
+            const fetchedGenres: LikedGenre[] = genresRes.value.items.map((g) => ({
+              id: g.genre_id,
+              genre: g.genre_name,
+              cover_image: g.cover_image,
+            }));
+            set((s) => {
+              const fetchedIds = new Set(fetchedGenres.map(g => g.id));
+              const localOnly = s.likedGenres.filter(g => !fetchedIds.has(g.id));
+              return { likedGenres: [...localOnly, ...fetchedGenres] };
             });
           }
         } catch {

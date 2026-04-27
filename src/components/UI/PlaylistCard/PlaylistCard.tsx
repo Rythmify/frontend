@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
-import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import AddToPlaylistModal from "@/components/Playlist/AddToPlaylistModal";
 import { useHistoryStore } from "@/stores/history.store";
 import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
 
@@ -21,6 +21,9 @@ export type PlaylistCardData = {
   isPrivate?: boolean;
   isLiked?: boolean;
   isAlbumView?: boolean;
+  linkTo?: string;
+  onLike?: (e: React.MouseEvent) => void;
+  isLikedOverride?: boolean;
 };
 
 interface PlaylistCardProps {
@@ -44,7 +47,12 @@ export default function PlaylistCard({
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // Derived State
-  const liked = item.isAlbumView ? isAlbumLiked(item.id) : isPlaylistLiked(item.id);
+  const liked =
+    item.isLikedOverride !== undefined
+      ? item.isLikedOverride
+      : item.isAlbumView
+        ? isAlbumLiked(item.id)
+        : isPlaylistLiked(item.id);
   const isThisPlaylistPlaying =
     isPlaying &&
     (currentTrack as any)?.context?.type === "playlist" &&
@@ -91,7 +99,7 @@ export default function PlaylistCard({
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
-      onClick={() => navigate(playlistPath)}
+      onClick={() => navigate(item.linkTo ?? playlistPath)}
       data-test="playlist-card"
     >
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
@@ -113,7 +121,9 @@ export default function PlaylistCard({
           isLiked={liked}
           onLike={(e) => {
             e.stopPropagation();
-            if (item.isAlbumView) {
+            if (item.onLike) {
+              item.onLike(e);
+            } else if (item.isAlbumView) {
               toggleAlbum({ playlist_id: item.id, name: item.title, cover_image: item.coverUrl } as any);
             } else {
               togglePlaylist(item);
