@@ -9,6 +9,7 @@ import PlaylistCard, {
   type PlaylistCardData,
 } from "@/components/UI/PlaylistCard/PlaylistCard";
 import { getHome, type HomeData } from "@/services/api/discover.service";
+import type { PersonalMix } from "@/services/api/discover.service";
 import {
   getMyPlaylists,
   getLikedPlaylists,
@@ -22,6 +23,26 @@ import type { BuzzingPlaylist } from "@/components/UI/GenreCard/GenreCard";
 
 // Responsive width to match your skeleton and UI requirements
 const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
+
+type SetsMixCardItem = {
+  id: string;
+  mix_id: string;
+  title: string;
+  subtitle: string;
+  cover_image: string | null;
+  badgeWords: [string, string];
+  badgeBg: string;
+  previewTrack: ReturnType<typeof mapDiscoveryTrack>;
+  label: string;
+  flavor: PersonalMix["flavor"];
+  genre_name: string | null;
+  track_count: number;
+  generated_at: string;
+  is_liked_by_me?: boolean;
+  madeKind?: undefined;
+};
+
+type SetsCarouselItem = MadeForYouItem | SetsMixCardItem;
 
 const SkeletonCard = () => (
   <div className={`flex flex-col gap-2 ${CARD_WIDTH} shrink-0 animate-pulse`}>
@@ -121,37 +142,39 @@ export default function SetsPage() {
   const madeForYouItems: MadeForYouItem[] = useMemo(() => {
     if (!homeData?.made_for_you) return [];
 
-    const daily = homeData.made_for_you.daily_mix.is_liked_by_me
-      ? {
-          id: homeData.made_for_you.daily_mix.id,
-          title: homeData.made_for_you.daily_mix.label,
-          subtitle: homeData.made_for_you.daily_mix.description,
-          coverUrl: homeData.made_for_you.daily_mix.cover_url ?? "",
-          madeKind: "daily" as const,
-          badgeWords: ["DAILY", "DROPS"] as [string, string],
-          badgeBg: "#1a237e",
-          previewTrack: mapDiscoveryTrack(homeData.made_for_you.daily_mix.preview_track),
-        }
-      : null;
+    const items: MadeForYouItem[] = [];
 
-    const weekly = homeData.made_for_you.weekly_mix.is_liked_by_me
-      ? {
-          id: homeData.made_for_you.weekly_mix.id,
-          title: homeData.made_for_you.weekly_mix.label,
-          subtitle: homeData.made_for_you.weekly_mix.description,
-          coverUrl: homeData.made_for_you.weekly_mix.cover_url ?? "",
-          madeKind: "weekly" as const,
-          badgeWords: ["WEEKLY", "WAVE"] as [string, string],
-          badgeBg: "#1b5e20",
-          previewTrack: mapDiscoveryTrack(homeData.made_for_you.weekly_mix.preview_track),
-        }
-      : null;
+    if (homeData.made_for_you.daily_mix.is_liked_by_me) {
+      items.push({
+        id: homeData.made_for_you.daily_mix.id,
+        title: homeData.made_for_you.daily_mix.label,
+        subtitle: homeData.made_for_you.daily_mix.description,
+        coverUrl: homeData.made_for_you.daily_mix.cover_url ?? "",
+        madeKind: "daily",
+        badgeWords: ["DAILY", "DROPS"],
+        badgeBg: "#1a237e",
+        previewTrack: mapDiscoveryTrack(homeData.made_for_you.daily_mix.preview_track),
+      });
+    }
 
-    return [daily, weekly].filter((item): item is MadeForYouItem => !!item);
+    if (homeData.made_for_you.weekly_mix.is_liked_by_me) {
+      items.push({
+        id: homeData.made_for_you.weekly_mix.id,
+        title: homeData.made_for_you.weekly_mix.label,
+        subtitle: homeData.made_for_you.weekly_mix.description,
+        coverUrl: homeData.made_for_you.weekly_mix.cover_url ?? "",
+        madeKind: "weekly",
+        badgeWords: ["WEEKLY", "WAVE"],
+        badgeBg: "#1b5e20",
+        previewTrack: mapDiscoveryTrack(homeData.made_for_you.weekly_mix.preview_track),
+      });
+    }
+
+    return items;
   }, [homeData]);
 
-  const mixItems = useMemo(() => {
-    const mixedForYou =
+  const mixItems: SetsCarouselItem[] = useMemo(() => {
+    const mixedForYou: SetsMixCardItem[] =
       homeData?.mixed_for_you
         ?.filter((mix) => mix.is_liked_by_me)
         .map((mix) => ({
@@ -163,8 +186,7 @@ export default function SetsPage() {
               ? "Based on listening history"
               : "Based on your taste",
           cover_image: mix.cover_image ?? mix.preview_track.cover_image ?? null,
-          madeKind: undefined,
-          badgeWords: ["MIX", ""] as [string, string],
+          badgeWords: ["MIX", ""],
           badgeBg: mix.flavor === "listening_history" ? "#1a237e" : "#1b5e20",
           previewTrack: mapDiscoveryTrack(mix.preview_track),
           label: mix.label ?? "",
@@ -172,7 +194,6 @@ export default function SetsPage() {
           genre_name: mix.genre_name,
           track_count: mix.track_count,
           generated_at: mix.generated_at,
-          preview_track: mix.preview_track,
           is_liked_by_me: mix.is_liked_by_me,
         })) ?? [];
 
@@ -183,6 +204,9 @@ export default function SetsPage() {
     if (activeFilter === "Created") return [];
     return mixItems.filter((mix) => mix.title.toLowerCase().includes(filterText.toLowerCase()));
   }, [activeFilter, filterText, mixItems]);
+
+  const isMadeForYouItem = (item: SetsCarouselItem): item is MadeForYouItem =>
+    item.madeKind === "daily" || item.madeKind === "weekly";
 
   const genreItems = useMemo(() => {
     const items =
@@ -241,7 +265,7 @@ export default function SetsPage() {
                 />
               ))}
               {visibleMixItems.map((mix) =>
-                mix.madeKind ? (
+                isMadeForYouItem(mix) ? (
                   <MadeForYouCard
                     key={mix.id}
                     item={mix}
@@ -256,13 +280,13 @@ export default function SetsPage() {
                       label: mix.title,
                       flavor: "listening_history",
                       genre_name: null,
-                      cover_image: mix.cover_image ?? null,
+                      cover_image: mix.cover_image,
                       track_count: 0,
                       generated_at: new Date().toISOString(),
                       preview_track: {
                         id: mix.previewTrack?.id ?? mix.id,
                         title: mix.previewTrack?.title ?? mix.title,
-                        cover_image: mix.previewTrack?.coverUrl ?? mix.cover_image ?? null,
+                        cover_image: mix.previewTrack?.coverUrl ?? mix.cover_image,
                         duration: null,
                         genre_name: null,
                         play_count: 0,
