@@ -8,8 +8,8 @@ import {
 } from "@/services/api/playlist/playlist.service";
 import { Modal } from "../MessagingComponents/Modal";
 import { useLikesStore } from "@/stores/likes.store";
-import PlaylistList from "./PlaylistList";
-import CreatePlaylistTab from "./CreatePlaylistTab";
+import PlaylistList from "@/components/Playlist/PlaylistList";
+import CreatePlaylistTab from "@/components/Playlist/CreatePlaylistTab";
 
 interface DisplayTrack {
   id: string;
