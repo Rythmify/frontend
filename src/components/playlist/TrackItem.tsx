@@ -1,4 +1,4 @@
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { LuListEnd } from "react-icons/lu";
@@ -44,6 +44,10 @@ function TrackItem({
   const addToQueue = usePlayerStore((state) => state.addToQueue);
   const { isTrackLiked, toggleTrack } = useLikesStore();
   const [addedToQueue, setAddedToQueue] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const repostTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const artistName = track.artist_name ?? track.artist_name ?? "Unknown Artist";
   const artistSlug =
@@ -85,10 +89,39 @@ function TrackItem({
     e.stopPropagation();
     try {
       await repostTrack(track.track_id);
+      setReposted(true);
+      if (repostTimerRef.current) clearTimeout(repostTimerRef.current);
+      repostTimerRef.current = setTimeout(() => {
+        repostTimerRef.current = null;
+      }, 2000);
     } catch (err) {
       console.error("Failed to repost track:", err);
     }
   };
+
+  const handleCopyLink = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/${artistSlug}/${track.track_id}`,
+      );
+      setCopySuccess(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => {
+        setCopySuccess(false);
+        copyTimerRef.current = null;
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (repostTimerRef.current) clearTimeout(repostTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const formatDuration = (seconds?: number | null) => {
     if (typeof seconds !== "number" || Number.isNaN(seconds)) return "0:00";
@@ -227,9 +260,10 @@ function TrackItem({
             </TipBtn>
 
             <TipBtn
-              tooltip="Repost"
+              tooltip={reposted ? "Reposted" : "Repost"}
               data-test={`button-repost-track-${track.track_id}`}
               onClick={handleRepost}
+              active={reposted}
             >
               <BiRepost className="text-base" />
             </TipBtn>
@@ -248,12 +282,7 @@ function TrackItem({
             <TipBtn
               tooltip="Copy link"
               data-test={`button-copy-link-track-${track.track_id}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(
-                  `${window.location.origin}/${artistSlug}/${track.track_id}`,
-                );
-              }}
+              onClick={handleCopyLink}
             >
               <FaRegCopy />
             </TipBtn>
@@ -364,6 +393,16 @@ function TrackItem({
           artistName={artistName}
           onClose={() => setPlaylistModalOpen(false)}
         />
+      )}
+
+      {copySuccess && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 z-[9999] -translate-x-1/2 rounded-md bg-black/90 px-3 py-2 text-xs font-semibold text-white shadow-lg"
+        >
+          Link copied
+        </div>
       )}
     </>
   );

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import TrackItem from "@/components/playlist/TrackItem";
 import { useLikesStore } from "@/stores/likes.store";
@@ -8,6 +8,12 @@ import { useLikesStore } from "@/stores/likes.store";
 const mockNavigate = vi.fn();
 const mockSetTrack = vi.fn();
 const mockRepostTrack = vi.fn();
+const mockWriteText = vi.fn(() => Promise.resolve());
+
+Object.defineProperty(navigator, "clipboard", {
+  value: { writeText: mockWriteText },
+  configurable: true,
+});
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>(
@@ -58,6 +64,7 @@ describe("Playlist TrackItem", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockNavigate.mockReset();
+    mockWriteText.mockResolvedValue(undefined);
     vi.mocked(useLikesStore).mockReturnValue({
       isTrackLiked: vi.fn(() => false),
       toggleTrack: vi.fn(),
@@ -225,5 +232,55 @@ describe("Playlist TrackItem", () => {
         artistName: "ArtA",
       }),
     );
+  });
+
+  it("shows repost active styling after reposting", async () => {
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
+    fireEvent.click(screen.getByTestId("button-repost-track-t1"));
+
+    expect(mockRepostTrack).toHaveBeenCalledWith("t1");
+    await waitFor(() =>
+      expect(screen.getByTestId("button-repost-track-t1")).toHaveClass(
+        "text-[var(--color-accent)]",
+      ),
+    );
+  });
+
+  it("shows a link copied message when copy link is clicked", async () => {
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
+    fireEvent.click(screen.getByTestId("button-copy-link-track-t1"));
+
+    expect(mockWriteText).toHaveBeenCalledWith(
+      `${window.location.origin}/ua/t1`,
+    );
+    expect(await screen.findByText("Link copied")).toBeInTheDocument();
   });
 });
