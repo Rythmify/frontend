@@ -12,6 +12,7 @@ import VolumeSlider from "./VolumeSlider";
 import QueuePanel from "./QueuePanel";
 import { FaHeart, FaUserPlus, FaUserCheck } from "react-icons/fa";
 import { MdQueueMusic } from "react-icons/md";
+import FollowButton from "../UI/FollowButton";
 
 export default function StickyPlayer() {
   const {
@@ -25,13 +26,13 @@ export default function StickyPlayer() {
   } = usePlayerStore();
 
   const { isTrackLiked, toggleTrack } = useLikesStore();
-  const { user, toggleFollow } = useAuthStore();
+  const { user } = useAuthStore();
 
   const [queueOpen, setQueueOpen] = useState(false);
 
   const isLiked = currentTrack ? isTrackLiked(currentTrack.id) : false;
   const isFollowing = currentTrack
-    ? (user?.following_ids ?? []).includes(currentTrack.artistUsername)
+    ? (user?.following_ids ?? []).includes(currentTrack.artistId || currentTrack.artistUsername)
     : false;
 
   if (!currentTrack) return null;
@@ -64,22 +65,25 @@ export default function StickyPlayer() {
       {/* 7. Artwork + Track Info — far right */}
       <div className="flex items-center gap-2 shrink-0 w-40">
         {currentTrack.coverUrl && (
-          <img
-            data-test="player-track-artwork"
-            src={currentTrack.coverUrl}
-            alt={currentTrack.title}
-            className="w-10 h-10 rounded object-cover shrink-0"
-          />
+          <Link to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}/${currentTrack.trackSlug || currentTrack.id}`}>
+            <img
+              data-test="player-track-artwork"
+              src={currentTrack.coverUrl}
+              alt={currentTrack.title}
+              className="w-10 h-10 rounded object-cover shrink-0 hover:opacity-80 transition-opacity"
+            />
+          </Link>
         )}
         <div className="flex flex-col min-w-0">
-          <span
+          <Link
+            to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}/${currentTrack.trackSlug || currentTrack.id}`}
             data-test="player-track-title"
-            className="text-white text-md font-semibold truncate leading-tight"
+            className="text-white text-md font-semibold truncate leading-tight hover:text-accent transition-colors"
           >
             {currentTrack.title}
-          </span>
+          </Link>
           <Link
-            to={`/${currentTrack.artistUsername}`}
+            to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}`}
             data-test="player-artist-name"
             className="text-text-muted text-[14px] truncate hover:text-white transition-colors leading-tight"
           >
@@ -101,14 +105,17 @@ export default function StickyPlayer() {
       </button>
 
       {/* 5. Follow */}
-      <button
-        data-test="player-button-follow"
-        onClick={() => currentTrack && toggleFollow(currentTrack.artistUsername)}
-        className={`w-10 h-10 flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer text-base
-          ${isFollowing ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
-      >
-        {isFollowing ? <FaUserCheck /> : <FaUserPlus />}
-      </button>
+      <div className="shrink-0 flex items-center justify-center w-10 h-10">
+        <FollowButton
+          userId={currentTrack.artistId || currentTrack.artistUsername}
+          username={currentTrack.artistUsername}
+          className={`!p-0 !bg-transparent !w-full !h-full flex items-center justify-center text-base transition-colors duration-150
+            ${!user ? "opacity-30 grayscale" : ""}
+            ${isFollowing ? "text-accent hover:text-accent/80" : "text-white hover:text-text-muted"}`}
+        >
+          {isFollowing ? <FaUserCheck /> : <FaUserPlus />}
+        </FollowButton>
+      </div>
 
       {/* 6. Queue */}
       <button

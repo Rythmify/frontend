@@ -198,6 +198,7 @@ export default function UsernamePage() {
       coverUrl: t.cover_image ?? undefined,
       plays: t.play_count,
       likes: t.like_count,
+      artistId: t.user_id,
     }),
   );
 

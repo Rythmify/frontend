@@ -29,6 +29,7 @@ interface TrackItemProps {
   postedAt?: string;
   isPrivate?: boolean;
   trackSlug?: string;
+  artistId?: string;
   contextQueue?: Track[];
 }
 
@@ -57,6 +58,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
   postedAt = "",
   isPrivate = false,
   trackSlug,
+  artistId,
   contextQueue,
 }) => {
   const [hovered, setHovered] = useState(false);
@@ -152,6 +154,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       postedAt: postedAt,
       waveformData: [],
       isPrivate: isPrivate,
+      artistId: artistId || "",
     };
 
     if (contextQueue) {

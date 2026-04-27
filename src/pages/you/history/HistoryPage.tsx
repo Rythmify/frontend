@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useHistoryStore } from "@/stores/history.store";
 import TrackCard from "@/components/UI/card/Card";
 import StationCard from "@/components/UI/StationCard/StationCard";
@@ -6,6 +6,7 @@ import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import WaveformTrackCard from "@/components/track/TrackCard";
 import type { PersonalMix } from "@/services/api/discover.service";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
+import Spinner from "@/components/UI/Spinner";
 
 // ─── Constants ────────────────────────────────────────────
 
@@ -34,8 +35,14 @@ function mixToCard(mix: PersonalMix): MadeForYouItem {
 // ─── Page ─────────────────────────────────────────────────
 
 export default function HistoryPage() {
-  const { entries, clearHistory } = useHistoryStore();
+  const { entries, clearHistory, hydrateFromBackend } = useHistoryStore();
   const [filter, setFilter] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    hydrateFromBackend().finally(() => setIsLoading(false));
+  }, [hydrateFromBackend]);
 
   const q = filter.trim().toLowerCase();
 
@@ -44,7 +51,7 @@ export default function HistoryPage() {
     if (e.type === "track")
       return (
         e.item.title.toLowerCase().includes(q) ||
-        e.item.artistName.toLowerCase().includes(q)
+        (e.item.artistName || "").toLowerCase().includes(q)
       );
     if (e.type === "station") return e.item.name.toLowerCase().includes(q);
     if (e.type === "mix") return (e.item.label ?? "").toLowerCase().includes(q);
@@ -70,7 +77,7 @@ export default function HistoryPage() {
           <div className="flex items-center gap-3">
             <button
               data-test="history-clear-all"
-              onClick={clearHistory}
+              onClick={() => clearHistory()}
               className="text-white text-sm font-semibold cursor-pointer hover:opacity-70 transition-opacity"
             >
               Clear all history
@@ -87,7 +94,11 @@ export default function HistoryPage() {
         </div>
 
         {/* Cards row */}
-        {recentFiltered.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-10">
+            <Spinner />
+          </div>
+        ) : recentFiltered.length === 0 ? (
           <p
             className="text-text-secondary text-sm py-6"
             data-test="history-empty"
@@ -103,7 +114,7 @@ export default function HistoryPage() {
               if (entry.type === "track")
                 return (
                   <TrackCard
-                    key={`track-${entry.item.id}`}
+                    key={`track-${entry.item.id}-${entry.playedAt}`}
                     track={entry.item}
                     widthClassName={CARD_WIDTH}
                     contextQueue={tracksFiltered}
@@ -133,7 +144,7 @@ export default function HistoryPage() {
       </div>
 
       {/* ── Tracks played ───────────────────────────────────── */}
-      {tracksFiltered.length > 0 && (
+      {!isLoading && tracksFiltered.length > 0 && (
         <div
           className="flex flex-col gap-4"
           data-test="history-tracks-played"
@@ -148,8 +159,8 @@ export default function HistoryPage() {
             className="flex flex-col"
             data-test="history-tracks-played-list"
           >
-            {tracksFiltered.map((track) => (
-              <WaveformTrackCard key={track.id} track={track} contextQueue={tracksFiltered} />
+            {tracksFiltered.map((track, i) => (
+              <WaveformTrackCard key={`${track.id}-${i}`} track={track} contextQueue={tracksFiltered} />
             ))}
           </div>
         </div>
