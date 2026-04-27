@@ -264,14 +264,14 @@ function AlbumsForYouSlugPage() {
 
   if (loading)
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div data-test="albums-for-you-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading album...
       </div>
     );
 
   if (error || !playlist)
     return (
-      <div className="p-20 text-center text-red-500">
+      <div data-test="albums-for-you-slug-error" className="p-20 text-center text-red-500">
         {error || "Album not found."}
       </div>
     );
@@ -293,7 +293,7 @@ function AlbumsForYouSlugPage() {
 
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div className="flex-1 min-w-0">
+          <div data-test="albums-for-you-slug-main" className="flex-1 min-w-0">
             <PlaylistActionsAlbum
               playlist={playlist}
               onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
@@ -301,7 +301,7 @@ function AlbumsForYouSlugPage() {
               }
             />
 
-            <div className="flex flex-1 gap-6 mt-8">
+            <div data-test="albums-for-you-slug-content" className="flex flex-1 gap-6 mt-8">
               <OwnerInfo
                 ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}
@@ -321,7 +321,7 @@ function AlbumsForYouSlugPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-[280px] shrink-0">
+          <div data-test="albums-for-you-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar
               featuredArtists={featuredArtists}
               playlist={playlist}

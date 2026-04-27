@@ -109,12 +109,13 @@ const CreatePlaylistTab = ({
   };
 
   return (
-    <div className="mt-6 space-y-5 pb-2">
+    <div data-test="create-playlist-tab" className="mt-6 space-y-5 pb-2">
       <div>
         <label className="flex items-center gap-1 text-xs text-text-upload font-bold mb-2 tracking-wide">
           Playlist title <span className="text-[#ec5261]">*</span>
         </label>
         <input
+          data-test="input-playlist-title"
           type="text"
           value={playlistTitle}
           onChange={(e) => setPlaylistTitle(e.target.value)}
@@ -122,8 +123,8 @@ const CreatePlaylistTab = ({
         />
       </div>
 
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
+      <div data-test="create-playlist-tab-actions" className="flex justify-between items-center">
+        <div data-test="create-playlist-tab-privacy" className="flex items-center gap-2">
           <label className="text-sm text-text-upload font-bold tracking-wide mr-2">
             Privacy :
           </label>
@@ -174,11 +175,13 @@ const CreatePlaylistTab = ({
       )}
 
       {tracksToAdd.length > 0 && (
-        <TracksToAddList
-          tracks={tracksToAdd}
-          isPlaylist={isPlaylist}
-          onRemove={handleRemove}
-        />
+        <div data-test="create-playlist-tracks">
+          <TracksToAddList
+            tracks={tracksToAdd}
+            isPlaylist={isPlaylist}
+            onRemove={handleRemove}
+          />
+        </div>
       )}
 
       {/* Suggestions from Likes */}

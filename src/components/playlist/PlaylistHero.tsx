@@ -127,7 +127,7 @@ export default function PlaylistHero({
   return (
     <div
       data-test="playlist-hero"
-      className="container m-auto px-4 py-6 w-full flex flex-row items-stretch gap-6 relative overflow-hidden"
+      className="container m-auto px-4 py-6 w-full flex flex-col lg:flex-row items-stretch gap-6 relative overflow-hidden"
       style={{
         background:
           "linear-gradient(135deg, #6b7280 0%, #9ca3af 50%, #6b7280 100%)",
@@ -135,9 +135,12 @@ export default function PlaylistHero({
       }}
     >
       {/* Left Content Section */}
-      <div className="flex-1 flex flex-col justify-between z-10">
+      <div
+        data-test="playlist-hero-main"
+        className="flex-1 flex flex-col justify-between z-10"
+      >
         {/* Top Section: Play + Title */}
-        <div className="flex items-start gap-6">
+        <div data-test="playlist-hero-header" className="flex items-start gap-6">
           {/* Play / Pause Button */}
           <button
             data-test="button-play-pause-hero-playlist"
@@ -152,7 +155,7 @@ export default function PlaylistHero({
           </button>
 
           {/* Title Block */}
-          <div className="flex flex-col items-start">
+          <div data-test="playlist-hero-title-block" className="flex flex-col items-start">
             <div className="bg-[#121212] px-4 py-3">
               <h1 className="text-2xl md:text-3xl text-white font-bold tracking-tight leading-tight">
                 {heroTitle}
@@ -169,7 +172,7 @@ export default function PlaylistHero({
             </div>
 
             {/* "Playlist owner" */}
-            <div className="bg-[#121212] px-4 py-1.5">
+            <div data-test="playlist-hero-owner" className="bg-[#121212] px-4 py-1.5">
               <p className="text-[17px] text-white font-bold cursor-pointer">
                 {ownerLabel}
               </p>
@@ -188,7 +191,10 @@ export default function PlaylistHero({
       </div>
 
       {/* Right Side: Metadata and Cover */}
-      <div className="flex flex-col items-end gap-4 shrink-0 z-10">
+      <div
+        data-test="playlist-hero-meta"
+        className="flex flex-col items-start lg:items-end gap-4 shrink-0 z-10"
+      >
         {/* Time and Genre tags */}
         <div className="flex flex-col items-end gap-2 mt-2">
           <span className="text-white text-[13px] font-medium whitespace-nowrap">
@@ -203,7 +209,7 @@ export default function PlaylistHero({
       </div>
 
       {/* Playlist Cover at the bottom right */}
-      <div className="shrink-0 z-10">
+      <div data-test="playlist-hero-cover" className="shrink-0 z-10">
         <PlaylistCover
           playlistId={playlist.playlist_id}
           playlistName={playlist.name}

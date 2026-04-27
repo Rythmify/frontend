@@ -159,7 +159,7 @@ function TrackItem({
           )}
         </div>
 
-        <div className="flex-1 min-w-0 flex items-baseline gap-1.5 overflow-hidden">
+        <div data-test={`track-item-meta-${track.track_id}`} className="flex-1 min-w-0 flex items-baseline gap-1.5 overflow-hidden">
           <span
             className={`text-sm shrink-0 w-5 font-bold text-right ${playbackTextClass}`}
           >
@@ -190,6 +190,7 @@ function TrackItem({
 
         <div className="flex items-center shrink-0 ml-3">
           <div
+            data-test={`track-item-actions-${track.track_id}`}
             className={`flex items-center gap-0.5 transition-opacity duration-150 ${hovered ? "opacity-100" : "opacity-0 pointer-events-none"}`}
           >
             <TipBtn
@@ -233,7 +234,7 @@ function TrackItem({
               <FaRegCopy />
             </TipBtn>
 
-            <div className="relative">
+            <div className="relative" data-test={`track-item-more-wrap-${track.track_id}`}>
               <TipBtn
                 tooltip="More"
                 data-test={`button-more-track-${track.track_id}`}
@@ -300,6 +301,7 @@ function TrackItem({
           </div>
 
           <span
+            data-test={`track-item-play-count-${track.track_id}`}
             className={`inline-flex items-center justify-end gap-1 px-2 text-[11px] text-text-muted tabular-nums w-14 text-right transition-opacity duration-150 ${
               hovered ? "opacity-0" : "opacity-100"
             }`}

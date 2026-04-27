@@ -212,20 +212,14 @@ function MadeForYouSlugPage() {
 
   if (loading)
     return (
-      <div
-        data-test="made-for-you-slug-loading"
-        className="animate-pulse p-20 text-center text-white"
-      >
+      <div data-test="made-for-you-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading made for you...
       </div>
     );
 
   if (error || !playlist)
     return (
-      <div
-        data-test="made-for-you-slug-error"
-        className="p-20 text-center text-red-500"
-      >
+      <div data-test="made-for-you-slug-error" className="p-20 text-center text-red-500">
         {error || "Made for you mix not found."}
       </div>
     );
@@ -268,10 +262,7 @@ function MadeForYouSlugPage() {
             </div>
           </div>
 
-          <div
-            className="w-full lg:w-70 shrink-0"
-            data-test="made-for-you-slug-sidebar"
-          >
+          <div className="w-full lg:w-[280px] shrink-0" data-test="made-for-you-slug-sidebar">
             <PlaylistSidebar playlist={playlist} />
             <GuestPageFooter />
           </div>

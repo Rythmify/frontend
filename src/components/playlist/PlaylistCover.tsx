@@ -112,7 +112,7 @@ export default function PlaylistCover({
     "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=800&q=80";
 
   const body = (
-    <div className="relative group">
+    <div data-test="playlist-cover-body" className="relative group">
       {isForYou ? (
         <div className="relative w-64 h-64 lg:w-80 lg:h-80 rounded-md overflow-hidden shadow-2xl border border-white/5 bg-input-bg">
           <img
@@ -272,7 +272,10 @@ export default function PlaylistCover({
   );
 
   return (
-    <div className="hidden md:flex shrink-0 items-center justify-center py-4 z-10">
+    <div
+      data-test="playlist-cover-wrapper"
+      className="hidden md:flex shrink-0 items-center justify-center py-4 z-10"
+    >
       {body}
     </div>
   );

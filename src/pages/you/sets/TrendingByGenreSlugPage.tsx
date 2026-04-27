@@ -280,7 +280,7 @@ function TrendingByGenreSlugPage() {
 
   if (loading) {
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div data-test="trending-by-genre-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading genre...
       </div>
     );
@@ -288,7 +288,7 @@ function TrendingByGenreSlugPage() {
 
   if (error || !playlist) {
     return (
-      <div className="p-20 text-center text-red-500">
+      <div data-test="trending-by-genre-slug-error" className="p-20 text-center text-red-500">
         {error || "Genre not found."}
       </div>
     );
@@ -312,7 +312,7 @@ function TrendingByGenreSlugPage() {
 
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div className="flex-1 min-w-0">
+          <div data-test="trending-by-genre-slug-main" className="flex-1 min-w-0">
             {isAuthenticated ? (
               <PlaylistActionsAlbum
                 playlist={playlist}
@@ -334,7 +334,7 @@ function TrendingByGenreSlugPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-[280px] shrink-0">
+          <div data-test="trending-by-genre-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar
               featuredArtists={featuredArtists}
               playlist={playlist}

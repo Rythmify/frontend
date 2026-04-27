@@ -115,7 +115,7 @@ export default function PlaylistActions({
   return (
     <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
       <div
-        data-test="playlist-action-bar"
+        data-test="playlist-actions-for-you"
         className="flex flex-row items-center gap-2 py-4"
       >
         {/* Like Button */}
@@ -129,6 +129,7 @@ export default function PlaylistActions({
             })
           }
           active={liked}
+          dataTest="playlist-actions-for-you-like"
         >
           <FaHeart
             className={`text-[14px] ${liked ? "text-accent" : "text-white"}`}
@@ -137,13 +138,21 @@ export default function PlaylistActions({
         </ActionButton>
 
         {/* Share Button */}
-        <ActionButton onClick={() => setShareOpen(true)} active={shareOpen}>
+        <ActionButton
+          onClick={() => setShareOpen(true)}
+          active={shareOpen}
+          dataTest="playlist-actions-for-you-share"
+        >
           <LuShare className="text-[16px]" />
           Share
         </ActionButton>
 
         {/* Add to Next up Button */}
-        <ActionButton onClick={handleAddToNextUp} active={addedToQueue}>
+        <ActionButton
+          onClick={handleAddToNextUp}
+          active={addedToQueue}
+          dataTest="playlist-actions-for-you-next-up"
+        >
           <LuListEnd className="text-[18px]" />
           Add to Next up
         </ActionButton>
@@ -154,6 +163,7 @@ export default function PlaylistActions({
             <ActionButton
               onClick={() => setShowPlaylistModal(true)}
               active={showPlaylistModal}
+              dataTest="playlist-actions-for-you-add-to-playlist"
             >
               <FaAddToPlaylist className="text-[14px]" />
               Add to playlist
@@ -163,6 +173,7 @@ export default function PlaylistActions({
               <ActionButton
                 onClick={() => setMoreOpen((p) => !p)}
                 active={moreOpen}
+                dataTest="playlist-actions-for-you-more"
               >
                 <FaEllipsisH className="text-[14px]" />
                 More
@@ -231,15 +242,18 @@ function ActionButton({
   onClick,
   active = false,
   className = "",
+  dataTest,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
   className?: string;
+  dataTest?: string;
 }) {
   return (
     <button
       onClick={onClick}
+      data-test={dataTest}
       className={`
         flex items-center gap-2 px-3 py-1.5 h-[32px]
         rounded-[4px] transition-colors duration-150 cursor-pointer

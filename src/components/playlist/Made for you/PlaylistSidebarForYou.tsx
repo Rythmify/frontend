@@ -90,7 +90,7 @@ export default function PlaylistSidebar({
           <p className="text-[var(--color-text-hover)] text-[12px] font-bold uppercase py-2 tracking-widest mb-4 flex items-center gap-2">
             Artists Featured
           </p>
-          <div className="flex flex-col gap-4">
+          <div data-test="playlist-sidebar-featured-list" className="flex flex-col gap-4">
             {artistsToShow.map(
               (artist) => (
                 <ArtistCard key={artist.id} artist={artist} />

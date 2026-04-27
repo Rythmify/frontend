@@ -478,7 +478,7 @@ export default function PlaylistComponent({
       </div>
 
       {/* Right column */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center sm:justify-start gap-1 sm:gap-1.5">
+      <div data-test="playlist-component-details" className="flex-1 min-w-0 flex flex-col justify-center sm:justify-start gap-1 sm:gap-1.5">
 
         {/* Row 1: creator / repostedBy  ·  title  ·  timestamp */}
         <div className="flex flex-col sm:flex-row items-start justify-between gap-0.5 sm:gap-4">
@@ -566,7 +566,7 @@ export default function PlaylistComponent({
         )}
 
         {/* Action bar */}
-        <div className="flex flex-wrap items-center justify-between gap-y-3 mt-4">
+        <div data-test="playlist-component-actions" className="flex flex-wrap items-center justify-between gap-y-3 mt-4">
           <div className="flex flex-wrap items-center gap-2">
             <ScBtn icon={<FaHeart size={13} />} label={fmtN(likeCount)} active={liked} tooltip="Like" onClick={handleLike} dataTest="playlist-component-btn-like" />
             <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} active={reposted} tooltip="Repost" onClick={handleRepost} dataTest="playlist-component-btn-repost" />

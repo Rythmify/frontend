@@ -123,7 +123,7 @@ export default function SetsPage() {
       />
 
       {/* Main Content Carousel */}
-      <div className="px-4 pt-2 pb-10">
+      <div data-test="sets-page-content" className="px-4 pt-2 pb-10">
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         {loading ? (
@@ -139,7 +139,7 @@ export default function SetsPage() {
             ))}
           </HorizontalCarousel>
         ) : (
-          <div className="flex flex-1 justify-center items-center py-20">
+          <div data-test="sets-page-empty" className="flex flex-1 justify-center items-center py-20">
             <p className="text-text-upload text-2xl font-bold text-center">
               {filterText
                 ? "No playlists match your search."
