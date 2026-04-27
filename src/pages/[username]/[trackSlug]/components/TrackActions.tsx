@@ -17,6 +17,7 @@ import { postComment } from "../../../../services/track.service";
 import { usePlayerStore } from "../../../../stores/player.store";
 import { useAuthStore } from "../../../../stores/auth.store";
 import { useLikesStore } from "../../../../stores/likes.store";
+import { toast } from "sonner";
 
 interface TrackActionsProps {
   track: Track;
@@ -35,21 +36,20 @@ export default function TrackActions({
   const { user } = useAuthStore();
   const currentUserAvatar = user?.avatar || "https://picsum.photos/seed/rythmify/100/100";
   
-  const { isTrackLiked, toggleTrack: globalToggleTrack } = useLikesStore();
+  const { isTrackLiked, toggleTrack: globalToggleTrack, getTrackStats, isTrackReposted, toggleRepost: globalToggleRepost } = useLikesStore();
+  
   const liked = isTrackLiked(track.id);
-  const [reposted, setReposted] = useState(track.isReposted || false);
-  const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
-  const [repostCount, setRepostCount] = useState(track.repostCount ?? 0);
-  const [playCount, setPlayCount] = useState(track.playCount ?? 0);
+  const globalStats = getTrackStats(track.id);
+  
+  const reposted = isTrackReposted(track.id) || (globalStats.isReposted ?? track.isReposted ?? false);
+  const likeCount = globalStats.likeCount ?? track.likeCount ?? 0;
+  const repostCount = globalStats.repostCount ?? track.repostCount ?? 0;
+  const playCount = globalStats.playCount ?? track.playCount ?? 0;
   const [commentCount, setCommentCount] = useState(track.commentCount ?? 0);
 
-  // Sync counts when track data changes from MSW
+  // Sync comment count when track data changes
   useEffect(() => {
-    setLikeCount(track.likeCount ?? 0);
-    setRepostCount(track.repostCount ?? 0);
-    setPlayCount(track.playCount ?? 0);
     setCommentCount(track.commentCount ?? 0);
-    setReposted(track.isReposted || false);
   }, [track]);
 
   const [shareOpen, setShareOpen] = useState(false);
@@ -70,36 +70,22 @@ export default function TrackActions({
 
   // Like - uses global store
   const handleLike = async () => {
-    const wasLiked = liked;
-    setLikeCount((p) => wasLiked ? Math.max(0, p - 1) : p + 1);
-    globalToggleTrack(track);
+    globalToggleTrack(track).catch(() => {
+      toast.error("Failed to like track");
+    });
   };
 
   const isOwner = !!user && (user.username === track.artistUsername || user.id === track.artistId);
 
-  // Repost - calls /api/tracks/:id/repost
+  // Repost - calls store
   const handleRepost = async () => {
     if (isOwner) {
-      alert("You cannot repost your own track!");
+      toast.error("You cannot repost your own track!");
       return;
     }
-    const wasReposted = reposted;
-    // Optimistic update
-    setReposted(!wasReposted);
-    setRepostCount((p) => wasReposted ? Math.max(0, p - 1) : p + 1);
-
-    try {
-      if (wasReposted) {
-        await engagementService.removeRepost(track.id);
-      } else {
-        await engagementService.repostTrack(track.id);
-      }
-    } catch (err: any) {
-      console.error("Repost failed", err);
-      // Handle generic errors
-      setReposted(wasReposted);
-      setRepostCount((p) => wasReposted ? p + 1 : Math.max(0, p - 1));
-    }
+    globalToggleRepost(track).catch(() => {
+      toast.error("Failed to repost track");
+    });
   };
 
   // Comment - calls MSW (/api/tracks/:id/comments)
@@ -194,7 +180,7 @@ export default function TrackActions({
                 data-test="button-copy-link"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
-                  alert("Link copied!");
+                  toast.success("Link copied to clipboard!");
                 }}
                 tooltip="Copy Link"
               >
@@ -236,7 +222,7 @@ export default function TrackActions({
                       label="Add to playlist"
                       data-test="dropdown-item-add-playlist"
                       onClick={() => {
-                        alert("Add to playlist feature is not implemented yet.");
+                        toast.info("Add to playlist feature is coming soon!");
                         setMoreOpen(false);
                       }}
                     />

@@ -25,6 +25,7 @@ import { audio, seekAudio, setGlobalWaveSurfer, setTrackLoadedLocally } from "..
 import * as engagementService from "../../services/engagement.service";
 import { getTrackWaveform } from "../../services/track.service";
 import { formatPostedAt } from "../../services/Time";
+import { toast } from "sonner";
 
 
 //  Helpers
@@ -312,7 +313,7 @@ export default function PlaylistComponent({
   onEdit,
   onDelete,
 }: PlaylistComponentProps) {
-  const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore();
+  const { currentTrack, isPlaying, setTrack, togglePlay, addTracksNext } = usePlayerStore();
   const { user } = useAuthStore();
 
   const isOwner = !!user && user.username === playlist.creatorUsername;
@@ -324,11 +325,22 @@ export default function PlaylistComponent({
   const isComponentActive = !!activeTrack;
   const componentIsPlaying = isComponentActive && isPlaying;
 
-  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const { 
+    isPlaylistLiked, 
+    togglePlaylist, 
+    isPlaylistReposted, 
+    togglePlaylistRepost,
+    getItemStats,
+    updateItemStats 
+  } = useLikesStore();
+
+  const globalStats = getItemStats(playlist.id);
   const liked = isPlaylistLiked(playlist.id);
-  const [reposted, setReposted] = useState(false);
-  const [likeCount, setLikeCount] = useState(playlist.likeCount ?? 0);
-  const [repostCount, setRepostCount] = useState(playlist.repostCount ?? 0);
+  const reposted = isPlaylistReposted(playlist.id) || (globalStats.isReposted ?? false);
+
+  const likeCount = globalStats.likeCount ?? playlist.likeCount ?? 0;
+  const repostCount = globalStats.repostCount ?? playlist.repostCount ?? 0;
+
   const [showSharePopup, setShowSharePopup] = useState(false);
 
   // Synthetic Track object fed to SharePopup
@@ -348,14 +360,20 @@ export default function PlaylistComponent({
   } as unknown as Track;
 
   useEffect(() => {
-    setLikeCount(playlist.likeCount ?? 0);
-    setRepostCount(playlist.repostCount ?? 0);
-  }, [playlist.likeCount, playlist.repostCount]);
+    if (globalStats.likeCount === undefined) {
+      updateItemStats(playlist.id, {
+        likeCount: playlist.likeCount,
+        repostCount: playlist.repostCount,
+        isReposted: !!reposted
+      });
+    }
+  }, [playlist.id]);
 
   const handleLike = async () => {
-    const wasLiked = liked;
-    // Update local count optimistically
-    setLikeCount((p) => (wasLiked ? p - 1 : p + 1));
+    if (isOwner) {
+      toast.error("You cannot like your own playlist!");
+      return;
+    }
 
     // Map minimal playlist data for the store
     const playlistData: PlaylistCardData = {
@@ -364,40 +382,31 @@ export default function PlaylistComponent({
       owner: playlist.creatorName,
       coverUrl: playlist.coverUrl ?? firstTrack?.coverUrl ?? null,
       isPrivate: playlist.isPrivate || false,
-      isLiked: !wasLiked,
+      isLiked: !liked,
     };
 
     try {
       await togglePlaylist(playlistData);
     } catch (err) {
-      // Revert local count on failure
-      setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
       console.error("Failed to toggle playlist like:", err);
     }
   };
 
   const handleRepost = async () => {
-    const wasReposted = reposted;
-    const newReposted = !wasReposted;
-
-    // Optimistic update
-    setReposted(newReposted);
-    setRepostCount((p) => (wasReposted ? p - 1 : p + 1));
+    if (isOwner) {
+      toast.error("You cannot repost your own playlist!");
+      return;
+    }
 
     try {
-      if (newReposted) {
-        await engagementService.repostPlaylist(playlist.id);
-      } else {
-        await engagementService.removePlaylistRepost(playlist.id);
-      }
+      await togglePlaylistRepost(playlist.id, { repostCount: playlist.repostCount });
     } catch (err: any) {
-      // Revert on failure
-      setReposted(wasReposted);
-      setRepostCount((p) => (wasReposted ? p + 1 : p - 1));
       if (err.response?.status === 404) {
-        alert("Reposting is not supported by the Rythmify backend API yet!");
+        toast.error("Reposting is not supported by the Rythmify backend API yet!");
       } else if (err.response?.status === 401) {
-        alert("Session expired or unauthorized. Please log out and back in.");
+        toast.error("Session expired or unauthorized. Please log out and back in.");
+      } else {
+        toast.error("Failed to repost playlist");
       }
       console.error("Failed to repost playlist:", err);
     }
@@ -570,11 +579,30 @@ export default function PlaylistComponent({
         {/* Action bar */}
         <div className="flex flex-wrap items-center justify-between gap-y-3 mt-4">
           <div className="flex flex-wrap items-center gap-2">
-            <ScBtn icon={<FaHeart size={13} />} label={fmtN(likeCount)} active={liked} tooltip="Like" onClick={handleLike} dataTest="playlist-component-btn-like" />
-            <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} active={reposted} tooltip="Repost" onClick={handleRepost} dataTest="playlist-component-btn-repost" />
+            {!isOwner ? (
+              <>
+                <ScBtn icon={<FaHeart size={13} />} label={fmtN(likeCount)} active={liked} tooltip="Like" onClick={handleLike} dataTest="playlist-component-btn-like" />
+                <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} active={reposted} tooltip="Repost" onClick={handleRepost} dataTest="playlist-component-btn-repost" />
+              </>
+            ) : (
+              <>
+                <ScBtn icon={<LuPencil size={14} />} label="Edit" onClick={onEdit} tooltip="Edit Playlist" dataTest="playlist-component-btn-edit" />
+                <ScBtn icon={<LuTrash2 size={14} />} label="Delete" onClick={onDelete} tooltip="Delete Playlist" dataTest="playlist-component-btn-delete" />
+              </>
+            )}
             <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowSharePopup(true)} dataTest="playlist-component-btn-share" />
             <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} dataTest="playlist-component-btn-copy" />
-            <ScBtn icon={<MdQueueMusic size={17} />} tooltip="Add to Next up" onClick={() => firstTrack && setTrack(firstTrack, playlist.tracks)} dataTest="playlist-component-btn-add-to-next" />
+            <ScBtn 
+              icon={<MdQueueMusic size={17} />} 
+              tooltip="Add to Next up" 
+              onClick={() => {
+                if (playlist.tracks.length > 0) {
+                  addTracksNext(playlist.tracks);
+                  toast.success(`Playlist "${playlist.title}" added to Next up`);
+                }
+              }} 
+              dataTest="playlist-component-btn-add-to-next" 
+            />
           </div>
 
           {/* Stat: total play count (sum of tracks) */}

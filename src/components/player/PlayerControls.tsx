@@ -7,6 +7,7 @@ import {
   FaRandom,
 } from "react-icons/fa";
 import { MdRepeat, MdRepeatOne } from "react-icons/md";
+import { toast } from "sonner";
 
 export default function PlayerControls() {
   const {
@@ -16,9 +17,31 @@ export default function PlayerControls() {
     togglePlay,
     next,
     previous,
-    toggleShuffle,
-    toggleRepeat,
+    toggleShuffle: toggleShuffleOriginal,
+    toggleRepeat: toggleRepeatOriginal,
   } = usePlayerStore();
+
+  const toggleShuffle = () => {
+    toggleShuffleOriginal();
+    const isShuffleNow = !isShuffle;
+    toast.info(isShuffleNow ? "Shuffle on" : "Shuffle off", {
+      icon: <FaRandom size={14} />,
+      duration: 1500,
+    });
+  };
+
+  const toggleRepeat = () => {
+    toggleRepeatOriginal();
+    // Store order: none -> one -> all -> none
+    let modeText = "Off";
+    if (repeatMode === "none") modeText = "One";
+    else if (repeatMode === "one") modeText = "All";
+    
+    toast.info(`Repeat: ${modeText}`, {
+      icon: modeText === "One" ? <MdRepeatOne size={16} /> : <MdRepeat size={16} />,
+      duration: 1500,
+    });
+  };
 
   return (
     <div data-test="player-controls" className="flex items-center gap-1">

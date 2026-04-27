@@ -62,7 +62,9 @@ interface PlayerState {
   toggleLike: () => void;
   toggleAutoplay: () => void;
   addToQueue: (track: Track) => void;
+  addTracksToQueue: (tracks: Track[]) => void;
   addNextInQueue: (track: Track) => void;
+  addTracksNext: (tracks: Track[]) => void;
   removeFromQueue: (index: number) => void;
   reorderQueue: (fromIndex: number, toIndex: number) => void;
   clearQueue: () => void;
@@ -272,6 +274,20 @@ export const usePlayerStore = create<PlayerState>()(
           const newQueue = [
             ...s.queue.slice(0, next),
             track,
+            ...s.queue.slice(next),
+          ];
+          return { queue: newQueue };
+        }),
+
+      addTracksToQueue: (tracks) =>
+        set((s) => ({ queue: [...s.queue, ...tracks] })),
+
+      addTracksNext: (tracks) =>
+        set((s) => {
+          const next = s.queueIndex + 1;
+          const newQueue = [
+            ...s.queue.slice(0, next),
+            ...tracks,
             ...s.queue.slice(next),
           ];
           return { queue: newQueue };
