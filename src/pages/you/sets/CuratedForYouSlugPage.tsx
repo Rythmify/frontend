@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import PlaylistSidebar from "../../../components/playlist/Made for you/PlaylistSidebarForYou";
-import PlaylistActions from "../../../components/playlist/Made for you/PlaylistActionsForYou";
+import PlaylistActionsGuest from "@/components/playlist/PlaylistActionsGuest";
 import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   type PlaylistDetails,
@@ -229,14 +229,14 @@ function CuratedForYouSlugPage() {
 
   if (loading)
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div data-test="curated-for-you-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading mix...
       </div>
     );
 
   if (error || !playlist)
     return (
-      <div className="p-20 text-center text-red-500">
+      <div data-test="curated-for-you-slug-error" className="p-20 text-center text-red-500">
         {error || "Mix not found."}
       </div>
     );
@@ -255,11 +255,11 @@ function CuratedForYouSlugPage() {
         isMix={true}
       />
 
-      <div className=" mx-auto">
+      <div className="mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div className="flex-1 min-w-0">
-            <PlaylistActions playlist={playlist} />
-            <div className="mt-8">
+          <div data-test="curated-for-you-slug-main" className="flex-1 min-w-0">
+            <PlaylistActionsGuest playlist={playlist} />
+            <div data-test="curated-for-you-slug-tracklist" className="mt-8">
               <TrackList
                 tracks={playlist.tracks}
                 currentTrackId={currentTrack?.id}
@@ -269,7 +269,7 @@ function CuratedForYouSlugPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-70 shrink-0">
+          <div data-test="curated-for-you-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar
               playlist={playlist}
               featuredArtists={featuredArtists}
