@@ -4,6 +4,7 @@ import TrackCard from "@/components/UI/card/Card";
 import StationCard from "@/components/UI/StationCard/StationCard";
 import MixCard from "@/components/UI/MixCard/MixCard";
 import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
+import AlbumCard from "@/components/UI/AlbumCard";
 import GenreCard from "@/components/UI/GenreCard/GenreCard";
 import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import { mockRecentlyPlayedTracks } from "@/services/mocks/discover";
@@ -24,12 +25,38 @@ const RecentlyPlayed = () => {
       .catch(() => setApiTracks(mockRecentlyPlayedTracks));
   }, []);
 
-  const recentEntries: HistoryEntry[] =
+  const rawEntries: HistoryEntry[] =
     entries.length > 0
       ? entries
       : (apiTracks.length > 0 ? apiTracks : mockRecentlyPlayedTracks).map(
           (t) => ({ type: "track" as const, item: t, playedAt: "" }),
         );
+
+  // For each preview track ID, record the index of the most-recent card entry
+  // that owns it. A track entry is only suppressed when the card is MORE RECENT
+  // (lower index) — i.e. the card was played after the auto-added track. If the
+  // user later plays the same track explicitly it will be at a lower index than
+  // the card and must be kept.
+  const cardPreviewIndexMap = new Map<string, number>();
+  rawEntries.forEach((e, i) => {
+    let previewId: string | null = null;
+    if (e.type === "station")    previewId = e.item.previewTrack ? String(e.item.previewTrack.id) : null;
+    if (e.type === "mix")        previewId = e.item.preview_track ? e.item.preview_track.id : null;
+    if (e.type === "album")      previewId = e.item.previewTrack ? String(e.item.previewTrack.id) : null;
+    if (e.type === "genre")      previewId = e.item.previewTrack ? String(e.item.previewTrack.id) : null;
+    if (e.type === "madeForYou") previewId = e.item.previewTrack ? String(e.item.previewTrack.id) : null;
+    if (previewId !== null && !cardPreviewIndexMap.has(previewId)) {
+      cardPreviewIndexMap.set(previewId, i);
+    }
+  });
+
+  const recentEntries = rawEntries.filter((e, i) => {
+    if (e.type !== "track") return true;
+    const cardIdx = cardPreviewIndexMap.get(String(e.item.id));
+    // Keep the track if no card owns it, or if the track is more recent (track
+    // index < card index means user played it explicitly after the card session).
+    return cardIdx === undefined || cardIdx > i;
+  });
 
   return (
     <div data-test="section-recently-played">
@@ -59,6 +86,14 @@ const RecentlyPlayed = () => {
             return (
               <PlaylistCard
                 key={`playlist-${entry.item.id}`}
+                item={entry.item}
+                widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"
+              />
+            );
+          if (entry.type === "album")
+            return (
+              <AlbumCard
+                key={`album-${entry.item.id}`}
                 item={entry.item}
                 widthClassName="w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]"
               />

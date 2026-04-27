@@ -245,7 +245,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
               {formatCount(likes)}
             </span>
           )}
-          {reposts !== undefined && (
+          {/* {reposts !== undefined && (
             <span
               data-test={`track-reposts-${id}`}
               className="flex cursor-pointer items-center gap-1"
@@ -263,7 +263,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
               <i className="fa-solid fa-comment text-[10px]" />
               {comments.toLocaleString()}
             </button>
-          )}
+          )} */}
         </div>
       </div>
 

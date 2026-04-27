@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { Station } from "@/types/station";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
@@ -84,6 +84,19 @@ export default function StationCard({
   const liked = isStationLiked(station.id);
   const navigate = useNavigate();
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const fetchTracksForModal = useCallback(
+    () =>
+      getStationTracks(station.seedArtist.id).then((r) =>
+        r.tracks.map((t) => ({
+          id: t.track_id,
+          title: t.title ?? "",
+          artistName: t.artist_name ?? "",
+          coverUrl: t.cover_image ?? undefined,
+        })),
+      ),
+    [station.seedArtist.id],
+  );
 
   const isThisStationPlaying =
     isPlaying &&
@@ -219,16 +232,7 @@ export default function StationCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          fetchTracks={() =>
-            getStationTracks(station.seedArtist.id).then((r) =>
-              r.tracks.map((t) => ({
-                id: t.track_id,
-                title: t.title ?? "",
-                artistName: t.artist_name ?? "",
-                coverUrl: t.cover_image ?? undefined,
-              })),
-            )
-          }
+          fetchTracks={fetchTracksForModal}
           trackTitle={station.name}
           onClose={() => setShowPlaylistModal(false)}
         />
