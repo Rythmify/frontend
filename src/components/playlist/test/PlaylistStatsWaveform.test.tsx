@@ -53,7 +53,7 @@ describe("PlaylistStatsWaveform", () => {
   });
 
   it("shows the waveform when not playing", () => {
-    render(<PlaylistStatsWaveform playlist={playlist} />);
+    render(<PlaylistStatsWaveform playlist={playlist} activeTrackId="t1" />);
 
     expect(screen.getByTestId("playlist-waveform-container")).toBeInTheDocument();
     expect(screen.getByTestId("mock-track-waveform")).toBeInTheDocument();

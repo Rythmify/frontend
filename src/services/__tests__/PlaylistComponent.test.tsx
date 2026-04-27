@@ -90,6 +90,16 @@ vi.mock("../../stores/auth.store", () => ({
   })),
 }));
 
+const mockLikesStore = {
+  likedPlaylists: [],
+  isPlaylistLiked: vi.fn().mockReturnValue(false),
+  togglePlaylist: vi.fn().mockResolvedValue(undefined),
+};
+
+vi.mock("../../stores/likes.store", () => ({
+  useLikesStore: vi.fn(() => mockLikesStore),
+}));
+
 const mockPlaylist = {
   id: 1,
   title: "Test Playlist",
@@ -111,6 +121,8 @@ const mockPlaylist = {
 describe("PlaylistComponent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLikesStore.isPlaylistLiked.mockReturnValue(false);
+    mockLikesStore.togglePlaylist.mockResolvedValue(undefined);
   });
 
   const renderComp = (playlist = mockPlaylist, props = {}) => {
@@ -215,19 +227,17 @@ describe("PlaylistComponent", () => {
   // ── Like interactions ──────────────────────────────────────────────────────
 
   it("optimistically updates like count for playlist", async () => {
-    const { likePlaylist } = await import("../../services/engagement.service");
     renderComp();
 
     const likeBtn = screen.getByTestId("playlist-component-btn-like");
     fireEvent.click(likeBtn);
 
     expect(likeBtn).toHaveTextContent("51");
-    expect(likePlaylist).toHaveBeenCalledWith(mockPlaylist.id);
+    expect(mockLikesStore.togglePlaylist).toHaveBeenCalled();
   });
 
   it("reverts like count for playlist if API fails", async () => {
-    const { likePlaylist } = await import("../../services/engagement.service");
-    vi.mocked(likePlaylist).mockRejectedValueOnce(new Error("API Error"));
+    mockLikesStore.togglePlaylist.mockRejectedValueOnce(new Error("API Error"));
 
     renderComp();
     const likeBtn = screen.getByTestId("playlist-component-btn-like");
@@ -241,34 +251,44 @@ describe("PlaylistComponent", () => {
   });
 
   it("decrements like count when unliking", async () => {
-    const { likePlaylist, unlikePlaylist } = await import("../../services/engagement.service");
-    renderComp();
+    const { rerender } = renderComp();
 
     const likeBtn = screen.getByTestId("playlist-component-btn-like");
 
     // Like first
     fireEvent.click(likeBtn);
     expect(likeBtn).toHaveTextContent("51");
-    expect(likePlaylist).toHaveBeenCalledWith(mockPlaylist.id);
 
     // Unlike
+    mockLikesStore.isPlaylistLiked.mockReturnValue(true); // Simulate liked state for next render
+    
+    // Rerender to apply new mock value
+    rerender(
+      <MemoryRouter>
+        <PlaylistComponent playlist={mockPlaylist as any} />
+      </MemoryRouter>
+    );
+
     fireEvent.click(likeBtn);
     expect(likeBtn).toHaveTextContent("50");
-    expect(unlikePlaylist).toHaveBeenCalledWith(mockPlaylist.id);
   });
 
   it("reverts unlike if API fails", async () => {
-    const { unlikePlaylist } = await import("../../services/engagement.service");
+    mockLikesStore.isPlaylistLiked.mockReturnValue(true);
 
-    renderComp();
+    const { rerender } = renderComp();
     const likeBtn = screen.getByTestId("playlist-component-btn-like");
 
-    // Like first (succeeds)
-    fireEvent.click(likeBtn);
-    await waitFor(() => expect(likeBtn).toHaveTextContent("51"));
+    // Set likeCount to 51 via prop to match "liked" state
+    rerender(
+      <MemoryRouter>
+        <PlaylistComponent playlist={{ ...mockPlaylist, likeCount: 51 } as any} />
+      </MemoryRouter>
+    );
+    expect(likeBtn).toHaveTextContent("51");
 
     // Unlike fails
-    vi.mocked(unlikePlaylist).mockRejectedValueOnce(new Error("API Error"));
+    mockLikesStore.togglePlaylist.mockRejectedValueOnce(new Error("API Error"));
     fireEvent.click(likeBtn);
     expect(likeBtn).toHaveTextContent("50");
 

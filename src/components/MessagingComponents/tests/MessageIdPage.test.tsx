@@ -12,9 +12,25 @@ vi.mock("@/services/api/messaging/conversationApi", () => ({
   markMessageReadState: vi.fn(),
 }));
 
-// ── Stable navigate mock ───────────────────────────────────────────────────
-// Declared before vi.mock so the hoisted factory captures the real reference.
-const mockNavigate = vi.fn();
+vi.mock("@/services/api/messaging/socketService", () => ({
+  joinConversation: vi.fn(),
+  leaveConversation: vi.fn(),
+  getSocket: vi.fn(() => ({
+    on: vi.fn(),
+    off: vi.fn(),
+  })),
+}));
+
+vi.mock("@/stores/messaging.store", () => ({
+  useMessagingStore: vi.fn(() => ({
+    refreshUnreadCount: vi.fn(),
+  })),
+}));
+
+const { mockNavigate } = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+}));
+
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
   return { ...actual, useNavigate: () => mockNavigate };
