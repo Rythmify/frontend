@@ -86,6 +86,7 @@ export interface UpdatePlaylistPayload {
   genre_id?: string | null;
   /** Replaces all existing playlist tags when provided */
   tags?: string[];
+  is_album_view?: boolean;
 }
 
 export interface PlaylistTracksPage {
@@ -158,6 +159,30 @@ export interface MadeForYouResponse {
     cover_url: string | null;
     tracks: MadeForYouTrackItem[];
   };
+}
+
+export interface TrendingByGenreTrack {
+  id: string;
+  title: string;
+  cover_image: string | null;
+  duration: number | null;
+  genre_name: string | null;
+  play_count: number;
+  like_count: number;
+  repost_count: number | null;
+  user_id: string;
+  artist_name: string | null;
+  stream_url: string | null;
+  created_at: string;
+}
+
+export interface TrendingByGenreResponse {
+  data: {
+    genre_id: string;
+    genre_name: string;
+    tracks: TrendingByGenreTrack[];
+  };
+  message: string;
 }
 
 export function formatDuration(totalSeconds: number) {
@@ -245,6 +270,8 @@ export async function updatePlaylist(
     formData.append("release_date", payload.release_date ?? "");
   if (payload.genre_id !== undefined)
     formData.append("genre_id", payload.genre_id ?? "");
+  if (payload.is_album_view !== undefined)
+    formData.append("is_album_view", String(payload.is_album_view));
   if (payload.tags?.length)
     payload.tags.forEach((id) => formData.append("tags[]", id));
 
@@ -366,6 +393,18 @@ export async function getMadeForYouDaily() {
 /** GET /home/made-for-you/weekly */
 export async function getMadeForYouWeekly() {
   return getMadeForYou("weekly");
+}
+
+/** GET /home/trending-by-genre/{genre_id} */
+export async function getTrendingByGenre(
+  genreId: string,
+  params?: { limit?: number; offset?: number },
+) {
+  const res = await axiosInstance.get<TrendingByGenreResponse>(
+    `/home/trending-by-genre/${genreId}`,
+    { params },
+  );
+  return res.data.data;
 }
 
 /** DELETE /playlists/:id/tracks/:trackId — remove a track from a playlist */

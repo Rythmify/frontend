@@ -10,6 +10,8 @@ import FollowButton from "@/components/UI/FollowButton";
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
   featuredArtists?: MockUser[];
+  likedByUsers?: MockUser[];
+  repostedByUsers?: MockUser[];
   showLikes?: boolean;
   showReposts?: boolean;
 }
@@ -17,6 +19,8 @@ interface PlaylistSidebarProps {
 export default function PlaylistSidebar({
   playlist,
   featuredArtists,
+  likedByUsers,
+  repostedByUsers,
   showLikes = false,
   showReposts = false,
 }: PlaylistSidebarProps) {
@@ -95,6 +99,26 @@ export default function PlaylistSidebar({
           </div>
         </div>
 
+        {(likedByUsers?.length || repostedByUsers?.length) && (
+          <div className="mt-6 flex flex-col gap-5">
+            {likedByUsers?.length ? (
+              <UserAvatarSection
+                title="Liked by"
+                users={likedByUsers}
+                dataTest="sidebar-liked-by"
+              />
+            ) : null}
+
+            {repostedByUsers?.length ? (
+              <UserAvatarSection
+                title="Reposted by"
+                users={repostedByUsers}
+                dataTest="sidebar-reposted-by"
+              />
+            ) : null}
+          </div>
+        )}
+
         {(showLikes || showReposts) && (
           <div className="mt-6 flex flex-col gap-4">
             {showLikes && (
@@ -120,6 +144,46 @@ export default function PlaylistSidebar({
         </div>
       </aside>
     </Tooltip.Provider>
+  );
+}
+
+function UserAvatarSection({
+  title,
+  users,
+  dataTest,
+}: {
+  title: string;
+  users: MockUser[];
+  dataTest: string;
+}) {
+  const visibleUsers = users.slice(0, 3);
+  const remaining = Math.max(0, users.length - visibleUsers.length);
+
+  return (
+    <div data-test={dataTest} className="flex flex-col gap-2">
+      <p className="text-[var(--color-text-hover)] text-[12px] font-bold uppercase tracking-widest">
+        {title}
+      </p>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {visibleUsers.map((user) => (
+          <Link key={String(user.id)} to={`/${user.username}`} className="shrink-0">
+            <img
+              src={user.avatarUrl}
+              alt={user.displayName}
+              title={user.displayName}
+              className="w-9 h-9 rounded-full object-cover border border-white/10"
+            />
+          </Link>
+        ))}
+
+        {remaining > 0 && (
+          <span className="text-[11px] text-text-secondary">
+            +{remaining} more
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

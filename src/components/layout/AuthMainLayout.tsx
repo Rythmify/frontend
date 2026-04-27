@@ -5,6 +5,7 @@ import StickyPlayer from "../player/StickyPlayer";
 import { useAuthStore } from "@/stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { getMe } from "@/services/auth.service";
+import { getMySubscription } from "@/services/api/upload/subscription.service";
 
 const AuthMainLayout = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -16,9 +17,14 @@ const AuthMainLayout = () => {
 
     // Refresh user profile from backend on every app load so persisted
     // data (following_ids, avatar, etc.) never stays stale across sessions.
-    getMe()
-      .then((res) => {
-        const p = res.data;
+    Promise.allSettled([getMe(), getMySubscription()])
+      .then(([profileResult, subResult]) => {
+        if (profileResult.status !== "fulfilled") return;
+        const p = profileResult.value.data;
+        const isPro =
+          subResult.status === "fulfilled"
+            ? subResult.value.data.user_subscription_id !== null
+            : p.isPro ?? false;
         setUser({
           id: p.id,
           username: p.username,
@@ -28,15 +34,14 @@ const AuthMainLayout = () => {
           bio: p.bio,
           email: p.email,
           role: p.role,
-          isPro: p.isPro ?? false,
+          isPro,
           avatar: p.profile_picture,
           coverUrl: p.cover_photo,
           city: p.city,
           country: p.country,
           following_ids: p.following_ids ?? [],
         });
-      })
-      .catch(() => {/* keep persisted data on failure */});
+      });
 
     hydrateFromApi();
   }, [isAuthenticated]);
