@@ -286,7 +286,7 @@ function AlbumsForYouSlugPage() {
   return (
     <div
       data-test="album-slug-page"
-      className="flex-1 w-full bg-bg min-h-screen"
+      className="flex-1 w-full bg-bg min-h-screen px-4 md:px-8 lg:px-12 xl:px-20 mx-auto"
     >
       <PlaylistHero
         key={playlist.playlist_id}
