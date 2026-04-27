@@ -65,22 +65,25 @@ export default function StickyPlayer() {
       {/* 7. Artwork + Track Info — far right */}
       <div className="flex items-center gap-2 shrink-0 w-40">
         {currentTrack.coverUrl && (
-          <img
-            data-test="player-track-artwork"
-            src={currentTrack.coverUrl}
-            alt={currentTrack.title}
-            className="w-10 h-10 rounded object-cover shrink-0"
-          />
+          <Link to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}/${currentTrack.trackSlug || currentTrack.id}`}>
+            <img
+              data-test="player-track-artwork"
+              src={currentTrack.coverUrl}
+              alt={currentTrack.title}
+              className="w-10 h-10 rounded object-cover shrink-0 hover:opacity-80 transition-opacity"
+            />
+          </Link>
         )}
         <div className="flex flex-col min-w-0">
-          <span
+          <Link
+            to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}/${currentTrack.trackSlug || currentTrack.id}`}
             data-test="player-track-title"
-            className="text-white text-md font-semibold truncate leading-tight"
+            className="text-white text-md font-semibold truncate leading-tight hover:text-accent transition-colors"
           >
             {currentTrack.title}
-          </span>
+          </Link>
           <Link
-            to={`/${currentTrack.artistUsername}`}
+            to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}`}
             data-test="player-artist-name"
             className="text-text-muted text-[14px] truncate hover:text-white transition-colors leading-tight"
           >

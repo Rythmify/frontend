@@ -145,7 +145,7 @@ export const usePlayerStore = create<PlayerState>()(
                id: q.track_id || q.id,
                title: q.track_title || q.title || "Unknown Title",
                artistName: q.artist_name || q.artistName || "Unknown Artist",
-               artistUsername: q.artist_username || q.artistUsername || "unknown",
+               artistUsername: q.artist_username || q.username || q.artistUsername || "unknown",
                audioUrl: q.stream_url || q.audioUrl || "",
                coverUrl: q.cover_image || q.coverUrl || "",
                duration: String(q.duration || 0),

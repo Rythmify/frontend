@@ -11,6 +11,7 @@ import { IoSend, IoPlaySharp, IoShareOutline } from "react-icons/io5";
 import { AiOutlineRetweet } from "react-icons/ai";
 import { LuListEnd } from "react-icons/lu";
 import SharePopup from "./SharePopup";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import type { Track } from "../../../../types/track";
 import * as engagementService from "../../../../services/engagement.service";
 import { postComment } from "../../../../services/track.service";
@@ -56,6 +57,7 @@ export default function TrackActions({
   const [moreOpen, setMoreOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [addedToQueue, setAddedToQueue] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -222,7 +224,7 @@ export default function TrackActions({
                       label="Add to playlist"
                       data-test="dropdown-item-add-playlist"
                       onClick={() => {
-                        toast.info("Add to playlist feature is coming soon!");
+                        setShowPlaylistModal(true);
                         setMoreOpen(false);
                       }}
                     />
@@ -260,6 +262,15 @@ export default function TrackActions({
         </div>
 
         {shareOpen && <SharePopup track={track} onClose={() => setShareOpen(false)} />}
+        {showPlaylistModal && (
+          <AddToPlaylistModal
+            trackId={String(track.id)}
+            trackTitle={track.title}
+            trackCoverUrl={track.coverUrl}
+            artistName={track.artistName}
+            onClose={() => setShowPlaylistModal(false)}
+          />
+        )}
       </>
     </Tooltip.Provider>
   );

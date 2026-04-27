@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
@@ -152,19 +152,25 @@ export default function RepostsPage() {
             className="p-4 bg-[#111111] rounded-lg border border-[#222222] hover:border-orange-500/30 transition-all"
           >
             <div className="flex gap-4">
-              <img
-                src={
-                  track.cover_image ||
-                  "https://picsum.photos/seed/rythmify/200/200"
-                }
-                alt={track.title}
-                className="w-24 h-24 rounded object-cover shadow-lg"
-              />
+              <Link to={`/${track.artist_name || track.user?.display_name || "share"}/${track.id}`}>
+                <img
+                  src={
+                    track.cover_image ||
+                    "https://picsum.photos/seed/rythmify/200/200"
+                  }
+                  alt={track.title}
+                  className="w-24 h-24 rounded object-cover shadow-lg hover:opacity-80 transition-opacity"
+                />
+              </Link>
               <div className="flex flex-col justify-center">
-                <h3 className="text-white font-bold text-lg">{track.title}</h3>
-                <p className="text-gray-400 text-sm">
-                  {track.artist_name || track.user?.display_name}
-                </p>
+                <Link to={`/${track.artist_name || track.user?.display_name || "share"}/${track.id}`}>
+                  <h3 className="text-white font-bold text-lg hover:text-orange-500 transition-colors">{track.title}</h3>
+                </Link>
+                <Link to={`/${track.artist_name || track.user?.display_name || "share"}`}>
+                  <p className="text-gray-400 text-sm hover:text-white transition-colors">
+                    {track.artist_name || track.user?.display_name}
+                  </p>
+                </Link>
                 <div className="flex gap-4 mt-2">
                   <span className="text-xs text-gray-500 flex items-center gap-1">
                     <svg
