@@ -117,7 +117,7 @@ const ResolveModal = ({ report, onClose, onConfirm }: ResolveModalProps) => {
           </div>
           <div className="flex justify-between">
             <span className="text-[#666]">Reported by</span>
-            <span className="text-white">{report.reported_by?.display_name ?? "Unknown"}</span>
+            <span className="text-white">{report.reported_by_name ?? report.reported_by?.display_name ?? "Unknown"}</span>
           </div>
         </div>
 
@@ -127,6 +127,7 @@ const ResolveModal = ({ report, onClose, onConfirm }: ResolveModalProps) => {
           {(["resolved", "dismissed"] as const).map((s) => (
             <button
               key={s}
+              data-test={`btn-decision-${s}`}
               onClick={() => setStatus(s)}
               className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 ${
                 status === s
@@ -145,6 +146,7 @@ const ResolveModal = ({ report, onClose, onConfirm }: ResolveModalProps) => {
         {/* Note */}
         <p className="text-[#999] text-xs uppercase tracking-widest mb-2">Admin Note (optional)</p>
         <textarea
+          data-test="textarea-admin-note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
@@ -154,12 +156,14 @@ const ResolveModal = ({ report, onClose, onConfirm }: ResolveModalProps) => {
 
         <div className="flex gap-2 mt-4">
           <button
+            data-test="btn-resolve-cancel"
             onClick={onClose}
             className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors"
           >
             Cancel
           </button>
           <button
+            data-test="btn-resolve-confirm"
             onClick={handleConfirm}
             disabled={loading}
             className="flex-1 py-2.5 rounded-lg bg-[#ff5500] hover:bg-[#e64a00] text-white text-sm font-medium transition-colors disabled:opacity-50"
@@ -220,6 +224,7 @@ const AppealModal = ({ appeal, onClose, onConfirm }: AppealModalProps) => {
           {(["upheld", "overturned"] as const).map((d) => (
             <button
               key={d}
+              data-test={`btn-decision-${d}`}
               onClick={() => setDecision(d)}
               className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all duration-150 ${
                 decision === d
@@ -235,6 +240,7 @@ const AppealModal = ({ appeal, onClose, onConfirm }: AppealModalProps) => {
         </div>
 
         <textarea
+          data-test="textarea-appeal-notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
@@ -243,8 +249,19 @@ const AppealModal = ({ appeal, onClose, onConfirm }: AppealModalProps) => {
         />
 
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors">Cancel</button>
-          <button onClick={handleConfirm} disabled={loading} className="flex-1 py-2.5 rounded-lg bg-[#ff5500] hover:bg-[#e64a00] text-white text-sm font-medium transition-colors disabled:opacity-50">
+          <button
+            data-test="btn-appeal-cancel"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            data-test="btn-appeal-confirm"
+            onClick={handleConfirm}
+            disabled={loading}
+            className="flex-1 py-2.5 rounded-lg bg-[#ff5500] hover:bg-[#e64a00] text-white text-sm font-medium transition-colors disabled:opacity-50"
+          >
             {loading ? "Saving…" : "Submit Decision"}
           </button>
         </div>
@@ -327,7 +344,6 @@ const AdminReportsPage = () => {
   const handleResolve = async (status: "resolved" | "dismissed", note: string) => {
     if (!resolveTarget) return;
     try {
-      // Optimistic update
       setReports((prev) => prev.map((r) => r.id === resolveTarget.id ? { ...r, status } : r));
       await resolveAdminReport(resolveTarget.id, { status, admin_note: note });
       showToast(`Report ${status} successfully`);
@@ -372,10 +388,11 @@ const AdminReportsPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Reports & Appeals</h1>
-          <p className="text-[#666] text-sm mt-1">Review flagged content and user appeals</p>
+          <h1 className="text-3xl font-bold text-white">Reports & Appeals</h1>
+          <p className="text-[#666] text-base mt-1">Review flagged content and user appeals</p>
         </div>
         <button
+          data-test="btn-refresh"
           onClick={() => tab === "reports" ? fetchReports() : fetchAppeals()}
           className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#161616] border border-white/5 text-[#888] hover:text-white transition-all"
         >
@@ -388,8 +405,9 @@ const AdminReportsPage = () => {
         {(["reports", "appeals"] as Tab[]).map((t) => (
           <button
             key={t}
+            data-test={`tab-${t}`}
             onClick={() => setTab(t)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-150 ${
               tab === t ? "bg-[#ff5500] text-white" : "text-[#888] hover:text-white"
             }`}
           >
@@ -405,12 +423,13 @@ const AdminReportsPage = () => {
           <>
             <div className="flex items-center gap-2">
               <Filter size={14} className="text-[#555]" />
-              <span className="text-[#555] text-xs">Filter:</span>
+              <span className="text-[#555] text-sm">Filter:</span>
             </div>
             <select
+              data-test="select-status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as ReportStatus | "")}
-              className="bg-[#161616] border border-white/8 text-sm text-[#ccc] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#ff5500]/50"
+              className="bg-[#161616] border border-white/8 text-base text-[#ccc] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#ff5500]/50"
             >
               <option value="">All Statuses</option>
               <option value="pending">Pending</option>
@@ -418,9 +437,10 @@ const AdminReportsPage = () => {
               <option value="dismissed">Dismissed</option>
             </select>
             <select
+              data-test="select-reason-filter"
               value={reasonFilter}
               onChange={(e) => setReasonFilter(e.target.value as ReportReason | "")}
-              className="bg-[#161616] border border-white/8 text-sm text-[#ccc] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#ff5500]/50"
+              className="bg-[#161616] border border-white/8 text-base text-[#ccc] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#ff5500]/50"
             >
               <option value="">All Reasons</option>
               <option value="copyright">Copyright</option>
@@ -433,12 +453,13 @@ const AdminReportsPage = () => {
           <>
             <div className="flex items-center gap-2">
               <Filter size={14} className="text-[#555]" />
-              <span className="text-[#555] text-xs">Filter:</span>
+              <span className="text-[#555] text-sm">Filter:</span>
             </div>
             <select
+              data-test="select-appeal-status-filter"
               value={appealStatus}
               onChange={(e) => setAppealStatus(e.target.value as AppealStatus | "")}
-              className="bg-[#161616] border border-white/8 text-sm text-[#ccc] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#ff5500]/50"
+              className="bg-[#161616] border border-white/8 text-base text-[#ccc] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#ff5500]/50"
             >
               <option value="">All Statuses</option>
               <option value="pending">Pending</option>
@@ -454,9 +475,9 @@ const AdminReportsPage = () => {
         {/* Table Header */}
         {tab === "reports" ? (
           <>
-            <div className="grid grid-cols-[1fr_100px_100px_120px_160px] gap-4 px-5 py-3 border-b border-white/5">
-              {["Resource", "Type", "Reason", "Status", "Actions"].map((h) => (
-                <span key={h} className="text-[#555] text-xs uppercase tracking-widest font-medium">
+            <div className="grid grid-cols-[1fr_180px_120px_120px_180px] gap-4 px-6 py-4 border-b border-white/5">
+              {["Report", "Reporter", "Reason", "Status", "Actions"].map((h) => (
+                <span key={h} className="text-[#555] text-sm uppercase tracking-widest font-medium">
                   {h}
                 </span>
               ))}
@@ -465,41 +486,71 @@ const AdminReportsPage = () => {
             {reportsLoading ? (
               <div className="divide-y divide-white/3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_100px_100px_120px_160px] gap-4 px-5 py-4">
-                    <Skeleton className="h-4 w-40" />
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-5 w-20" />
-                    <Skeleton className="h-5 w-20" />
-                    <Skeleton className="h-8 w-32" />
+                  <div key={i} className="grid grid-cols-[1fr_180px_120px_120px_180px] gap-4 px-6 py-5 items-center">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-44" />
+                      <Skeleton className="h-3.5 w-64" />
+                    </div>
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-9 w-36" />
                   </div>
                 ))}
               </div>
             ) : reports.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-[#555]">
-                <Search size={32} className="mb-3 opacity-30" />
-                <p className="text-sm">No reports found</p>
+                <Search size={36} className="mb-3 opacity-30" />
+                <p className="text-base">No reports found</p>
               </div>
             ) : (
               <div className="divide-y divide-white/3">
                 {reports.map((report) => (
                   <div
                     key={report.id}
-                    className="grid grid-cols-[1fr_100px_100px_120px_160px] gap-4 px-5 py-3.5 items-center hover:bg-white/2 transition-colors"
+                    className="grid grid-cols-[1fr_180px_120px_120px_180px] gap-4 px-6 py-5 items-start hover:bg-white/2 transition-colors"
                   >
+                    {/* Report subject + description */}
                     <div className="min-w-0">
-                      <p className="text-white text-sm truncate font-medium">
-                        {report.resource?.title ?? report.resource?.display_name ?? report.resource_id.slice(0, 8) + "…"}
-                      </p>
-                      <p className="text-[#555] text-xs mt-0.5">
-                        by {report.reported_by?.display_name ?? "Unknown"}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          report.resource_type === "user"
+                            ? "bg-blue-500/10 text-blue-400"
+                            : "bg-purple-500/10 text-purple-400"
+                        }`}>
+                          {report.resource_type}
+                        </span>
+                        <p className="text-white text-sm font-medium font-mono break-all">
+                          {report.resource?.title ?? report.resource?.display_name ?? report.resource_id}
+                        </p>
+                      </div>
+                      {report.description && (
+                        <p className="text-[#666] text-sm leading-relaxed line-clamp-2 mt-1">
+                          "{report.description}"
+                        </p>
+                      )}
+                      <p className="text-[#555] text-xs mt-1.5 font-mono">
+                        {new Date(report.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                     </div>
-                    <span className="text-[#888] text-xs capitalize">{report.resource_type}</span>
+
+                    {/* Reporter */}
+                    <div className="min-w-0">
+                      <p className="text-[#ccc] text-sm font-medium truncate">
+                        {report.reported_by_name ?? report.reported_by?.display_name ?? "Unknown"}
+                      </p>
+                      {report.reported_by_email && (
+                        <p className="text-[#555] text-xs truncate mt-0.5">{report.reported_by_email}</p>
+                      )}
+                    </div>
+
                     <ReasonBadge reason={report.reason} />
                     <StatusBadge status={report.status} />
+
                     <div className="flex items-center gap-2">
                       {report.status === "pending" && (
                         <button
+                          data-test={`btn-resolve-${report.id}`}
                           onClick={() => setResolveTarget(report)}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ff5500]/10 border border-[#ff5500]/20 text-[#ff5500] text-xs font-medium hover:bg-[#ff5500]/20 transition-all"
                         >
@@ -508,6 +559,7 @@ const AdminReportsPage = () => {
                         </button>
                       )}
                       <button
+                        data-test={`btn-view-${report.id}`}
                         onClick={() => setResolveTarget(report)}
                         className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 text-[#888] hover:text-white hover:bg-white/8 transition-all"
                         title="View details"
@@ -522,9 +574,9 @@ const AdminReportsPage = () => {
           </>
         ) : (
           <>
-            <div className="grid grid-cols-[1fr_140px_120px_160px] gap-4 px-5 py-3 border-b border-white/5">
+            <div className="grid grid-cols-[1fr_160px_130px_180px] gap-4 px-6 py-4 border-b border-white/5">
               {["Appeal Reason", "Original Report", "Status", "Actions"].map((h) => (
-                <span key={h} className="text-[#555] text-xs uppercase tracking-widest font-medium">
+                <span key={h} className="text-[#555] text-sm uppercase tracking-widest font-medium">
                   {h}
                 </span>
               ))}
@@ -533,30 +585,30 @@ const AdminReportsPage = () => {
             {appealsLoading ? (
               <div className="divide-y divide-white/3">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_140px_120px_160px] gap-4 px-5 py-4">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-5 w-20" />
-                    <Skeleton className="h-8 w-32" />
+                  <div key={i} className="grid grid-cols-[1fr_160px_130px_180px] gap-4 px-6 py-5">
+                    <Skeleton className="h-4 w-56" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-9 w-36" />
                   </div>
                 ))}
               </div>
             ) : appeals.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-[#555]">
-                <AlertCircle size={32} className="mb-3 opacity-30" />
-                <p className="text-sm">No appeals found</p>
+                <AlertCircle size={36} className="mb-3 opacity-30" />
+                <p className="text-base">No appeals found</p>
               </div>
             ) : (
               <div className="divide-y divide-white/3">
                 {appeals.map((appeal) => (
                   <div
                     key={appeal.id}
-                    className="grid grid-cols-[1fr_140px_120px_160px] gap-4 px-5 py-3.5 items-center hover:bg-white/2 transition-colors"
+                    className="grid grid-cols-[1fr_160px_130px_180px] gap-4 px-6 py-5 items-center hover:bg-white/2 transition-colors"
                   >
-                    <p className="text-[#ccc] text-sm truncate">{appeal.appeal_reason}</p>
+                    <p className="text-[#ccc] text-base truncate">{appeal.appeal_reason}</p>
                     <div className="flex items-center gap-1.5">
-                      <MessageSquare size={12} className="text-[#555]" />
-                      <span className="text-[#888] text-xs capitalize">
+                      <MessageSquare size={14} className="text-[#555]" />
+                      <span className="text-[#888] text-sm capitalize">
                         {appeal.original_report?.resource_type ?? "report"}
                       </span>
                     </div>
@@ -564,6 +616,7 @@ const AdminReportsPage = () => {
                     <div>
                       {appeal.status === "pending" && (
                         <button
+                          data-test={`btn-review-${appeal.id}`}
                           onClick={() => setAppealTarget(appeal)}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium hover:bg-blue-500/20 transition-all"
                         >
@@ -587,10 +640,18 @@ const AdminReportsPage = () => {
               {tab === "reports" ? reportsMeta.total : appealsMeta.total}
             </span>
             <div className="flex items-center gap-2">
-              <button className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30" disabled>
+              <button
+                data-test="btn-prev-page"
+                className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30"
+                disabled
+              >
                 Previous
               </button>
-              <button className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30" disabled>
+              <button
+                data-test="btn-next-page"
+                className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30"
+                disabled
+              >
                 Next
               </button>
             </div>

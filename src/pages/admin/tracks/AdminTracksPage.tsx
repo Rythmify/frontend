@@ -73,6 +73,7 @@ const ActionDropdown = ({ track, onToggleHide, onDelete }: DropdownProps) => {
   return (
     <div ref={ref} className="relative">
       <button
+        data-test={`btn-track-actions-${track.id}`}
         onClick={() => setOpen((o) => !o)}
         className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-[#888] hover:text-white hover:bg-white/8 transition-all"
       >
@@ -82,6 +83,7 @@ const ActionDropdown = ({ track, onToggleHide, onDelete }: DropdownProps) => {
       {open && (
         <div className="absolute right-0 top-full mt-1.5 z-30 w-44 bg-[#1f1f1f] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
           <button
+            data-test={track.is_hidden ? "btn-toggle-unhide" : "btn-toggle-hide"}
             onClick={() => { setOpen(false); onToggleHide(track); }}
             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-[#ccc] hover:text-white hover:bg-white/5 transition-colors"
           >
@@ -92,6 +94,7 @@ const ActionDropdown = ({ track, onToggleHide, onDelete }: DropdownProps) => {
             )}
           </button>
           <button
+            data-test="btn-delete-track"
             onClick={() => { setOpen(false); onDelete(track); }}
             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-[#ccc] hover:text-red-400 hover:bg-red-500/5 transition-colors"
           >
@@ -150,8 +153,15 @@ const DeleteModal = ({
         </div>
 
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors">Cancel</button>
           <button
+            data-test="btn-delete-cancel"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            data-test="btn-delete-confirm"
             onClick={handleConfirm}
             disabled={loading}
             className="flex-1 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors disabled:opacity-50"
@@ -206,6 +216,7 @@ const HideModal = ({
           <>
             <p className="text-[#999] text-xs uppercase tracking-widest mb-2">Reason (optional)</p>
             <textarea
+              data-test="textarea-hide-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
@@ -222,8 +233,15 @@ const HideModal = ({
         )}
 
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors">Cancel</button>
           <button
+            data-test="btn-hide-cancel"
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            data-test="btn-hide-confirm"
             onClick={handleConfirm}
             disabled={loading}
             className={`flex-1 py-2.5 rounded-lg text-white text-sm font-medium transition-colors disabled:opacity-50 ${
@@ -336,16 +354,20 @@ const AdminTracksPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Track Moderation</h1>
-          <p className="text-[#666] text-sm mt-1">Hide or permanently remove platform tracks</p>
+          <h1 className="text-3xl font-bold text-white">Track Moderation</h1>
+          <p className="text-[#666] text-base mt-1">Hide or permanently remove platform tracks</p>
         </div>
-        <button onClick={fetchTracks} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#161616] border border-white/5 text-[#888] hover:text-white transition-all">
+        <button
+          data-test="btn-refresh"
+          onClick={fetchTracks}
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#161616] border border-white/5 text-[#888] hover:text-white transition-all"
+        >
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-[#666]">
+      <div className="flex items-center gap-4 text-sm text-[#666]">
         <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" />Public</div>
         <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-500" />Private</div>
         <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" />Hidden by Admin</div>
@@ -355,64 +377,69 @@ const AdminTracksPage = () => {
       <div className="flex items-center gap-2 bg-[#161616] border border-white/8 rounded-lg px-3 py-2 max-w-md focus-within:border-[#ff5500]/50 transition-colors">
         <Search size={15} className="text-[#555]" />
         <input
+          data-test="input-track-search"
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search tracks…"
-          className="flex-1 bg-transparent text-sm text-white placeholder:text-[#555] focus:outline-none"
+          className="flex-1 bg-transparent text-base text-white placeholder:text-[#555] focus:outline-none"
         />
         {search && (
-          <button onClick={() => setSearch("")} className="text-[#555] hover:text-white">
+          <button
+            data-test="btn-clear-search"
+            onClick={() => setSearch("")}
+            className="text-[#555] hover:text-white"
+          >
             <X size={13} />
           </button>
         )}
       </div>
 
       {!loading && (
-        <p className="text-[#555] text-xs">{total.toLocaleString()} track{total !== 1 ? "s" : ""}</p>
+        <p className="text-[#555] text-sm">{total.toLocaleString()} track{total !== 1 ? "s" : ""}</p>
       )}
 
       {/* Table */}
       <div className="rounded-xl bg-[#161616] border border-white/5">
-        <div className="grid grid-cols-[auto_1fr_120px_80px_80px_80px_80px] gap-4 px-5 py-3 border-b border-white/5">
+        <div className="grid grid-cols-[auto_1fr_150px_90px_90px_100px_80px] gap-4 px-6 py-4 border-b border-white/5">
           {["", "Track", "Artist", "Plays", "Likes", "Duration", "Actions"].map((h, i) => (
-            <span key={i} className="text-[#555] text-xs uppercase tracking-widest font-medium">{h}</span>
+            <span key={i} className="text-[#555] text-sm uppercase tracking-widest font-medium">{h}</span>
           ))}
         </div>
 
         {loading ? (
           <div className="divide-y divide-white/3">
             {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="grid grid-cols-[auto_1fr_120px_80px_80px_80px_80px] gap-4 px-5 py-4 items-center">
-                <Skeleton className="w-10 h-10 rounded-lg" />
-                <div className="space-y-1.5">
-                  <Skeleton className="h-3.5 w-40" />
-                  <Skeleton className="h-3 w-24" />
+              <div key={i} className="grid grid-cols-[auto_1fr_150px_90px_90px_100px_80px] gap-4 px-6 py-5 items-center">
+                <Skeleton className="w-13 h-13 rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-44" />
+                  <Skeleton className="h-3.5 w-28" />
                 </div>
-                <Skeleton className="h-3.5 w-24" />
-                <Skeleton className="h-3.5 w-10" />
-                <Skeleton className="h-3.5 w-10" />
-                <Skeleton className="h-3.5 w-12" />
-                <Skeleton className="h-8 w-8 rounded-lg" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-14" />
+                <Skeleton className="h-9 w-9 rounded-lg" />
               </div>
             ))}
           </div>
         ) : tracks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-[#555]">
-            <Music size={32} className="mb-3 opacity-30" />
-            <p className="text-sm">No tracks found</p>
+            <Music size={36} className="mb-3 opacity-30" />
+            <p className="text-base">No tracks found</p>
           </div>
         ) : (
           <div className="divide-y divide-white/3">
             {tracks.map((track) => (
-              <div key={track.id} className="grid grid-cols-[auto_1fr_120px_80px_80px_80px_80px] gap-4 px-5 py-3 items-center hover:bg-white/2 transition-colors">
+              <div key={track.id} className="grid grid-cols-[auto_1fr_150px_90px_90px_100px_80px] gap-4 px-6 py-5 items-center hover:bg-white/2 transition-colors">
                 {/* Cover */}
-                <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
+                <div className="relative w-13 h-13 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
                   {track.cover_image ? (
                     <img src={track.cover_image} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Music size={14} className="text-[#555]" />
+                      <Music size={16} className="text-[#555]" />
                     </div>
                   )}
                   <div className="absolute top-0.5 left-0.5">
@@ -422,21 +449,21 @@ const AdminTracksPage = () => {
 
                 {/* Title */}
                 <div className="min-w-0">
-                  <p className={`text-sm font-medium truncate ${track.is_hidden ? "text-[#666] line-through" : "text-white"}`}>
+                  <p className={`text-base font-medium truncate ${track.is_hidden ? "text-[#666] line-through" : "text-white"}`}>
                     {track.title}
                   </p>
-                  {track.genre && <p className="text-[#555] text-xs mt-0.5">{track.genre}</p>}
+                  {track.genre && <p className="text-[#555] text-sm mt-0.5">{track.genre}</p>}
                 </div>
 
-                <p className="text-[#888] text-sm truncate">{track.artist_name}</p>
+                <p className="text-[#888] text-base truncate">{track.artist_name}</p>
 
-                <div className="flex items-center gap-1 text-[#888] text-sm">
-                  <Play size={11} className="text-[#555]" />
+                <div className="flex items-center gap-1 text-[#888] text-base">
+                  <Play size={13} className="text-[#555]" />
                   {track.play_count.toLocaleString()}
                 </div>
 
-                <span className="text-[#888] text-sm">{track.like_count.toLocaleString()}</span>
-                <span className="text-[#888] text-sm">{fmtDuration(track.duration)}</span>
+                <span className="text-[#888] text-base">{track.like_count.toLocaleString()}</span>
+                <span className="text-[#888] text-base">{fmtDuration(track.duration)}</span>
 
                 <ActionDropdown
                   track={track}
@@ -455,8 +482,22 @@ const AdminTracksPage = () => {
               {offset + 1}–{Math.min(offset + limit, total)} of {total.toLocaleString()}
             </span>
             <div className="flex items-center gap-2">
-              <button onClick={() => setOffset(Math.max(0, offset - limit))} disabled={offset === 0} className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30 transition-colors">Previous</button>
-              <button onClick={() => setOffset(offset + limit)} disabled={offset + limit >= total} className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30 transition-colors">Next</button>
+              <button
+                data-test="btn-prev-page"
+                onClick={() => setOffset(Math.max(0, offset - limit))}
+                disabled={offset === 0}
+                className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30 transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                data-test="btn-next-page"
+                onClick={() => setOffset(offset + limit)}
+                disabled={offset + limit >= total}
+                className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30 transition-colors"
+              >
+                Next
+              </button>
             </div>
           </div>
         )}

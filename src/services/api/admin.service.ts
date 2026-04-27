@@ -43,6 +43,8 @@ export interface ReportDetailed extends Report {
   description?: string;
   resource?: ReportResource;
   reported_by?: ReportedBy;
+  reported_by_name?: string;
+  reported_by_email?: string;
   resolved_at?: string | null;
   admin_note?: string | null;
 }

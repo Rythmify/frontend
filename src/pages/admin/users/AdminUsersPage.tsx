@@ -305,12 +305,17 @@ const AdminUsersPage = () => {
   }, [search]);
 
   const fetchUsers = useCallback(async () => {
+    if (!debouncedSearch.trim()) {
+      setUsers([]);
+      setTotal(0);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      // Using search endpoint or a generic users listing
       const res = await axiosInstance.get("/search", {
         params: {
-          q: debouncedSearch || "a",
+          q: debouncedSearch,
           type: "users",
           limit,
           offset,
@@ -378,7 +383,7 @@ const AdminUsersPage = () => {
   };
 
   return (
-    <div className="p-4 max-w-8xl mx-auto space-y-4">
+    <div className="p-8 max-w-7xl mx-auto space-y-6">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-xl border ${toast.ok ? "bg-green-500/10 border-green-500/20 text-green-400" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
@@ -389,8 +394,8 @@ const AdminUsersPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">User Management</h1>
-          <p className="text-[#666] text-sm mt-1">Suspend, reinstate, and warn platform users</p>
+          <h1 className="text-3xl font-bold text-white">User Management</h1>
+          <p className="text-[#666] text-base mt-1">Suspend, reinstate, and warn platform users</p>
         </div>
         <button onClick={fetchUsers} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#161616] border border-white/5 text-[#888] hover:text-white transition-all">
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
@@ -406,7 +411,7 @@ const AdminUsersPage = () => {
             value={search}
             onChange={(e) => { setSearch(e.target.value); setOffset(0); }}
             placeholder="Search users…"
-            className="flex-1 bg-transparent text-sm text-white placeholder:text-[#555] focus:outline-none"
+            className="flex-1 bg-transparent text-base text-white placeholder:text-[#555] focus:outline-none"
           />
           {search && (
             <button onClick={() => setSearch("")} className="text-[#555] hover:text-white">
@@ -417,7 +422,7 @@ const AdminUsersPage = () => {
         <select
           value={roleFilter}
           onChange={(e) => { setRoleFilter(e.target.value); setOffset(0); }}
-          className="bg-[#161616] border border-white/8 text-sm text-[#ccc] rounded-lg px-3 py-2 focus:outline-none focus:border-[#ff5500]/50"
+          className="bg-[#161616] border border-white/8 text-base text-[#ccc] rounded-lg px-3 py-2 focus:outline-none focus:border-[#ff5500]/50"
         >
           <option value="">All Roles</option>
           <option value="artist">Artist</option>
@@ -426,74 +431,74 @@ const AdminUsersPage = () => {
       </div>
 
       {/* Total */}
-      {!loading && (
-        <p className="text-[#555] text-xs">
+      {!loading && debouncedSearch && (
+        <p className="text-[#555] text-sm">
           {total.toLocaleString()} user{total !== 1 ? "s" : ""} found
         </p>
       )}
 
       {/* Table */}
-      <div className="rounded-xl bg-[#161616] border border-white/5 ">
-        <div className="grid grid-cols-[1fr_120px_100px_110px_80px] gap-4 px-5 py-3 border-b border-white/5">
+      <div className="rounded-xl bg-[#161616] border border-white/5 overflow-hidden">
+        <div className="grid grid-cols-[1fr_140px_120px_130px_80px] gap-4 px-6 py-4 border-b border-white/5">
           {["User", "Role", "Status", "Followers", "Actions"].map((h) => (
-            <span key={h} className="text-[#555] text-xs uppercase tracking-widest font-medium">{h}</span>
+            <span key={h} className="text-[#555] text-sm uppercase tracking-widest font-medium">{h}</span>
           ))}
         </div>
 
         {loading ? (
           <div className="divide-y divide-white/3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="grid grid-cols-[1fr_120px_100px_110px_80px] gap-4 px-5 py-4 items-center">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="w-8 h-8 rounded-full" />
-                  <div className="space-y-1.5">
-                    <Skeleton className="h-3.5 w-32" />
-                    <Skeleton className="h-3 w-24" />
+              <div key={i} className="grid grid-cols-[1fr_140px_120px_130px_80px] gap-4 px-6 py-5 items-center">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="w-11 h-11 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-3.5 w-28" />
                   </div>
                 </div>
-                <Skeleton className="h-5 w-16" />
-                <Skeleton className="h-5 w-16" />
-                <Skeleton className="h-4 w-12" />
-                <Skeleton className="h-8 w-8 rounded-lg" />
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-5 w-14" />
+                <Skeleton className="h-9 w-9 rounded-lg" />
               </div>
             ))}
           </div>
         ) : users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-[#555]">
-            <Users size={32} className="mb-3 opacity-30" />
-            <p className="text-sm">No users found</p>
+            <Users size={36} className="mb-3 opacity-30" />
+            <p className="text-base">{debouncedSearch ? "No users found" : "Type a name to search users"}</p>
           </div>
         ) : (
           <div className="divide-y divide-white/3">
             {users.map((user) => (
-              <div key={user.id} className="grid grid-cols-[1fr_120px_100px_110px_80px] gap-4 px-5 py-3.5 items-center hover:bg-white/2 transition-colors">
-                <div className="flex items-center gap-3 min-w-0">
+              <div key={user.id} className="grid grid-cols-[1fr_140px_120px_130px_80px] gap-4 px-6 py-5 items-center hover:bg-white/2 transition-colors">
+                <div className="flex items-center gap-4 min-w-0">
                   {user.profile_picture ? (
                     <img
                       src={user.profile_picture}
                       alt={user.display_name}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      className="w-11 h-11 rounded-full object-cover flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-[#ff5500]/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-[#ff5500] text-xs font-bold">
+                    <div className="w-11 h-11 rounded-full bg-[#ff5500]/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[#ff5500] text-sm font-bold">
                         {(user.display_name || "?")[0].toUpperCase()}
                       </span>
                     </div>
                   )}
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-white text-sm font-medium truncate">{user.display_name}</p>
-                      {user.is_verified && <Shield size={11} className="text-[#ff5500] flex-shrink-0" />}
+                      <p className="text-white text-base font-medium truncate">{user.display_name}</p>
+                      {user.is_verified && <Shield size={13} className="text-[#ff5500] flex-shrink-0" />}
                     </div>
                     {user.username && (
-                      <p className="text-[#555] text-xs truncate">@{user.username}</p>
+                      <p className="text-[#555] text-sm truncate">@{user.username}</p>
                     )}
                   </div>
                 </div>
                 <RoleBadge role={user.role} />
                 <StatusBadge status={user.status} />
-                <span className="text-[#888] text-sm">
+                <span className="text-[#888] text-base">
                   {user.followers_count?.toLocaleString() ?? "—"}
                 </span>
                 <ActionDropdown
@@ -509,22 +514,22 @@ const AdminUsersPage = () => {
 
         {/* Pagination */}
         {total > limit && (
-          <div className="px-5 py-3 border-t border-white/5 flex items-center justify-between">
-            <span className="text-[#555] text-xs">
+          <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between">
+            <span className="text-[#555] text-sm">
               {offset + 1}–{Math.min(offset + limit, total)} of {total}
             </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setOffset(Math.max(0, offset - limit))}
                 disabled={offset === 0}
-                className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30 transition-colors"
+                className="px-4 py-2 rounded-lg bg-white/5 text-[#888] text-sm hover:text-white disabled:opacity-30 transition-colors"
               >
                 Previous
               </button>
               <button
                 onClick={() => setOffset(offset + limit)}
                 disabled={offset + limit >= total}
-                className="px-3 py-1.5 rounded-lg bg-white/5 text-[#888] text-xs hover:text-white disabled:opacity-30 transition-colors"
+                className="px-4 py-2 rounded-lg bg-white/5 text-[#888] text-sm hover:text-white disabled:opacity-30 transition-colors"
               >
                 Next
               </button>

@@ -42,7 +42,7 @@ const StatCard = ({ label, value, icon: Icon, accent, subtext, loading }: StatCa
   >
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <p className="text-[#777] text-xs font-medium uppercase tracking-widest truncate">{label}</p>
+        <p className="text-[#777] text-sm font-medium uppercase tracking-widest truncate">{label}</p>
         {loading ? (
           <Skeleton className="h-8 w-24 mt-2" />
         ) : (
@@ -55,7 +55,7 @@ const StatCard = ({ label, value, icon: Icon, accent, subtext, loading }: StatCa
           </p>
         )}
         {subtext && !loading && (
-          <p className="text-[#555] text-xs mt-1 truncate">{subtext}</p>
+          <p className="text-[#555] text-sm mt-1 truncate">{subtext}</p>
         )}
       </div>
       <div
@@ -92,7 +92,7 @@ const StorageBar = ({
         {loading ? (
           <Skeleton className="h-4 w-20" />
         ) : (
-          <span className="text-[#999] text-xs">
+          <span className="text-[#999] text-sm">
             {used.toFixed(1)} GB / {total.toFixed(1)} GB
           </span>
         )}
@@ -107,7 +107,7 @@ const StorageBar = ({
               style={{ width: `${pct}%`, backgroundColor: color }}
             />
           </div>
-          <p className="text-[#555] text-xs mt-2">{pct.toFixed(1)}% used</p>
+          <p className="text-[#555] text-sm mt-2">{pct.toFixed(1)}% used</p>
         </>
       )}
     </div>
@@ -159,8 +159,8 @@ const AdminDashboardPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Platform Analytics</h1>
-          <p className="text-[#666] text-sm mt-1">Monitor platform health and key metrics</p>
+          <h1 className="text-3xl font-bold text-white">Platform Analytics</h1>
+          <p className="text-[#666] text-base mt-1">Monitor platform health and key metrics</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Period pills */}
@@ -168,8 +168,9 @@ const AdminDashboardPage = () => {
             {periods.map((p) => (
               <button
                 key={p.value}
+                data-test={`period-btn-${p.value}`}
                 onClick={() => setPeriod(p.value)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 ${
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${
                   period === p.value
                     ? "bg-[#ff5500] text-white"
                     : "text-[#888] hover:text-white"
@@ -180,6 +181,7 @@ const AdminDashboardPage = () => {
             ))}
           </div>
           <button
+            data-test="btn-refresh"
             onClick={() => fetchData(period, true)}
             disabled={refreshing}
             className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#161616] border border-white/5 text-[#888] hover:text-white hover:border-white/10 transition-all duration-150 disabled:opacity-50"
@@ -279,7 +281,7 @@ const AdminDashboardPage = () => {
             <span className="text-[#ffd3a5]">Completed Plays</span>
             <span className="text-white">) × 100</span>
           </div>
-          <p className="text-[#555] text-xs mt-3 leading-relaxed">
+          <p className="text-[#555] text-sm mt-3 leading-relaxed">
             A <strong className="text-[#888]">Completed Play</strong> is defined as a session where{" "}
             <code className="text-[#ff5500]">duration_played ≥ 90%</code> of the track duration.
           </p>
@@ -291,7 +293,7 @@ const AdminDashboardPage = () => {
                   style={{ width: `${Math.min(data.play_through_rate, 100)}%` }}
                 />
               </div>
-              <span className="text-[#ff5500] text-xs font-bold tabular-nums w-12 text-right">
+              <span className="text-[#ff5500] text-sm font-bold tabular-nums w-12 text-right">
                 {data.play_through_rate.toFixed(1)}%
               </span>
             </div>
@@ -299,13 +301,13 @@ const AdminDashboardPage = () => {
         </div>
       </div>
 
-      {/* Artist / Listener ratio placeholder */}
+      {/* Quick Actions */}
       <div className="rounded-xl bg-[#161616] border border-white/5 p-5">
         <div className="flex items-center gap-2 mb-1">
           <Users size={16} className="text-[#888]" />
           <span className="text-white text-sm font-medium">Quick Actions</span>
         </div>
-        <p className="text-[#555] text-xs mb-4">Jump to common admin tasks</p>
+        <p className="text-[#555] text-sm mb-4">Jump to common admin tasks</p>
         <div className="flex flex-wrap gap-3">
           {[
             { label: "Review Pending Reports", href: "/admin/reports" },
@@ -315,7 +317,8 @@ const AdminDashboardPage = () => {
             <a
               key={href}
               href={href}
-              className="px-4 py-2 rounded-lg bg-white/5 border border-white/5 text-sm text-[#ccc] hover:text-white hover:bg-white/8 hover:border-white/10 transition-all duration-150"
+              data-test={`quick-action-${href.split("/").pop()}`}
+              className="px-4 py-2 rounded-lg bg-white/5 border border-white/5 text-base text-[#ccc] hover:text-white hover:bg-white/8 hover:border-white/10 transition-all duration-150"
             >
               {label}
             </a>

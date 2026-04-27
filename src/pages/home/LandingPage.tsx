@@ -202,7 +202,7 @@ const LandingPage = () => {
               Sign in
             </Link>
             <Link
-              to="/register"
+              to="/signin"
               className="rounded px-4 py-2 text-md font-extrabold text-white bg-black hover:text-text-secondary transition-colors"
             >
               Create account
