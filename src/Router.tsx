@@ -68,7 +68,12 @@ const MoreOfLikeSlugPage = lazy(
 const CuratedForYouSlugPage = lazy(
   () => import("@/pages/you/sets/CuratedForYouSlugPage"),
 );
-
+const AlbumsForYouSlugPage = lazy(
+  () => import("@/pages/you/albums/AlbumsForYouSlugPage"),
+);
+const TrendingByGenreSlugPage = lazy(
+  () => import("@/pages/you/sets/TrendingByGenreSlugPage"),
+);
 // Feed
 const FeedPage = lazy(() => import("@/pages/feed/FeedPage"));
 const ChartsPage = lazy(() => import("@/pages/feed/charts/ChartsPage"));
@@ -128,6 +133,9 @@ const AlbumSlugPage = lazy(() => import("@/pages/you/albums/AlbumSlugPage"));
 
 // Settings
 const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage"));
+const SubscriptionsPage = lazy(
+  () => import("@/pages/subscriptions/Subscriptions"),
+);
 const ContentPage = lazy(() => import("@/pages/settings/content/ContentPage"));
 const SettingsNotificationsPage = lazy(
   () => import("@/pages/settings/notifications/NotificationsPage"),
@@ -155,7 +163,9 @@ const VinylPage = lazy(() => import("@/pages/creator/artists/vinyl/VinylPage"));
 const CommentsArtistPage = lazy(
   () => import("@/pages/creator/artists/comments/ArtistsCommentsPage"),
 );
-const CheckoutPage = lazy(() => import("@/pages/creator/checkout/CheckoutPage"));
+const CheckoutPage = lazy(
+  () => import("@/pages/creator/checkout/CheckoutPage"),
+);
 const PaymentPage = lazy(() => import("@/pages/creator/checkout/PaymentPage"));
 const PlanPage = lazy(() => import("@/pages/premium/PlanPage"));
 
@@ -234,6 +244,14 @@ export const router = createBrowserRouter([
       {
         path: "rythmify/sets/:mixSlug",
         element: <Lazy component={CuratedForYouSlugPage} />,
+      },
+      {
+        path: "discover/albums/:albumSlug",
+        element: <Lazy component={AlbumsForYouSlugPage} />,
+      },
+      {
+        path: "discover/genres/:playlistSlug",
+        element: <Lazy component={TrendingByGenreSlugPage} />,
       },
       { path: "people", element: <Lazy component={PeoplePage} /> },
       { path: "download", element: <Lazy component={DownloadPage} /> },
@@ -350,11 +368,11 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // Settings
-          {
-            path: "settings",
-            element: <Lazy component={SettingsPage} />,
-            children: [
+            // Settings
+            {
+              path: "settings",
+              element: <Lazy component={SettingsPage} />,
+              children: [
               { index: true, element: <Navigate to="content" replace /> },
               { path: "content", element: <Lazy component={ContentPage} /> },
               {
@@ -374,6 +392,12 @@ export const router = createBrowserRouter([
                 element: <Lazy component={TwoFactorPage} />,
               },
             ],
+          },
+
+          // Subscriptions
+          {
+            path: "subscriptions",
+            element: <Lazy component={SubscriptionsPage} />,
           },
         ],
       },

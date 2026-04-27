@@ -10,6 +10,7 @@ import {
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
+import { getTrackById } from "@/services/track.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
 import TrackList from "../../../components/playlist/TrackList";
@@ -61,7 +62,20 @@ function PlaylistSlugPage() {
 
         if (cancelled) return;
 
-        setPlaylist(playlistRes.data);
+        const hydratedTracks = await Promise.all(
+          playlistRes.data.tracks.map(async (track) => {
+            const fullTrack = await getTrackById(track.track_id).catch(() => null);
+            return {
+              ...track,
+              play_count: fullTrack?.playCount ?? track.play_count ?? 0,
+            };
+          }),
+        );
+
+        setPlaylist({
+          ...playlistRes.data,
+          tracks: hydratedTracks,
+        });
 
         try {
           const owner = await getUserById(playlistRes.data.owner_user_id);

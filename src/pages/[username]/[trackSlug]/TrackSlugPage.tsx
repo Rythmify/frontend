@@ -13,6 +13,7 @@ import {
   incrementPlayCount,
 } from "../../../services/track.service";
 import { usePlayerStore } from "../../../stores/player.store";
+import { useLikesStore } from "../../../stores/likes.store";
 import type { Comment } from "../../../types/comment";
 
 export default function TrackSlugPage() {
@@ -21,6 +22,7 @@ export default function TrackSlugPage() {
     trackId: string;
   }>();
   const navigate = useNavigate();
+  const loves = useLikesStore();
 
   const [track, setTrack] = useState<Track | null>(null);
   const [relatedTracks, setRelatedTracks] = useState<Track[]>([]);
@@ -59,14 +61,14 @@ export default function TrackSlugPage() {
             if (!cancelled)
               setRelatedTracks(Array.isArray(tracks) ? tracks : []);
           })
-          .catch(() => {});
+          .catch(() => { });
 
         getTrackComments(String(fetchedTrack.id))
           .then((fetchedComments) => {
             if (!cancelled)
               setComments(Array.isArray(fetchedComments) ? fetchedComments : []);
           })
-          .catch(() => {});
+          .catch(() => { });
       } catch (err) {
         if (!cancelled) setError("Failed to load track. Please try again.");
         console.error(err);
@@ -108,21 +110,48 @@ export default function TrackSlugPage() {
     }
   };
 
-  // View counting logic: Count only if user listens to at least 30 seconds
+  // Seed store stats when track loads
+  useEffect(() => {
+    if (track) {
+      loves.updateItemStats(track.id, {
+        likeCount: track.likeCount,
+        repostCount: track.repostCount,
+        playCount: track.playCount,
+        isReposted: track.isReposted
+      });
+    }
+  }, [track?.id]);
+
+  // View counting logic: Count at 30s, or 90% for short tracks
   useEffect(() => {
     let hasCounted = false;
     if (!track || currentTrack?.id !== track.id) return;
 
     const unsubscribe = usePlayerStore.subscribe((state) => {
-      if (!hasCounted && state.currentTime >= 30 && state.currentTrack?.id === track.id) {
-        hasCounted = true;
-        incrementPlayCount(track.id);
-        setTrack(prev => prev ? { ...prev, playCount: (prev.playCount || 0) + 1 } : null);
+      if (!hasCounted && state.currentTrack?.id === track.id) {
+        // Parse duration
+        let durationSec = 0;
+        if (typeof track.duration === "string") {
+          const parts = track.duration.split(":").map(Number);
+          if (parts.length === 2) durationSec = parts[0] * 60 + parts[1];
+        } else {
+          durationSec = Number(track.duration);
+        }
+
+        const threshold = durationSec > 0 && durationSec < 30 ? durationSec * 0.9 : 30;
+
+        if (state.currentTime >= threshold && state.currentTime > 0) {
+          hasCounted = true;
+          incrementPlayCount(track.id);
+          loves.incrementPlayCount(track.id);
+          // Also update local state for immediate UI feedback on this page
+          setTrack(prev => prev ? { ...prev, playCount: (prev.playCount || 0) + 1 } : null);
+        }
       }
     });
 
     return () => unsubscribe();
-  }, [track?.id, currentTrack?.id]);
+  }, [track?.id, currentTrack?.id, track?.duration]);
 
   const handleComment = async (text: string, timestampSec: number) => {
     if (!track) return;
@@ -203,14 +232,14 @@ export default function TrackSlugPage() {
         <div data-test="track-main-content" className="flex-1 min-w-0">
           <TrackActions
             track={heroTrack ?? track}
-            onAddToNextUp={() => usePlayerStore.getState().addToQueue(track)}
+            onAddToNextUp={() => usePlayerStore.getState().addNextInQueue(track)}
             onComment={handleComment}
           />
-          
+
           {/* Comments Section - Moved below actions like SoundCloud */}
-          <TrackCommentList 
-            comments={comments} 
-            trackId={String(track.id)} 
+          <TrackCommentList
+            comments={comments}
+            trackId={String(track.id)}
             totalComments={track.commentCount}
             onCommentAdded={() => {
               setTrack(prev => prev ? { ...prev, commentCount: (prev.commentCount || 0) + 1 } : null);
@@ -227,9 +256,9 @@ export default function TrackSlugPage() {
           data-test="track-sidebar-col"
           className="w-full lg:w-[280px] shrink-0 lg:pt-[12px]"
         >
-          <TrackSidebar 
-            track={heroTrack ?? track} 
-            featuredArtists={[]} 
+          <TrackSidebar
+            track={heroTrack ?? track}
+            featuredArtists={[]}
             relatedTracks={relatedTracks}
           />
         </div>

@@ -11,11 +11,14 @@ import { IoSend, IoPlaySharp, IoShareOutline } from "react-icons/io5";
 import { AiOutlineRetweet } from "react-icons/ai";
 import { LuListEnd } from "react-icons/lu";
 import SharePopup from "./SharePopup";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import type { Track } from "../../../../types/track";
 import * as engagementService from "../../../../services/engagement.service";
 import { postComment } from "../../../../services/track.service";
 import { usePlayerStore } from "../../../../stores/player.store";
 import { useAuthStore } from "../../../../stores/auth.store";
+import { useLikesStore } from "../../../../stores/likes.store";
+import { toast } from "sonner";
 
 interface TrackActionsProps {
   track: Track;
@@ -34,27 +37,27 @@ export default function TrackActions({
   const { user } = useAuthStore();
   const currentUserAvatar = user?.avatar || "https://picsum.photos/seed/rythmify/100/100";
   
-  const [liked, setLiked] = useState(isLiked);
-  const [reposted, setReposted] = useState(track.isReposted || false);
-  const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
-  const [repostCount, setRepostCount] = useState(track.repostCount ?? 0);
-  const [playCount, setPlayCount] = useState(track.playCount ?? 0);
+  const { isTrackLiked, toggleTrack: globalToggleTrack, getItemStats, isTrackReposted, toggleRepost: globalToggleRepost } = useLikesStore();
+  
+  const liked = isTrackLiked(track.id);
+  const globalStats = getItemStats(track.id);
+  
+  const reposted = isTrackReposted(track.id) || (globalStats.isReposted ?? track.isReposted ?? false);
+  const likeCount = globalStats.likeCount ?? track.likeCount ?? 0;
+  const repostCount = globalStats.repostCount ?? track.repostCount ?? 0;
+  const playCount = globalStats.playCount ?? track.playCount ?? 0;
   const [commentCount, setCommentCount] = useState(track.commentCount ?? 0);
 
-  // Sync counts when track data changes from MSW
+  // Sync comment count when track data changes
   useEffect(() => {
-    setLikeCount(track.likeCount ?? 0);
-    setRepostCount(track.repostCount ?? 0);
-    setPlayCount(track.playCount ?? 0);
     setCommentCount(track.commentCount ?? 0);
-    setLiked(track.isLiked || false);
-    setReposted(track.isReposted || false);
   }, [track]);
 
   const [shareOpen, setShareOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [addedToQueue, setAddedToQueue] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,51 +70,24 @@ export default function TrackActions({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Like - calls MSW ( /api/tracks/:id/like )
+  // Like - uses global store
   const handleLike = async () => {
-    try {
-      if (liked) {
-        await engagementService.unlikeTrack(track.id);
-        setLiked(false);
-        setLikeCount((p) => p - 1);
-      } else {
-        await engagementService.likeTrack(track.id);
-        setLiked(true);
-        setLikeCount((p) => p + 1);
-      }
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        alert("Session expired or unauthorized. Please log out and back in.");
-      }
-      setLiked((p) => !p);
-    }
+    globalToggleTrack(track).catch(() => {
+      toast.error("Failed to like track");
+    });
   };
 
   const isOwner = !!user && (user.username === track.artistUsername || user.id === track.artistId);
 
-  // Repost - calls /api/tracks/:id/repost
+  // Repost - calls store
   const handleRepost = async () => {
     if (isOwner) {
-      alert("You cannot repost your own track!");
+      toast.error("You cannot repost your own track!");
       return;
     }
-    const wasReposted = reposted;
-    // Optimistic update
-    setReposted(!wasReposted);
-    setRepostCount((p) => wasReposted ? Math.max(0, p - 1) : p + 1);
-
-    try {
-      if (wasReposted) {
-        await engagementService.removeRepost(track.id);
-      } else {
-        await engagementService.repostTrack(track.id);
-      }
-    } catch (err: any) {
-      console.error("Repost failed", err);
-      // Handle generic errors
-      setReposted(wasReposted);
-      setRepostCount((p) => wasReposted ? p + 1 : Math.max(0, p - 1));
-    }
+    globalToggleRepost(track).catch(() => {
+      toast.error("Failed to repost track");
+    });
   };
 
   // Comment - calls MSW (/api/tracks/:id/comments)
@@ -206,7 +182,7 @@ export default function TrackActions({
                 data-test="button-copy-link"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
-                  alert("Link copied!");
+                  toast.success("Link copied to clipboard!");
                 }}
                 tooltip="Copy Link"
               >
@@ -248,7 +224,7 @@ export default function TrackActions({
                       label="Add to playlist"
                       data-test="dropdown-item-add-playlist"
                       onClick={() => {
-                        alert("Add to playlist feature is not implemented yet.");
+                        setShowPlaylistModal(true);
                         setMoreOpen(false);
                       }}
                     />
@@ -286,6 +262,15 @@ export default function TrackActions({
         </div>
 
         {shareOpen && <SharePopup track={track} onClose={() => setShareOpen(false)} />}
+        {showPlaylistModal && (
+          <AddToPlaylistModal
+            trackId={String(track.id)}
+            trackTitle={track.title}
+            trackCoverUrl={track.coverUrl}
+            artistName={track.artistName}
+            onClose={() => setShowPlaylistModal(false)}
+          />
+        )}
       </>
     </Tooltip.Provider>
   );

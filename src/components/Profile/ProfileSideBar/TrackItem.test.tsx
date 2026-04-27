@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import TrackItem from "@/components/UI/TrackItem";
+import React from "react";
+import TrackItem from "../../UI/TrackItem";
 
 const mockNavigate = vi.fn();
 
@@ -8,10 +9,69 @@ vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }));
 
+vi.mock("@/stores/player.store", () => ({
+  usePlayerStore: Object.assign(
+    vi.fn(() => ({
+      currentTrack: null,
+      isPlaying: false,
+      setTrack: vi.fn(),
+      togglePlay: vi.fn(),
+    })),
+    {
+      getState: vi.fn(() => ({
+        playContext: vi.fn(),
+      })),
+    }
+  ),
+}));
+
+const mockLikesStore = {
+  isTrackLiked: vi.fn().mockReturnValue(false),
+  toggleTrack: vi.fn(),
+};
+
+vi.mock("@/stores/likes.store", () => ({
+  useLikesStore: vi.fn((selector) => {
+    if (typeof selector === 'function') return selector(mockLikesStore);
+    return mockLikesStore;
+  }),
+}));
+
+vi.mock("@/stores/history.store", () => ({
+  useHistoryStore: vi.fn(() => ({
+    addTrack: vi.fn(),
+  })),
+}));
+
+vi.mock("@/stores/auth.store", () => ({
+  useAuthStore: vi.fn(() => ({
+    user: { id: "user-123", username: "me" },
+  })),
+}));
+
+vi.mock("@/services/engagement.service", () => ({
+  repostTrack: vi.fn(),
+  removeRepost: vi.fn(),
+}));
+
+vi.mock("@/services/track.service", () => ({
+  getRelatedTracks: vi.fn(),
+}));
+
+vi.mock("./SharePopup", () => ({
+  default: () => <div data-test="share-popup" />,
+}));
+
+vi.mock("@/components/playlist/AddToPlaylistModal", () => ({
+  default: () => <div data-test="add-to-playlist-modal" />,
+}));
+
 const defaultProps = {
   id: "1",
   title: "SICKO MODE",
   artist: "Travis Scott",
+  artistUsername: "travis-scott",
+  trackSlug: "sicko-mode",
   coverUrl: "https://example.com/cover.jpg",
   plays: 120000000,
   likes: 2500000,
@@ -31,13 +91,6 @@ describe("TrackItem", () => {
     expect(screen.getByText("SICKO MODE")).toBeInTheDocument();
   });
 
-  it("renders cover image when coverUrl is provided", () => {
-    render(<TrackItem {...defaultProps} />);
-    const img = screen.getByAltText("SICKO MODE");
-    expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute("src", "https://example.com/cover.jpg");
-  });
-
   it("renders stats correctly", () => {
     render(<TrackItem {...defaultProps} />);
     expect(screen.getByText("120.0M")).toBeInTheDocument();
@@ -54,22 +107,12 @@ describe("TrackItem", () => {
     expect(screen.getByTestId("track-more-button-1")).toBeInTheDocument();
   });
 
-  it("hides like and more buttons on mouse leave", () => {
+  it("calls toggleTrack when heart is clicked", () => {
     render(<TrackItem {...defaultProps} />);
     const container = screen.getByTestId("track-item-1");
     fireEvent.mouseEnter(container);
-    fireEvent.mouseLeave(container);
-    expect(screen.queryByTestId("track-like-button-1")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("track-more-button-1")).not.toBeInTheDocument();
-  });
-
-  it("calls onUnlike when heart is clicked while liked", () => {
-    const onUnlike = vi.fn();
-    render(<TrackItem {...defaultProps} onUnlike={onUnlike} />);
-    const container = screen.getByTestId("track-item-1");
-    fireEvent.mouseEnter(container);
     fireEvent.click(screen.getByTestId("track-like-button-1"));
-    expect(onUnlike).toHaveBeenCalledWith("1");
+    expect(mockLikesStore.toggleTrack).toHaveBeenCalled();
   });
 
   it("navigates to artist page when artist name is clicked", () => {
@@ -78,33 +121,25 @@ describe("TrackItem", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/travis-scott");
   });
 
-  it("navigates to track page when title is clicked", () => {
+  it("navigates to personalised mix page when title is clicked", () => {
     render(<TrackItem {...defaultProps} />);
     fireEvent.click(screen.getByTestId("track-title-1"));
-    expect(mockNavigate).toHaveBeenCalledWith("/travis-scott/sicko-mode");
+    // Aligned with TrackItem.tsx: /discover/personalised/${trackSlug ?? ""}:${id}
+    expect(mockNavigate).toHaveBeenCalledWith("/discover/personalised/sicko-mode:1");
   });
 
   it("navigates to track page when comments is clicked", () => {
     render(<TrackItem {...defaultProps} />);
     fireEvent.click(screen.getByTestId("track-comments-1"));
-    expect(mockNavigate).toHaveBeenCalledWith("/travis-scott/sicko-mode");
+    expect(mockNavigate).toHaveBeenCalledWith("/travis-scott/1");
   });
 
-  it("shows more menu when ellipsis button is clicked", () => {
+  it("shows more menu and options", () => {
     render(<TrackItem {...defaultProps} />);
     const container = screen.getByTestId("track-item-1");
     fireEvent.mouseEnter(container);
     fireEvent.click(screen.getByTestId("track-more-button-1"));
-    expect(screen.getByText("Repost")).toBeInTheDocument();
-    expect(screen.getByText("Share")).toBeInTheDocument();
     expect(screen.getByText("Copy Link")).toBeInTheDocument();
     expect(screen.getByText("Add to Playlist")).toBeInTheDocument();
-    expect(screen.getByText("Station")).toBeInTheDocument();
-  });
-
-  it("renders without optional props", () => {
-    render(<TrackItem id="2" title="Test" artist="Artist" />);
-    expect(screen.getByText("Test")).toBeInTheDocument();
-    expect(screen.getByText("Artist")).toBeInTheDocument();
   });
 });

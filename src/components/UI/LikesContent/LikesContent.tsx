@@ -22,8 +22,8 @@ export default function LikesContent({ tracks, showControls = true, maxItems, wi
 
   const filtered = filter.trim()
     ? tracks.filter(t =>
-        t.title.toLowerCase().includes(filter.toLowerCase()) ||
-        t.artistName.toLowerCase().includes(filter.toLowerCase()))
+        (t.title?.toLowerCase() || "").includes(filter.toLowerCase()) ||
+        (t.artistName?.toLowerCase() || "").includes(filter.toLowerCase()))
     : tracks;
 
   const displayed = maxItems ? filtered.slice(0, maxItems) : filtered;

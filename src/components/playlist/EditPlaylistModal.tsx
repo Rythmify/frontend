@@ -122,6 +122,7 @@ export default function EditPlaylistModal({
         description: description.trim() || null,
         is_public: isPublic,
         subtype,
+        is_album_view: subtype === "album",
         slug: slug || undefined,
         release_date: releaseDate || null,
         genre_id: genreId || null,
@@ -134,6 +135,12 @@ export default function EditPlaylistModal({
         tracks: currentTracks,
         track_count: currentTracks.length,
       } as PlaylistDetails);
+
+      window.dispatchEvent(
+        new CustomEvent("playlist-updated", {
+          detail: { playlistId: playlist.playlist_id, updated: res.data },
+        }),
+      );
 
       onClose();
     } catch {

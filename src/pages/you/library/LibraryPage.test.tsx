@@ -1,28 +1,43 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import LibraryPage from "@/pages/you/library/LibraryPage";
 
 // ─── Mocks ────────────────────────────────────────────────
 
-vi.mock("react-router-dom", () => ({
-  Link: ({
-    to,
-    children,
-    ...props
-  }: {
-    to: string;
-    children: React.ReactNode;
-    [key: string]: unknown;
-  }) => (
-    <a href={String(to)} {...(props as Record<string, unknown>)}>
-      {children}
-    </a>
-  ),
-}));
+import { configure } from "@testing-library/react";
 
-vi.mock("@/stores/likes.store", () => ({ useLikesStore: vi.fn() }));
-vi.mock("@/stores/history.store", () => ({ useHistoryStore: vi.fn() }));
-vi.mock("@/stores/auth.store", () => ({ useAuthStore: vi.fn() }));
+configure({ testIdAttribute: "data-test" });
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return { ...actual };
+});
+
+vi.mock("@/services/user.service", () => ({
+  getUserById: vi.fn().mockResolvedValue({ followers_count: 100 }),
+}));
+vi.mock("@/stores/likes.store", () => ({
+  useLikesStore: Object.assign(vi.fn(), {
+    subscribe: vi.fn(),
+    getState: vi.fn(() => ({})),
+    setState: vi.fn(),
+  }),
+}));
+vi.mock("@/stores/history.store", () => ({
+  useHistoryStore: Object.assign(vi.fn(), {
+    subscribe: vi.fn(),
+    getState: vi.fn(() => ({})),
+    setState: vi.fn(),
+  }),
+}));
+vi.mock("@/stores/auth.store", () => ({
+  useAuthStore: Object.assign(vi.fn(), {
+    subscribe: vi.fn(),
+    getState: vi.fn(() => ({})),
+    setState: vi.fn(),
+  }),
+}));
 
 vi.mock("@/services/api/discover.service", () => ({
   getRecentlyPlayed: vi.fn(),
@@ -80,9 +95,9 @@ vi.mock("@/components/UI/StationCard/StationCard", () => ({
     <div data-test={`station-card-${station.id}`} />
   ),
 }));
-vi.mock("@/components/UI/MadeForYouCard/MadeForYouCard", () => ({
-  default: ({ item }: { item: { id: string } }) => (
-    <div data-test={`mix-card-${item.id}`} />
+vi.mock("@/components/UI/MixCard/MixCard", () => ({
+  default: ({ mix }: { mix: { id: string } }) => (
+    <div data-test={`mix-card-${mix.id}`} />
   ),
 }));
 vi.mock("@/components/UI/LikesContent/LikesContent", () => ({
@@ -194,7 +209,11 @@ const makePlaylistCard = (id: string, title = "Playlist") => ({
 
 async function renderPage() {
   await act(async () => {
-    render(<LibraryPage />);
+    render(
+      <MemoryRouter>
+        <LibraryPage />
+      </MemoryRouter>,
+    );
   });
 }
 
@@ -315,7 +334,13 @@ describe("LibraryPage", () => {
       entries: [makeMixEntry("hm-null", null)],
     });
     await act(async () => {
-      expect(() => render(<LibraryPage />)).not.toThrow();
+      expect(() =>
+        render(
+          <MemoryRouter>
+            <LibraryPage />
+          </MemoryRouter>,
+        ),
+      ).not.toThrow();
     });
     expect(screen.getByTestId("mix-card-hm-null")).toBeInTheDocument();
   });
@@ -325,7 +350,13 @@ describe("LibraryPage", () => {
       entries: [makeMixEntry("hm-empty", "")],
     });
     await act(async () => {
-      expect(() => render(<LibraryPage />)).not.toThrow();
+      expect(() =>
+        render(
+          <MemoryRouter>
+            <LibraryPage />
+          </MemoryRouter>,
+        ),
+      ).not.toThrow();
     });
     expect(screen.getByTestId("mix-card-hm-empty")).toBeInTheDocument();
   });
@@ -467,8 +498,7 @@ describe("LibraryPage", () => {
     ]);
     await renderPage();
     await waitFor(() => {
-      // mapFollowingToUser assigns id = String(index + 1), so first user gets "1"
-      expect(screen.getByTestId("user-card-1")).toBeInTheDocument();
+      expect(screen.getByTestId("user-card-u1")).toBeInTheDocument();
     });
   });
 

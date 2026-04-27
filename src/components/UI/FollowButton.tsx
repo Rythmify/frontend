@@ -6,8 +6,9 @@ interface FollowButtonProps {
   username: string;
   userId?: string;
   className?: string;
-  initialIsFollowing?: boolean; // ← add this
+  initialIsFollowing?: boolean;
   onFollowChange?: (isFollowing: boolean) => void;
+  children?: React.ReactNode;
 }
 
 export default function FollowButton({
@@ -16,6 +17,7 @@ export default function FollowButton({
   className,
   initialIsFollowing,
   onFollowChange,
+  children,
 }: FollowButtonProps) {
   const { user, toggleFollow } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -69,13 +71,17 @@ export default function FollowButton({
       data-test={`follow-button-${username}`}
       onClick={handleClick}
       disabled={isLoading || !userId}
-      className={`cursor-pointer rounded px-4 py-1.5 text-xs font-bold transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50 ${
-        resolvedIsFollowing
-          ? "bg-input-bg text-bg-inverted"
-          : "bg-white text-black"
+      className={`${
+        !children
+          ? `cursor-pointer rounded px-4 py-1.5 text-xs font-bold transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50 ${
+              resolvedIsFollowing
+                ? "bg-input-bg text-bg-inverted"
+                : "bg-white text-black"
+            }`
+          : "cursor-pointer transition-colors"
       } ${className ?? ""}`}
     >
-      {resolvedIsFollowing ? "Following" : "Follow"}
+      {children ? children : (resolvedIsFollowing ? "Following" : "Follow")}
     </button>
   );
 }

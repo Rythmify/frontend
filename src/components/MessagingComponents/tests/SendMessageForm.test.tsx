@@ -64,6 +64,8 @@ const defaultProps = {
   conversationId: "conv-1",
   existingMessages: [],
   loadingMessages: false,
+  hasMoreMessages: false,
+  onLoadMore: vi.fn(),
   onMessageSent: vi.fn(),
   ParticipantInfo: {
     display_name: "Alice",
