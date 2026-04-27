@@ -74,6 +74,8 @@ function MadeForYouSlugPage() {
     user?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890";
   const normalizedSlug = normalizeMadeSlug(kind ?? madeSlug ?? playlistSlug);
   const madeForYouKind = getMadeForYouKind(normalizedSlug);
+  const madeForYouBadgeWords: [string, string] =
+    madeForYouKind === "weekly" ? ["WEEKLY", "WAVE"] : ["DAILY", "DROPS"];
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -237,6 +239,7 @@ function MadeForYouSlugPage() {
         showUploadButton={false}
         isMix={false}
         isForYou={true}
+        forYouBadgeWords={madeForYouBadgeWords}
         coverImages={coverImages}
       />
 

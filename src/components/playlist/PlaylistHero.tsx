@@ -18,6 +18,7 @@ interface PlaylistHeroProps {
   coverImages?: Array<string | null | undefined>;
   isStation?: boolean;
   isForYou?: boolean;
+  forYouBadgeWords?: [string, string];
   colorIndex?: number;
   isMix?: boolean;
   moreOfLikeTitle?: string;
@@ -36,6 +37,7 @@ export default function PlaylistHero({
   coverImages,
   isStation = false,
   isForYou = false,
+  forYouBadgeWords,
   colorIndex = 0,
   isMix = false,
   moreOfLikeTitle,
@@ -219,6 +221,7 @@ export default function PlaylistHero({
           onImageUpload={onImageUpload}
           isStation={isStation}
           isForYou={isForYou}
+          forYouBadgeWords={forYouBadgeWords}
           isMix={isMix}
           isMoreOfLike={moreOfLike}
           colorIndex={colorIndex}

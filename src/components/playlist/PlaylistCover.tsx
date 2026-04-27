@@ -68,6 +68,7 @@ interface PlaylistCoverProps {
   onImageUpload?: (file: File) => void | Promise<void>;
   isStation?: boolean;
   isForYou?: boolean;
+  forYouBadgeWords?: [string, string];
   isMix?: boolean;
   isMoreOfLike?: boolean;
   colorIndex?: number;
@@ -84,6 +85,7 @@ export default function PlaylistCover({
   onImageUpload,
   isStation = false,
   isForYou = false,
+  forYouBadgeWords,
   isMix = false,
   isMoreOfLike = false,
   colorIndex = 0,
@@ -138,7 +140,7 @@ export default function PlaylistCover({
                 fontStyle: "italic",
               }}
             >
-              FOR
+              {forYouBadgeWords?.[0] ?? "FOR"}
             </span>
             <span
               className="text-sm sm:text-lg md:text-xl lg:text-2xl uppercase leading-none text-white"
@@ -147,7 +149,7 @@ export default function PlaylistCover({
                 fontWeight: 900,
               }}
             >
-              YOU
+              {forYouBadgeWords?.[1] ?? "YOU"}
             </span>
           </div>
         </div>
