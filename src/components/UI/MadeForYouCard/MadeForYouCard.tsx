@@ -79,7 +79,13 @@ export default function MadeForYouCard({
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleMix({ id: item.id });
+    toggleMix({
+      id: item.id,
+      title: item.title,
+      cover_image: item.coverUrl,
+      link_to: item.madeKind ? `/discover/sets/new-for-you/${item.madeKind}/${item.id}` : undefined,
+      kind: item.madeKind ?? undefined,
+    });
   };
 
   return (

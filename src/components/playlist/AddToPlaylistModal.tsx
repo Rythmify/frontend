@@ -9,8 +9,8 @@ import {
 import { getUploadQuota } from "@/services/api/upload/quota.service";
 import { Modal } from "../MessagingComponents/Modal";
 import { useLikesStore } from "@/stores/likes.store";
-import PlaylistList from "./PlaylistList";
-import CreatePlaylistTab from "./CreatePlaylistTab";
+import PlaylistList from "@/components/playlist/PlaylistList";
+import CreatePlaylistTab from "@/components/playlist/CreatePlaylistTab";
 
 interface DisplayTrack {
   id: string;
