@@ -46,7 +46,7 @@ export default function TrackList({
           />
         ))}
       </div>
-      <div className="flex justify-center mb-20 pt-8">
+      <div className="flex justify-center mb-10 pt-8">
         <svg
           viewBox="0 0 143 64"
           xmlns="http://www.w3.org/2000/svg"
