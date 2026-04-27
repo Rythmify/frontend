@@ -5,7 +5,9 @@ import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { getRelatedTracks } from "@/services/track.service";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
-import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import CardOverlay, {
+  AddToPlaylistIcon,
+} from "@/components/UI/CardOverlay/CardOverlay";
 
 // ─── Props ────────────────────────────────────────────────
 interface TrackCardProps {
@@ -14,7 +16,6 @@ interface TrackCardProps {
   addToPlaylistTracks?: Track[];
   contextQueue?: Track[];
 }
-
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = {
@@ -122,8 +123,15 @@ const TrackCard = ({
         coverUrl: t.coverUrl ?? undefined,
       }));
     }
-    return [{ id: String(track.id), title: track.title, artistName: track.artistName, coverUrl: track.coverUrl ?? undefined }];
-  }, [track.id, addToPlaylistTracks]);
+    return [
+      {
+        id: String(track.id),
+        title: track.title,
+        artistName: track.artistName,
+        coverUrl: track.coverUrl ?? undefined,
+      },
+    ];
+  }, [track.id, track.title, track.artistName, track.coverUrl, addToPlaylistTracks]);
 
   const liked = isTrackLiked(track.id);
 
@@ -168,7 +176,10 @@ const TrackCard = ({
           isPlaying={isThisTrackPlaying}
           onPlay={handlePlayClick}
           isLiked={liked}
-          onLike={(e) => { e.stopPropagation(); toggleTrack(track); }}
+          onLike={(e) => {
+            e.stopPropagation();
+            toggleTrack(track);
+          }}
           moreMenuItems={[
             {
               label: "Add to playlist",
@@ -187,7 +198,9 @@ const TrackCard = ({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          trackTitle={addToPlaylistTracks?.length ? "More of what you like" : track.title}
+          trackTitle={
+            addToPlaylistTracks?.length ? "More of what you like" : track.title
+          }
           fetchTracks={fetchTracksForModal}
           moreOfLike={!!addToPlaylistTracks?.length}
           onClose={() => setShowPlaylistModal(false)}
