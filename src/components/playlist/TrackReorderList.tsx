@@ -26,6 +26,7 @@ interface SortableTrackRowProps {
   track: PlaylistTrackItem;
   playlistId: string;
   onRemoved: (id: string) => void;
+  dataTest?: string;
 }
 
 interface TrackReorderListProps {
@@ -40,6 +41,7 @@ function SortableTrackRow({
   track,
   playlistId,
   onRemoved,
+  dataTest,
 }: SortableTrackRowProps) {
   const [removing, setRemoving] = useState(false);
 
@@ -69,7 +71,7 @@ function SortableTrackRow({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-3 p-3 rounded-md bg-bg hover:bg-[#303030]
                  transition-opacity ${isDragging ? "opacity-40" : "opacity-100"}`}
-      data-test="sortable-track-row"
+      data-test={dataTest ?? "sortable-track-row"}
     >
       {/* Drag handle */}
       <button
@@ -184,14 +186,14 @@ export default function TrackReorderList({
         items={tracks.map((t) => t.track_id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="space-y-2">
+        <div data-test="track-reorder-list" className="space-y-2">
           {tracks.map((t) => (
             <SortableTrackRow
               key={t.track_id}
               track={t}
               playlistId={playlistId}
               onRemoved={handleRemoved}
-              data-test="sortable-track-row-container"
+              dataTest="sortable-track-row-container"
             />
           ))}
         </div>

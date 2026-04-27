@@ -222,14 +222,14 @@ function MixForYouSlugPage() {
 
   if (loading)
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div data-test="mix-for-you-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading mix...
       </div>
     );
 
   if (error || !playlist)
     return (
-      <div className="p-20 text-center text-red-500">
+      <div data-test="mix-for-you-slug-error" className="p-20 text-center text-red-500">
         {error || "Mix not found."}
       </div>
     );
@@ -248,11 +248,14 @@ function MixForYouSlugPage() {
         isMix={true}
       />
 
-      <div className=" mx-auto">
+      <div className="mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div className="flex-1 min-w-0">
-            <PlaylistActions playlist={playlist} />
-            <div className="mt-8">
+          <div data-test="mix-for-you-slug-main" className="flex-1 min-w-0">
+            <PlaylistActions
+              playlist={playlist}
+              engagementKind="mix"
+            />
+            <div data-test="mix-for-you-slug-tracklist" className="mt-8">
               <TrackList
                 tracks={playlist.tracks}
                 currentTrackId={currentTrack?.id}
@@ -262,7 +265,7 @@ function MixForYouSlugPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-70 shrink-0">
+          <div data-test="mix-for-you-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar
               playlist={playlist}
               featuredArtists={featuredArtists}

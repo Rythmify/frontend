@@ -214,9 +214,7 @@ const AddToPlaylistModal = ({
 
       const newPlaylistId = res.data.playlist_id;
 
-      const tracksForNewPlaylist = isMoreOfLike
-        ? (initialTracks ?? tracksToAdd)
-        : tracksToAdd;
+      const tracksForNewPlaylist = tracksToAdd;
 
       for (const t of tracksForNewPlaylist) {
         await addTrackToPlaylist(newPlaylistId, String(t.id));
@@ -255,15 +253,18 @@ const AddToPlaylistModal = ({
 
   return (
     <Modal isOpen={true} onClose={onClose}>
-      <div className="w-[550px] bg-bg">
+      <div
+        data-test="add-to-playlist-modal"
+        className="w-full max-w-[95vw] sm:min-w-[500px] sm:max-w-[500px] bg-bg"
+      >
         {!loading && !hasPlaylists && (
-          <div className="flex items-center px-2 py-2 text-[22px] font-bold text-text-upload">
+          <div data-test="add-to-playlist-modal-title" className="flex items-center px-2 py-2 text-[22px] font-bold text-text-upload">
             Create a playlist
           </div>
         )}
 
         {!loading && hasPlaylists && (
-          <div className="flex text-[22px] font-bold items-center">
+          <div data-test="add-to-playlist-modal-tabs" className="flex text-[22px] font-bold items-center">
             <button
               data-test="button-tab-add-to-playlist"
               onClick={() => setActiveTab("add")}
@@ -296,7 +297,7 @@ const AddToPlaylistModal = ({
         )}
 
         {loading ? (
-          <div className="py-8 flex justify-center">
+          <div data-test="add-to-playlist-modal-loading" className="py-8 flex justify-center">
             <div className="w-6 h-6 rounded-full border-2 border-[#555] border-t-text-upload animate-spin" />
           </div>
         ) : activeTab === "add" ? (
