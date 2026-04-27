@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import PlaylistCard, {
   type PlaylistCardData,
@@ -37,27 +37,37 @@ export default function SetsPage() {
 
   const filterOptions = ["All", "Created", "Liked"];
 
-  // Fetch data on mount
-  useEffect(() => {
-    const fetchAll = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [created, liked] = await Promise.all([
-          getMyPlaylists({ limit: 50 }),
-          getLikedPlaylists({ limit: 50 }),
-        ]);
-        setCreatedPlaylists(created.data.items.filter((p) => !p.is_album_view));
-        setLikedPlaylists(liked.data.items.filter((p) => !p.is_album_view));
-      } catch (err) {
-        setError("Failed to load your library. Please try again.");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [created, liked] = await Promise.all([
+        getMyPlaylists({ limit: 50 }),
+        getLikedPlaylists({ limit: 50 }),
+      ]);
+      setCreatedPlaylists(created.data.items.filter((p) => !p.is_album_view));
+      setLikedPlaylists(liked.data.items.filter((p) => !p.is_album_view));
+    } catch (err) {
+      setError("Failed to load your library. Please try again.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Fetch data on mount and refresh after playlist edits
+  useEffect(() => {
+    fetchAll();
+
+    const handlePlaylistUpdated = () => {
+      fetchAll();
+    };
+
+    window.addEventListener("playlist-updated", handlePlaylistUpdated);
+    return () => {
+      window.removeEventListener("playlist-updated", handlePlaylistUpdated);
+    };
+  }, [fetchAll]);
 
   // Filter and Search Logic
   const visiblePlaylists = useMemo(() => {
@@ -99,7 +109,7 @@ export default function SetsPage() {
   ));
 
   return (
-    <div className="container px-4 md:px-8 lg:px-12 xl:px-20 min-h-screen flex flex-col">
+    <div className="container min-h-screen flex flex-col">
       {/* Header Section */}
       <SetsHeader
         title="Hear your own playlists and the playlists you've liked:"
@@ -113,7 +123,7 @@ export default function SetsPage() {
       />
 
       {/* Main Content Carousel */}
-      <div className="pt-2 pb-10">
+      <div className="px-4 pt-2 pb-10">
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         {loading ? (

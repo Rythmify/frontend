@@ -98,7 +98,7 @@ const PlaylistCard = ({
 
   const playlistSlug =
     //playlist.slug ??
-    playlist.name
+    (playlist.name || "")
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")

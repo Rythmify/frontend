@@ -4,7 +4,6 @@ import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
-import AlbumCard from "@/components/playlist/PlaylistCard";
 import StationCard from "@/components/UI/StationCard/StationCard";
 import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
@@ -135,9 +134,26 @@ function mapPlaylistToCard(
     id: p.playlist_id,
     title: p.name,
     owner: displayName,
+    ownerUsername: displayName,
     coverUrl: p.cover_image,
     isPrivate: !p.is_public,
     isLiked: p.like_count > 0,
+  };
+}
+
+function mapAlbumToCard(
+  p: Playlist,
+  displayName: string,
+): PlaylistCardData {
+  return {
+    id: p.playlist_id,
+    title: p.name,
+    owner: displayName,
+    ownerUsername: p.owner_user_id,
+    coverUrl: p.cover_image ?? null,
+    isPrivate: !p.is_public,
+    isLiked: p.like_count > 0,
+    isAlbumView: true,
   };
 }
 
@@ -230,8 +246,12 @@ export default function LibraryPage() {
       getLikedPlaylists({ limit: 50 }),
     ])
       .then(([created, liked]) => {
-        const createdAlbums = created.data.items.filter((p) => p.is_album_view);
-        const likedAlbums = liked.data.items.filter((p) => p.is_album_view);
+        const createdAlbums = created.data.items.filter(
+          (p) => p.is_album_view || p.subtype === "album",
+        );
+        const likedAlbums = liked.data.items.filter(
+          (p) => p.is_album_view || p.subtype === "album",
+        );
         const merged = [...createdAlbums, ...likedAlbums];
         const seen = new Set<string>();
         const unique = merged.filter((p) => {
@@ -245,13 +265,23 @@ export default function LibraryPage() {
   }, []);
 
   // History entries (all types) take priority; fall back to API/mock tracks
-  const recentEntries =
-    entries.length > 0
-      ? entries
-      : (recentlyPlayedApi.length > 0
-          ? recentlyPlayedApi
-          : mockRecentlyPlayedTracks
-        ).map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
+  const recentEntries = (() => {
+    const list =
+      entries.length > 0
+        ? entries
+        : (recentlyPlayedApi.length > 0
+            ? recentlyPlayedApi
+            : mockRecentlyPlayedTracks
+          ).map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
+
+    const seen = new Set<string>();
+    return list.filter((e) => {
+      const key = `${e.type}-${e.item.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
 
   const likesDisplay = likedTracks;
   const stationsDisplay = likedStations;
@@ -267,7 +297,26 @@ export default function LibraryPage() {
     });
   })();
 
-  const displayedFollowing = followingUsers;
+  const displayedFollowing = (() => {
+    if (!user) return followingUsers;
+    const fids = new Set(user.following_ids);
+
+    // Filter API users to only those we actually follow
+    const fromApi = followingUsers.filter((u) => fids.has(u.username));
+
+    // For any fid that doesn't have an API user, add a synthetic one
+    const seenUsernames = new Set(fromApi.map((u) => u.username));
+    const synthetic: User[] = user.following_ids
+      .filter((username) => !seenUsernames.has(username))
+      .map((username, i) => ({
+        id: String(-(i + 1)), // Test expects negative IDs for synthetic users
+        username,
+        displayName: username,
+        followers: 0,
+      }));
+
+    return [...fromApi, ...synthetic];
+  })();
 
   const recentTracks = recentEntries
     .filter((e) => e.type === "track")
@@ -347,15 +396,16 @@ export default function LibraryPage() {
         {(() => {
           const seen = new Set<string>();
           return [...albums, ...storeLikedAlbums]
+            .filter((p) => p.is_album_view || p.subtype === "album")
             .filter((p) => {
               if (seen.has(p.playlist_id)) return false;
               seen.add(p.playlist_id);
               return true;
             })
             .map((p) => (
-              <AlbumCard
+              <PlaylistCard
                 key={p.playlist_id}
-                playlist={p}
+                item={mapAlbumToCard(p, user?.displayName ?? user?.username ?? p.owner_user_id)}
                 widthClassName={CARD_WIDTH}
               />
             ));
