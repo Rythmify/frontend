@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHistoryStore } from "@/stores/history.store";
 import { useLikesStore } from "@/stores/likes.store";
@@ -51,6 +51,19 @@ export default function GenreCard({
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const liked = isAuthenticated && isGenreLiked(item.id);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const fetchTracksForModal = useCallback(
+    () =>
+      getTrendingByGenre(item.id).then((r) =>
+        r.tracks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          artistName: t.artist_name ?? "",
+          coverUrl: t.cover_image ?? undefined,
+        })),
+      ),
+    [item.id],
+  );
   const isThisPlaying =
     isPlaying &&
     !!item.previewTrack &&
@@ -158,16 +171,7 @@ export default function GenreCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          fetchTracks={() =>
-            getTrendingByGenre(item.id).then((r) =>
-              r.tracks.map((t) => ({
-                id: t.id,
-                title: t.title,
-                artistName: t.artist_name ?? "",
-                coverUrl: t.cover_image ?? undefined,
-              })),
-            )
-          }
+          fetchTracks={fetchTracksForModal}
           trackTitle={item.genre}
           onClose={() => setShowPlaylistModal(false)}
         />

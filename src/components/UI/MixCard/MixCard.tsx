@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PersonalMix } from "@/services/api/discover.service";
 import { getMixTracks } from "@/services/api/discover.service";
@@ -26,26 +26,26 @@ function stableColorIndex(id: string): number {
   return h % BADGE_COLORS.length;
 }
 
-function colorIndex(label: string, id: string): number {
-  const match = label.match(/\d+/);
+function colorIndex(mix: PersonalMix): number {
+  const match = (mix.label ?? "").match(/\d+/);
   if (match) return (parseInt(match[0], 10) - 1) % BADGE_COLORS.length;
-  return stableColorIndex(id);
+  return stableColorIndex(mix.id);
 }
 
 // ─── Props ────────────────────────────────────────────────
 
 interface MixCardProps {
   mix: PersonalMix;
-  widthClassName?: string;
   index?: number;
+  widthClassName?: string;
 }
 
 // ─── Component ────────────────────────────────────────────
 
 export default function MixCard({
   mix,
-  widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
   index,
+  widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: MixCardProps) {
   const mixId = mix.mix_id ?? mix.id;
   const displayLabel =
@@ -61,6 +61,16 @@ export default function MixCard({
   // API sends mix_id; the TypeScript interface says id — coalesce both
   const liked = isMixLiked(mixId);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const fetchTracksForModal = useCallback(async () => {
+    const data = await getMixTracks(mixId);
+    return data.tracks.map((t) => ({
+      id: t.id,
+      title: t.title,
+      artistName: t.artist_name ?? undefined,
+      coverUrl: t.cover_image ?? undefined,
+    }));
+  }, [mixId]);
 
   // Guard against stale persisted history entries that predate the non-null contract
   const previewTrack = mix.preview_track
@@ -148,15 +158,7 @@ export default function MixCard({
       {showPlaylistModal && (
         <AddToPlaylistModal
           trackTitle={mix.label ?? ""}
-          fetchTracks={async () => {
-            const data = await getMixTracks(mixId);
-            return data.tracks.map((t) => ({
-              id: t.id,
-              title: t.title,
-              artistName: t.artist_name ?? undefined,
-              coverUrl: t.cover_image ?? undefined,
-            }));
-          }}
+          fetchTracks={fetchTracksForModal}
           onClose={() => setShowPlaylistModal(false)}
         />
       )}
