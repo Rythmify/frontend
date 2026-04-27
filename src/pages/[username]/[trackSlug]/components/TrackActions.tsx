@@ -36,10 +36,10 @@ export default function TrackActions({
   const { user } = useAuthStore();
   const currentUserAvatar = user?.avatar || "https://picsum.photos/seed/rythmify/100/100";
   
-  const { isTrackLiked, toggleTrack: globalToggleTrack, getTrackStats, isTrackReposted, toggleRepost: globalToggleRepost } = useLikesStore();
+  const { isTrackLiked, toggleTrack: globalToggleTrack, getItemStats, isTrackReposted, toggleRepost: globalToggleRepost } = useLikesStore();
   
   const liked = isTrackLiked(track.id);
-  const globalStats = getTrackStats(track.id);
+  const globalStats = getItemStats(track.id);
   
   const reposted = isTrackReposted(track.id) || (globalStats.isReposted ?? track.isReposted ?? false);
   const likeCount = globalStats.likeCount ?? track.likeCount ?? 0;

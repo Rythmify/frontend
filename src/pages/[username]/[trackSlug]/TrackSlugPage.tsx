@@ -113,7 +113,7 @@ export default function TrackSlugPage() {
   // Seed store stats when track loads
   useEffect(() => {
     if (track) {
-      loves.updateTrackStats(track.id, {
+      loves.updateItemStats(track.id, {
         likeCount: track.likeCount,
         repostCount: track.repostCount,
         playCount: track.playCount,

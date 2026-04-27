@@ -40,7 +40,6 @@ interface LikesStore {
   likedPlaylists: PlaylistCardData[];
   likedAlbums: Playlist[];
   likedMixes: LikedMix[];
-  likedMixes: LikedMix[];
   likedGenres: LikedGenre[];
   repostedTrackIds: string[];
   repostedPlaylistIds: string[];
