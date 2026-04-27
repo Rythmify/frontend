@@ -20,6 +20,7 @@ const TracksToAddList = ({
 
   return (
     <div
+      data-test="tracks-to-add-list"
       className={`rounded-sm overflow-hidden  ${
         isPlaylist ? "max-h-64 overflow-y-auto" : ""
       }`}
@@ -27,6 +28,7 @@ const TracksToAddList = ({
       {tracks.map((track) => (
         <div
           key={track.id}
+          data-test={`track-to-add-${track.id}`}
           className="flex items-center gap-2 py-2 px-2 transition-colors group"
         >
           {/* Cover */}

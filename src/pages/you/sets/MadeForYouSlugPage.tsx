@@ -7,14 +7,18 @@ import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { usePlayerStore } from "../../../stores/player.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { getUserById, type PublicUser } from "@/services/user.service";
 import {
   getMadeForYouDaily,
   getMadeForYouWeekly,
   type PlaylistDetails,
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
+import type { MockUser } from "@/services/mocks/users";
 
 type MadeForYouKind = "daily" | "weekly";
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function normalizeMadeSlug(rawSlug?: string) {
   return rawSlug?.replace(/^:/, "").toLowerCase();
@@ -27,12 +31,43 @@ function getMadeForYouKind(value: string | undefined): MadeForYouKind | null {
   return null;
 }
 
+function getTopArtistTrackCounts(
+  tracks: Array<Pick<PlaylistTrackItem, "artist_id"> & { user_id?: string }>,
+): [string, number][] {
+  const counts = new Map<string, number>();
+
+  for (const track of tracks) {
+    const artistId = (track.artist_id ?? track.user_id)?.trim();
+    if (!artistId) continue;
+    counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries());
+}
+
+function toFeaturedArtist(
+  user: PublicUser,
+  trackCount: number,
+): MockUser {
+  return {
+    id: user.id as unknown as number,
+    username: user.username ?? user.display_name,
+    displayName: user.display_name,
+    avatarUrl:
+      user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
+    followerCount: user.followers_count ?? 0,
+    trackCount,
+    isFollowing: false,
+  };
+}
+
 function madeForYouToPlaylistDetails(
   payload: Awaited<ReturnType<typeof getMadeForYouDaily>>,
   ownerUserId: string,
+  playlistId: string,
 ): PlaylistDetails {
   return {
-    playlist_id: payload.mix_id,
+    playlist_id: UUID_RE.test(playlistId) ? playlistId : payload.mix_id,
     owner_user_id: ownerUserId,
     name: payload.title,
     description: null,
@@ -74,8 +109,11 @@ function MadeForYouSlugPage() {
     user?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890";
   const normalizedSlug = normalizeMadeSlug(kind ?? madeSlug ?? playlistSlug);
   const madeForYouKind = getMadeForYouKind(normalizedSlug);
+  const madeForYouBadgeWords: [string, string] =
+    madeForYouKind === "weekly" ? ["WEEKLY", "WAVE"] : ["DAILY", "DROPS"];
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
+  const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,12 +145,33 @@ function MadeForYouSlugPage() {
 
         if (cancelled) return;
 
-        setPlaylist(madeForYouToPlaylistDetails(payload, currentUserId));
+        setPlaylist(
+          madeForYouToPlaylistDetails(
+            payload,
+            currentUserId,
+            payload.mix_id?? playlistSlug,
+          ),
+        );
+
+        const artistIds = getTopArtistTrackCounts(payload.tracks);
+        const artists = await Promise.all(
+          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
+            const user = await getUserById(artistId).catch(() => null);
+            return user ? toFeaturedArtist(user, trackCount) : null;
+          }),
+        );
+
+        if (!cancelled) {
+          setFeaturedArtists(
+            artists.filter((artist): artist is MockUser => !!artist),
+          );
+        }
       } catch (err) {
         console.error(err);
         if (!cancelled) {
           setError("Failed to load made for you tracks.");
           setPlaylist(null);
+          setFeaturedArtists([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -212,20 +271,14 @@ function MadeForYouSlugPage() {
 
   if (loading)
     return (
-      <div
-        data-test="made-for-you-slug-loading"
-        className="animate-pulse p-20 text-center text-white"
-      >
+      <div data-test="made-for-you-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading made for you...
       </div>
     );
 
   if (error || !playlist)
     return (
-      <div
-        data-test="made-for-you-slug-error"
-        className="p-20 text-center text-red-500"
-      >
+      <div data-test="made-for-you-slug-error" className="p-20 text-center text-red-500">
         {error || "Made for you mix not found."}
       </div>
     );
@@ -243,6 +296,7 @@ function MadeForYouSlugPage() {
         showUploadButton={false}
         isMix={false}
         isForYou={true}
+        forYouBadgeWords={madeForYouBadgeWords}
         coverImages={coverImages}
       />
 
@@ -251,11 +305,12 @@ function MadeForYouSlugPage() {
           <div className="flex-1 min-w-0" data-test="made-for-you-slug-main">
             <div data-test="made-for-you-slug-actions">
               <PlaylistActions
-                playlist={playlist}
-                initialTracks={playlist.tracks}
-                isGeneratedPlaylist
-                generatedPlaylistTitle={playlist.name}
-              />
+              playlist={playlist}
+              initialTracks={playlist.tracks}
+              isGeneratedPlaylist
+              engagementKind="mix"
+              generatedPlaylistTitle={playlist.name}
+            />
             </div>
 
             <div className="mt-8" data-test="made-for-you-slug-tracklist">
@@ -268,11 +323,11 @@ function MadeForYouSlugPage() {
             </div>
           </div>
 
-          <div
-            className="w-full lg:w-70 shrink-0"
-            data-test="made-for-you-slug-sidebar"
-          >
-            <PlaylistSidebar playlist={playlist} />
+          <div className="w-full lg:w-[280px] shrink-0" data-test="made-for-you-slug-sidebar">
+            <PlaylistSidebar
+              playlist={playlist}
+              featuredArtists={featuredArtists}
+            />
             <GuestPageFooter />
           </div>
         </div>

@@ -34,7 +34,7 @@ export default function OwnerInfo({
       data-test="album-owner-info"
       className="flex flex-col items-center gap-3 px-2 py-2 text-center"
     >
-      <Link to={`/${username}`} className="shrink-0">
+      <Link to={`/${username}`} className="shrink-0" data-test="album-owner-link">
         <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden mx-auto">
           {avatarUrl ? (
             <img
@@ -63,7 +63,7 @@ export default function OwnerInfo({
           {name}
         </Link>
 
-        <div className="flex items-center justify-center gap-4 text-[12px] text-text-secondary">
+        <div data-test="album-owner-stats" className="flex items-center justify-center gap-4 text-[12px] text-text-secondary">
           {typeof followers === "number" && (
             <p className="flex items-center gap-1">
               <svg
@@ -103,6 +103,7 @@ export default function OwnerInfo({
             username={username}
             userId={ownerUserId}
             initialIsFollowing={isFollowing}
+            data-test="album-owner-follow-button"
             className="mt-1 mx-auto min-w-[96px]"
           />
         )}
