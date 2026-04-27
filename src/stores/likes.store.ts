@@ -544,6 +544,6 @@ export const useLikesStore = create<LikesStore>()(
         }
       },
     }),
-    { name: "rythmify-likes" },
+    { name: "rythmify-likes", version: 1 },
   ),
 );
