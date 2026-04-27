@@ -204,6 +204,7 @@ export default function StationSlugPage() {
                 initialTracks={stationTracks}
                 onAddToNextUp={handlePlayStation}
                 isStation={true}
+                engagementKind="station"
               />
             </div>
 

@@ -19,6 +19,7 @@ import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup
 import type { Track } from "../../types/track";
 import { usePlayerStore } from "../../stores/player.store";
 import { useAuthStore } from "../../stores/auth.store";
+import { useLikesStore } from "../../stores/likes.store";
 import { audio, seekAudio, setGlobalWaveSurfer, setTrackLoadedLocally } from "../../services/audioService";
 import * as engagementService from "../../services/engagement.service";
 import { getTrackWaveform } from "../../services/track.service";
@@ -312,6 +313,10 @@ export default function PlaylistComponent({
 }: PlaylistComponentProps) {
   const { currentTrack, isPlaying, setTrack, togglePlay } = usePlayerStore();
   const { user } = useAuthStore();
+  const likedFromStore = useLikesStore((state) =>
+    state.isPlaylistLiked(String(playlist.id)),
+  );
+  const togglePlaylist = useLikesStore((state) => state.togglePlaylist);
 
   const isOwner = !!user && user.username === playlist.creatorUsername;
 
@@ -322,11 +327,11 @@ export default function PlaylistComponent({
   const isComponentActive = !!activeTrack;
   const componentIsPlaying = isComponentActive && isPlaying;
 
-  const [liked, setLiked] = useState(false);
   const [reposted, setReposted] = useState(false);
   const [likeCount, setLikeCount] = useState(playlist.likeCount ?? 0);
   const [repostCount, setRepostCount] = useState(playlist.repostCount ?? 0);
   const [showSharePopup, setShowSharePopup] = useState(false);
+  const [liked, setLiked] = useState(likedFromStore);
 
   // Synthetic Track object fed to SharePopup
   const shareTrack = {
@@ -349,6 +354,10 @@ export default function PlaylistComponent({
     setRepostCount(playlist.repostCount ?? 0);
   }, [playlist.likeCount, playlist.repostCount]);
 
+  useEffect(() => {
+    setLiked(likedFromStore);
+  }, [likedFromStore]);
+
   const handleLike = async () => {
     const wasLiked = liked;
     const newLiked = !wasLiked;
@@ -358,18 +367,16 @@ export default function PlaylistComponent({
     setLikeCount((p) => (wasLiked ? p - 1 : p + 1));
 
     try {
-      if (newLiked) {
-        await engagementService.likePlaylist(playlist.id);
-      } else {
-        await engagementService.unlikePlaylist(playlist.id);
-      }
+      await togglePlaylist({
+        id: String(playlist.id),
+        title: playlist.title,
+        owner: playlist.creatorUsername,
+        coverUrl: playlist.coverUrl || null,
+      });
     } catch (err: any) {
       // Revert on failure
       setLiked(wasLiked);
       setLikeCount((p) => (wasLiked ? p + 1 : p - 1));
-      if (err.response?.status === 401) {
-        alert("Session expired or unauthorized. Please log out and back in.");
-      }
       console.error("Failed to update playlist like status:", err);
     }
   };

@@ -15,6 +15,8 @@ import {
 } from "@/services/api/playlist/playlist.service";
 
 type MadeForYouKind = "daily" | "weekly";
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function normalizeMadeSlug(rawSlug?: string) {
   return rawSlug?.replace(/^:/, "").toLowerCase();
@@ -30,9 +32,10 @@ function getMadeForYouKind(value: string | undefined): MadeForYouKind | null {
 function madeForYouToPlaylistDetails(
   payload: Awaited<ReturnType<typeof getMadeForYouDaily>>,
   ownerUserId: string,
+  playlistId: string,
 ): PlaylistDetails {
   return {
-    playlist_id: payload.mix_id,
+    playlist_id: UUID_RE.test(playlistId) ? playlistId : payload.mix_id,
     owner_user_id: ownerUserId,
     name: payload.title,
     description: null,
@@ -109,7 +112,13 @@ function MadeForYouSlugPage() {
 
         if (cancelled) return;
 
-        setPlaylist(madeForYouToPlaylistDetails(payload, currentUserId));
+        setPlaylist(
+          madeForYouToPlaylistDetails(
+            payload,
+            currentUserId,
+            payload.mix_id?? playlistSlug,
+          ),
+        );
       } catch (err) {
         console.error(err);
         if (!cancelled) {
@@ -248,11 +257,12 @@ function MadeForYouSlugPage() {
           <div className="flex-1 min-w-0" data-test="made-for-you-slug-main">
             <div data-test="made-for-you-slug-actions">
               <PlaylistActions
-                playlist={playlist}
-                initialTracks={playlist.tracks}
-                isGeneratedPlaylist
-                generatedPlaylistTitle={playlist.name}
-              />
+              playlist={playlist}
+              initialTracks={playlist.tracks}
+              isGeneratedPlaylist
+              engagementKind="mix"
+              generatedPlaylistTitle={playlist.name}
+            />
             </div>
 
             <div className="mt-8" data-test="made-for-you-slug-tracklist">

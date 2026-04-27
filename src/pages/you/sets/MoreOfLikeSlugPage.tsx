@@ -67,10 +67,10 @@ function buildPlaylist(
     playlist_id: seedTrack.id,
     owner_user_id:
       seedTrack.artistUsername || seedTrack.artistName || seedTrack.id,
-    name: "More of what you like",
-    description: seedTrack.title
+    name: seedTrack.title
       ? `Related tracks: ${seedTrack.title}`
       : "Related tracks picked for you",
+    description: "More of what you like",
     is_public: true,
     cover_image: seedTrack.coverUrl || null,
     created_at: seedTrack.postedAt || new Date().toISOString(),
@@ -272,13 +272,19 @@ function MoreOfLikeSlugPage() {
 
   if (loading)
     return (
-      <div data-test="more-of-like-slug-loading" className="animate-pulse p-20 text-center text-white">
+      <div
+        data-test="more-of-like-slug-loading"
+        className="animate-pulse p-20 text-center text-white"
+      >
         Loading playlist...
       </div>
     );
   if (error || !playlist)
     return (
-      <div data-test="more-of-like-slug-error" className="p-20 text-center text-red-500">
+      <div
+        data-test="more-of-like-slug-error"
+        className="p-20 text-center text-red-500"
+      >
         {error || "Related tracks not found."}
       </div>
     );
@@ -312,12 +318,16 @@ function MoreOfLikeSlugPage() {
               playlist={playlist}
               initialTracks={relatedPlaylistTracks}
               isGeneratedPlaylist
+              engagementKind="none"
               onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                 setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
               }
             />
 
-            <div data-test="more-of-like-slug-tracklist" className="flex flex-col lg:flex-row gap-6 mt-8">
+            <div
+              data-test="more-of-like-slug-tracklist"
+              className="flex flex-col lg:flex-row gap-6 mt-8"
+            >
               <TrackList
                 tracks={relatedPlaylistTracks}
                 currentTrackId={currentTrack?.id}
@@ -327,7 +337,10 @@ function MoreOfLikeSlugPage() {
             </div>
           </div>
 
-          <div data-test="more-of-like-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
+          <div
+            data-test="more-of-like-slug-sidebar"
+            className="w-full lg:w-[280px] shrink-0"
+          >
             <PlaylistSidebar
               featuredArtists={featuredArtists}
               playlist={playlist}

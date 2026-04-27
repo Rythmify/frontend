@@ -6,7 +6,6 @@ import { IoCopyOutline } from "react-icons/io5";
 import { LuListEnd } from "react-icons/lu";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import type {
-  Playlist,
   PlaylistDetails,
   PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
@@ -134,17 +133,21 @@ export default function PlaylistActions({
 
         {/* Like */}
         <ActionButton
-          tooltip={liked ? "Unlike" : "Like"}
+          tooltip={liked ? "Liked" : "Like"}
           data-test="button-like"
           active={liked}
-          onClick={() =>
-            togglePlaylist({
+          onClick={async () => {
+            try {
+              await togglePlaylist({
               id: playlist.playlist_id,
               title: playlist.name,
               owner: playlist.owner_user_id,
               coverUrl: playlist.cover_image || null,
-            })
-          }
+              });
+            } catch (err) {
+              console.error("Failed to toggle playlist like:", err);
+            }
+          }}
         >
           {liked ? (
             <FaHeart className="text-[16px] text-[var(--color-accent)]" />

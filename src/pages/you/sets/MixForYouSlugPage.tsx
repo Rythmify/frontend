@@ -6,6 +6,7 @@ import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   type PlaylistDetails,
   type PlaylistTrackItem,
+  playlistExists,
 } from "@/services/api/playlist/playlist.service";
 import { getMixTracks } from "@/services/api/discover.service";
 import type { DiscoveryTrack, MixDetailsData } from "@/services/api/discover.service";
@@ -79,6 +80,7 @@ function MixForYouSlugPage() {
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [backendPlaylistExists, setBackendPlaylistExists] = useState(false);
 
   const {
     setTrack: setPlayerTrack,
@@ -102,6 +104,10 @@ function MixForYouSlugPage() {
         if (cancelled) return;
 
         setPlaylist(mixToPlaylistDetails(mix, currentUserId));
+        const existing = await playlistExists(mix.mix_id);
+        if (!cancelled) {
+          setBackendPlaylistExists(existing);
+        }
 
         const uniqueArtistIds = Array.from(
           new Set(mix.tracks.map((track) => track.user_id).filter(Boolean)),
@@ -128,6 +134,7 @@ function MixForYouSlugPage() {
       } catch (err) {
         if (cancelled) return;
         setError("Mix not found.");
+        setBackendPlaylistExists(false);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -251,7 +258,11 @@ function MixForYouSlugPage() {
       <div className="mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           <div data-test="mix-for-you-slug-main" className="flex-1 min-w-0">
-            <PlaylistActions playlist={playlist} />
+            <PlaylistActions
+              playlist={playlist}
+              engagementKind="mix"
+              backendPlaylistExists={backendPlaylistExists}
+            />
             <div data-test="mix-for-you-slug-tracklist" className="mt-8">
               <TrackList
                 tracks={playlist.tracks}

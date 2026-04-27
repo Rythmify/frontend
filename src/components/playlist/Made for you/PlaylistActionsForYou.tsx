@@ -19,6 +19,7 @@ interface PlaylistActionsProps {
   playlist: Playlist & Partial<Pick<PlaylistDetails, "tracks">>;
   initialTracks?: PlaylistTrackItem[];
   isGeneratedPlaylist?: boolean;
+  engagementKind?: "playlist" | "mix" | "station" | "none";
   generatedPlaylistTitle?: string;
   onAddToNextUp?: () => void;
   onPlaylistUpdated?: (updated: Playlist) => void;
@@ -29,14 +30,29 @@ export default function PlaylistActions({
   playlist,
   initialTracks,
   isGeneratedPlaylist = false,
+  engagementKind,
   generatedPlaylistTitle,
   onAddToNextUp,
   onPlaylistUpdated,
   isStation = false,
 }: PlaylistActionsProps) {
-  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
+  const {
+    isPlaylistLiked,
+    isMixLiked,
+    isStationLiked,
+    togglePlaylist,
+    toggleMix,
+    toggleStation,
+  } = useLikesStore();
   const { addToQueue } = usePlayerStore();
-  const liked = isPlaylistLiked(playlist.playlist_id);
+  const resolvedEngagementKind =
+    engagementKind ?? (isStation ? "station" : isGeneratedPlaylist ? "mix" : "playlist");
+  const liked =
+    resolvedEngagementKind === "mix"
+      ? isMixLiked(playlist.playlist_id)
+      : resolvedEngagementKind === "station"
+        ? isStationLiked(playlist.playlist_id)
+        : isPlaylistLiked(playlist.playlist_id);
 
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -106,6 +122,45 @@ export default function PlaylistActions({
     }, 3000);
   };
 
+  const handleLike = async () => {
+    try {
+      if (resolvedEngagementKind === "none") {
+        return;
+      }
+
+      if (resolvedEngagementKind === "station") {
+        await toggleStation({
+          id: playlist.playlist_id,
+          name: playlist.name,
+          seedArtist: {
+            id: playlist.owner_user_id,
+            displayName: playlist.name,
+          },
+          coverUrl: playlist.cover_image || null,
+          trackCount: playlist.track_count ?? 0,
+        });
+        return;
+      }
+
+      if (resolvedEngagementKind === "mix") {
+        await toggleMix({
+          id: playlist.playlist_id,
+          mix_id: playlist.playlist_id,
+        });
+        return;
+      }
+
+      await togglePlaylist({
+        id: playlist.playlist_id,
+        title: playlist.name,
+        owner: playlist.owner_user_id,
+        coverUrl: playlist.cover_image || null,
+      });
+    } catch (err) {
+      console.error("Failed to toggle playlist like:", err);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
@@ -120,14 +175,7 @@ export default function PlaylistActions({
       >
         {/* Like Button */}
         <ActionButton
-          onClick={() =>
-            togglePlaylist({
-              id: playlist.playlist_id,
-              title: playlist.name,
-              owner: playlist.owner_user_id,
-              coverUrl: playlist.cover_image || null,
-            })
-          }
+          onClick={handleLike}
           active={liked}
           dataTest="playlist-actions-for-you-like"
         >
@@ -243,17 +291,20 @@ function ActionButton({
   active = false,
   className = "",
   dataTest,
+  disabled = false,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
   className?: string;
   dataTest?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       data-test={dataTest}
+      disabled={disabled}
       className={`
         flex items-center gap-2 px-3 py-1.5 h-[32px]
         rounded-[4px] transition-colors duration-150 cursor-pointer
@@ -263,6 +314,7 @@ function ActionButton({
             ? "text-accent"
             : "text-text-upload border-transparent hover:text-[#717171]"
         }
+        disabled:opacity-50 disabled:cursor-not-allowed
         ${className}
       `}
     >
