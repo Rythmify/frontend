@@ -1,5 +1,5 @@
 import { useState, type MouseEvent, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { LuListEnd } from "react-icons/lu";
 import {
@@ -39,6 +39,7 @@ function TrackItem({
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
+  const navigate = useNavigate();
   const setTrack = usePlayerStore((state) => state.setTrack);
   const addToQueue = usePlayerStore((state) => state.addToQueue);
   const { isTrackLiked, toggleTrack } = useLikesStore();
@@ -47,6 +48,12 @@ function TrackItem({
   const artistName = track.artist_name ?? track.artist_name ?? "Unknown Artist";
   const artistSlug =
     track.artist_username ?? track.artist_username ?? "unknown";
+  const artistStationId = track.artist_id ?? track.artist_username ?? "";
+  const stationSlug = artistName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
   const coverImage =
     track.cover_image ?? track.cover_image ?? "https://via.placeholder.com/150";
   const playCount = track.play_count ?? 0;
@@ -309,7 +316,13 @@ function TrackItem({
                   <MiniDropItem
                     icon={<FaBroadcastTower />}
                     label="Station"
-                    onClick={() => setMoreOpen(false)}
+                    onClick={() => {
+                      setMoreOpen(false);
+                      if (!artistStationId) return;
+                      navigate(
+                        `/discover/stations/${stationSlug}:${artistStationId}`,
+                      );
+                    }}
                     data-test={`dropdown-station-track-${track.track_id}`}
                   />
                 </div>
