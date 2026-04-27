@@ -120,9 +120,11 @@ const NotificationsPage = () => {
 
 {status === 'success' && (
   <div data-test="notifications-list" className="flex flex-col gap-2">
-    {notifications.map(n => (
-      <NotificationCard key={n.id} notification={n} showActions={true} onMarkRead={handleMarkRead} data-test={`notification-card-${n.id}`} />
-    ))}
+    {notifications
+      .filter(n => n.type !== 'new_post_by_followed')
+      .map(n => (
+        <NotificationCard key={n.id} notification={n} showActions={true} onMarkRead={handleMarkRead} data-test={`notification-card-${n.id}`} />
+      ))}
   </div>
 )}
 

@@ -2,7 +2,7 @@ import axiosInstance from '../axiosInstance';
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
-export type NotificationType = 'follow' | 'like' | 'repost' | 'comment';
+export type NotificationType = 'follow' | 'like' | 'repost' | 'comment' | 'new_post_by_followed';
 
 export interface NotificationActor {
   id: string;
@@ -20,7 +20,7 @@ export interface Notification {
   id: string;
   type: NotificationType;
   actor: NotificationActor;
-  resource_type: 'track' | 'user' | 'playlist' | 'comment' | null  
+  resource_type: 'track' | 'user' | 'playlist' | 'comment'|'new_post_by_followed' | null  
   resource_id: string | null;
   resource_details: NotificationResourceDetails | null;
   is_read: boolean;

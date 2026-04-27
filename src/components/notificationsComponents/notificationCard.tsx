@@ -7,7 +7,7 @@ import { BlockUserModal } from '@/components/UI/BlockModal'
 import { ReportModal } from '@/components/UI/ReportModal'
 import { SpamModal } from '@/components/UI/SpamModal'
 import UserAvatar from '@/components/UI/UserAvatar'
-
+import { useAuthStore } from '@/stores/auth.store'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatRelativeTime = (dateStr: string): string => {
@@ -81,6 +81,7 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
   const [isBlockOpen, setIsBlockOpen]   = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isSpamOpen, setIsSpamOpen]     = useState(false)
+  const { user } = useAuthStore()
 
     const handleCellClick = async () => {
     if (!n.is_read) {
@@ -94,7 +95,7 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
     if (n.type === 'follow') {
       navigate(`/${n.actor.username}`)
     } else {
-      navigate(`/tracks/${n.resource_id}`)
+      navigate(`/${n.resource_type}/${n.resource_id}`)
     }
   }
 
@@ -138,11 +139,15 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
           className={styles.actions}
           onClick={e => e.stopPropagation()}
         >
-          {n.type === 'follow' && (
-            <FollowButton username={n.actor.username} userId={n.actor.id} />
+         {n.type === 'follow' && (
+        <FollowButton
+         username={n.actor.username}
+         userId={n.actor.id}
+         initialIsFollowing={user?.following_ids?.includes(n.actor.id) ?? false}
+          />
           )}
 
-          {/* 3 dots */}
+          {/* more button */}
           {showActions && (
             <div data-test={`notification-menu-wrapper-${n.id}`} className={styles.dropdownWrapper}>
               <button
