@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHistoryStore } from "@/stores/history.store";
 import { useLikesStore } from "@/stores/likes.store";
@@ -49,10 +49,25 @@ export default function GenreCard({
   const { addGenre } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const liked = isGenreLiked(item.id);
+  const liked = isAuthenticated && isGenreLiked(item.id);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const fetchTracksForModal = useCallback(
+    () =>
+      getTrendingByGenre(item.id).then((r) =>
+        r.tracks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          artistName: t.artist_name ?? "",
+          coverUrl: t.cover_image ?? undefined,
+        })),
+      ),
+    [item.id],
+  );
   const isThisPlaying =
-    isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
+    isPlaying &&
+    !!item.previewTrack &&
+    currentTrack?.id === item.previewTrack.id;
   const genrePath = `/discover/genres/${item.id}`;
 
   const handlePlay = (e: React.MouseEvent) => {
@@ -103,7 +118,11 @@ export default function GenreCard({
       navigate("/signin");
       return;
     }
-    toggleGenre({ id: item.id, genre: item.genre, cover_image: item.cover_image });
+    toggleGenre({
+      id: item.id,
+      genre: item.genre,
+      cover_image: item.cover_image,
+    });
   };
 
   return (
@@ -152,16 +171,7 @@ export default function GenreCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          fetchTracks={() =>
-            getTrendingByGenre(item.id).then((r) =>
-              r.tracks.map((t) => ({
-                id: t.id,
-                title: t.title,
-                artistName: t.artist_name ?? "",
-                coverUrl: t.cover_image ?? undefined,
-              })),
-            )
-          }
+          fetchTracks={fetchTracksForModal}
           trackTitle={item.genre}
           onClose={() => setShowPlaylistModal(false)}
         />

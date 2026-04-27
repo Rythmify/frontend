@@ -33,11 +33,11 @@ export default function DeleteConfirmModal({
 
   return (
     <Modal isOpen onClose={onClose}>
-      <div className="w-[420px] bg-bg flex flex-col gap-3">
-        <h2 className="text-text-upload text-[17px] font-bold">
+      <div data-test="delete-confirm-modal" className="w-full max-w-[95vw] sm:w-[420px] bg-bg flex flex-col gap-3">
+        <h2 data-test="delete-confirm-title" className="text-text-upload text-[17px] font-bold">
           Delete playlist
         </h2>
-        <p className="text-white text-sm leading-relaxed">
+        <p data-test="delete-confirm-message" className="text-white text-sm leading-relaxed">
           Are you sure you want to delete {playlistName}? This action cannot be undone.
         </p>
 

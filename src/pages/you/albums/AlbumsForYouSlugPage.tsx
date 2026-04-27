@@ -20,6 +20,7 @@ import { getUserById, type PublicUser } from "@/services/user.service";
 import { getRelatedTracks } from "@/services/track.service";
 import type { Track } from "@/types/track";
 import OwnerInfo from "@/components/playlist/OwnerInfo";
+import { playlistExists } from "@/services/api/playlist/playlist.service";
 
 function albumToPlaylistDetails(
   album: DiscoveryAlbum,
@@ -85,6 +86,7 @@ function AlbumsForYouSlugPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
+  const [backendPlaylistExists, setBackendPlaylistExists] = useState(false);
 
   const {
     setTrack: setPlayerTrack,
@@ -145,6 +147,10 @@ function AlbumsForYouSlugPage() {
         if (cancelled) return;
 
         setPlaylist(albumToPlaylistDetails(album, referenceTrack, tracks));
+        const existing = await playlistExists(album.id);
+        if (!cancelled) {
+          setBackendPlaylistExists(existing);
+        }
 
         const artistIds = getTopArtistTrackCounts(tracks);
         const artists = await Promise.all(
@@ -170,6 +176,7 @@ function AlbumsForYouSlugPage() {
           setError("Album not found.");
           setFeaturedArtists([]);
           setAlbumOwner(null);
+          setBackendPlaylistExists(false);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -264,14 +271,14 @@ function AlbumsForYouSlugPage() {
 
   if (loading)
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div data-test="albums-for-you-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading album...
       </div>
     );
 
   if (error || !playlist)
     return (
-      <div className="p-20 text-center text-red-500">
+      <div data-test="albums-for-you-slug-error" className="p-20 text-center text-red-500">
         {error || "Album not found."}
       </div>
     );
@@ -279,7 +286,7 @@ function AlbumsForYouSlugPage() {
   return (
     <div
       data-test="album-slug-page"
-      className="flex-1 w-full bg-bg min-h-screen"
+      className="flex-1 w-full bg-bg min-h-screen px-4 md:px-8 lg:px-12 xl:px-20 mx-auto"
     >
       <PlaylistHero
         key={playlist.playlist_id}
@@ -293,15 +300,17 @@ function AlbumsForYouSlugPage() {
 
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div className="flex-1 min-w-0">
+          <div data-test="albums-for-you-slug-main" className="flex-1 min-w-0">
             <PlaylistActionsAlbum
               playlist={playlist}
+              engagementKind="album"
+              backendPlaylistExists={backendPlaylistExists}
               onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                 setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
               }
             />
 
-            <div className="flex flex-1 gap-6 mt-8">
+            <div data-test="albums-for-you-slug-content" className="flex flex-1 gap-6 mt-8">
               <OwnerInfo
                 ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}
@@ -321,7 +330,7 @@ function AlbumsForYouSlugPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-[280px] shrink-0">
+          <div data-test="albums-for-you-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar
               featuredArtists={featuredArtists}
               playlist={playlist}
