@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeAll } from "vitest";
 import TrackWaveform from "../../pages/[username]/[trackSlug]/components/TrackWaveform";
 import type { Track } from "../../types/track";
@@ -32,10 +32,20 @@ vi.mock("../audioService", () => {
     audio: fakeAudio,
     setTrackLoadedLocally: vi.fn(),
     setGlobalWaveSurfer: vi.fn(),
-    globalWaveSurfer: null,
     seekAudio: vi.fn(),
   };
 });
+
+vi.mock("../track.service", () => ({
+  getTrackWaveform: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
+}));
+
+vi.mock("../../../stores/player.store", () => ({
+  usePlayerStore: {
+    getState: vi.fn(() => ({ currentTrack: null })),
+    subscribe: vi.fn(),
+  },
+}));
 
 // Stub canvas.getContext so the gradient code in TrackWaveform doesn't crash
 beforeAll(() => {
@@ -75,12 +85,12 @@ describe("TrackWaveform", () => {
   it("calls WaveSurfer.create to set up the waveform", async () => {
     const WaveSurfer = (await import("wavesurfer.js")).default;
     render(<TrackWaveform track={track} />);
-    expect(WaveSurfer.create).toHaveBeenCalled();
+    await waitFor(() => expect(WaveSurfer.create).toHaveBeenCalled());
   });
 
   it("registers the track id with audioService so we can track what's loaded", async () => {
-    const { setTrackLoadedLocally } = await import("../audioService");
+    const { setGlobalWaveSurfer } = await import("../audioService");
     render(<TrackWaveform track={track} />);
-    expect(setTrackLoadedLocally).toHaveBeenCalledWith(track.id);
+    await waitFor(() => expect(setGlobalWaveSurfer).toHaveBeenCalledWith(expect.anything(), track.id));
   });
 });
