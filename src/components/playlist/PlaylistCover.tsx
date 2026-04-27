@@ -151,6 +151,33 @@ export default function PlaylistCover({
             </span>
           </div>
         </div>
+      ) : isMix ? (
+        <div className="relative w-64 h-64 lg:w-80 lg:h-80 rounded-md overflow-hidden bg-input-bg">
+          <img
+            src={src}
+            alt={playlistName}
+            className="w-full h-full object-cover transition-all duration-200 group-hover:brightness-75"
+            data-test="mix-card-image"
+          />
+
+          <div
+            className="w-[90%] absolute left-2 bottom-2 px-1.5 py-0.3 sm:px-2 sm:py-0.5 rounded-sm flex items-baseline gap-1"
+            style={{ backgroundColor: badge.bg }}
+            data-test="mix-card-badge"
+          >
+            <span
+              className="text-sm sm:text-md md:text-lg lg:text-xl tracking-tighter uppercase leading-none"
+              style={{
+                color: badge.text,
+                fontFamily:
+                  "Soehne, system-ui, -apple-system, Roboto, Ubuntu, Cantarell, sans-serif",
+                fontWeight: 900,
+              }}
+            >
+              {playlistName}
+            </span>
+          </div>
+        </div>
       ) : coverImages?.some(Boolean) ? (
         <div className="relative w-64 h-64 lg:w-80 lg:h-80 rounded-md overflow-hidden shadow-2xl border border-white/5 bg-[#0d0d1a]">
           {isStation && (
@@ -169,25 +196,6 @@ export default function PlaylistCover({
                 </p>
               </div>
             </>
-          )}
-
-          {isMix && (
-            <div
-              className="absolute left-3 bottom-3 px-2 py-1 rounded-sm flex items-center gap-2 shadow-lg"
-              style={{ backgroundColor: badge.bg }}
-              data-test="mix-card-badge"
-            >
-              <span
-                className="text-sm sm:text-lg md:text-xl lg:text-2xl tracking-widest uppercase leading-none"
-                style={{
-                  color: badge.text,
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 900,
-                }}
-              >
-                MIX
-              </span>
-            </div>
           )}
 
           {isMoreOfLike && (
@@ -209,27 +217,47 @@ export default function PlaylistCover({
             </div>
           )}
 
-          {!isStation && !isForYou && (
+          {!isStation && !isForYou && !isMix && (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.06),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.05),transparent_28%)]" />
           )}
 
           <div className="absolute top-[6%] left-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20">
             <img
-              src={previewUrl || localPreviewUrl || coverImages?.[0] || coverImage || "https://unsplash.com/photos/close-up-view-of-retro-audio-cassette-and-pencils-on-pink-backdrop-DWWjwQfLmqE"}
+              src={
+                previewUrl ||
+                localPreviewUrl ||
+                coverImages?.[0] ||
+                coverImage ||
+                "https://unsplash.com/photos/close-up-view-of-retro-audio-cassette-and-pencils-on-pink-backdrop-DWWjwQfLmqE"
+              }
               alt={playlistName}
               className="w-full h-full object-cover"
             />
           </div>
           <div className="absolute top-[22%] left-[24%] w-[50%] aspect-square rounded-full overflow-hidden border-[2px] border-white/25">
             <img
-              src={previewUrl || localPreviewUrl || coverImages?.[1] || coverImages?.[0] || coverImage || "https://picsum.photos/seed/playlist-2/600/600"}
+              src={
+                previewUrl ||
+                localPreviewUrl ||
+                coverImages?.[1] ||
+                coverImages?.[0] ||
+                coverImage ||
+                "https://picsum.photos/seed/playlist-2/600/600"
+              }
               alt={playlistName}
               className="w-full h-full object-cover"
             />
           </div>
           <div className="absolute bottom-[14%] right-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20">
             <img
-              src={previewUrl || localPreviewUrl || coverImages?.[2] || coverImages?.[1] || coverImage || "https://picsum.photos/seed/playlist-3/600/600"}
+              src={
+                previewUrl ||
+                localPreviewUrl ||
+                coverImages?.[2] ||
+                coverImages?.[1] ||
+                coverImage ||
+                "https://picsum.photos/seed/playlist-3/600/600"
+              }
               alt={playlistName}
               className="w-full h-full object-cover"
             />
