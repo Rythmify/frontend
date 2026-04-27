@@ -34,6 +34,8 @@ const buildActionText = (n: Notification): string => {
       return `reposted your ${rType} "${title}"`
     case 'comment':
       return `commented "${n.resource_details?.content ?? ''}" on your ${rType}`
+    case 'new_post_by_followed':
+      return `posted a new ${rType} `
     default:
       return ''
   }
