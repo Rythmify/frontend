@@ -113,7 +113,7 @@ describe("StationSlugPage", () => {
 
   it("loads the station from the route slug and plays it", async () => {
     render(
-      <MemoryRouter initialEntries={["/discover/stations/based-on-drake:aaaa1111-2222-4333-8444-555566667777"]}>
+      <MemoryRouter initialEntries={["/discover/stations/artist-1:aaaa1111-2222-4333-8444-555566667777"]}>
         <Routes>
           <Route
             path="/discover/stations/:stationSlug"
@@ -152,7 +152,7 @@ describe("StationSlugPage", () => {
       });
 
     render(
-      <MemoryRouter initialEntries={["/discover/stations/based-on-drake:aaaa1111-2222-4333-8444-555566667777"]}>
+      <MemoryRouter initialEntries={["/discover/stations/artist-1:aaaa1111-2222-4333-8444-555566667777"]}>
         <Routes>
           <Route
             path="/discover/stations/:stationSlug"

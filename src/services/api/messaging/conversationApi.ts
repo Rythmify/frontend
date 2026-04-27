@@ -1,3 +1,4 @@
+import axios, { type AxiosError } from 'axios';
 import axiosInstance from '../axiosInstance';
 
 // ─── Shared Types ────────────────────────────────────────────────────────────
@@ -289,15 +290,14 @@ export const fetchConversations = async (
   return response.data;
 };
 
-// GET /messages/conversations/:conversationId
 export const fetchConversation = async (
   conversationId: string,
-  page: number = 1,
-  limit: number = 50
+  limit: number = 50,
+  offset: number = 0
 ): Promise<ConversationDetailResponse> => {
   const response = await axiosInstance.get<ConversationDetailResponse>(
     `/messages/conversations/${conversationId}`,
-    { params: { page, limit } }
+    { params: { limit, offset } }
   );
   return response.data;
 };
@@ -359,11 +359,29 @@ export const markMessageReadState = async (
   messageId: string,
   is_read: boolean
 ): Promise<MarkMessageReadResponse> => {
-  const response = await axiosInstance.patch<MarkMessageReadResponse>(
-    `/messages/conversations/${conversationId}/messages/${messageId}/read`,
-    { is_read } satisfies MarkMessageReadRequest
-  );
-  return response.data;
+  try {
+    const response = await axiosInstance.patch<MarkMessageReadResponse>(
+      `/messages/conversations/${conversationId}/messages/${messageId}/read`,
+      { is_read } satisfies MarkMessageReadRequest
+    );
+    return response.data;
+  } catch (error: unknown) {
+    if (
+      axios.isAxiosError(error) &&
+      error.response?.status === 409 &&
+      error.response.data?.error?.code === 'MESSAGES_READ_STATE_CONFLICT'
+    ) {
+      return {
+        success: true,
+        data: {
+          message_id: messageId,
+          is_read,
+          conversation_unread_count: 0,
+        },
+      };
+    }
+    throw error;
+  }
 };
 
 // GET /resolve

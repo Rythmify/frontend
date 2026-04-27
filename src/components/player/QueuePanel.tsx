@@ -8,6 +8,7 @@ import { FaTimes, FaGripLines } from "react-icons/fa";
 import { MdPlayArrow } from "react-icons/md";
 import { usePlayerStore } from "../../stores/player.store";
 import type { Track } from "../../types/track";
+import { toast } from "sonner";
 
 function fmt(s: string | number | undefined) {
   if (!s) return "";
@@ -208,8 +209,13 @@ export default function QueuePanel({ onClose }: QueuePanelProps) {
     setTrack,
     removeFromQueue,
     reorderQueue,
-    clearQueue,
+    clearQueue: clearQueueOriginal,
   } = usePlayerStore();
+
+  const clearQueue = () => {
+    clearQueueOriginal();
+    toast.success("Queue cleared");
+  };
 
   // Tracks after the currently playing one
   const upNext = queue.slice(queueIndex + 1);

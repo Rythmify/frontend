@@ -1,4 +1,4 @@
-﻿import axiosInstance from "./axiosInstance";
+import axiosInstance from "./axiosInstance";
 
 // =============================================================================
 // TYPES — API response shapes (aligned to OpenAPI spec)
@@ -172,9 +172,13 @@ export interface DiscoveryAlbum {
   owner_name: string;
   track_count: number;
   like_count: number;
-  created_at?: string;
-  preview_track?: DiscoveryTrack | null;
+  created_at: string;
+  preview_track: DiscoveryTrack | null;
   is_liked_by_me?: boolean;
+}
+
+export function getAlbumPreviewTrackId(album: DiscoveryAlbum): string | null {
+  return album.preview_track?.id ?? null;
 }
 
 export type MixDetailsTrack = DiscoveryTrack;
@@ -258,19 +262,19 @@ export const getSuggestedArtists = async (params?: {
 };
 
 // GET /home/albums-for-you
-export const getAlbumsForYou = async (params?: {
-  limit?: number;
-  offset?: number;
-}): Promise<{
+export interface AlbumsForYouResponse {
   data: DiscoveryAlbum[];
   source: "followed_artists" | "global_fallback";
   pagination: ListMeta;
-}> => {
-  const res = await axiosInstance.get<{
-    data: DiscoveryAlbum[];
-    source: "followed_artists" | "global_fallback";
-    pagination: ListMeta;
-  }>("/home/albums-for-you", { params: { ...params, is_album_view: true } });
+}
+
+export const getAlbumsForYou = async (params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AlbumsForYouResponse> => {
+  const res = await axiosInstance.get<AlbumsForYouResponse>("/home/albums-for-you", {
+    params: { ...params, is_album_view: true },
+  });
   return res.data;
 };
 
@@ -281,15 +285,11 @@ export const getMixTracks = async (
   const res = await axiosInstance.get<MixDetailsResponse>(`/home/mixes/${mixId}`);
   return res.data.data;
 };
-// POST /me/listening-history — record a play event (fire-and-forget)
+// POST /tracks/:track_id/play — record a play event (fire-and-forget)
 export const writeListeningHistory = async (
   trackId: string,
-  playedAt: string,
 ): Promise<void> => {
-  await axiosInstance.post("/me/listening-history", {
-    track_id: trackId,
-    played_at: playedAt,
-  });
+  await axiosInstance.post(`/tracks/${trackId}/play`);
 };
 
 // to do

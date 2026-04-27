@@ -6,6 +6,7 @@ import {
   getPlaylist,
   type Playlist,
 } from "@/services/api/playlist/playlist.service";
+import { getUploadQuota } from "@/services/api/upload/quota.service";
 import { Modal } from "../MessagingComponents/Modal";
 import { useLikesStore } from "@/stores/likes.store";
 import PlaylistList from "@/components/Playlist/PlaylistList";
@@ -89,6 +90,7 @@ const AddToPlaylistModal = ({
   const [creating, setCreating] = useState(false);
   const [createSuccess, setCreateSuccess] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [playlistLimitReached, setPlaylistLimitReached] = useState(false);
 
   const handlePlaylistTitleChange = (val: string) => {
     setCreateError(null);
@@ -107,9 +109,13 @@ const AddToPlaylistModal = ({
     const initializeData = async () => {
       setLoading(true);
       try {
-        const res = await getMyPlaylists();
+        const [res, quota] = await Promise.all([
+          getMyPlaylists(),
+          getUploadQuota(),
+        ]);
         const items = res.data.items;
         setPlaylists(items);
+        if (!quota.canCreatePlaylist) setPlaylistLimitReached(true);
         if (items.length === 0) setActiveTab("create");
 
         if (initialTracks?.length) {
@@ -229,9 +235,16 @@ const AddToPlaylistModal = ({
       // Reset Create Form
       setPlaylistTitle(`Related tracks: ${trackTitle}`);
       setPrivacy("public");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setCreateError(getPlaylistErrorMessage(err));
+      if (
+        err?.response?.status === 403 &&
+        err?.response?.data?.error?.code === "SUBSCRIPTION_LIMIT_REACHED"
+      ) {
+        setPlaylistLimitReached(true);
+      } else {
+        setCreateError(getPlaylistErrorMessage(err));
+      }
     } finally {
       setCreating(false);
     }
@@ -303,11 +316,13 @@ const AddToPlaylistModal = ({
             creating={creating}
             success={createSuccess}
             error={createError}
+            limitReached={playlistLimitReached}
             moreOfLike={moreOfLike}
             tracksToAdd={tracksToAdd}
             setTracksToAdd={setTracksToAdd}
             isPlaylist={isPlaylist}
             defaultPlaylistId={defaultPlaylistId}
+            hasPlaylists={hasPlaylists}
             onAdd={handleAdd}
             likedTracks={likedTracks}
             onCreate={handleCreate}
