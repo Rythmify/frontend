@@ -55,6 +55,7 @@ export default function GenreCard({
     isPlaying &&
     !!item.previewTrack &&
     currentTrack?.id === item.previewTrack.id;
+  const genrePath = `/discover/genres/${item.id}`;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -114,6 +115,7 @@ export default function GenreCard({
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
+      onClick={() => navigate(genrePath)}
       data-test={`genre-card-${item.id}`}
     >
       {/* Cover */}

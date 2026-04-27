@@ -20,6 +20,7 @@ export interface AlbumCardItem {
   likeCount: number;
   createdAt?: string;
   previewTrack?: Track;
+  previewTrackId?: string | null;
 }
 
 interface AlbumCardProps {
@@ -38,10 +39,11 @@ export default function AlbumCard({
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   const liked = isAlbumLiked(item.id);
+  const previewTrackId = item.previewTrack?.id ?? item.previewTrackId ?? null;
   const isThisPlaying =
-    isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
+    isPlaying && !!previewTrackId && currentTrack?.id === previewTrackId;
 
-  const albumPath = `/${item.ownerUsername || item.ownerId}/album/${item.slug || item.id}`;
+  const albumPath = `/discover/albums/:${item.slug ?? item.id}`;
 
   const buildPayload = (): Playlist => ({
     playlist_id: item.id,
@@ -59,7 +61,7 @@ export default function AlbumCard({
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!item.previewTrack) return;
-    if (currentTrack?.id === item.previewTrack.id) {
+    if (currentTrack?.id === previewTrackId) {
       togglePlay();
     } else {
       setTrack(item.previewTrack);

@@ -2,9 +2,23 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Track } from "../types/track";
 import { useAuthStore } from "./auth.store";
+import { savePlayerState, getPlayerState } from "../services/api/playback.service";
 
-// audioService imports this store, so we can't import it at the top level
-// without creating a circular dependency. Dynamic import resolves this.
+// Debounced helper to avoid spamming the backend
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+function debouncedSave(userId: string, state: PlayerState) {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    savePlayerState({
+      trackId: state.currentTrack?.id,
+      positionSeconds: state.currentTime,
+      volume: state.volume,
+      queue: state.queue.map((t) => t.id),
+    });
+  }, 2000);
+}
+
+// Dynamic import for audioService to avoid circular dependencies
 let _seekAudio: ((time: number) => void) | null = null;
 function getSeekAudio() {
   if (!_seekAudio) {
@@ -15,40 +29,23 @@ function getSeekAudio() {
   return _seekAudio;
 }
 
-let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-const debouncedSave = (userId: string | undefined, state: any) => {
-  if (!userId) return;
-  if (saveTimeout) clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(() => {
-    import("../services/api/playback.service").then((m) => {
-      m.savePlayerState({
-        trackId: state.currentTrack?.id,
-        positionSeconds: Math.floor(state.currentTime),
-        volume: state.volume,
-        queue: state.queue.map((t: any) => t.id),
-      });
-    });
-  }, 2000); // 2 second debounce
-};
-
 interface PlayerState {
-  // Current track
   currentTrack: Track | null;
   queue: Track[];
   queueIndex: number;
-
-  // Playback state
   isPlaying: boolean;
-  currentTime: number;   // seconds
-  duration: number;      // seconds
-  volume: number;        // 0-1
+  currentTime: number;
+  duration: number;
+  volume: number;
   isMuted: boolean;
   isShuffle: boolean;
   repeatMode: "none" | "one" | "all";
   isLiked: boolean;
+  isAutoplay: boolean;
 
   // Actions
   setTrack: (track: Track, queue?: Track[], startTime?: number) => void;
+  playContext: (sourceType: string, sourceId: string | null, fallbackTrack: Track, startTime?: number) => Promise<void>;
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
@@ -63,10 +60,12 @@ interface PlayerState {
   toggleShuffle: () => void;
   toggleRepeat: () => void;
   toggleLike: () => void;
+  toggleAutoplay: () => void;
   addToQueue: (track: Track) => void;
   addNextInQueue: (track: Track) => void;
   removeFromQueue: (index: number) => void;
   reorderQueue: (fromIndex: number, toIndex: number) => void;
+  clearQueue: () => void;
   reset: () => void;
   loadFromBackend: () => Promise<void>;
 }
@@ -80,11 +79,12 @@ export const usePlayerStore = create<PlayerState>()(
       isPlaying: false,
       currentTime: 0,
       duration: 0,
-      volume: 0.8,
+      volume: 1,
       isMuted: false,
       isShuffle: false,
       repeatMode: "none",
       isLiked: false,
+      isAutoplay: true,
 
       setTrack: (track, queue, startTime) => {
         const newQueue = queue ?? get().queue;
@@ -92,8 +92,6 @@ export const usePlayerStore = create<PlayerState>()(
         const isSameTrack = get().currentTrack?.id === track.id;
 
         if (isSameTrack) {
-          // Keep the loaded audio, but merge in any missing metadata
-          // such as playlist context so downstream UI can reflect the active source.
           set({
             currentTrack: {
               ...(get().currentTrack ?? track),
@@ -107,9 +105,6 @@ export const usePlayerStore = create<PlayerState>()(
           return;
         }
 
-        // New track - preserve currentTime only when coming from null state
-        // (example hero waveform was interacted with before pressing play)
-        // or if a startTime was explicitly provided.
         const isFromNullState = get().currentTrack === null;
         const nextTime = startTime ?? (isFromNullState ? get().currentTime : 0);
 
@@ -123,17 +118,97 @@ export const usePlayerStore = create<PlayerState>()(
         });
       },
 
+      playContext: async (sourceType, sourceId, fallbackTrack, startTime) => {
+        // Optimistically play the track immediately
+        set({
+          currentTrack: fallbackTrack,
+          queue: [fallbackTrack],
+          queueIndex: 0,
+          isPlaying: true,
+          currentTime: startTime || 0
+        });
+        
+        try {
+          const { postQueueContext } = await import("../services/api/playback.service");
+          const res = await postQueueContext({
+            interaction_type: "play",
+            source_type: sourceType,
+            source_id: sourceId,
+            target_user_id: null
+          });
+          
+          if (res && res.queue) {
+            // Map backend queue format to frontend Track[]
+            const mappedQueue = res.queue.map(q => ({
+               id: q.track_id || q.id,
+               title: q.track_title || q.title || "Unknown Title",
+               artistName: q.artist_name || q.artistName || "Unknown Artist",
+               artistUsername: q.artist_username || q.artistUsername || "unknown",
+               audioUrl: q.stream_url || q.audioUrl || "",
+               coverUrl: q.cover_image || q.coverUrl || "",
+               duration: String(q.duration || 0),
+               waveformData: q.waveformData || [],
+               playCount: q.playCount || 0,
+               likeCount: q.likeCount || 0,
+               repostCount: q.repostCount || 0,
+               commentCount: q.commentCount || 0,
+            } as Track));
+            
+            const qIndex = mappedQueue.findIndex(t => String(t.id) === String(fallbackTrack.id));
+            
+            set({
+               queue: mappedQueue,
+               queueIndex: Math.max(0, qIndex)
+            });
+          }
+        } catch (e) {
+          console.error("Failed to load context queue", e);
+        }
+      },
+
       play: () => set({ isPlaying: true }),
       pause: () => set({ isPlaying: false }),
       togglePlay: () => set((s) => ({ isPlaying: !s.isPlaying })),
 
       next: () => {
-        const { queue, queueIndex, isShuffle } = get();
+        const { queue, queueIndex, isShuffle, isAutoplay, currentTrack } = get();
+        
+        if (queueIndex >= queue.length - 1 && isAutoplay && currentTrack) {
+          import("../services/track.service").then(async (m) => {
+            try {
+              const { tracks } = await m.getRelatedTracks(String(currentTrack.id));
+              if (tracks && tracks.length > 0) {
+                const filtered = tracks.filter((t: Track) => !queue.some(q => q.id === t.id));
+                if (filtered.length > 0) {
+                   set((s) => ({ 
+                     queue: [...s.queue, ...filtered],
+                     currentTrack: filtered[0],
+                     queueIndex: s.queueIndex + 1,
+                     isPlaying: true,
+                     currentTime: 0
+                   }));
+                   return;
+                }
+              }
+            } catch (err) {
+              console.error("Autoplay failed", err);
+            }
+            const nextIndex = isShuffle ? Math.floor(Math.random() * queue.length) : (queueIndex + 1) % queue.length;
+            set({ currentTrack: queue[nextIndex], queueIndex: nextIndex, isPlaying: true, currentTime: 0 });
+          });
+          return;
+        }
+
         if (!queue.length) return;
         let nextIndex: number;
         if (isShuffle) {
           nextIndex = Math.floor(Math.random() * queue.length);
         } else {
+          // If we are at the end and repeat is none, just stop
+          if (queueIndex >= queue.length - 1 && get().repeatMode === "none") {
+            set({ isPlaying: false, currentTime: 0 });
+            return;
+          }
           nextIndex = (queueIndex + 1) % queue.length;
         }
         set({
@@ -147,7 +222,6 @@ export const usePlayerStore = create<PlayerState>()(
       previous: () => {
         const { queue, queueIndex, currentTime } = get();
         if (!queue.length) return;
-        // More than 3 seconds in? Restart the current track instead of going back.
         if (currentTime > 3) {
           get().seek(0);
           return;
@@ -161,8 +235,6 @@ export const usePlayerStore = create<PlayerState>()(
         });
       },
 
-      // Delegates to seekAudio so there is one canonical seek path.
-      // Falls back to a store-only update if seekAudio isn't resolved yet.
       seek: (time) => {
         const seekFn = getSeekAudio();
         if (seekFn) {
@@ -172,33 +244,24 @@ export const usePlayerStore = create<PlayerState>()(
         }
       },
 
-      // seekTo: updates store currentTime only - doesnt touch isPlaying.
-      // Use this when the audio element has already been seeked directly
-      // (example WaveSurfer interaction, progress bar drag) so the subscriber
-      // doesnt fire audio.play() and interrupt the seek.
       seekTo: (time) => {
         set({ currentTime: time });
       },
 
       setCurrentTime: (time) => set({ currentTime: time }),
       setDuration: (duration) => set({ duration }),
-
-      setVolume: (volume) => set({ volume, isMuted: volume === 0 }),
+      setVolume: (volume) => set({ volume }),
       toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
-
       toggleShuffle: () => set((s) => ({ isShuffle: !s.isShuffle })),
-
       toggleRepeat: () =>
-        set((s) => ({
-          repeatMode:
-            s.repeatMode === "none"
-              ? "all"
-              : s.repeatMode === "all"
-                ? "one"
-                : "none",
-        })),
+        set((s) => {
+          const modes: ("none" | "one" | "all")[] = ["none", "one", "all"];
+          const current = modes.indexOf(s.repeatMode);
+          return { repeatMode: modes[(current + 1) % modes.length] };
+        }),
 
       toggleLike: () => set((s) => ({ isLiked: !s.isLiked })),
+      toggleAutoplay: () => set((s) => ({ isAutoplay: !s.isAutoplay })),
 
       addToQueue: (track) =>
         set((s) => ({ queue: [...s.queue, track] })),
@@ -229,7 +292,6 @@ export const usePlayerStore = create<PlayerState>()(
           const newQueue = [...s.queue];
           const [moved] = newQueue.splice(fromIndex, 1);
           newQueue.splice(toIndex, 0, moved);
-          // Keep queueIndex pointing at the same track after reorder
           let newQueueIndex = s.queueIndex;
           if (fromIndex === s.queueIndex) {
             newQueueIndex = toIndex;
@@ -241,6 +303,11 @@ export const usePlayerStore = create<PlayerState>()(
           return { queue: newQueue, queueIndex: newQueueIndex };
         }),
 
+      clearQueue: () => set((s) => ({ 
+        queue: s.currentTrack ? [s.currentTrack] : [], 
+        queueIndex: 0 
+      })),
+
       reset: () =>
         set({
           currentTrack: null,
@@ -249,24 +316,21 @@ export const usePlayerStore = create<PlayerState>()(
           isPlaying: false,
           currentTime: 0,
           duration: 0,
-          isLiked: false,
+          isShuffle: false,
+          repeatMode: "none",
         }),
 
       loadFromBackend: async () => {
-        const { getPlayerState } = await import("../services/api/playback.service");
         const backendState = await getPlayerState();
         if (!backendState || !backendState.track_id) return;
 
-        // Note: The backend returns metadata but we might want the full Track object.
-        // For now, we construct a partial Track object from the returned metadata.
         const track: Track = {
           id: backendState.track_id,
-          title: backendState.track_title || "",
-          artistName: backendState.artist_name || "",
-          audioUrl: backendState.stream_url || "",
-          duration: backendState.duration?.toString() || "0",
+          title: backendState.track_title || "Unknown track",
+          artistName: backendState.artist_name || "Unknown artist",
           artistUsername: "",
-          trackSlug: "",
+          audioUrl: backendState.stream_url || "",
+          duration: String(backendState.duration || 0),
           coverUrl: "",
           genre: "",
           likeCount: 0,
@@ -279,6 +343,10 @@ export const usePlayerStore = create<PlayerState>()(
 
         set({
           currentTrack: track,
+          queue: Array.isArray(backendState.queue) && backendState.queue.length > 0 
+            ? backendState.queue 
+            : [track],
+          queueIndex: 0,
           currentTime: backendState.position_seconds,
           volume: backendState.volume,
           isPlaying: false,
@@ -297,8 +365,8 @@ export const usePlayerStore = create<PlayerState>()(
         isMuted: state.isMuted,
         isShuffle: state.isShuffle,
         repeatMode: state.repeatMode,
+        isAutoplay: state.isAutoplay,
       }),
-      // Force isPlaying to false on hydration
       onRehydrateStorage: () => (state) => {
         if (state) state.isPlaying = false;
       },
@@ -306,17 +374,19 @@ export const usePlayerStore = create<PlayerState>()(
   )
 );
 
-// --- Sync Subscriptions ---
-
-// 1. Save to backend on changes (debounced)
+// Sync Subscriptions
 usePlayerStore.subscribe((state, prev) => {
-  // We only want to save if the user is authenticated and something important changed.
-  // Note: Saving currentTime on every second is too much. 
-  // We save if the track changes, volume changes, queue changes, or every 5 seconds of playback.
   const trackChanged = state.currentTrack?.id !== prev.currentTrack?.id;
   const volumeChanged = state.volume !== prev.volume;
   const queueChanged = state.queue.length !== prev.queue.length;
   const progressStepped = Math.floor(state.currentTime / 5) !== Math.floor(prev.currentTime / 5);
+
+  if (trackChanged && state.currentTrack) {
+    // Automatically add to listening history whenever a track starts
+    import("./history.store").then((m) => {
+      m.useHistoryStore.getState().addTrack(state.currentTrack!);
+    }).catch(e => console.error("Failed to add track to history", e));
+  }
 
   if (trackChanged || volumeChanged || queueChanged || progressStepped) {
     const { user, isAuthenticated } = useAuthStore.getState();
@@ -326,11 +396,38 @@ usePlayerStore.subscribe((state, prev) => {
   }
 });
 
-// 2. Load from backend on login
-// This ensures that when a user signs in, their last saved state (across devices)
-// overrides the current local guest/cached state.
 useAuthStore.subscribe((state, prev) => {
   if (state.isAuthenticated && !prev.isAuthenticated) {
     usePlayerStore.getState().loadFromBackend();
+  }
+});
+
+// Real-time Cross-Tab Synchronization
+window.addEventListener("storage", (event) => {
+  if (event.key === "rythmify-player-storage") {
+    try {
+      const newValue = JSON.parse(event.newValue || "{}");
+      if (newValue.state) {
+        const { currentTrack, queue, queueIndex, isPlaying, volume, isMuted, repeatMode, isShuffle, currentTime } = newValue.state;
+        const currentState = usePlayerStore.getState();
+        
+        usePlayerStore.setState({
+          currentTrack,
+          queue,
+          queueIndex,
+          currentTime,
+          volume,
+          isMuted,
+          repeatMode,
+          isShuffle,
+        });
+        
+        if (isPlaying && currentState.isPlaying) {
+           currentState.pause();
+        }
+      }
+    } catch (e) {
+      console.error("Failed to sync player state across tabs", e);
+    }
   }
 });

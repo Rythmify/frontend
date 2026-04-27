@@ -81,8 +81,7 @@ function SigninFlow() {
         },
         googleRes.data.access_token,
       );
-      const token = localStorage.getItem("access_token") ?? "";
-      connectSocket(token);
+      connectSocket(googleRes.data.access_token);
       navigate("/discover");
     } catch (err: any) {
       setLoginError(
