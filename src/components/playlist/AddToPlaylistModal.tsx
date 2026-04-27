@@ -214,9 +214,7 @@ const AddToPlaylistModal = ({
 
       const newPlaylistId = res.data.playlist_id;
 
-      const tracksForNewPlaylist = isMoreOfLike
-        ? (initialTracks ?? tracksToAdd)
-        : tracksToAdd;
+      const tracksForNewPlaylist = tracksToAdd;
 
       for (const t of tracksForNewPlaylist) {
         await addTrackToPlaylist(newPlaylistId, String(t.id));
@@ -257,7 +255,7 @@ const AddToPlaylistModal = ({
     <Modal isOpen={true} onClose={onClose}>
       <div
         data-test="add-to-playlist-modal"
-        className="w-full max-w-[95vw] sm:max-w-[550px] bg-bg"
+        className="w-full max-w-[95vw] sm:min-w-[500px] sm:max-w-[500px] bg-bg"
       >
         {!loading && !hasPlaylists && (
           <div data-test="add-to-playlist-modal-title" className="flex items-center px-2 py-2 text-[22px] font-bold text-text-upload">

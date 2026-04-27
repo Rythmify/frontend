@@ -195,17 +195,23 @@ const CreatePlaylistTab = ({
           {visibleLikedTracks.map((t) => (
             <div key={t.id} className="p-2 rounded-md transition-colors">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <img
                     src={t.coverUrl}
                     className="w-12 h-12 rounded-sm object-cover"
                     alt=""
                   />
-                  <div>
-                    <p className="text-sm text-text-secondary truncate font-bold">
+                  <div className="min-w-0">
+                    <p
+                      className="text-sm text-text-secondary truncate font-bold"
+                      title={t.artistName}
+                    >
                       {t.artistName}
                     </p>
-                    <p className="text-text-upload hover:text-[#717171] font-bold text-sm truncate">
+                    <p
+                      className="text-text-upload hover:text-[#717171] font-bold text-sm truncate"
+                      title={t.title}
+                    >
                       {t.title}
                     </p>
                   </div>
@@ -225,7 +231,7 @@ const CreatePlaylistTab = ({
                 >
                   {recentlyAddedIds.includes(String(t.id))
                     ? "Added"
-                    : "Add to selection"}
+                    : "Add to playlist"}
                 </button>
               </div>
             </div>
