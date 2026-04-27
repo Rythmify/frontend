@@ -41,15 +41,27 @@ interface LikesStore {
   likedAlbums: Playlist[];
   likedMixes: LikedMix[];
   likedGenres: LikedGenre[];
+  repostedTrackIds: string[];
+  repostedPlaylistIds: string[];
+  itemStats: Record<string, { playCount?: number; likeCount?: number; repostCount?: number; isReposted?: boolean }>;
 
-  toggleTrack: (track: Track) => void;
-  toggleStation: (station: Station) => void;
+  toggleTrack: (track: Track) => Promise<void>;
+  toggleRepost: (track: Track) => Promise<void>;
+  togglePlaylistRepost: (playlistId: string, initialStats?: Partial<{ likeCount: number; repostCount: number }>) => Promise<void>;
+  incrementPlayCount: (trackId: string) => void;
+  updateItemStats: (id: string, stats: Partial<{ playCount: number; likeCount: number; repostCount: number; isReposted: boolean }>) => void;
+  
+  toggleStation: (station: Station) => Promise<void>;
   togglePlaylist: (playlist: PlaylistCardData) => Promise<void>;
-  toggleAlbum: (album: Playlist) => void;
-  toggleMix: (mix: LikedMix) => void;
-  toggleGenre: (genre: LikedGenre) => void;
+  toggleAlbum: (album: Playlist) => Promise<void>;
+  toggleMix: (mix: LikedMix) => Promise<void>;
+  toggleGenre: (genre: LikedGenre) => Promise<void>;
 
   isTrackLiked: (id: number | string) => boolean;
+  isTrackReposted: (id: number | string) => boolean;
+  isPlaylistReposted: (id: string) => boolean;
+  getItemStats: (id: number | string) => { playCount?: number; likeCount?: number; repostCount?: number; isReposted?: boolean };
+  
   isStationLiked: (id: string) => boolean;
   isPlaylistLiked: (id: string) => boolean;
   isAlbumLiked: (id: string) => boolean;
@@ -70,27 +82,152 @@ export const useLikesStore = create<LikesStore>()(
       likedAlbums: [],
       likedMixes: [],
       likedGenres: [],
+      repostedTrackIds: [],
+      repostedPlaylistIds: [],
+      itemStats: {},
 
       toggleTrack: (track) => {
         const isLiked = get().likedTracks.some(
           (t) => String(t.id) === String(track.id),
         );
-        set((s) => ({
-          likedTracks: isLiked
-            ? s.likedTracks.filter((t) => String(t.id) !== String(track.id))
-            : [track, ...s.likedTracks],
-        }));
+        const trackId = String(track.id);
+        
+        set((s) => {
+          const nextLiked = isLiked
+            ? s.likedTracks.filter((t) => String(t.id) !== trackId)
+            : [track, ...s.likedTracks];
+          
+          const currentStats = s.itemStats[trackId] || {};
+          const nextLikeCount = (currentStats.likeCount ?? track.likeCount ?? 0) + (isLiked ? -1 : 1);
+          
+          return {
+            likedTracks: nextLiked,
+            itemStats: {
+              ...s.itemStats,
+              [trackId]: { ...currentStats, likeCount: Math.max(0, nextLikeCount) }
+            }
+          };
+        });
+
         const call = isLiked ? unlikeTrack(track.id) : likeTrack(track.id);
-        call.catch((err) => {
+        return call.catch((err) => {
           const status = err?.response?.status;
           if (isLiked && status === 404) return;
           if (!isLiked && status === 409) return;
+          // Rollback
           set((s) => ({
             likedTracks: isLiked
               ? [track, ...s.likedTracks]
-              : s.likedTracks.filter((t) => String(t.id) !== String(track.id)),
+              : s.likedTracks.filter((t) => String(t.id) !== trackId),
           }));
+          throw err;
         });
+      },
+
+      toggleRepost: async (track) => {
+        const trackId = String(track.id);
+        const isReposted = get().repostedTrackIds.includes(trackId);
+        
+        set((s) => {
+          const nextIds = isReposted 
+            ? s.repostedTrackIds.filter(id => id !== trackId)
+            : [...s.repostedTrackIds, trackId];
+          
+          const currentStats = s.itemStats[trackId] || {};
+          const nextRepostCount = (currentStats.repostCount ?? track.repostCount ?? 0) + (isReposted ? -1 : 1);
+
+          return {
+            repostedTrackIds: nextIds,
+            itemStats: {
+              ...s.itemStats,
+              [trackId]: { 
+                ...currentStats, 
+                repostCount: Math.max(0, nextRepostCount),
+                isReposted: !isReposted 
+              }
+            }
+          };
+        });
+
+        try {
+          const { repostTrack, removeRepost } = await import("@/services/engagement.service");
+          if (isReposted) await removeRepost(track.id);
+          else await repostTrack(track.id);
+        } catch (err) {
+          // Rollback
+          set((s) => ({
+            repostedTrackIds: isReposted 
+              ? [...s.repostedTrackIds, trackId]
+              : s.repostedTrackIds.filter(id => id !== trackId)
+          }));
+          throw err;
+        }
+      },
+
+      togglePlaylistRepost: async (playlistId, initialStats) => {
+        const id = String(playlistId);
+        const isReposted = get().repostedPlaylistIds.includes(id);
+
+        set((s) => {
+          const nextIds = isReposted
+            ? s.repostedPlaylistIds.filter((rid) => rid !== id)
+            : [...s.repostedPlaylistIds, id];
+          
+          const currentStats = s.itemStats[id] || {};
+          const nextRepostCount = (currentStats.repostCount ?? initialStats?.repostCount ?? 0) + (isReposted ? -1 : 1);
+
+          return { 
+            repostedPlaylistIds: nextIds,
+            itemStats: {
+              ...s.itemStats,
+              [id]: {
+                ...currentStats,
+                repostCount: Math.max(0, nextRepostCount),
+                isReposted: !isReposted
+              }
+            }
+          };
+        });
+
+        try {
+          const { repostPlaylist, removePlaylistRepost } = await import("@/services/engagement.service");
+          if (isReposted) await removePlaylistRepost(playlistId);
+          else await repostPlaylist(playlistId);
+        } catch (err) {
+          // Rollback
+          set((s) => ({
+            repostedPlaylistIds: isReposted
+              ? [...s.repostedPlaylistIds, id]
+              : s.repostedPlaylistIds.filter((rid) => rid !== id),
+          }));
+          throw err;
+        }
+      },
+
+      incrementPlayCount: (trackId) => {
+        const id = String(trackId);
+        set((s) => {
+          const currentStats = s.itemStats[id] || {};
+          return {
+            itemStats: {
+              ...s.itemStats,
+              [id]: { 
+                ...currentStats, 
+                playCount: (currentStats.playCount ?? 0) + 1 
+              }
+            }
+          };
+        });
+      },
+
+      updateItemStats: (id, stats) => {
+        const sid = String(id);
+        set((s) => ({
+          itemStats: {
+            ...s.itemStats,
+            [sid]: { ...(s.itemStats[sid] || {}), ...stats }
+          }
+        }));
       },
 
       toggleStation: (station) => {
@@ -102,29 +239,41 @@ export const useLikesStore = create<LikesStore>()(
         }));
         const artistId = station.seedArtist.id;
         const call = isLiked ? unlikeStationApi(artistId) : likeStationApi(artistId);
-        call.catch(() => {
+        return call.catch((err) => {
           set((s) => ({
             likedStations: isLiked
               ? [station, ...s.likedStations]
               : s.likedStations.filter((st) => st.id !== station.id),
           }));
+          throw err;
         });
       },
 
       togglePlaylist: (playlist) => {
         const isLiked = get().likedPlaylists.some((p) => p.id === playlist.id);
-        set((s) => ({
-          likedPlaylists: isLiked
+        const id = String(playlist.id);
+
+        set((s) => {
+          const nextLiked = isLiked
             ? s.likedPlaylists.filter((p) => p.id !== playlist.id)
-            : [playlist, ...s.likedPlaylists],
-        }));
+            : [playlist, ...s.likedPlaylists];
+          
+          const currentStats = s.itemStats[id] || {};
+          const nextLikeCount = (currentStats.likeCount ?? 0) + (isLiked ? -1 : 1);
+
+          return {
+            likedPlaylists: nextLiked,
+            itemStats: {
+              ...s.itemStats,
+              [id]: { ...currentStats, likeCount: Math.max(0, nextLikeCount) }
+            }
+          };
+        });
+
         const call = isLiked
           ? unlikePlaylist(playlist.id)
           : likePlaylist(playlist.id);
         return call.catch((err) => {
-          const status = err?.response?.status;
-          if (isLiked && status === 404) return;
-          if (!isLiked && status === 409) return;
           set((s) => ({
             likedPlaylists: isLiked
               ? [playlist, ...s.likedPlaylists]
@@ -143,12 +292,13 @@ export const useLikesStore = create<LikesStore>()(
             : [mix, ...s.likedMixes],
         }));
         const call = isLiked ? unlikeMix(mixId) : likeMix(mixId);
-        call.catch(() => {
+        return call.catch((err) => {
           set((s) => ({
             likedMixes: isLiked
               ? [mix, ...s.likedMixes]
               : s.likedMixes.filter((m) => (m.mix_id ?? m.id) !== mixId),
           }));
+          throw err;
         });
       },
 
@@ -162,12 +312,13 @@ export const useLikesStore = create<LikesStore>()(
         const call = isLiked
           ? unlikeGenreTrending(genre.id)
           : likeGenreTrending(genre.id);
-        call.catch(() => {
+        return call.catch((err) => {
           set((s) => ({
             likedGenres: isLiked
               ? [genre, ...s.likedGenres]
               : s.likedGenres.filter((g) => g.id !== genre.id),
           }));
+          throw err;
         });
       },
 
@@ -183,7 +334,7 @@ export const useLikesStore = create<LikesStore>()(
         const call = isLiked
           ? unlikeAlbum(album.playlist_id)
           : likeAlbum(album.playlist_id);
-        call.catch((err) => {
+        return call.catch((err) => {
           const status = err?.response?.status;
           if (isLiked && status === 404) return;
           if (!isLiked && status === 409) return;
@@ -194,11 +345,19 @@ export const useLikesStore = create<LikesStore>()(
                   (a) => a.playlist_id !== album.playlist_id,
                 ),
           }));
+          throw err;
         });
       },
 
       isTrackLiked: (id) =>
         get().likedTracks.some((t) => String(t.id) === String(id)),
+      isTrackReposted: (id) =>
+        get().repostedTrackIds.includes(String(id)) || !!get().itemStats[String(id)]?.isReposted,
+      isPlaylistReposted: (id) =>
+        get().repostedPlaylistIds.includes(String(id)) || !!get().itemStats[String(id)]?.isReposted,
+      getItemStats: (id) =>
+        get().itemStats[String(id)] || {},
+
       isStationLiked: (id) => get().likedStations.some((s) => s.id === id),
       isPlaylistLiked: (id) =>
         !!id && get().likedPlaylists.some((p) => p.id === id),
@@ -279,12 +438,17 @@ export const useLikesStore = create<LikesStore>()(
           ]);
 
           if (tracksRes.status === "fulfilled") {
-            const tracks = tracksRes.value.data.map(mapTrackSummaryToTrack);
-            set({ likedTracks: tracks });
+            const fetchedTracks = tracksRes.value.data.map(mapTrackSummaryToTrack);
+            set((s) => {
+              // Merge local tracks that aren't in the API response yet
+              const fetchedIds = new Set(fetchedTracks.map(t => String(t.id)));
+              const localOnly = s.likedTracks.filter(t => !fetchedIds.has(String(t.id)));
+              return { likedTracks: [...localOnly, ...fetchedTracks] };
+            });
           }
 
           if (playlistsRes.status === "fulfilled") {
-            const playlists = playlistsRes.value.data.map((p) => ({
+            const fetchedPlaylists = playlistsRes.value.data.map((p) => ({
               id: p.playlist_id,
               title: p.name,
               owner: p.owner_user_id,
@@ -292,7 +456,11 @@ export const useLikesStore = create<LikesStore>()(
               isPrivate: !p.is_public,
               isLiked: true,
             }));
-            set({ likedPlaylists: playlists });
+            set((s) => {
+              const fetchedIds = new Set(fetchedPlaylists.map(p => String(p.id)));
+              const localOnly = s.likedPlaylists.filter(p => !fetchedIds.has(String(p.id)));
+              return { likedPlaylists: [...localOnly, ...fetchedPlaylists] };
+            });
           }
         } catch {
           // silent — keep local state if API fails

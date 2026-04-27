@@ -22,15 +22,18 @@ const formatRelativeTime = (dateStr: string): string => {
 }
 
 const buildActionText = (n: Notification): string => {
+  const rType = n.resource_type ?? 'track'
+  const title = n.resource_details?.title || n.resource_id || ''
+
   switch (n.type) {
     case 'follow':
       return 'started following you'
     case 'like':
-      return `liked your ${n.resource_type}  "${n.resource_details?.title ?? ''}"`
+      return `liked your ${rType} "${title}"`
     case 'repost':
-      return `reposted your ${n.resource_type} "${n.resource_details?.title ?? ''}"`
+      return `reposted your ${rType} "${title}"`
     case 'comment':
-      return `commented "${n.resource_details?.content ?? ''}" on your ${n.resource_type}`
+      return `commented "${n.resource_details?.content ?? ''}" on your ${rType}`
     default:
       return ''
   }

@@ -23,7 +23,7 @@ const MSG_LIMIT = 50;
 
 export default function MessageIdPage() {
   const navigate = useNavigate();
-  const { conversationId } = useParams();
+  const { messageId } = useParams<{ messageId: string }>();
 
   const [conversations, setConversations]   = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId]     = useState<string | null>(null);
@@ -143,8 +143,9 @@ export default function MessageIdPage() {
         setConversations(items);
         if (items.length === 0) return;
 
-        const target = conversationId
-          ? (items.find((c) => c.id === conversationId) ?? items[0])
+        // open conversation matching URL param, fallback to first
+        const target = messageId
+          ? (items.find((c) => c.id === messageId || c.participant.id === messageId) ?? items[0])
           : items[0];
 
         loadConversation(target);

@@ -3,6 +3,7 @@ import type { Comment } from "../../../../types/comment";
 import { likeComment, unlikeComment, deleteComment } from "../../../../services/engagement.service";
 import { postReply, getReplies } from "../../../../services/track.service";
 import { useAuthStore } from "../../../../stores/auth.store";
+import { toast } from "sonner";
 
 interface TrackCommentListProps {
   comments: Comment[];
@@ -212,6 +213,7 @@ export default function TrackCommentList({
 
       setReplyText("");
       setReplyingTo(null);
+      toast.success("Reply posted!");
       if (onCommentAdded) onCommentAdded();
     } catch (err) {
       console.error("Failed to post reply", err);
@@ -219,7 +221,19 @@ export default function TrackCommentList({
   };
 
   const handleDelete = async (commentId: string) => {
-    if (!confirm("Are you sure?")) return;
+    toast("Are you sure you want to delete this comment?", {
+      action: {
+        label: "Delete",
+        onClick: () => proceedWithDelete(commentId),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
+  };
+
+  const proceedWithDelete = async (commentId: string) => {
 
     // 1. Snapshot state for potential rollback
     const commentIdStr = String(commentId);
@@ -278,7 +292,7 @@ export default function TrackCommentList({
 
       // Notify parent to update global count
       if (onCommentDeleted) onCommentDeleted(commentIdStr, totalToRemove);
-      
+      toast.success("Comment deleted");
     } catch (err: any) {
       console.error("Delete failed, rolling back", err);
       // Rollback
@@ -294,7 +308,7 @@ export default function TrackCommentList({
         return restored;
       });
       setExpandedThreads(threadSnapshot);
-      alert("Failed to delete comment. You may not have permission.");
+      toast.error("Failed to delete comment. You may not have permission.");
     }
   };
 
