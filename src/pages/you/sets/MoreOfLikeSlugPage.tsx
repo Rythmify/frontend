@@ -292,7 +292,7 @@ function MoreOfLikeSlugPage() {
   return (
     <div
       data-test="more-of-like-slug-page"
-      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen"
+      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1  bg-bg min-h-screen"
     >
       <PlaylistHero
         key={playlist.playlist_id}
@@ -311,7 +311,7 @@ function MoreOfLikeSlugPage() {
         moreOfLikeTitle={seedTrack?.title}
       />
 
-      <div className="container px-4 md:px-8 lg:px-12 xl:px-20 mx-auto w-full">
+      <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           <div data-test="more-of-like-slug-main" className="flex-1 min-w-0">
             <PlaylistActions
