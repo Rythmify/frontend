@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { type Notification,markNotificationRead } from '@/services/api/notifications/notificationsAPI'
+import { useState, useEffect } from 'react'
+import { type Notification, markNotificationRead, fetchFollowStatus } from '@/services/api/notifications/notificationsAPI'
 import FollowButton from '@/components/UI/FollowButton'
 import { Modal } from '@/components/UI/Modal'
 import { BlockUserModal } from '@/components/UI/BlockModal'
@@ -8,6 +8,7 @@ import { ReportModal } from '@/components/UI/ReportModal'
 import { SpamModal } from '@/components/UI/SpamModal'
 import UserAvatar from '@/components/UI/UserAvatar'
 import { useAuthStore } from '@/stores/auth.store'
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatRelativeTime = (dateStr: string): string => {
@@ -44,28 +45,26 @@ const buildActionText = (n: Notification): string => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = {
-  row:            `flex items-start sm:items-center gap-4 cursor-pointer p-3`,
-  unreadDot:      `w-2 h-2 rounded-full bg-red-500 flex-shrink-0`,
-  unreadDotHidden:`w-2 h-2 flex-shrink-0`,
-  avatarWrapper:  `relative w-11 h-11 flex-shrink-0 overflow-visible`,
-  avatar:         `w-full h-full rounded-full bg-[#EEEEEE] overflow-hidden`,
-  avatarImg:      `w-full h-full object-cover`,
-  avatarFallback: `w-full h-full flex items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold`,
+  row:             `flex items-start sm:items-center gap-4 cursor-pointer p-3`,
+  unreadDot:       `w-2 h-2 rounded-full bg-red-500 flex-shrink-0`,
+  unreadDotHidden: `w-2 h-2 flex-shrink-0`,
+  avatarWrapper:   `relative w-11 h-11 flex-shrink-0 overflow-visible`,
+  avatar:          `w-full h-full rounded-full bg-[#EEEEEE] overflow-hidden`,
+  avatarImg:       `w-full h-full object-cover`,
+  avatarFallback:  `w-full h-full flex items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold`,
   unreadDotOverlay:`absolute -top-1 -left-1 w-2 h-2 rounded-full bg-red-500 z-10`,
-  content:        `flex-1 min-w-0`,
-  textRow:        `text-sm text-white leading-snug`,
-  username:       `font-bold mr-1`,
-  actionText:     `font-normal text-text-secondary`,
-  timeRow:        `flex items-center gap-1 text-xs text-text-secondary mt-1`,
-  timeIcon:       `fa-solid fa-user text-[10px]`,
-  actions:        `flex items-center gap-2 flex-shrink-0 self-start sm:self-auto`,
-  dotsBtn:        `w-9 h-9 flex items-center justify-center bg-[#1a1a1a] border border-border rounded-sm hover:bg-[#2a2a2a] transition-colors`,
-  dotsIcon:       `fa-solid fa-ellipsis text-white text-sm`,
-
-  // Dropdown
+  content:         `flex-1 min-w-0`,
+  textRow:         `text-sm text-white leading-snug`,
+  username:        `font-bold mr-1`,
+  actionText:      `font-normal text-text-secondary`,
+  timeRow:         `flex items-center gap-1 text-xs text-text-secondary mt-1`,
+  timeIcon:        `fa-solid fa-user text-[10px]`,
+  actions:         `flex items-center gap-2 flex-shrink-0 self-start sm:self-auto`,
+  dotsBtn:         `w-9 h-9 flex items-center justify-center bg-[#1a1a1a] border border-border rounded-sm hover:bg-[#2a2a2a] transition-colors`,
+  dotsIcon:        `fa-solid fa-ellipsis text-white text-sm`,
   dropdownWrapper: `relative`,
   dropdown:        `absolute right-0 top-full mt-1 bg-bg border border-border rounded-sm z-20 min-w-[200px] py-1 shadow-xl`,
-  dropdownItem:    `w-full text-left px-4 py-3 text-sm font-bold text-white hover:bg-[#2a2a2a] transition-colors`,
+  dropdownItem:    `w-full text-left px-4 py-3 text-sm font-bold text-white hover:bg-[#2a2a2a] transition-colors disabled:opacity-50`,
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -73,8 +72,8 @@ const styles = {
 interface NotificationCardProps {
   notification: Notification
   showActions?: boolean
- onMarkRead?: (id: string) => void
-'data-test'?: string
+  onMarkRead?: (id: string) => void
+  'data-test'?: string
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -82,13 +81,40 @@ interface NotificationCardProps {
 const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: NotificationCardProps) => {
   const navigate = useNavigate()
 
-  const [menuOpen, setMenuOpen]         = useState(false)
-  const [isBlockOpen, setIsBlockOpen]   = useState(false)
-  const [isReportOpen, setIsReportOpen] = useState(false)
-  const [isSpamOpen, setIsSpamOpen]     = useState(false)
+  const [menuOpen, setMenuOpen]           = useState(false)
+  const [isBlockOpen, setIsBlockOpen]     = useState(false)
+  const [isReportOpen, setIsReportOpen]   = useState(false)
+  const [isSpamOpen, setIsSpamOpen]       = useState(false)
+  const [isBlocking, setIsBlocking]       = useState(false)
+  const [isFollowing, setIsFollowing]     = useState(false)
+  const [loadingStatus, setLoadingStatus] = useState(true)
   const { user } = useAuthStore()
 
-    const handleCellClick = async () => {
+  useEffect(() => {
+    if (!n.actor?.id) return
+    setLoadingStatus(true)
+    fetchFollowStatus(n.actor.id)
+      .then((res) => {
+        setIsBlocking(res.data.is_blocking)
+        setIsFollowing(res.data.is_following)
+      })
+      .catch(() => {
+        setIsBlocking(false)
+        setIsFollowing(false)
+      })
+      .finally(() => setLoadingStatus(false))
+  }, [n.actor?.id])
+
+  const handleUnblock = async () => {
+    try {
+      // call your unblock API here
+      setIsBlocking(false)
+    } catch {
+      // silently fail
+    }
+  }
+
+  const handleCellClick = async () => {
     if (!n.is_read) {
       try {
         await markNotificationRead(n.id)
@@ -106,17 +132,15 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
 
   return (
     <>
-      <div data-test={`notification-card-${n.id}`} className={styles.row } onClick={handleCellClick}>
+      <div data-test={`notification-card-${n.id}`} className={styles.row} onClick={handleCellClick}>
 
         {/* Avatar */}
         <div data-test={`notification-avatar-${n.id}`} className={styles.avatarWrapper}>
-          {/* Unread dot */}
           {!n.is_read && <div className={styles.unreadDotOverlay} />}
-
           <UserAvatar
             src={n.actor?.avatar}
-            name={n.actor?.display_name ?? n.actor?.username ?? ""}
-            alt={n.actor?.display_name ?? n.actor?.username ?? "User"}
+            name={n.actor?.display_name ?? n.actor?.username ?? ''}
+            alt={n.actor?.display_name ?? n.actor?.username ?? 'User'}
             imageDataTest={`notification-avatar-img-${n.id}`}
             fallbackDataTest={`notification-avatar-fallback-${n.id}`}
             wrapperClassName={styles.avatar}
@@ -144,12 +168,12 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
           className={styles.actions}
           onClick={e => e.stopPropagation()}
         >
-         {n.type === 'follow' && (
-        <FollowButton
-         username={n.actor.username}
-         userId={n.actor.id}
-         initialIsFollowing={user?.following_ids?.includes(n.actor.id) ?? false}
-          />
+          {n.type === 'follow' && !loadingStatus && (
+            <FollowButton
+              username={n.actor.username}
+              userId={n.actor.id}
+              initialIsFollowing={isFollowing}
+            />
           )}
 
           {/* more button */}
@@ -168,9 +192,13 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
                   <button
                     data-test={`notification-block-btn-${n.id}`}
                     className={styles.dropdownItem}
-                    onClick={() => { setIsBlockOpen(true); setMenuOpen(false) }}
+                    disabled={loadingStatus}
+                    onClick={() => {
+                      if (isBlocking) { handleUnblock() } else { setIsBlockOpen(true) }
+                      setMenuOpen(false)
+                    }}
                   >
-                    Block {n.actor.display_name}
+                    {loadingStatus ? '...' : `${isBlocking ? 'Unblock' : 'Block'} ${n.actor.display_name}`}
                   </button>
                   <button
                     data-test={`notification-report-btn-${n.id}`}
@@ -193,7 +221,10 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
           userId={n.actor.id}
           username={n.actor.display_name}
           onClose={() => setIsBlockOpen(false)}
-          onBlocked={() => setIsBlockOpen(false)}
+          onBlocked={() => {
+            setIsBlocking(true)
+            setIsBlockOpen(false)
+          }}
         />
       </Modal>
 

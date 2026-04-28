@@ -58,6 +58,13 @@ export interface SuccessMessageResponse {
   message: string;
 }
 
+export interface FollowStatus {
+  is_following: boolean;
+  is_followed_by: boolean;
+  is_blocking: boolean;
+  is_blocked_by: boolean;
+}
+
 // ─── Following Types ──────────────────────────────────────────────────────────
 
 export interface FollowingUser {
@@ -258,6 +265,17 @@ export const submitReport = async (
   const response = await axiosInstance.post<ReportCreatedResponse>(
     '/reports',
     payload
+  );
+  return response.data;
+};
+
+export interface FollowStatusResponse {
+  data: FollowStatus;
+}
+
+export const fetchFollowStatus = async (userId: string): Promise<FollowStatusResponse> => {
+  const response = await axiosInstance.get<FollowStatusResponse>(
+    `/users/${userId}/follow-status`
   );
   return response.data;
 };
