@@ -1,31 +1,18 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { searchAlbums } from "@/services/api/search/Searchapi";
-import AlbumCard from "@/components/UI/AlbumCard";
-import type { AlbumCardItem } from "@/components/UI/AlbumCard";
-import type { Album } from "@/services/api/search/Searchapi";
+import PlaylistComponent from "@/components/playlist/PlaylistComponent";
+import { mapPlaylist } from "@/services/api/search/searchMappers";
+import type { Playlist } from "@/types/playlist";
 
 const PAGE_SIZE = 10;
-
-function mapAlbum(album: Album): AlbumCardItem {
-  return {
-    id:           album.id,
-    title:        album.title,
-    owner:        album.artist.name,
-    ownerId:      album.artist.id,
-    coverUrl:     album.coverUrl,
-    trackCount:   0,
-    likeCount:    0,
-    previewTrack: undefined,
-  };
-}
 
 export default function AlbumsPage() {
   const [searchParams] = useSearchParams();
   const q   = searchParams.get("q") ?? "";
   const tag = searchParams.get("tag") ?? undefined;
 
-  const [albums, setAlbums]   = useState<AlbumCardItem[]>([]);
+  const [albums, setAlbums]   = useState<Playlist[]>([]);
   const [total, setTotal]     = useState(0);
   const [offset, setOffset]   = useState(0);
   const [loading, setLoading] = useState(false);
@@ -54,7 +41,7 @@ export default function AlbumsPage() {
           controller.signal,
         );
 
-        const mapped = (res.albums as Album[]).map(mapAlbum);
+        const mapped = (res.albums as any[]).map(mapPlaylist);
 
         setAlbums((prev) => (replace ? mapped : [...prev, ...mapped]));
         setTotal(res.pagination.total);
@@ -109,6 +96,7 @@ export default function AlbumsPage() {
     hasMoreRef.current = albums.length < total;
   }, [albums.length, total]);
 
+  // ── Empty query ───────────────────────────────────────────────────────────
   if (!q.trim()) {
     return (
       <div className="flex items-center justify-center py-20 text-text-muted text-sm">
@@ -117,6 +105,7 @@ export default function AlbumsPage() {
     );
   }
 
+  // ── Error ─────────────────────────────────────────────────────────────────
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -131,6 +120,7 @@ export default function AlbumsPage() {
     );
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col w-full">
 
@@ -141,14 +131,10 @@ export default function AlbumsPage() {
         </p>
       )}
 
-      {/* Albums grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      {/* Album list */}
+      <div className="flex flex-col divide-y divide-white/5">
         {albums.map((album) => (
-          <AlbumCard
-            key={album.id}
-            item={album}
-            widthClassName="w-full"
-          />
+          <PlaylistComponent key={album.id} playlist={album} urlSegment="album" />
         ))}
       </div>
 
