@@ -6,8 +6,9 @@ import { router } from "./Router";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useAuthStore } from "@/stores/auth.store";
 import { performRefresh } from "@/services/api/axiosInstance";
+import { connectSocket, getCurrentToken } from '@/services/api/messaging/socketService';
+import { Toaster } from "sonner";
 
-// Decode a JWT and return its exp field in ms (or null if invalid)
 function getJwtExpiryMs(token: string): number | null {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -16,8 +17,6 @@ function getJwtExpiryMs(token: string): number | null {
     return null;
   }
 }
-
-import { Toaster } from "sonner";
 
 function App() {
   // Log out cleanly when the token refresh fails (401 after retry)
@@ -37,10 +36,34 @@ function App() {
     return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
   }, []);
 
+  // ── Socket initialization ────────────────────────────────────────────────
+  // Runs once on mount. Handles the page-refresh case where the module state
+  // resets but the user is still authenticated (token persisted in storage).
+  // connectSocket internally checks socket.connected so this is safe to call
+  // even if the socket was already created at login time.
+  useEffect(() => {
+    const { isAuthenticated } = useAuthStore.getState();
+    const token = (useAuthStore.getState() as { token?: string }).token
+      ?? localStorage.getItem("auth_token");
+
+    if (isAuthenticated && token && !getCurrentToken()) {
+      connectSocket(token);
+    }
+
+    // Also reconnect whenever the user logs in mid-session
+    const unsubscribe = useAuthStore.subscribe((state, prevState) => {
+      if (state.isAuthenticated && !(prevState as typeof state).isAuthenticated) {
+        const freshToken = (state as { token?: string }).token
+          ?? localStorage.getItem("auth_token");
+        if (freshToken) connectSocket(freshToken);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   // Proactively refresh the access token 60 s before it expires so the
   // session stays alive as long as the browser tab is open.
-  // We also subscribe to auth-store changes so the timer starts immediately
-  // after a fresh login (not just on the initial page load).
   useEffect(() => {
     let timerId: ReturnType<typeof setTimeout> | null = null;
 
@@ -51,7 +74,6 @@ function App() {
       if (!token) return;
 
       const expiryMs = getJwtExpiryMs(token);
-      // Refresh 60 s before expiry; if we can't decode, try again in 2 min
       const delayMs = expiryMs
         ? Math.max(expiryMs - Date.now() - 60_000, 0)
         : 2 * 60 * 1000;
@@ -60,14 +82,11 @@ function App() {
         try {
           const newToken = await performRefresh();
           if (newToken) {
-            schedule(); // reschedule for the new token's expiry
+            schedule();
           } else {
-            // Response was 200 but had no token — retry in 30 s
             timerId = setTimeout(schedule, 30_000);
           }
         } catch {
-          // Refresh failed transiently — retry in 30 s;
-          // the 401 interceptor will also handle it on the next request
           timerId = setTimeout(schedule, 30_000);
         }
       }, delayMs);
@@ -75,7 +94,6 @@ function App() {
 
     schedule();
 
-    // Restart timer whenever the user logs in (isAuthenticated flips to true)
     let prevAuthenticated = useAuthStore.getState().isAuthenticated;
     const unsubscribe = useAuthStore.subscribe((state) => {
       if (state.isAuthenticated && !prevAuthenticated) schedule();
@@ -94,32 +112,28 @@ function App() {
 
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-    <HeroUIProvider>
-      <RouterProvider router={router} />
-      <Toaster 
-        position="bottom-right" 
-        expand={false} 
-        richColors 
-        theme="dark"
-        toastOptions={{
-          style: {
-            background: 'rgba(18, 18, 18, 0.95)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#fff',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-            maxWidth: '350px',
-          },
-        }}
-      />
-    </HeroUIProvider>
+      <HeroUIProvider>
+        <RouterProvider router={router} />
+        <Toaster
+          position="bottom-right"
+          expand={false}
+          richColors
+          theme="dark"
+          toastOptions={{
+            style: {
+              background: 'rgba(18, 18, 18, 0.95)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#fff',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+              maxWidth: '350px',
+            },
+          }}
+        />
+      </HeroUIProvider>
     </GoogleOAuthProvider>
   );
 }
 
 export default App;
-
-
-
-

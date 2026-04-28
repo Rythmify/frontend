@@ -5,9 +5,9 @@ import DeleteConversationButton from '@/components/MessagingComponents/DeleteCon
 import { BlockUserModal } from '../UI/BlockModal'
 import { ReportModal } from '../UI/ReportModal'
 import { SpamModal } from '../UI/SpamModal'
-import { markMessageReadState } from '@/services/api/messaging/conversationApi'
-import { unblockUser } from '@/services/api/messaging/conversationApi'
+import { markMessageReadState, unblockUser, fetchFollowStatus } from '@/services/api/messaging/conversationApi'
 import Tooltip from '@/components/UI/Tooltip'
+
 interface ConversationHeaderProps {
   reciepiantId: string
   conversationId: string
@@ -35,11 +35,21 @@ const ConversationHeader = ({
   const [loadingRead, setLoadingRead]       = useState(false)
   const [isUnread, setIsUnread]             = useState(false)
   const [isBlocked, setIsBlocked]           = useState(false)
+  const [loadingBlock, setLoadingBlock]     = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     setIsUnread(false)
   }, [conversationId])
+
+  useEffect(() => {
+    if (!reciepiantId) return
+    setLoadingBlock(true)
+    fetchFollowStatus(reciepiantId)
+      .then((res) => setIsBlocked(res.data.is_blocking))
+      .catch(() => setIsBlocked(false))
+      .finally(() => setLoadingBlock(false))
+  }, [reciepiantId])
 
   const handleToggleRead = async () => {
     if (!lastMessageId) return
@@ -63,7 +73,7 @@ const ConversationHeader = ({
   }
 
   return (
-    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3  top-0 bg-your-background-color z-[10] ">
+    <div data-test="conversation-header" className="flex justify-between items-center border-b border-border pb-3 top-0 bg-your-background-color z-[10]">
 
       {/* Left: back + name + [desktop: block + report] */}
       <div className="flex items-center gap-2 text-text">
@@ -85,13 +95,14 @@ const ConversationHeader = ({
         </button>
         {/* Desktop only */}
         <div className="hidden md:flex items-center gap-2">
-          <Tooltip text="Block">
+          <Tooltip text={isBlocked ? 'Unblock' : 'Block'}>
             <button
               data-test="conversation-block-button"
-              className="p-2 text-sm font-bold text-white hover:text-text-secondary transition-colors cursor-pointer"
+              className="p-2 text-sm font-bold text-white hover:text-text-secondary transition-colors cursor-pointer disabled:opacity-50"
+              disabled={loadingBlock}
               onClick={isBlocked ? handleUnblock : () => setIsBlockOpen(true)}
             >
-              {isBlocked ? 'Unblock' : 'Block'}
+              {loadingBlock ? '...' : isBlocked ? 'Unblock' : 'Block'}
             </button>
           </Tooltip>
           <Tooltip text="Report">
@@ -140,10 +151,14 @@ const ConversationHeader = ({
             <div className="absolute right-0 top-full mt-1 bg-bg border border-border rounded-sm z-20 min-w-[180px] py-1 shadow-xl">
               <button
                 data-test="conversation-block-button-mobile"
-                className="w-full text-left px-4 py-3 text-sm font-bold text-white hover:bg-[#2a2a2a] transition-colors"
-                onClick={() => { if (isBlocked) { handleUnblock(); } else { setIsBlockOpen(true); } setMobileMenuOpen(false); }}
+                className="w-full text-left px-4 py-3 text-sm font-bold text-white hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
+                disabled={loadingBlock}
+                onClick={() => {
+                  if (isBlocked) { handleUnblock() } else { setIsBlockOpen(true) }
+                  setMobileMenuOpen(false)
+                }}
               >
-                {isBlocked ? 'Unblock' : 'Block'} {recipientName}
+                {loadingBlock ? '...' : `${isBlocked ? 'Unblock' : 'Block'} ${recipientName}`}
               </button>
               <button
                 data-test="conversation-report-button-mobile"
