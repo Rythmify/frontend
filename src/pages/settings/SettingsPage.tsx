@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import SettingsLayout from "@/pages/settings/SettingsLayout";
 import { useAuthStore, type User } from "@/stores/auth.store";
-import { getMe, normalizeDateOfBirth } from "@/services/auth.service";
+import { normalizeDateOfBirth } from "@/services/auth.service";
 import {
   changeEmail,
   deleteMyAccount,
@@ -305,8 +305,7 @@ function EmailAddresses({
 }: {
   onToast: (msg: string, type: "success" | "error") => void;
 }) {
-  const { user, setUser } = useAuthStore(); 
-  //const { user } = useAuthStore();
+  const { user } = useAuthStore();
   const [showInput, setShowInput] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -327,36 +326,6 @@ function EmailAddresses({
       JSON.stringify(pendingEmails),
     );
   }, [pendingEmails, user?.id]);
-
-  // Poll to check if any pending email got confirmed
-  useEffect(() => {
-  const unconfirmed = pendingEmails.filter((e) => !e.confirmed);
-  if (unconfirmed.length === 0) return;
-
-  // Capture current pending emails in the closure to avoid stale ref issues
-  const pendingSnapshot = pendingEmails.map((e) => e.email.toLowerCase());
-
-  const interval = setInterval(async () => {
-    try {
-      const response = await getMe();
-      const profile = response.data;
-
-      const freshEmail = profile.email?.toLowerCase();
-
-      if (freshEmail && pendingSnapshot.includes(freshEmail)) {
-        
-        setPendingEmails((prev) =>
-          prev.filter((e) => e.email.toLowerCase() !== freshEmail),
-        );
-        setUser({ ...user!, email: profile.email });
-      }
-    } catch (error) {
-      console.error("Failed to refresh email state:", error);
-    }
-  }, 5000);
-
-  return () => clearInterval(interval);
-}, [pendingEmails, setUser]);
 
   const handleAdd = async () => {
     const trimmedEmail = newEmail.trim();

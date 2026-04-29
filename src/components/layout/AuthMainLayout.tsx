@@ -52,10 +52,10 @@ const AuthMainLayout = () => {
             null,
           gender: p.gender ?? currentUser?.gender ?? null,
         });
-      });
+    });
 
     hydrateFromApi();
-  }, [currentUser, hydrateFromApi, isAuthenticated, setUser]);
+  }, [hydrateFromApi, isAuthenticated, setUser]);
 
   return (
     <div className="min-h-screen flex flex-col">
