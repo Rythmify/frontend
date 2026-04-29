@@ -313,7 +313,7 @@ function ShareTab({
   const handleSocialClick = (s: typeof socials[0]) => {
     const url = s.shareUrl(shareUrl);
     if (url.startsWith("mailto:")) {
-      window.location.href = url;
+      window.location.assign(url);
     } else {
       window.open(url, "_blank", "width=600,height=400,noopener,noreferrer");
     }
