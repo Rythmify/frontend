@@ -8,29 +8,30 @@ let currentToken: string | null = null;
 let activeConversationRoom: string | null = null;
 
 export function connectSocket(token: string): void {
-  // If a socket already exists (connected OR in the middle of reconnecting)
-  // do NOT create a second one — that would leak the first instance.
-  if (socket) return;
+  // KEY CHANGE: don't bail if socket exists but is disconnected/dead
+  if (socket?.connected) return;
+
+  // If a stale (disconnected) socket exists, tear it down first
+  if (socket) {
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+  }
 
   currentToken = token;
-  console.log('[Socket] connectSocket — creating socket');
 
   socket = io(import.meta.env.VITE_API_BASE_URL, {
     auth: { token: `Bearer ${token}` },
     transports: ['websocket'],
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: 10,      // increase from 5
     reconnectionDelay: 2_000,
+    reconnectionDelayMax: 10_000,  // cap backoff
   });
 
   socket.on('connect', () => {
     console.log('[Socket] Connected:', socket?.id);
-
-    // ── Re-join the active room on every (re)connect ──────────────────
-    // Socket.IO rooms are server-side only; a new socket.id means the
-    // server has no memory of which rooms this client was in before.
     if (activeConversationRoom) {
-      console.log('[Socket] Rejoining room after reconnect:', activeConversationRoom);
       socket?.emit('message:join', {
         conversationId: activeConversationRoom.replace('conversation:', ''),
       });
@@ -39,14 +40,22 @@ export function connectSocket(token: string): void {
 
   socket.on('disconnect', (reason) => {
     console.log('[Socket] Disconnected:', reason);
+    // Transport-level close = server kicked us; reconnect won't fire automatically
+    if (reason === 'io server disconnect') {
+      socket?.connect();
+    }
+  });
+
+  // KEY CHANGE: when Socket.IO gives up, null out the stale reference
+  // so the next call to connectSocket() can create a fresh socket
+  socket.on('reconnect_failed', () => {
+    console.warn('[Socket] Reconnect failed — clearing stale socket');
+    socket?.removeAllListeners();
+    socket = null;
   });
 
   socket.on('connect_error', (err) => {
     console.error('[Socket] Connection error:', err.message);
-  });
-
-  socket.on('error', (err: { message: string }) => {
-    console.error('[Socket] Server error:', err.message);
   });
 }
 

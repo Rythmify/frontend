@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PersonalMix } from "@/services/api/discover.service";
 import { getMixTracks } from "@/services/api/discover.service";
@@ -7,7 +7,9 @@ import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { usePlayerStore } from "@/stores/player.store";
-import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import CardOverlay, {
+  AddToPlaylistIcon,
+} from "@/components/UI/CardOverlay/CardOverlay";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 
 const BADGE_COLORS: { bg: string; text: string }[] = [
@@ -16,7 +18,6 @@ const BADGE_COLORS: { bg: string; text: string }[] = [
   { bg: "#ffffff", text: "#000000" }, // MIX 5 — red
   { bg: "#FE5500", text: "#000000" }, // MIX 3 — light
   { bg: "#000000", text: "#ffffff" }, // MIX 4 — orange
-  
 ];
 
 function stableColorIndex(id: string): number {
@@ -47,8 +48,12 @@ export default function MixCard({
   widthClassName = "w-[110px] sm:w-[130px] md:w-[145px] lg:w-[159px]",
 }: MixCardProps) {
   const mixId = mix.mix_id ?? mix.id;
-  const displayLabel = index !== undefined ? `Mix ${index + 1}` : (mix.label ?? "");
-  const badge = BADGE_COLORS[index !== undefined ? index % BADGE_COLORS.length : colorIndex(mix)];
+  const displayLabel =
+    index !== undefined ? `Mix ${index + 1}` : (mix.label ?? "");
+  const badge =
+    BADGE_COLORS[
+      index !== undefined ? index % BADGE_COLORS.length : colorIndex(mix)
+    ];
   const { isMixLiked, toggleMix } = useLikesStore();
   const { addMix } = useHistoryStore();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
@@ -57,9 +62,22 @@ export default function MixCard({
   const liked = isMixLiked(mixId);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
+  const fetchTracksForModal = useCallback(async () => {
+    const data = await getMixTracks(mixId);
+    return data.tracks.map((t) => ({
+      id: t.id,
+      title: t.title,
+      artistName: t.artist_name ?? undefined,
+      coverUrl: t.cover_image ?? undefined,
+    }));
+  }, [mixId]);
+
   // Guard against stale persisted history entries that predate the non-null contract
-  const previewTrack = mix.preview_track ? mapDiscoveryTrack(mix.preview_track) : null;
-  const isThisMixPlaying = isPlaying && !!previewTrack && currentTrack?.id === previewTrack.id;
+  const previewTrack = mix.preview_track
+    ? mapDiscoveryTrack(mix.preview_track)
+    : null;
+  const isThisMixPlaying =
+    isPlaying && !!previewTrack && currentTrack?.id === previewTrack.id;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -72,11 +90,17 @@ export default function MixCard({
     }
   };
 
-
- const mixPath = `/discover/sets/${mixId}`;
+  const mixPath = `/discover/sets/${mixId}`;
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleMix(mix);
+    toggleMix({
+      id: mixId,
+      mix_id: mix.mix_id,
+      title: mix.label ?? "",
+      cover_image: mix.cover_image ?? mix.preview_track?.cover_image ?? null,
+      link_to: mixPath,
+      kind: "personal",
+    });
   };
 
   return (
@@ -87,9 +111,9 @@ export default function MixCard({
     >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {(mix.cover_image ?? mix.preview_track.cover_image) && (
+        {(mix.cover_image ?? mix.preview_track?.cover_image) && (
           <img
-            src={(mix.cover_image ?? mix.preview_track.cover_image) as string}
+            src={(mix.cover_image ?? mix.preview_track?.cover_image) as string}
             alt={mix.label ?? ""}
             className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
             data-test="mix-card-image"
@@ -106,9 +130,9 @@ export default function MixCard({
             className="text-sm sm:text-md md:text-lg lg:text-xl tracking-tighter uppercase leading-none"
             style={{
               color: badge.text,
-              fontFamily: "Söhne, system-ui, -apple-system, Roboto, Ubuntu, Cantarell, sans-serif, Roboto, sans-serif",
+              fontFamily:
+                "Söhne, system-ui, -apple-system, Roboto, Ubuntu, Cantarell, sans-serif, Roboto, sans-serif",
               fontWeight: 900,
-            
             }}
           >
             {displayLabel}
@@ -141,15 +165,7 @@ export default function MixCard({
       {showPlaylistModal && (
         <AddToPlaylistModal
           trackTitle={mix.label ?? ""}
-          fetchTracks={async () => {
-            const data = await getMixTracks(mixId);
-            return data.tracks.map((t) => ({
-              id: t.id,
-              title: t.title,
-              artistName: t.artist_name ?? undefined,
-              coverUrl: t.cover_image ?? undefined,
-            }));
-          }}
+          fetchTracks={fetchTracksForModal}
           onClose={() => setShowPlaylistModal(false)}
         />
       )}

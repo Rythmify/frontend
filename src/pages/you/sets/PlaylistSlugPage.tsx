@@ -197,7 +197,7 @@ function PlaylistSlugPage() {
 
   if (loading) {
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div data-test="playlist-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading playlist...
       </div>
     );
@@ -205,7 +205,7 @@ function PlaylistSlugPage() {
 
   if (error || !playlist) {
     return (
-      <div className="p-20 text-center text-red-500">
+      <div data-test="playlist-slug-error" className="p-20 text-center text-red-500">
         {error || "Playlist not found."}
       </div>
     );
@@ -226,10 +226,10 @@ function PlaylistSlugPage() {
         ownerUsername={albumOwner?.username ?? username}
       />
 
-      <div className=" mx-auto">
+      <div className="mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           {/* Left Column: Actions and Track List */}
-          <div className="flex-1 min-w-0">
+          <div data-test="playlist-slug-main" className="flex-1 min-w-0">
             {showOwnerActions ? (
               <PlaylistActions
                 playlist={playlist}
@@ -241,7 +241,7 @@ function PlaylistSlugPage() {
               <PlaylistActionsForYou playlist={playlist} />
             )}
 
-            <div className="flex flex-col lg:flex-row gap-6 mt-8">
+            <div data-test="playlist-slug-content" className="flex flex-col lg:flex-row gap-6 mt-8">
               <OwnerInfo
                 ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}
@@ -263,7 +263,7 @@ function PlaylistSlugPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-[280px] shrink-0">
+          <div data-test="playlist-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar playlist={playlist} />
             <GuestPageFooter />
           </div>

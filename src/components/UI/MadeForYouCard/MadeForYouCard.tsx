@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLikesStore } from "@/stores/likes.store";
 import { usePlayerStore } from "@/stores/player.store";
@@ -43,6 +43,20 @@ export default function MadeForYouCard({
   const { addMadeForYou } = useHistoryStore();
   const liked = isMixLiked(item.id);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const fetchTracksForModal = useCallback(
+    () =>
+      (item.madeKind === "daily" ? getMadeForYouDaily() : getMadeForYouWeekly()).then(
+        (r) =>
+          r.tracks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            artistName: t.artist_name,
+            coverUrl: t.cover_image ?? undefined,
+          })),
+      ),
+    [item.madeKind],
+  );
   const isThisPlaying =
     isPlaying &&
     !!item.previewTrack &&
@@ -65,7 +79,13 @@ export default function MadeForYouCard({
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleMix({ id: item.id });
+    toggleMix({
+      id: item.id,
+      title: item.title,
+      cover_image: item.coverUrl,
+      link_to: item.madeKind ? `/discover/sets/new-for-you/${item.madeKind}/${item.id}` : undefined,
+      kind: item.madeKind ?? undefined,
+    });
   };
 
   return (
@@ -141,19 +161,7 @@ export default function MadeForYouCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          fetchTracks={() =>
-            (item.madeKind === "daily"
-              ? getMadeForYouDaily()
-              : getMadeForYouWeekly()
-            ).then((r) =>
-              r.tracks.map((t) => ({
-                id: t.id,
-                title: t.title,
-                artistName: t.artist_name,
-                coverUrl: t.cover_image ?? undefined,
-              })),
-            )
-          }
+          fetchTracks={fetchTracksForModal}
           trackTitle={item.title}
           onClose={() => setShowPlaylistModal(false)}
         />

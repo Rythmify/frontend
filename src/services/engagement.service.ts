@@ -48,6 +48,45 @@ export async function getMyLikedTracks(params?: {
   };
 }
 
+export interface LikedMixItem {
+  playlist_id: string;
+  title: string;
+  cover_image: string | null;
+  type: "auto_generated" | "curated_daily" | "curated_weekly";
+  track_count: number;
+  liked_at: string;
+}
+
+export interface LikedGenreItem {
+  genre_id: string;
+  genre_name: string;
+  playlist_id: string;
+  cover_image: string | null;
+  liked_at: string;
+}
+
+export async function getMyLikedMixes(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ items: LikedMixItem[]; total: number }> {
+  const res = await axiosInstance.get<{ data: { items: LikedMixItem[]; total: number } }>(
+    "/me/liked-mixes",
+    { params },
+  );
+  return { items: res.data.data.items ?? [], total: res.data.data.total ?? 0 };
+}
+
+export async function getMyLikedGenres(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ items: LikedGenreItem[]; total: number }> {
+  const res = await axiosInstance.get<{ data: { items: LikedGenreItem[]; total: number } }>(
+    "/me/liked-genres",
+    { params },
+  );
+  return { items: res.data.data.items ?? [], total: res.data.data.total ?? 0 };
+}
+
 /**
  * GET /me/reposted-tracks
  * Owner only — the API has no GET /users/{userId}/reposts endpoint.

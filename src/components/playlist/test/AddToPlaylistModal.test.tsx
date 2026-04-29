@@ -8,6 +8,7 @@ import {
   createPlaylist,
   getPlaylist,
 } from "@/services/api/playlist/playlist.service";
+import { getUploadQuota } from "@/services/api/upload/quota.service";
 import { useLikesStore } from "@/stores/likes.store";
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
@@ -15,6 +16,10 @@ vi.mock("@/services/api/playlist/playlist.service", () => ({
   addTrackToPlaylist: vi.fn(),
   createPlaylist: vi.fn(),
   getPlaylist: vi.fn(),
+}));
+
+vi.mock("@/services/api/upload/quota.service", () => ({
+  getUploadQuota: vi.fn(),
 }));
 
 vi.mock("@/stores/likes.store", () => ({
@@ -43,13 +48,23 @@ vi.mock("../PlaylistList", () => ({
 }));
 
 vi.mock("../CreatePlaylistTab", () => ({
-  default: ({ onCreate, playlistTitle, setPlaylistTitle }: any) => (
+  default: ({
+    onCreate,
+    playlistTitle,
+    setPlaylistTitle,
+    setTracksToAdd,
+    tracksToAdd,
+  }: any) => (
     <div data-test="create-tab">
       <input
         data-test="create-title-input"
         value={playlistTitle}
         onChange={(e) => setPlaylistTitle(e.target.value)}
       />
+      <button data-test="clear-tracks" onClick={() => setTracksToAdd([])}>
+        Clear tracks
+      </button>
+      <div data-test="tracks-count">{tracksToAdd.length}</div>
       <button data-test="create-submit" onClick={onCreate}>
         Save
       </button>
@@ -84,6 +99,9 @@ describe("AddToPlaylistModal", () => {
     vi.mocked(getMyPlaylists).mockResolvedValue({
       data: { items: mockPlaylists, meta: { limit: 20, offset: 0, total: 1 } },
       message: "ok",
+    } as any);
+    vi.mocked(getUploadQuota).mockResolvedValue({
+      canCreatePlaylist: true,
     } as any);
     vi.mocked(addTrackToPlaylist).mockResolvedValue({ data: {} } as any);
   });
@@ -165,5 +183,38 @@ describe("AddToPlaylistModal", () => {
         "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
       ),
     );
+  });
+
+  it("creates a playlist from the current selected tracks only", async () => {
+    vi.mocked(createPlaylist).mockResolvedValueOnce({
+      data: {
+        playlist_id: "new-playlist",
+        name: "Related tracks: Song Title",
+        slug: "related-tracks-song-title",
+        is_public: true,
+        track_count: 0,
+      },
+    } as any);
+
+    render(
+      <AddToPlaylistModal
+        {...baseProps}
+        initialTracks={[
+          { id: "t-1", title: "Track 1" },
+          { id: "t-2", title: "Track 2" },
+        ]}
+        moreOfLike={true}
+      />,
+    );
+
+    await waitFor(() => screen.getByTestId("button-tab-create-playlist"));
+    fireEvent.click(screen.getByTestId("button-tab-create-playlist"));
+    fireEvent.click(screen.getByTestId("clear-tracks"));
+    fireEvent.click(screen.getByTestId("create-submit"));
+
+    await waitFor(() => {
+      expect(createPlaylist).toHaveBeenCalled();
+    });
+    expect(addTrackToPlaylist).not.toHaveBeenCalled();
   });
 });
