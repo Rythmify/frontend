@@ -2,7 +2,7 @@ import axiosInstance from '../axiosInstance';
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
-export type NotificationType = 'follow' | 'like' | 'repost' | 'comment';
+export type NotificationType = 'follow' | 'like' | 'repost' | 'comment' | 'new_post_by_followed';
 
 export interface NotificationActor {
   id: string;
@@ -20,7 +20,7 @@ export interface Notification {
   id: string;
   type: NotificationType;
   actor: NotificationActor;
-  resource_type: 'track' | 'user' | 'playlist' | 'comment' | null  
+  resource_type: 'track' | 'user' | 'playlist' | 'comment'|'new_post_by_followed' | null  
   resource_id: string | null;
   resource_details: NotificationResourceDetails | null;
   is_read: boolean;
@@ -56,6 +56,13 @@ export interface SuccessMessageResponse {
     success: boolean;
   };
   message: string;
+}
+
+export interface FollowStatus {
+  is_following: boolean;
+  is_followed_by: boolean;
+  is_blocking: boolean;
+  is_blocked_by: boolean;
 }
 
 // ─── Following Types ──────────────────────────────────────────────────────────
@@ -258,6 +265,17 @@ export const submitReport = async (
   const response = await axiosInstance.post<ReportCreatedResponse>(
     '/reports',
     payload
+  );
+  return response.data;
+};
+
+export interface FollowStatusResponse {
+  data: FollowStatus;
+}
+
+export const fetchFollowStatus = async (userId: string): Promise<FollowStatusResponse> => {
+  const response = await axiosInstance.get<FollowStatusResponse>(
+    `/users/${userId}/follow-status`
   );
   return response.data;
 };

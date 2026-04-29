@@ -137,13 +137,13 @@ const LandingPage = () => {
       {/* ════════════════════════════════════════════════════════════════
           ANNOUNCEMENT BANNER
           ════════════════════════════════════════════════════════════ */}
-      <div className="flex items-center justify-center h-20 gap-2 mb-10 bg-[#303030] px-4 py-7 text-sm text-white  rounded border border-gray-300/40">
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-10 bg-[#303030] px-4 py-4 sm:py-7 text-sm text-white rounded border border-gray-300/40">
         <img
           src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0ibm9uZSI+PHBhdGggZmlsbD0iIzZDMTJEMiIgZD0ibTguMzgzIDItNiAxMmg1LjM4bC0xLjg4IDguNzc2TDIzLjYzMSA3aC02Ljg2NGwzLTVIOC4zODNaIi8+PC9zdmc+"
-          className="banner__iconImage m-get_heard "
+          className="banner__iconImage m-get_heard hidden sm:block"
         />
 
-        <span className="text-[#ccc] text-lg">
+        <span className="text-[#ccc] text-sm sm:text-lg text-center">
           Uploading tracks just got way easier: upload, get heard, and get paid
           in one seamless experience.{" "}
           <Link
@@ -159,7 +159,7 @@ const LandingPage = () => {
           HERO CAROUSEL
           ════════════════════════════════════════════════════════════ */}
       <div
-        className="relative min-h-[500px] overflow-hidden rounded-3xl bg-[#111]"
+        className="relative min-h-[420px] sm:min-h-[500px] overflow-hidden rounded-3xl bg-[#111]"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -202,7 +202,7 @@ const LandingPage = () => {
               Sign in
             </Link>
             <Link
-              to="/register"
+              to="/signin"
               className="rounded px-4 py-2 text-md font-extrabold text-white bg-black hover:text-text-secondary transition-colors"
             >
               Create account

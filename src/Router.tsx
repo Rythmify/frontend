@@ -169,6 +169,13 @@ const CheckoutPage = lazy(
 const PaymentPage = lazy(() => import("@/pages/creator/checkout/PaymentPage"));
 const PlanPage = lazy(() => import("@/pages/premium/PlanPage"));
 
+// Admin
+const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
+const AdminDashboardPage = lazy(() => import("@/pages/admin/dashboard/AdminDashboardPage"));
+const AdminReportsPage = lazy(() => import("@/pages/admin/reports/AdminReportsPage"));
+const AdminUsersPage = lazy(() => import("@/pages/admin/users/AdminUsersPage"));
+const AdminTracksPage = lazy(() => import("@/pages/admin/tracks/AdminTracksPage"));
+
 // Not Found
 const NotFound = lazy(() => import("@/pages/not-found/NotFound"));
 
@@ -476,7 +483,19 @@ export const router = createBrowserRouter([
     element: <Lazy component={GitHubCallbackPage} />,
   },
 
-  // 9. Not Found
+  // 10. Admin
+  {
+    path: "admin",
+    element: <Lazy component={AdminLayout} />,
+    children: [
+      { index: true, element: <Lazy component={AdminDashboardPage} /> },
+      { path: "reports", element: <Lazy component={AdminReportsPage} /> },
+      { path: "users", element: <Lazy component={AdminUsersPage} /> },
+      { path: "tracks", element: <Lazy component={AdminTracksPage} /> },
+    ],
+  },
+
+  // 11. Not Found
   {
     path: "*",
     element: <Lazy component={NotFound} />,

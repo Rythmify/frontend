@@ -30,6 +30,7 @@ import { useHistoryStore } from "@/stores/history.store";
 import { useAuthStore } from "@/stores/auth.store";
 import MixedForYou from "@/components/discover/MixedForYou";
 import MixCard from "@/components/UI/MixCard/MixCard";
+import GenreCard from "@/components/UI/GenreCard/GenreCard";
 
 // ─── Constants ────────────────────────────────────────────
 
@@ -200,6 +201,8 @@ export default function LibraryPage() {
     likedStations,
     likedPlaylists,
     likedAlbums: storeLikedAlbums,
+    likedMixes,
+    likedGenres,
   } = useLikesStore();
   const { user } = useAuthStore();
   const { entries } = useHistoryStore();
@@ -297,25 +300,23 @@ export default function LibraryPage() {
     });
   })();
 
+  const showMixesAndGenres = playlistFilter !== "Created";
+
   const displayedFollowing = (() => {
-    if (!user) return followingUsers;
-    const fids = new Set(user.following_ids);
+    // API result is authoritative; show all of them
+    const seenUsernames = new Set(followingUsers.map((u) => u.username));
 
-    // Filter API users to only those we actually follow
-    const fromApi = followingUsers.filter((u) => fids.has(u.username));
-
-    // For any fid that doesn't have an API user, add a synthetic one
-    const seenUsernames = new Set(fromApi.map((u) => u.username));
-    const synthetic: User[] = user.following_ids
+    // Supplement with any following_ids entries not yet returned by the API (optimistic)
+    const synthetic: User[] = (user?.following_ids ?? [])
       .filter((username) => !seenUsernames.has(username))
       .map((username, i) => ({
-        id: String(-(i + 1)), // Test expects negative IDs for synthetic users
+        id: String(-(i + 1)),
         username,
         displayName: username,
         followers: 0,
       }));
 
-    return [...fromApi, ...synthetic];
+    return [...followingUsers, ...synthetic];
   })();
 
   const recentTracks = recentEntries
@@ -388,6 +389,59 @@ export default function LibraryPage() {
       >
         {visiblePlaylists.map((item) => (
           <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
+        ))}
+
+        {showMixesAndGenres && likedMixes.map((mix, mixIndex) => {
+          const mixId = mix.mix_id ?? mix.id;
+          if (mix.kind === "daily" || mix.kind === "weekly") {
+            return (
+              <MadeForYouCard
+                key={mixId}
+                item={{
+                  id: mix.id,
+                  title: mix.title || (mix.kind === "daily" ? "Daily Drops" : "Weekly Wave"),
+                  subtitle: mix.kind === "daily" ? "Daily mix" : "Weekly mix",
+                  coverUrl: mix.cover_image ?? "",
+                  madeKind: mix.kind,
+                  badgeWords: mix.kind === "daily" ? ["DAILY", "DROPS"] : ["WEEKLY", "WAVE"],
+                  badgeBg: mix.kind === "daily" ? "#1a237e" : "#1b5e20",
+                }}
+                widthClassName={CARD_WIDTH}
+              />
+            );
+          }
+          return (
+            <MixCard
+              key={mixId}
+              mix={{
+                id: mix.id,
+                mix_id: mix.mix_id,
+                label: mix.title || `Mix ${mixIndex + 1}`,
+                flavor: "listening_history",
+                genre_name: null,
+                cover_image: mix.cover_image ?? null,
+                track_count: 0,
+                generated_at: "",
+                preview_track: null as any,
+                is_liked_by_me: true,
+              }}
+              widthClassName={CARD_WIDTH}
+            />
+          );
+        })}
+
+        {showMixesAndGenres && likedGenres.map((genre, i) => (
+          <GenreCard
+            key={genre.id}
+            item={{
+              id: genre.id,
+              genre: genre.genre,
+              cover_image: genre.cover_image,
+              track_count: 0,
+            }}
+            index={i}
+            widthClassName={CARD_WIDTH}
+          />
         ))}
       </Section>
 

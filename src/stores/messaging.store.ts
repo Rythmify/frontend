@@ -64,42 +64,36 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
   //   • Remove any old listener before adding a new one (idempotent).
   //   • Only increment when the incoming message is NOT in the currently
   //     open conversation (MessageIdPage handles that case itself).
-  setupSocketListeners: () => {
-    // Reconnect if the page was hard-refreshed (connectSocket is called on
-    // login, but module state is reset on page reload).
-    if (!getSocket()) {
-      // Prefer the token already used by the socket module; fall back to
-      // the auth store (which persists the token in its own storage).
-      const token =
-        getCurrentToken() ??
-        (useAuthStore.getState() as { token?: string }).token ??
-        null
+setupSocketListeners: () => {
+  const token =
+    getCurrentToken() ??
+    (useAuthStore.getState() as { token?: string }).token ??
+    null;
 
-      if (token) {
-        connectSocket(token)
-      } else {
-        console.warn('[MessagingStore] setupSocketListeners — no auth token available')
-        return
-      }
+  // KEY CHANGE: always attempt connect (connectSocket checks .connected internally now)
+  if (token) {
+    connectSocket(token);
+  } else {
+    console.warn('[MessagingStore] No auth token');
+    return;
+  }
+
+  const socket = getSocket();
+  if (!socket) return;
+
+  if (onMessageReceived) {
+    socket.off('message:received', onMessageReceived);
+  }
+
+  onMessageReceived = (data) => {
+    const { activeConversationId } = get();
+    if (data.conversationId !== activeConversationId) {
+      set((state) => ({ unreadCount: state.unreadCount + 1 }));
     }
+  };
 
-    const socket = getSocket()
-    if (!socket) return
-
-    // Remove stale listener (handles the case where Navbar re-mounts)
-    if (onMessageReceived) {
-      socket.off('message:received', onMessageReceived)
-    }
-
-    onMessageReceived = (data: { conversationId: string; message: unknown }) => {
-      const { activeConversationId } = get()
-      if (data.conversationId !== activeConversationId) {
-        set((state) => ({ unreadCount: state.unreadCount + 1 }))
-      }
-    }
-
-    socket.on('message:received', onMessageReceived)
-  },
+  socket.on('message:received', onMessageReceived);
+},
 
   // ── Remove the global listener ──────────────────────────────────────────
   //
