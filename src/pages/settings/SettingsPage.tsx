@@ -1130,12 +1130,13 @@ function DeleteAccountModal({
   onConfirm,
 }: {
   onClose: () => void;
-  onConfirm: () => Promise<boolean>;
+  onConfirm: (password: string) => Promise<boolean>;
 }) {
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [otherReason, setOtherReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [password, setPassword] = useState("");
 
   const toggleReason = (reason: string) => {
     setSelectedReasons((current) =>
@@ -1146,10 +1147,10 @@ function DeleteAccountModal({
   };
 
   const handleDelete = async () => {
-    if (!confirmed || isDeleting) return;
+    if (!confirmed || isDeleting || !password.trim()) return;
     setIsDeleting(true);
     try {
-      const deleted = await onConfirm();
+      const deleted = await onConfirm(password.trim());
       if (deleted) {
         onClose();
       }
@@ -1240,6 +1241,24 @@ function DeleteAccountModal({
             </span>
           </label>
 
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="delete-account-password"
+              className="text-sm font-semibold text-[var(--color-text-hover)]"
+            >
+              Password
+            </label>
+            <input
+              id="delete-account-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password to confirm"
+              data-test="settings-delete-account-password-input"
+              className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-text-hover)] placeholder:text-[var(--color-text)] focus:outline-none focus:border-[var(--color-border-light)]"
+            />
+          </div>
+
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-1">
             <button
               onClick={onClose}
@@ -1251,7 +1270,7 @@ function DeleteAccountModal({
             </button>
             <button
               onClick={handleDelete}
-              disabled={!confirmed || isDeleting}
+              disabled={!confirmed || isDeleting || !password.trim()}
               data-test="settings-delete-account-confirm-button"
               className="rounded-[var(--radius-sm)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-border-light)] disabled:text-[var(--color-text)]"
             >
@@ -1295,9 +1314,9 @@ function AccountPage() {
     setToast({ message, type });
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (password: string) => {
     try {
-      await deleteMyAccount();
+      await deleteMyAccount(password);
       logout();
       navigate("/", { replace: true });
       return true;

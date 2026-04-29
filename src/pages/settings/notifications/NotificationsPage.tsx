@@ -75,10 +75,13 @@ type NotifRow = {
   info?: boolean;
   emailKey: string;
   deviceKey: string | null;
-  deviceType: boolean | "dropdown";
+  deviceType: boolean | "dropdown" | "checkbox+dropdown";
+  dropdownKey?: string;
 };
 
-type Prefs = Record<string, boolean>;
+type MessageSource = "everyone" | "followers_only" | "nobody";
+
+type Prefs = Record<string, boolean | MessageSource>;
 
 // ── Section ───────────────────────────────────────────────────
 
@@ -91,7 +94,7 @@ function NotifSection({
   title: string;
   rows: NotifRow[];
   prefs: Prefs;
-  onToggle: (key: string, value: boolean) => void;
+  onToggle: (key: string, value: boolean | MessageSource) => void;
 }) {
   const emailKeys = rows.map((r) => r.emailKey);
   const deviceKeys = rows
@@ -144,12 +147,20 @@ function NotifSection({
               {row.deviceType === "dropdown" ? (
                 <div className="relative">
                   <select
-                    data-test={`settings-notifications-${row.emailKey}-device-select`}
+                    value={(prefs[row.dropdownKey ?? "messages_from"] ??
+                      "everyone") as MessageSource}
+                    onChange={(e) =>
+                      onToggle(
+                        row.dropdownKey ?? "messages_from",
+                        e.target.value as MessageSource,
+                      )
+                    }
+                    data-test={`settings-notifications-${row.emailKey}-dropdown`}
                     className="text-xs text-[var(--color-text-hover)] bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] pl-2 pr-5 py-1 appearance-none cursor-pointer"
                   >
-                    <option>Everyone</option>
-                    <option>Followed</option>
-                    <option>Off</option>
+                    <option value="everyone">Everyone</option>
+                    <option value="followers_only">Followers only</option>
+                    <option value="nobody">Nobody</option>
                   </select>
                   <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[var(--color-text)]">
                     <svg
@@ -168,6 +179,55 @@ function NotifSection({
                       />
                     </svg>
                   </span>
+                </div>
+              ) : row.deviceType === "checkbox+dropdown" ? (
+                <div className="flex flex-col gap-2">
+                  {row.deviceKey ? (
+                    (() => {
+                      const deviceKey = row.deviceKey;
+                      return (
+                    <Checkbox
+                      checked={!!prefs[deviceKey]}
+                      onChange={() => onToggle(deviceKey, !prefs[deviceKey])}
+                    />
+                      );
+                    })()
+                  ) : null}
+                  <div className="relative">
+                    <select
+                      value={(prefs[row.dropdownKey ?? "messages_from"] ??
+                        "everyone") as MessageSource}
+                      onChange={(e) =>
+                        onToggle(
+                          row.dropdownKey ?? "messages_from",
+                          e.target.value as MessageSource,
+                        )
+                      }
+                      data-test={`settings-notifications-${row.emailKey}-dropdown`}
+                      className="text-xs text-[var(--color-text-hover)] bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] pl-2 pr-5 py-1 appearance-none cursor-pointer"
+                    >
+                      <option value="everyone">Everyone</option>
+                      <option value="followers_only">Followers only</option>
+                      <option value="nobody">Nobody</option>
+                    </select>
+                    <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[var(--color-text)]">
+                      <svg
+                        width="8"
+                        height="8"
+                        viewBox="0 0 12 12"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M2 4l4 4 4-4"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </div>
                 </div>
               ) : row.deviceKey ? (
                 <Checkbox
@@ -227,9 +287,10 @@ const ACTIVITIES: NotifRow[] = [
   },
   {
     label: "New message",
-    emailKey: "new_message_in_app",
+    emailKey: "new_message_email",
     deviceKey: "new_message_push",
-    deviceType: "dropdown",
+    deviceType: "checkbox+dropdown",
+    dropdownKey: "messages_from",
     info: true,
   },
 ];
@@ -275,8 +336,9 @@ const DEFAULT_PREFS: Prefs = {
   comment_on_post_push: true,
   recommended_content_email: false,
   recommended_content_push: false,
-  new_message_in_app: true,
+  new_message_email: false,
   new_message_push: true,
+  messages_from: "everyone",
   feature_updates_email: true,
   feature_updates_push: true,
   surveys_and_feedback_email: false,
@@ -310,7 +372,7 @@ export default function NotificationsPage() {
     loadPrefs();
   }, []);
 
-  const handleToggle = (key: string, value: boolean) => {
+  const handleToggle = (key: string, value: boolean | MessageSource) => {
     setPrefs((prev) => ({ ...prev, [key]: value }));
     setDirty(true);
     setSaveStatus("idle");

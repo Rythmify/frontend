@@ -215,10 +215,13 @@ describe("SettingsPage", () => {
 
     fireEvent.click(screen.getByTestId("settings-delete-account-button"));
     fireEvent.click(screen.getByTestId("settings-delete-account-confirm-input"));
+    fireEvent.change(screen.getByTestId("settings-delete-account-password-input"), {
+      target: { value: "Password123!" },
+    });
     fireEvent.click(screen.getByTestId("settings-delete-account-confirm-button"));
 
     await waitFor(() => {
-      expect(mockDeleteMyAccount).toHaveBeenCalled();
+      expect(mockDeleteMyAccount).toHaveBeenCalledWith("Password123!");
     });
     expect(mockLogout).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });

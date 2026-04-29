@@ -23,8 +23,9 @@ const serverPrefs = {
   comment_on_post_push: true,
   recommended_content_email: false,
   recommended_content_push: false,
-  new_message_in_app: true,
+  new_message_email: false,
   new_message_push: true,
+  messages_from: "everyone",
   feature_updates_email: true,
   feature_updates_push: true,
   surveys_and_feedback_email: false,
@@ -93,6 +94,36 @@ describe("NotificationsPage", () => {
     });
 
     expect(await screen.findByText("Saved!")).toBeInTheDocument();
+  });
+
+  it("saves the new message dropdown and checkbox like the other rows", async () => {
+    (axiosInstance.patch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+    render(<NotificationsPage />);
+    await screen.findByText("New message");
+
+    const [emailCheckbox, deviceCheckbox] = getRowCheckboxes("New message");
+    fireEvent.click(emailCheckbox);
+    fireEvent.click(deviceCheckbox);
+    fireEvent.change(
+      screen.getByTestId("settings-notifications-new_message_email-dropdown"),
+      {
+        target: { value: "followers_only" },
+      },
+    );
+
+    fireEvent.click(screen.getByTestId("settings-notifications-save-button"));
+
+    await waitFor(() => {
+      expect(axiosInstance.patch).toHaveBeenCalledWith(
+        "/notifications/preferences",
+        expect.objectContaining({
+          new_message_email: true,
+          new_message_push: false,
+          messages_from: "followers_only",
+        }),
+      );
+    });
   });
 
   it("reloads server state when cancel is clicked", async () => {

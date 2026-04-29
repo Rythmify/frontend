@@ -255,12 +255,14 @@ export async function updateMyContentSettings(data: ContentSettings) {
   return res.data;
 }
 
-/** DELETE /users/me */
-export async function deleteMyAccount() {
+/** DELETE /auth/me */
+export async function deleteMyAccount(password: string) {
   const res = await axiosInstance.delete<{
     data?: { success?: boolean };
     message?: string;
-  }>("/users/me");
+  }>("/auth/me", {
+    data: { password },
+  });
   return res.data;
 }
 
