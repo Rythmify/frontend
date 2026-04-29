@@ -7,39 +7,22 @@ import type {
 } from "@/services/api/discover.service";
 import { mapDiscoveryTrack } from "@/services/api/discover.mapper";
 
-const FALLBACK_ITEMS: MadeForYouItem[] = [
-  {
-    id: "daily-drops",
-    title: "Daily Drops",
-    subtitle: "New releases based on your taste",
-    coverUrl: "https://picsum.photos/200/200?random=801",
-    madeKind: "daily",
-    badgeWords: ["DAILY", "DROPS"],
-    badgeBg: "#1a237e",
-  },
-  {
-    id: "weekly-wave",
-    title: "Weekly Wave",
-    subtitle: "The best of Rythmify this week",
-    coverUrl: "https://picsum.photos/200/200?random=802",
-    madeKind: "weekly",
-    badgeWords: ["WEEKLY", "WAVE"],
-    badgeBg: "#1b5e20",
-  },
-];
+const BADGE_WORDS: Record<"daily" | "weekly", [string, string]> = {
+  daily: ["DAILY", "DROPS"],
+  weekly: ["WEEKLY", "WAVE"],
+};
 
 function toMadeForYouItem(
   mix: CuratedMixSummary,
-  fallback: MadeForYouItem,
   kind: "daily" | "weekly",
 ): MadeForYouItem {
   return {
-    ...fallback,
     id: mix.id,
     title: mix.label,
     subtitle: mix.description,
-    coverUrl: mix.cover_url ?? fallback.coverUrl,
+    coverUrl: mix.cover_url ?? "",
     madeKind: kind,
+    badgeWords: BADGE_WORDS[kind],
     previewTrack: mapDiscoveryTrack(mix.preview_track),
   };
 }
@@ -49,12 +32,12 @@ interface Props {
 }
 
 const MadeForYou = ({ madeForYou }: Props) => {
-  const items: MadeForYouItem[] = madeForYou
-    ? [
-        toMadeForYouItem(madeForYou.daily_mix, FALLBACK_ITEMS[0], "daily"),
-        toMadeForYouItem(madeForYou.weekly_mix, FALLBACK_ITEMS[1], "weekly"),
-      ]
-    : FALLBACK_ITEMS;
+  if (!madeForYou) return null;
+
+  const items: MadeForYouItem[] = [
+    toMadeForYouItem(madeForYou.daily_mix, "daily"),
+    toMadeForYouItem(madeForYou.weekly_mix, "weekly"),
+  ];
 
   return (
     <div data-test="section-made-for-you">
