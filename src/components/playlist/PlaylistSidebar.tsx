@@ -50,6 +50,7 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
           </p>
           <Link
             to={`/${playlist.owner_user_id}/sets`}
+            data-test="playlist-sidebar-view-all"
             className="text-[12px] text-[#757575] hover:underline transition-colors"
           >
             View all
@@ -58,11 +59,11 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
 
         <div data-test="sidebar-user-playlists" className="px-1">
           {loading ? (
-            <div className="py-4 flex justify-center">
+            <div data-test="playlist-sidebar-loading" className="py-4 flex justify-center">
               <div className="w-4 h-4 rounded-full border-2 border-[#555] border-t-white animate-spin" />
             </div>
           ) : userPlaylists.length === 0 ? (
-            <p className="text-[var(--color-text-muted)] text-xs ">
+            <p data-test="playlist-sidebar-empty" className="text-[var(--color-text-muted)] text-xs ">
               No other playlists.
             </p>
           ) : (

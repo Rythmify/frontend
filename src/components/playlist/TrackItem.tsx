@@ -1,5 +1,5 @@
-import { useState, type MouseEvent, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { LuListEnd } from "react-icons/lu";
 import {
@@ -16,11 +16,10 @@ import { FaRegCopy } from "react-icons/fa";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import { repostTrack } from "@/services/mocks/Track.service";
+import { usePlayerStore } from "@/stores/player.store";
+import { useLikesStore } from "@/stores/likes.store";
 import type { Track } from "@/types/track";
 import type { PlaylistTrackItem } from "@/services/api/playlist/playlist.service";
-import { useLikesStore } from "@/stores/likes.store";
-import { usePlayerStore } from "@/stores/player.store";
-
 function TrackItem({
   track,
   index,
@@ -35,44 +34,54 @@ function TrackItem({
   isPlaying: boolean;
   onPlay?: () => void;
   onLike: () => void;
-}) {
+  }) {
   const [hovered, setHovered] = useState(false);
-  const { isTrackLiked, toggleTrack: globalToggleTrack } = useLikesStore();
-  const liked = isTrackLiked(track.track_id);
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
+  const navigate = useNavigate();
   const setTrack = usePlayerStore((state) => state.setTrack);
   const addToQueue = usePlayerStore((state) => state.addToQueue);
+  const { isTrackLiked, toggleTrack } = useLikesStore();
   const [addedToQueue, setAddedToQueue] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const repostTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const artistName = track.artist_name ?? track.artist_name ?? "Unknown Artist";
   const artistSlug =
     track.artist_username ?? track.artist_username ?? "unknown";
+  const artistStationId = track.artist_id ?? track.artist_username ?? "";
+  const stationSlug = artistName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
   const coverImage =
     track.cover_image ?? track.cover_image ?? "https://via.placeholder.com/150";
   const playCount = track.play_count ?? 0;
+  const liked = isTrackLiked(track.track_id);
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Build a minimal Track object for the store
-    const trackObj: Track = {
+    toggleTrack({
       id: track.track_id,
       title: track.title ?? "Untitled track",
-      artistName: artistName,
+      artistName,
       artistUsername: artistSlug,
       coverUrl: coverImage,
-      audioUrl: track.audio_url ?? "",
-      duration: formatDuration(track.duration),
       genre: "",
       likeCount: 0,
       repostCount: 0,
-      playCount: playCount,
+      playCount,
       commentCount: 0,
+      duration: formatDuration(track.duration),
       postedAt: track.added_at ?? "",
       waveformData: [],
-    };
-    globalToggleTrack(trackObj);
+      audioUrl: track.audio_url ?? "",
+      isPrivate: !track.is_public,
+    });
     onLike();
   };
 
@@ -80,10 +89,39 @@ function TrackItem({
     e.stopPropagation();
     try {
       await repostTrack(track.track_id);
+      setReposted(true);
+      if (repostTimerRef.current) clearTimeout(repostTimerRef.current);
+      repostTimerRef.current = setTimeout(() => {
+        repostTimerRef.current = null;
+      }, 2000);
     } catch (err) {
       console.error("Failed to repost track:", err);
     }
   };
+
+  const handleCopyLink = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/${artistSlug}/${track.track_id}`,
+      );
+      setCopySuccess(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => {
+        setCopySuccess(false);
+        copyTimerRef.current = null;
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (repostTimerRef.current) clearTimeout(repostTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const formatDuration = (seconds?: number | null) => {
     if (typeof seconds !== "number" || Number.isNaN(seconds)) return "0:00";
@@ -116,7 +154,6 @@ function TrackItem({
       waveformData: [],
       audioUrl: track.audio_url ?? "",
       isPrivate: !track.is_public,
-      artistId: track.artist_id || "",
     };
 
     setTrack(trackForPlayer);
@@ -179,7 +216,7 @@ function TrackItem({
           )}
         </div>
 
-        <div className="flex-1 min-w-0 flex items-baseline gap-1.5 overflow-hidden">
+        <div data-test={`track-item-meta-${track.track_id}`} className="flex-1 min-w-0 flex items-baseline gap-1.5 overflow-hidden">
           <span
             className={`text-sm shrink-0 w-5 font-bold text-right ${playbackTextClass}`}
           >
@@ -210,6 +247,7 @@ function TrackItem({
 
         <div className="flex items-center shrink-0 ml-3">
           <div
+            data-test={`track-item-actions-${track.track_id}`}
             className={`flex items-center gap-0.5 transition-opacity duration-150 ${hovered ? "opacity-100" : "opacity-0 pointer-events-none"}`}
           >
             <TipBtn
@@ -222,9 +260,10 @@ function TrackItem({
             </TipBtn>
 
             <TipBtn
-              tooltip="Repost"
+              tooltip={reposted ? "Reposted" : "Repost"}
               data-test={`button-repost-track-${track.track_id}`}
               onClick={handleRepost}
+              active={reposted}
             >
               <BiRepost className="text-base" />
             </TipBtn>
@@ -243,17 +282,12 @@ function TrackItem({
             <TipBtn
               tooltip="Copy link"
               data-test={`button-copy-link-track-${track.track_id}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(
-                  `${window.location.origin}/${artistSlug}/${track.track_id}`,
-                );
-              }}
+              onClick={handleCopyLink}
             >
               <FaRegCopy />
             </TipBtn>
 
-            <div className="relative">
+            <div className="relative" data-test={`track-item-more-wrap-${track.track_id}`}>
               <TipBtn
                 tooltip="More"
                 data-test={`button-more-track-${track.track_id}`}
@@ -311,7 +345,13 @@ function TrackItem({
                   <MiniDropItem
                     icon={<FaBroadcastTower />}
                     label="Station"
-                    onClick={() => setMoreOpen(false)}
+                    onClick={() => {
+                      setMoreOpen(false);
+                      if (!artistStationId) return;
+                      navigate(
+                        `/discover/stations/${stationSlug}:${artistStationId}`,
+                      );
+                    }}
                     data-test={`dropdown-station-track-${track.track_id}`}
                   />
                 </div>
@@ -320,6 +360,7 @@ function TrackItem({
           </div>
 
           <span
+            data-test={`track-item-play-count-${track.track_id}`}
             className={`inline-flex items-center justify-end gap-1 px-2 text-[11px] text-text-muted tabular-nums w-14 text-right transition-opacity duration-150 ${
               hovered ? "opacity-0" : "opacity-100"
             }`}
@@ -352,6 +393,16 @@ function TrackItem({
           artistName={artistName}
           onClose={() => setPlaylistModalOpen(false)}
         />
+      )}
+
+      {copySuccess && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 z-[9999] -translate-x-1/2 rounded-md bg-black/90 px-3 py-2 text-xs font-semibold text-white shadow-lg"
+        >
+          Link copied
+        </div>
       )}
     </>
   );
