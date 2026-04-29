@@ -1255,8 +1255,12 @@ function DeleteAccountModal({
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password to confirm"
               data-test="settings-delete-account-password-input"
+              autoComplete="current-password"
               className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-text-hover)] placeholder:text-[var(--color-text)] focus:outline-none focus:border-[var(--color-border-light)]"
             />
+            <p className="text-xs text-[var(--color-text)]">
+              Enter your password to confirm deletion.
+            </p>
           </div>
 
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-1">
