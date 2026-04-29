@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getSubscriptionPlans,
   checkoutSubscription,
+  getMyTransactions,
 } from "@/services/api/upload/subscription.service";
 import HeroSection from "../../components/Premium/HeroSection";
 import PricingCards from "../../components/Premium/PricingCards";
@@ -12,6 +13,16 @@ export default function PlanPage() {
   const navigate = useNavigate();
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [monthlyPrice, setMonthlyPrice] = useState<number | null>(null);
+
+  useEffect(() => {
+    getSubscriptionPlans()
+      .then((plans) => {
+        const premium = plans.find((p) => p.name === "premium");
+        if (premium) setMonthlyPrice(parseFloat(premium.price));
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleGetStarted() {
     setIsStarting(true);
@@ -21,15 +32,19 @@ export default function PlanPage() {
       const premium = plans.find((p) => p.name === "premium");
       if (!premium) throw new Error("Premium plan not found.");
       const { transaction_id } = await checkoutSubscription(premium.subscription_plan_id);
-      sessionStorage.setItem("pending_transaction_id", transaction_id);
       navigate("/creator/payment", { state: { transaction_id } });
     } catch (err: any) {
       const code = err.response?.data?.error?.code;
       if (code === "SUBSCRIPTION_CHECKOUT_PENDING") {
-        const stored = sessionStorage.getItem("pending_transaction_id");
-        if (stored) {
-          navigate("/creator/payment", { state: { transaction_id: stored } });
-          return;
+        try {
+          const transactions = await getMyTransactions();
+          const pending = transactions.find((t) => t.payment_status === "pending");
+          if (pending) {
+            navigate("/creator/payment", { state: { transaction_id: pending.transaction_id, isPending: true } });
+            return;
+          }
+        } catch {
+          // fall through to error message
         }
         setStartError("You already have a pending checkout. Please complete your payment.");
       } else {
@@ -53,6 +68,15 @@ export default function PlanPage() {
 
   return (
     <main className="min-h-screen bg-white font-sans">
+      <button
+        type="button"
+        onClick={() => navigate("/subscriptions")}
+        aria-label="Exit"
+        className="fixed top-5 right-6 z-50 flex items-center justify-center h-6 w-6 p-5 rounded-full bg-input-bg hover:bg-[#dcdcdc] text-text-upload dark:hover:bg-[#353535] transition-all duration-300 cursor-pointer"
+      >
+        <i className="fa-solid fa-xmark text-md" />
+      </button>
+
       {startError && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 flex items-center justify-between rounded-sm bg-[#FB2C36]/10 border border-[#FB2C36]/30 px-4 py-3 shadow-lg min-w-[320px] max-w-[90vw]">
           <span className="text-sm font-bold text-[#FB2C36]">{startError}</span>
@@ -66,8 +90,8 @@ export default function PlanPage() {
         </div>
       )}
       <HeroSection {...ctaProps} />
-      <PricingCards {...ctaProps} startError={null} />
-      <CompareTable {...ctaProps} />
+      <PricingCards {...ctaProps} startError={null} monthlyPrice={monthlyPrice} />
+      <CompareTable {...ctaProps} monthlyPrice={monthlyPrice} />
     </main>
   );
 }
