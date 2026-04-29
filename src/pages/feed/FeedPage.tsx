@@ -114,7 +114,7 @@ const FeedPage = () => {
         </div>
 
         {/* Sidebar - Hidden on mobile/tablet, shown on desktop */}
-        <div data-test="feed-sidebar" className="hidden lg:block lg:flex-[3] xl:flex-[2] pt-8 sticky top-0 h-fit">
+        <div data-test="feed-sidebar" className="hidden lg:block lg:flex-[3] xl:flex-[2] pt-8">
           <DiscoverSideBar />
         </div>
       </div>
