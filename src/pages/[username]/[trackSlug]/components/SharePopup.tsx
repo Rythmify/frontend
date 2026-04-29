@@ -188,18 +188,18 @@ function ShareTab({
   const getTargetUrl = () => {
     const origin = window.location.origin;
     if (track) {
-      return `${origin}/${track.artistUsername}/${track.trackSlug || track.id}`;
+      // Prioritize trackSlug if available, fallback to id
+      return `${origin}/${track.artistUsername || "artist"}/${track.trackSlug || track.id}`;
     }
     if (playlist) {
       const slug = playlist.slug || playlist.playlist_id;
-      const username = playlist.owner_user_id; // Using owner ID as fallback for username
+      // Use owner_username if available, or a generic 'user' fallback
+      // Note: playlist.owner_user_id is a UUID, so we prefer a username if we can find one in the context
+      const username = (playlist as any).owner_username || playlist.owner_user_id || "user";
       
-      // Determine type based on properties or name patterns
       const name = playlist.name.toLowerCase();
       if (name.includes("mix")) return `${origin}/discover/sets/${slug}`;
       if (name.includes("station")) return `${origin}/discover/stations/${slug}`;
-      if (name.includes("made for you") || name.includes("personalised")) return `${origin}/discover/personalised/${slug}`;
-      if (playlist.track_count > 10 && name.includes("album")) return `${origin}/${username}/album/${slug}`;
       
       return `${origin}/${username}/sets/${slug}`;
     }
@@ -210,28 +210,32 @@ function ShareTab({
   const [shareUrl, setShareUrl] = useState(targetUrl);
   const [isShortening, setIsShortening] = useState(false);
 
+  // Sync shareUrl when targetUrl changes (e.g. navigation or prop updates)
+  useEffect(() => {
+    if (!shortenLink) {
+      setShareUrl(targetUrl);
+    }
+  }, [targetUrl, shortenLink]);
+
+  // Handle URL shortening via resolve endpoint
   useEffect(() => {
     if (shortenLink) {
       setIsShortening(true);
+      // We pass the full URL to the resolve endpoint as it handles parsing based on domain
       axiosInstance
         .get(`/resolve`, { params: { url: targetUrl } })
         .then((res) => {
-          // Check all common backend response patterns
+          // Resolve endpoint typically returns { data: { permalink, ... } }
           const permalink = res.data?.data?.permalink || res.data?.permalink || res.data?.data?.url;
-          if (permalink && permalink !== targetUrl) {
+          if (permalink) {
             setShareUrl(permalink);
-          } else {
-            // If the backend returns the same URL, it means shortening isn't available for this link
-            setShareUrl(targetUrl);
           }
         })
         .catch((err) => {
-          console.error("Shortening failed:", err);
+          console.error("[SharePopup] Shortening failed:", err);
           setShareUrl(targetUrl);
         })
         .finally(() => setIsShortening(false));
-    } else {
-      setShareUrl(targetUrl);
     }
   }, [shortenLink, targetUrl]);
 
@@ -242,11 +246,17 @@ function ShareTab({
       let totalSeconds = 0;
       if (timeParts.length === 2) totalSeconds = timeParts[0] * 60 + timeParts[1];
       else if (timeParts.length === 1) totalSeconds = timeParts[0];
-      finalUrl += `?t=${totalSeconds}`;
+      
+      // Handle query parameter appending
+      const separator = finalUrl.includes("?") ? "&" : "?";
+      finalUrl += `${separator}t=${totalSeconds}`;
     }
-    navigator.clipboard.writeText(finalUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    
+    navigator.clipboard.writeText(finalUrl).then(() => {
+      setCopied(true);
+      toast.success("Link copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const [timestamp, setTimestamp] = useState("0:00");
@@ -268,32 +278,46 @@ function ShareTab({
       label: "Twitter",
       bg: "#1da1f2",
       "data-test": "social-twitter",
+      shareUrl: (url: string) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(`Check out ${data.title} on Rythmify!`)}`,
     },
     {
       icon: <FaFacebook />,
       label: "Facebook",
       bg: "#1877f2",
       "data-test": "social-facebook",
+      shareUrl: (url: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
     },
     {
       icon: <FaTumblr />,
       label: "Tumblr",
       bg: "#35465c",
       "data-test": "social-tumblr",
+      shareUrl: (url: string) => `https://www.tumblr.com/widgets/share/tool?canonicalUrl=${encodeURIComponent(url)}`,
     },
     {
       icon: <FaPinterest />,
       label: "Pinterest",
       bg: "#e60023",
       "data-test": "social-pinterest",
+      shareUrl: (url: string) => `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&description=${encodeURIComponent(data.title)}`,
     },
     {
       icon: <FaEnvelope />,
       label: "Email",
       bg: "#555",
       "data-test": "social-email",
+      shareUrl: (url: string) => `mailto:?subject=${encodeURIComponent(data.title)}&body=${encodeURIComponent(`Listen to ${data.title} by ${data.subtitle} on Rythmify: ${url}`)}`,
     },
   ];
+
+  const handleSocialClick = (s: typeof socials[0]) => {
+    const url = s.shareUrl(shareUrl);
+    if (url.startsWith("mailto:")) {
+      window.location.href = url;
+    } else {
+      window.open(url, "_blank", "width=600,height=400,noopener,noreferrer");
+    }
+  };
 
   return (
     <div data-test="share-tab-content" className="flex flex-col gap-4">
@@ -371,6 +395,7 @@ function ShareTab({
           <button
             key={s.label}
             data-test={s["data-test"]}
+            onClick={() => handleSocialClick(s)}
             className="flex flex-col items-center gap-1.5 cursor-pointer group"
           >
             <span
