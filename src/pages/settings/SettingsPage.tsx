@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import SettingsLayout from "@/pages/settings/SettingsLayout";
 import { useAuthStore, type User } from "@/stores/auth.store";
-import { getMe } from "@/services/auth.service";
+import { getMe, normalizeDateOfBirth } from "@/services/auth.service";
 import {
   changeEmail,
   deleteMyAccount,
@@ -41,6 +41,9 @@ function mapProfileToStoreUser(
     profile.cover_photo ?? profile.coverUrl ?? currentUser?.coverUrl;
   const city = profile.city ?? currentUser?.city;
   const country = profile.country ?? currentUser?.country;
+  const dateOfBirth = normalizeDateOfBirth(
+    profile.date_of_birth ?? currentUser?.date_of_birth,
+  );
 
   return {
     id: profile.id,
@@ -60,7 +63,7 @@ function mapProfileToStoreUser(
       [city, country].filter(Boolean).join(", ") || currentUser?.location,
     following_ids: profile.following_ids ?? currentUser?.following_ids ?? [],
     followers_ids: profile.followers_ids ?? currentUser?.followers_ids,
-    date_of_birth: profile.date_of_birth ?? currentUser?.date_of_birth ?? null,
+    date_of_birth: dateOfBirth,
     gender: profile.gender ?? currentUser?.gender ?? null,
   };
 }
@@ -856,7 +859,7 @@ function BasicInformation({
   const [saveState, setSaveState] = useState<"idle" | "saving">("idle");
 
   useEffect(() => {
-    const syncedDateOfBirth = user?.date_of_birth ?? "";
+    const syncedDateOfBirth = normalizeDateOfBirth(user?.date_of_birth) ?? "";
     const syncedGender = (user?.gender ?? "") as "" | "male" | "female";
 
     if (syncedDateOfBirth) {
@@ -895,7 +898,7 @@ function BasicInformation({
   const canSave = isDirty && saveState !== "saving";
 
   const resetForm = () => {
-    const syncedDateOfBirth = user?.date_of_birth ?? "";
+    const syncedDateOfBirth = normalizeDateOfBirth(user?.date_of_birth) ?? "";
     const syncedGender = (user?.gender ?? "") as "" | "male" | "female";
 
     if (syncedDateOfBirth) {
@@ -954,10 +957,13 @@ function BasicInformation({
     try {
       const response = await updateMeAccount(payload);
       const profile = response?.data ?? response;
-      const nextUser = mapProfileToStoreUser(profile, user);
+      const mergedProfile = { ...profile, ...payload };
+      const nextUser = mapProfileToStoreUser(mergedProfile, user);
 
       setUser({ ...nextUser });
-      setLastSyncedDateOfBirth(nextUser.date_of_birth ?? payload.date_of_birth ?? "");
+      setLastSyncedDateOfBirth(
+        payload.date_of_birth ?? nextUser.date_of_birth ?? "",
+      );
       setLastSyncedGender((nextUser.gender ?? "") as "" | "male" | "female");
       setIsDirty(false);
       onToast("Basic information saved successfully.", "success");

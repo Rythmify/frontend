@@ -20,6 +20,7 @@ vi.mock("@/stores/likes.store", () => ({
 
 vi.mock("@/services/auth.service", () => ({
   getMe: () => mockGetMe(),
+  normalizeDateOfBirth: (value: string | null | undefined) => value ?? null,
 }));
 
 vi.mock("@/services/api/upload/subscription.service", () => ({

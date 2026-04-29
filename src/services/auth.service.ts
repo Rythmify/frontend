@@ -78,6 +78,15 @@ export interface ContentSettings {
   default_license_type?: "all_rights_reserved" | "creative_commons" | null;
 }
 
+export function normalizeDateOfBirth(value?: string | null): string | null {
+  if (!value) return null;
+
+  const trimmed = value.trim();
+  const isoDateMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+
+  return isoDateMatch?.[1] ?? trimmed;
+}
+
 // Token helpers
 
 function saveToken(token: string) {

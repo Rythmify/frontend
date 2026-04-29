@@ -18,6 +18,7 @@ vi.mock("@/services/auth.service", () => ({
   forgotPassword: (...args: unknown[]) => mockForgotPassword(...args),
   updateMeAccount: (...args: unknown[]) => mockUpdateMeAccount(...args),
   disconnectProvider: (...args: unknown[]) => mockDisconnectProvider(...args),
+  normalizeDateOfBirth: (value: string | null | undefined) => value ?? null,
 }));
 
 vi.mock("@/stores/auth.store", () => ({
