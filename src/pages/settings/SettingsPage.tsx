@@ -852,9 +852,7 @@ function BasicInformation({
   const [lastSyncedGender, setLastSyncedGender] = useState<
     "" | "male" | "female"
   >("");
-  const [hasUserEdited, setHasUserEdited] = useState(false);
-  const [hasEditedBirthDate, setHasEditedBirthDate] = useState(false);
-  const [hasEditedGender, setHasEditedGender] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving">("idle");
 
   useEffect(() => {
@@ -878,129 +876,117 @@ function BasicInformation({
     setGender(syncedGender);
     setLastSyncedDateOfBirth(syncedDateOfBirth);
     setLastSyncedGender(syncedGender);
-    setHasUserEdited(false);
-    setHasEditedBirthDate(false);
-    setHasEditedGender(false);
+    setIsDirty(false);
+    setSaveState("idle");
   }, [currentYear, user?.date_of_birth, user?.gender]);
 
-  useEffect(() => {
-    if (!hasUserEdited || !gender) return;
+  const candidateDateOfBirth = `${year}-${String(
+    MONTHS.indexOf(month as (typeof MONTHS)[number]) + 1,
+  ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const normalizedDateOfBirth = `${String(
+    new Date(`${candidateDateOfBirth}T00:00:00`).getFullYear(),
+  )}-${String(
+    new Date(`${candidateDateOfBirth}T00:00:00`).getMonth() + 1,
+  ).padStart(2, "0")}-${String(
+    new Date(`${candidateDateOfBirth}T00:00:00`).getDate(),
+  ).padStart(2, "0")}`;
+  const isBirthDateDirty = lastSyncedDateOfBirth !== candidateDateOfBirth;
+  const isGenderDirty = lastSyncedGender !== gender;
+  const canSave = isDirty && saveState !== "saving";
 
+  const resetForm = () => {
+    const syncedDateOfBirth = user?.date_of_birth ?? "";
+    const syncedGender = (user?.gender ?? "") as "" | "male" | "female";
+
+    if (syncedDateOfBirth) {
+      const [savedYear, savedMonth, savedDay] = syncedDateOfBirth.split("-");
+      const monthIndex = Number(savedMonth) - 1;
+      if (savedYear) setYear(savedYear);
+      if (savedDay) setDay(String(Number(savedDay)));
+      if (monthIndex >= 0 && monthIndex < MONTHS.length) {
+        setMonth(MONTHS[monthIndex]);
+      }
+    } else {
+      setMonth("January");
+      setDay("1");
+      setYear(String(currentYear));
+    }
+
+    setGender(syncedGender);
+    setIsDirty(false);
+  };
+
+  const handleSave = async () => {
     if (!localStorage.getItem("auth_token")) {
-      setHasUserEdited(false);
-      setHasEditedBirthDate(false);
-      setHasEditedGender(false);
-      setSaveState("idle");
+      logout();
       onToast("Session expired. Please sign in again.", "error");
       return;
     }
 
-    const candidateDateOfBirth = `${year}-${String(
-      MONTHS.indexOf(month as (typeof MONTHS)[number]) + 1,
-    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    if (gender === "") {
+      onToast("Please indicate your gender before saving.", "error");
+      return;
+    }
+
     const payload: {
       gender?: "male" | "female";
       date_of_birth?: string;
     } = {};
 
-    if (hasEditedGender && lastSyncedGender !== gender) {
+    if (isGenderDirty) {
       payload.gender = gender;
     }
 
-    if (hasEditedBirthDate && lastSyncedDateOfBirth !== candidateDateOfBirth) {
-      const normalizedCandidate = new Date(`${candidateDateOfBirth}T00:00:00`);
-      const normalizedDateOfBirth = `${String(
-        normalizedCandidate.getFullYear(),
-      )}-${String(normalizedCandidate.getMonth() + 1).padStart(2, "0")}-${String(
-        normalizedCandidate.getDate(),
-      ).padStart(2, "0")}`;
-
+    if (isBirthDateDirty) {
       if (normalizedDateOfBirth !== candidateDateOfBirth) {
-        setHasUserEdited(false);
         onToast("Please choose a valid birth date.", "error");
         return;
       }
-
       payload.date_of_birth = candidateDateOfBirth;
     }
 
     if (!payload.gender && !payload.date_of_birth) {
-      setHasUserEdited(false);
+      onToast("No changes to save.", "error");
       return;
     }
 
-    const timer = window.setTimeout(async () => {
-      setSaveState("saving");
-      setHasUserEdited(false);
-      try {
-        // const response = await updateMeAccount(payload);
-        // const nextUser = mapProfileToStoreUser(response.data, user);
-        // // setUser(nextUser);
-        // setUser({ ...nextUser });
-        const response = await updateMeAccount(payload);
+    setSaveState("saving");
+    try {
+      const response = await updateMeAccount(payload);
+      const profile = response?.data ?? response;
+      const nextUser = mapProfileToStoreUser(profile, user);
 
-        const profile = response?.data ?? response;
+      setUser({ ...nextUser });
+      setLastSyncedDateOfBirth(nextUser.date_of_birth ?? payload.date_of_birth ?? "");
+      setLastSyncedGender((nextUser.gender ?? "") as "" | "male" | "female");
+      setIsDirty(false);
+      onToast("Basic information saved successfully.", "success");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const message =
+        err?.response?.data?.error?.message ??
+        err?.response?.data?.message ??
+        "Failed to update basic information.";
 
-        const nextUser = mapProfileToStoreUser(profile, user);
-
-        setUser({ ...nextUser });
-        setLastSyncedDateOfBirth(
-          nextUser.date_of_birth ??
-            payload.date_of_birth ??
-            lastSyncedDateOfBirth,
-        );
-        setLastSyncedGender(
-          (nextUser.gender ?? gender) as "" | "male" | "female",
-        );
-        setHasEditedBirthDate(false);
-        setHasEditedGender(false);
-      } catch (err: any) {
-        const status = err?.response?.status;
-        const message =
-          err?.response?.data?.error?.message ??
-          err?.response?.data?.message ??
-          "Failed to update basic information.";
-
-        if (status === 401) {
-          logout();
-          setHasEditedBirthDate(false);
-          setHasEditedGender(false);
-          onToast("Session expired. Please sign in again.", "error");
-          return;
-        }
-
-        if (status === 429) {
-          setHasEditedBirthDate(false);
-          setHasEditedGender(false);
-          onToast(
-            "Too many requests. Please wait a moment and try again.",
-            "error",
-          );
-          return;
-        }
-
-        onToast(message, "error");
-      } finally {
-        setSaveState("idle");
+      if (status === 401) {
+        logout();
+        onToast("Session expired. Please sign in again.", "error");
+        return;
       }
-    }, 500);
 
-    return () => window.clearTimeout(timer);
-  }, [
-    day,
-    gender,
-    hasEditedBirthDate,
-    hasEditedGender,
-    hasUserEdited,
-    lastSyncedDateOfBirth,
-    lastSyncedGender,
-    logout,
-    month,
-    onToast,
-    setUser,
-    user,
-    year,
-  ]);
+      if (status === 429) {
+        onToast(
+          "Too many requests. Please wait a moment and try again.",
+          "error",
+        );
+        return;
+      }
+
+      onToast(message, "error");
+    } finally {
+      setSaveState("idle");
+    }
+  };
 
   return (
     <div>
@@ -1016,8 +1002,7 @@ function BasicInformation({
               dataTest="settings-birth-month-select"
               onChange={(value) => {
                 setMonth(value);
-                setHasUserEdited(true);
-                setHasEditedBirthDate(true);
+                setIsDirty(true);
               }}
             >
               {MONTHS.map((m) => (
@@ -1029,8 +1014,7 @@ function BasicInformation({
               dataTest="settings-birth-day-select"
               onChange={(value) => {
                 setDay(value);
-                setHasUserEdited(true);
-                setHasEditedBirthDate(true);
+                setIsDirty(true);
               }}
             >
               {days.map((d) => (
@@ -1042,8 +1026,7 @@ function BasicInformation({
               dataTest="settings-birth-year-select"
               onChange={(value) => {
                 setYear(value);
-                setHasUserEdited(true);
-                setHasEditedBirthDate(true);
+                setIsDirty(true);
               }}
             >
               {years.map((y) => (
@@ -1061,8 +1044,7 @@ function BasicInformation({
             dataTest="settings-gender-select"
             onChange={(value) => {
               setGender(value as "" | "male" | "female");
-              setHasUserEdited(true);
-              setHasEditedGender(true);
+              setIsDirty(true);
             }}
           >
             <option value="">Indicate gender</option>
@@ -1076,11 +1058,29 @@ function BasicInformation({
           )}
         </div>
       </div>
-      {saveState === "saving" && (
-        <p className="mt-3 text-xs text-[var(--color-text)]">
-          Saving basic information...
-        </p>
-      )}
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={!canSave}
+          data-test="settings-basic-info-save-button"
+          className="rounded-[var(--radius-sm)] bg-[var(--color-input-bg)] px-4 py-2 text-sm font-semibold text-[var(--color-text-hover)] transition-all duration-150 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saveState === "saving" ? "Saving..." : "Save changes"}
+        </button>
+        <button
+          onClick={resetForm}
+          disabled={!isDirty || saveState === "saving"}
+          data-test="settings-basic-info-cancel-button"
+          className="text-sm font-semibold text-[var(--color-text)] transition hover:text-[var(--color-text-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        {saveState === "saving" && (
+          <p className="text-xs text-[var(--color-text)]">
+            Saving basic information...
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -1298,7 +1298,7 @@ function DeleteAccount({
     <button
       onClick={onDeleteRequested}
       data-test="settings-delete-account-button"
-      className="text-sm self-start fint-bold text-[var(--color-error)] "
+      className="text-sm self-start font-bold text-[var(--color-error)]"
     >
       Delete account
     </button>

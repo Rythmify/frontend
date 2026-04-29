@@ -157,6 +157,56 @@ describe("SettingsPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("saves basic information when save changes is clicked", async () => {
+    mockUpdateMeAccount.mockResolvedValue({
+      data: {
+        id: "u1",
+        username: "me",
+        display_name: "Me",
+        first_name: "Test",
+        last_name: "User",
+        bio: "",
+        email: "me@example.com",
+        role: "listener",
+        profile_picture: null,
+        cover_photo: null,
+        city: null,
+        country: null,
+        gender: "female",
+        date_of_birth: "2001-02-02",
+      },
+      message: "Basic information saved successfully.",
+    });
+
+    localStorage.setItem("auth_token", "mock-token");
+    renderSettings();
+
+    fireEvent.change(screen.getByTestId("settings-gender-select"), {
+      target: { value: "female" },
+    });
+    fireEvent.change(screen.getByTestId("settings-birth-month-select"), {
+      target: { value: "February" },
+    });
+    fireEvent.change(screen.getByTestId("settings-birth-day-select"), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByTestId("settings-birth-year-select"), {
+      target: { value: "2001" },
+    });
+    fireEvent.click(screen.getByTestId("settings-basic-info-save-button"));
+
+    await waitFor(() => {
+      expect(mockUpdateMeAccount).toHaveBeenCalledWith({
+        gender: "female",
+        date_of_birth: "2001-02-02",
+      });
+    });
+
+    expect(
+      await screen.findByText("Basic information saved successfully."),
+    ).toBeInTheDocument();
+  });
+
   it("deletes the account after confirmation", async () => {
     mockDeleteMyAccount.mockResolvedValue({});
 

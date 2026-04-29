@@ -40,6 +40,9 @@ const AuthMainLayout = () => {
           city: p.city,
           country: p.country,
           following_ids: p.following_ids ?? [],
+          followers_ids: p.followers_ids ?? [],
+          date_of_birth: p.date_of_birth ?? null,
+          gender: p.gender ?? null,
         });
       });
 
