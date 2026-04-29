@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import SettingsLayout from "@/pages/settings/SettingsLayout";
 import { useAuthStore, type User } from "@/stores/auth.store";
@@ -131,49 +132,52 @@ function Toast({
   }, [onClose]);
 
   return (
-    <div
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-[var(--radius-md)] shadow-md text-sm text-white transition-all duration-300 ${
-        type === "success"
-          ? "bg-[var(--color-success)]"
-          : "bg-[var(--color-error)]"
-      }`}
-    >
-      {type === "success" ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M5 13l4 4L19 7"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M6 18L18 6M6 6l12 12"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      )}
-      {message}
-      <button
-        onClick={onClose}
-        data-test="settings-toast-close-button"
-        className="ml-2 opacity-70 hover:opacity-100"
+    createPortal(
+      <div
+        className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-[var(--radius-md)] shadow-md text-sm text-white transition-all duration-300 ${
+          type === "success"
+            ? "bg-[var(--color-success)]"
+            : "bg-[var(--color-error)]"
+        }`}
       >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path
-            d="M2 2l8 8M10 2l-8 8"
-            stroke="white"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      </button>
-    </div>
+        {type === "success" ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M5 13l4 4L19 7"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M6 18L18 6M6 6l12 12"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
+        {message}
+        <button
+          onClick={onClose}
+          data-test="settings-toast-close-button"
+          className="ml-2 opacity-70 hover:opacity-100"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path
+              d="M2 2l8 8M10 2l-8 8"
+              stroke="white"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </div>,
+      document.body,
+    )
   );
 }
 
