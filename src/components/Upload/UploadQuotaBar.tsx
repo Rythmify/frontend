@@ -71,7 +71,7 @@ const UploadQuotaBar = ({ quota: quotaProp }: Props) => {
       </div>
 
       {/*Button*/}
-      {!isUnlimited && (
+      {!isUnlimited && !quota?.canUpload && (
         <button
           data-test="get-unlimited-uploads-button-quota-bar"
           type="button"
