@@ -7,12 +7,14 @@ import type { PersonalMix } from "@/services/api/discover.service";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
 import type { BuzzingPlaylist } from "@/components/UI/GenreCard/GenreCard";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
+import type { AlbumCardItem } from "@/components/UI/AlbumCard";
 
 export type HistoryEntry =
   | { type: "track"; item: Track; playedAt: string }
   | { type: "station"; item: Station; playedAt: string }
   | { type: "mix"; item: PersonalMix; playedAt: string }
   | { type: "playlist"; item: PlaylistCardData; playedAt: string }
+  | { type: "album"; item: AlbumCardItem; playedAt: string }
   | { type: "genre"; item: BuzzingPlaylist; playedAt: string }
   | { type: "madeForYou"; item: MadeForYouItem; playedAt: string };
 
@@ -22,6 +24,7 @@ interface HistoryStore {
   addStation: (station: Station) => void;
   addMix: (mix: PersonalMix) => void;
   addPlaylist: (playlist: PlaylistCardData) => void;
+  addAlbum: (item: AlbumCardItem) => void;
   addGenre: (genre: BuzzingPlaylist) => void;
   addMadeForYou: (item: MadeForYouItem) => void;
   clearHistory: () => Promise<void>;
@@ -81,6 +84,15 @@ export const useHistoryStore = create<HistoryStore>()(
           entries: dedupeAndPrepend(s.entries, {
             type: "playlist",
             item: playlist,
+            playedAt: new Date().toISOString(),
+          }),
+        })),
+
+      addAlbum: (item) =>
+        set((s) => ({
+          entries: dedupeAndPrepend(s.entries, {
+            type: "album",
+            item,
             playedAt: new Date().toISOString(),
           }),
         })),

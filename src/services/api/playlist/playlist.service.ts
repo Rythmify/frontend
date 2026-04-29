@@ -248,6 +248,16 @@ export async function getPlaylist(
   return res.data;
 }
 
+export async function playlistExists(playlistId: string): Promise<boolean> {
+  if (!playlistId) return false;
+  try {
+    await getPlaylist(playlistId, { include_tracks: false });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * PATCH /playlists/:id — update playlist metadata.
  * Sends multipart/form-data as required by the API spec.
@@ -281,6 +291,18 @@ export async function updatePlaylist(
   }>(`/playlists/${playlistId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return res.data;
+}
+
+/** POST /playlists/:id/convert — convert a playlist to a track */
+export async function convertPlaylist(
+  playlistId: string,
+  payload: { name?: string; is_public?: boolean },
+) {
+  const res = await axiosInstance.post<{
+    data: Playlist;
+    message: string;
+  }>(`/playlists/${playlistId}/convert`, payload);
   return res.data;
 }
 

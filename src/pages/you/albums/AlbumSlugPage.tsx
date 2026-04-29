@@ -17,6 +17,7 @@ import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { useAuthStore } from "@/stores/auth.store";
+import { playlistExists } from "@/services/api/playlist/playlist.service";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -46,6 +47,7 @@ function AlbumSlugPage() {
   const [error, setError] = useState<string | null>(null);
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
   const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
+  const [backendPlaylistExists, setBackendPlaylistExists] = useState(false);
 
   const {
     setTrack: setPlayerTrack,
@@ -79,6 +81,10 @@ function AlbumSlugPage() {
         if (cancelled) return;
 
         setPlaylist(playlistRes.data);
+        const existing = await playlistExists(playlistRes.data.playlist_id);
+        if (!cancelled) {
+          setBackendPlaylistExists(existing);
+        }
 
         try {
           const owner = await getUserById(playlistRes.data.owner_user_id);
@@ -119,6 +125,7 @@ function AlbumSlugPage() {
           setError("Failed to load playlist.");
           setFeaturedArtists([]);
           setAlbumOwner(null);
+          setBackendPlaylistExists(false);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -216,13 +223,13 @@ function AlbumSlugPage() {
 
   if (loading)
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div data-test="album-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading album...
       </div>
     );
   if (error || !playlist)
     return (
-      <div className="p-20 text-center text-red-500">
+      <div data-test="album-slug-error" className="p-20 text-center text-red-500">
         {error || "Playlist not found."}
       </div>
     );
@@ -230,7 +237,7 @@ function AlbumSlugPage() {
   return (
     <div
       data-test="album-slug-page"
-      className="flex-1 w-full bg-bg min-h-screen"
+      className="flex-1 bg-bg min-h-screen px-4 md:px-8 lg:px-12 xl:px-20 mx-auto w-full"
     >
       {/* Hero Section using the fetched playlist data */}
       <PlaylistHero
@@ -246,7 +253,7 @@ function AlbumSlugPage() {
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           {/* Left Column: Actions and Track List */}
-          <div className="flex-1 min-w-0">
+          <div data-test="album-slug-main" className="flex-1 min-w-0">
             {isOwner ? (
               <PlaylistActions
                 playlist={playlist}
@@ -257,6 +264,8 @@ function AlbumSlugPage() {
             ) : (
               <PlaylistActionsAlbum
                 playlist={playlist}
+                engagementKind="album"
+                backendPlaylistExists={backendPlaylistExists}
                 onAddToNextUp={handleAddToNextUp}
                 onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                   setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
@@ -264,7 +273,7 @@ function AlbumSlugPage() {
               />
             )}
 
-            <div className="flex flex-1 gap-6 mt-8">
+            <div data-test="album-slug-content" className="flex flex-1 gap-6 mt-8">
               <OwnerInfo
                 ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}
@@ -285,7 +294,7 @@ function AlbumSlugPage() {
           </div>
 
           {/* Right Column: Sidebar */}
-          <div className="w-full lg:w-[280px] shrink-0">
+          <div data-test="album-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar
               featuredArtists={featuredArtists}
               playlist={playlist}
