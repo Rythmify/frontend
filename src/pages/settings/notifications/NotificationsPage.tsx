@@ -182,17 +182,6 @@ function NotifSection({
                 </div>
               ) : row.deviceType === "checkbox+dropdown" ? (
                 <div className="flex flex-col gap-2">
-                  {row.deviceKey ? (
-                    (() => {
-                      const deviceKey = row.deviceKey;
-                      return (
-                    <Checkbox
-                      checked={!!prefs[deviceKey]}
-                      onChange={() => onToggle(deviceKey, !prefs[deviceKey])}
-                    />
-                      );
-                    })()
-                  ) : null}
                   <div className="relative">
                     <select
                       value={(prefs[row.dropdownKey ?? "messages_from"] ??

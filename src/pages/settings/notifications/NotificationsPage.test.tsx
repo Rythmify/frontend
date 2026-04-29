@@ -102,9 +102,8 @@ describe("NotificationsPage", () => {
     render(<NotificationsPage />);
     await screen.findByText("New message");
 
-    const [emailCheckbox, deviceCheckbox] = getRowCheckboxes("New message");
+    const [emailCheckbox] = getRowCheckboxes("New message");
     fireEvent.click(emailCheckbox);
-    fireEvent.click(deviceCheckbox);
     fireEvent.change(
       screen.getByTestId("settings-notifications-new_message_email-dropdown"),
       {
@@ -119,7 +118,7 @@ describe("NotificationsPage", () => {
         "/notifications/preferences",
         expect.objectContaining({
           new_message_email: true,
-          new_message_push: false,
+          new_message_push: true,
           messages_from: "followers_only",
         }),
       );
