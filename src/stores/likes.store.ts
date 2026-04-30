@@ -652,6 +652,7 @@ export const useLikesStore = create<LikesStore>()(
         likedAlbums: state.likedAlbums,
         likedMixes: state.likedMixes,
         likedGenres: state.likedGenres,
+        likedRadioTracks: state.likedRadioTracks,
         repostedTrackIds: state.repostedTrackIds,
         repostedPlaylistIds: state.repostedPlaylistIds,
         itemStats: state.itemStats,
