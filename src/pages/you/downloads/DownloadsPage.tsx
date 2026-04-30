@@ -3,6 +3,8 @@ import TrackCard from "@/components/UI/card/Card";
 import { useDownloadStore } from "@/stores/useDownload";
 import { useAuthStore } from "@/stores/auth.store";
 
+const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
+
 // ── Icons ─────────────────────────────────────────────────────
 
 function DownloadCloudIcon() {
@@ -78,19 +80,22 @@ export default function DownloadsPage() {
   if (downloadedTracks.length === 0) return <EmptyNothingDownloaded />;
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-6">
       <p className="text-white/40 text-sm mb-6">
         {downloadedTracks.length}{" "}
         {downloadedTracks.length === 1 ? "track" : "tracks"} downloaded
       </p>
 
-      {downloadedTracks.map((track) => (
-        <TrackCard
-          key={track.id}
-          track={track}
-          contextQueue={downloadedTracks}
-        />
-      ))}
+      <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
+        {downloadedTracks.map((track) => (
+          <TrackCard
+            key={track.id}
+            track={track}
+            widthClassName={CARD_WIDTH}
+            contextQueue={downloadedTracks}
+          />
+        ))}
+      </div>
     </div>
   );
 }
