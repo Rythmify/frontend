@@ -286,9 +286,6 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                     >
                       {u.username}
                     </button>
-                    {u.isVerified && (
-                      <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
-                    )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <button
