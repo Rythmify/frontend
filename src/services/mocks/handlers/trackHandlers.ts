@@ -24,6 +24,7 @@ const mockTrack: Track = {
   stream_url: null,
   preview_url: null,
   waveform_url: null,
+  cover_image: null,
   created_at: new Date().toISOString(),
   updated_at: null,
   artists: null,
