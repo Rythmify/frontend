@@ -1,4 +1,3 @@
-import React from "react";
 import { useAuthStore } from "@/stores/auth.store";
 
 const UploadIcon = () => (
@@ -53,48 +52,40 @@ const ProBadgeIcon = () => (
   </svg>
 );
 
-const plan = {
-  name: "Premium",
-  subtitle: "Tailored access to essential artist tools",
-  price: "EGP 29.99",
-  priceNote: "/ month, billed yearly for EGP 359.88",
-  cta: "Get started",
-  features: [
-    { icon: <UploadIcon />, label: "Unlimited uploads" },
-    { icon: <DownloadIcon />, label: "Offline listening downloads" },
-  ],
-};
-
 interface PlanCardProps {
   onGetStarted: () => void;
   isStarting: boolean;
   startError: string | null;
   disabled: boolean;
+  monthlyPrice: number | null;
 }
 
-function PlanCard({ onGetStarted, isStarting, startError, disabled }: PlanCardProps) {
+function PlanCard({ onGetStarted, isStarting, startError, disabled, monthlyPrice }: PlanCardProps) {
   const { user } = useAuthStore();
   const isPro = user?.isPro ?? false;
+
+  const priceDisplay = monthlyPrice !== null ? `EGP ${monthlyPrice.toFixed(2)}` : null;
+  const yearlyDisplay = monthlyPrice !== null ? `EGP ${(monthlyPrice * 12).toFixed(2)}` : null;
 
   return (
     <div className="w-full max-w-3xl rounded-[28px] border-2 border-black bg-white p-10 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
       <div className="space-y-6">
         <div>
           <h2 className="m-0 inline-flex items-center gap-2 text-[2.15rem] font-black leading-[1.05] tracking-tight text-black md:text-[2.45rem]">
-            {plan.name}
+            Premium
             <ProBadgeIcon />
           </h2>
           <p className="mt-3 text-base leading-7 text-black md:text-[1.05rem]">
-            {plan.subtitle}
+            Tailored access to essential artist tools
           </p>
         </div>
 
         <div className="flex flex-wrap items-baseline gap-3">
           <span className="text-[1.6rem] font-black text-[#cfb25d] md:text-[1.75rem]">
-            {plan.price}
+            {priceDisplay ?? "—"}
           </span>
           <span className="text-sm leading-7 text-black md:text-[0.95rem]">
-            {plan.priceNote}
+            {yearlyDisplay ? `/ month, billed yearly for ${yearlyDisplay}` : ""}
           </span>
         </div>
 
@@ -110,7 +101,7 @@ function PlanCard({ onGetStarted, isStarting, startError, disabled }: PlanCardPr
               disabled={isStarting || disabled}
               className="block w-full cursor-pointer rounded-full bg-black px-6 py-4 text-center text-[0.98rem] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {isStarting ? "Loading…" : plan.cta}
+              {isStarting ? "Loading…" : "Get started"}
             </button>
             {startError && (
               <p className="text-sm font-semibold text-[#c0392b]">{startError}</p>
@@ -119,7 +110,10 @@ function PlanCard({ onGetStarted, isStarting, startError, disabled }: PlanCardPr
         )}
 
         <ul className="space-y-5">
-          {plan.features.map((feature) => (
+          {[
+            { icon: <UploadIcon />, label: "Unlimited uploads" },
+            { icon: <DownloadIcon />, label: "Offline listening downloads" },
+          ].map((feature) => (
             <li
               key={feature.label}
               className="flex items-center gap-4 text-base font-bold leading-7 text-black"
@@ -135,6 +129,7 @@ function PlanCard({ onGetStarted, isStarting, startError, disabled }: PlanCardPr
 }
 
 export default function PricingCards(props: PlanCardProps) {
+
   return (
     <section id="pricing-cards" className="bg-white px-6 py-32 md:px-10 lg:px-24">
       <h2 className="mb-16 text-center text-5xl font-black tracking-tight text-black md:text-[3.35rem]">
