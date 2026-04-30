@@ -38,6 +38,7 @@ interface AuthStore {
  
    */
   toggleFollow: (username: string, extraIds?: string[]) => void;
+  clearFollowing: (ids: string[]) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -85,6 +86,22 @@ export const useAuthStore = create<AuthStore>()(
                   (id) => !state.user!.following_ids.includes(id),
                 ),
               ];
+
+          return { user: { ...state.user, following_ids } };
+        }),
+
+      clearFollowing: (ids) =>
+        set((state) => {
+          if (!state.user || ids.length === 0) return state;
+
+          const blockedIds = new Set(ids.filter(Boolean));
+          const following_ids = state.user.following_ids.filter(
+            (id) => !blockedIds.has(id),
+          );
+
+          if (following_ids.length === state.user.following_ids.length) {
+            return state;
+          }
 
           return { user: { ...state.user, following_ids } };
         }),

@@ -3,6 +3,7 @@ import ProfileHeader from "../../components/Profile/ProfileHeader/ProfileHeader"
 import ProfileTabs from "../../components/Profile/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideBar";
 import { useLikesStore } from "@/stores/likes.store";
+import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
 import { Modal } from "@/components/UI/Modal";
@@ -36,6 +37,7 @@ export default function UsernamePage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showBlock, setShowBlock] = useState(false);
   const [blockedState, setBlockedState] = useState(false);
+  const clearFollowing = useAuthStore((state) => state.clearFollowing);
 
   const {
     user,
@@ -285,6 +287,7 @@ export default function UsernamePage() {
             ? async () => {
               try {
                 await unblockUser(profileData.id);
+                clearFollowing([profileData.id, profileData.username ?? ""]);
                 refreshProfileData();
                 setBlockedState(false);
               } catch (error) {
@@ -441,6 +444,7 @@ export default function UsernamePage() {
             onBlocked={() => {
               setShowBlock(false);
               setBlockedState(true);
+              clearFollowing([profileData.id, profileData.username ?? ""]);
               refreshProfileData();
             }}
           />

@@ -285,7 +285,7 @@ export function useProfileData(
     return () => {
       cancelled = true;
     };
-  }, [isOwner, username]);
+  }, [isOwner, username, refreshVersion]);
 
   // ── Keep isFollowing in sync with auth store's following_ids ──
   useEffect(() => {
