@@ -21,6 +21,10 @@ interface SendMessageFormProps {
   };
 }
 
+type MessageWithEmbed = Message & {
+  _embedResource?: ResolvedEmbed['resource'];
+};
+
 export default function SendMessageForm({
   conversationId,
   existingMessages,
@@ -31,6 +35,7 @@ export default function SendMessageForm({
   isTyping,
   ParticipantInfo,
 }: SendMessageFormProps) {
+  // `value` here is already URL-stripped (MessageBox calls onValueChange with clean text)
   const [value, setValue]         = useState('');
   const [embeds, setEmbeds]       = useState<ResolvedEmbed[]>([]);
   const [error, setError]         = useState<string | null>(null);
@@ -43,7 +48,7 @@ export default function SendMessageForm({
   const prevScrollHeightRef = useRef(0);
   const isLoadingMoreRef    = useRef(false);
 
-  // ─── Scroll to bottom on initial load & new outgoing/incoming messages ───
+  // ─── Scroll to bottom on initial load & new messages ─────────────────────
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -52,22 +57,19 @@ export default function SendMessageForm({
     const current = existingMessages.length;
 
     if (isLoadingMoreRef.current) {
-      // Restore scroll position after prepend so view doesn't jump
       const newScrollHeight = container.scrollHeight;
       container.scrollTop   = newScrollHeight - prevScrollHeightRef.current;
       isLoadingMoreRef.current = false;
     } else if (prev === 0 && current > 0) {
-      // Initial load — jump to bottom
       container.scrollTop = container.scrollHeight;
     } else if (current > prev) {
-      // New message appended — scroll to bottom
       container.scrollTop = container.scrollHeight;
     }
 
     prevMsgCountRef.current = current;
   }, [existingMessages]);
 
-  // ─── IntersectionObserver — load older messages when sentinel is visible ──
+  // ─── IntersectionObserver — load older messages ───────────────────────────
   const handleIntersect = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (!entries[0].isIntersecting) return;
@@ -97,7 +99,10 @@ export default function SendMessageForm({
 
   // ─── Send handler ─────────────────────────────────────────────────────────
   const handleSend = async () => {
-    if (value.trim() === '' && embeds.length === 0) {
+    // `value` is already stripped of embed URLs by MessageBox
+    const cleanBody = value.trim();
+
+    if (cleanBody === '' && embeds.length === 0) {
       setError('Enter a message or paste a track/playlist link');
       return;
     }
@@ -105,32 +110,39 @@ export default function SendMessageForm({
     setIsSending(true);
 
     try {
-      const sentMessages: Message[] = [];
+      const sentMessages: MessageWithEmbed[] = [];
 
       if (embeds.length > 0) {
         for (let i = 0; i < embeds.length; i++) {
           const embed = embeds[i];
-          const res = await sendMessage(conversationId, {
-            ...(i === 0 && value.trim() ? { body: value.trim() } : {}),
+
+          // Only attach the text body to the first message
+          const payload = {
+            ...(i === 0 && cleanBody ? { body: cleanBody } : {}),
             resource: { type: embed.type, id: embed.id },
-          });
-          const msg: Message = {
+          };
+
+          const res = await sendMessage(conversationId, payload);
+
+          const msg: MessageWithEmbed = {
             ...res.data,
-            body: i === 0 ? value.trim() : '',
-            embed_type: embed.type,
-            embed_id: embed.id,
+            body:           i === 0 ? cleanBody : '',
+            embed_type:     embed.type,
+            embed_id:       embed.id,
             _embedResource: embed.resource,
-          } as Message & { _embedResource: ResolvedEmbed['resource'] };
+          };
+
           sentMessages.push(msg);
         }
       } else {
-        const res = await sendMessage(conversationId, { body: value.trim() });
-        sentMessages.push({ ...res.data, body: value.trim() });
+        // Plain text — no embed
+        const res = await sendMessage(conversationId, { body: cleanBody });
+        sentMessages.push({ ...res.data, body: cleanBody });
       }
 
       for (const msg of sentMessages) {
-        onMessageSent(msg);
-        emitMessageSent(conversationId, msg);
+        onMessageSent(msg as Message);
+        emitMessageSent(conversationId, msg as Message);
       }
       emitStopTyping(conversationId);
 
@@ -155,7 +167,7 @@ export default function SendMessageForm({
   const getSenderInfo = (senderId: string) => {
     if (senderId === user?.id) {
       return {
-        display_name: user?.displayName ?? user?.username ?? 'Me',
+        display_name:    user?.displayName ?? user?.username ?? 'Me',
         profile_picture: user?.avatar ?? null,
       };
     }
@@ -170,17 +182,14 @@ export default function SendMessageForm({
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto flex flex-col gap-4 px-3 py-3 min-h-0"
       >
-        {/* Sentinel — sits at the very top; triggers load-more when visible */}
         <div ref={sentinelRef} className="h-1 w-full shrink-0" />
 
-        {/* "Loading older…" indicator */}
         {loadingMessages && hasMoreMessages && (
           <div className="text-xs text-[#666] text-center py-2 shrink-0">
             Loading older messages…
           </div>
         )}
 
-        {/* Initial load spinner */}
         {loadingMessages && existingMessages.length === 0 ? (
           <div className="text-sm text-[#666] text-center py-4">
             Loading messages…
@@ -196,7 +205,6 @@ export default function SendMessageForm({
           ))
         )}
 
-        {/* Typing indicator */}
         {isTyping && (
           <p className="text-xs text-[#999] italic px-1 pb-1 shrink-0">
             typing…
@@ -218,6 +226,7 @@ export default function SendMessageForm({
             if (empty) setError(null);
           }}
           onEmbedsResolved={setEmbeds}
+          hasError={!!error}
         />
 
         {error && <p className="text-xs text-red-400">{error}</p>}
