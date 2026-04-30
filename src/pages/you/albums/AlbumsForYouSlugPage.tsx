@@ -16,10 +16,12 @@ import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { getUserById, type PublicUser } from "@/services/user.service";
+import { getTrackById } from "@/services/track.service";
 import { getPlaylist } from "@/services/api/playlist/playlist.service";
 import type { Track } from "@/types/track";
 import OwnerInfo from "@/components/playlist/OwnerInfo";
 import { playlistExists } from "@/services/api/playlist/playlist.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 function albumToPlaylistDetails(
   album: DiscoveryAlbum,
@@ -77,6 +79,44 @@ function getTopArtistTrackCounts(
   return Array.from(counts.entries());
 }
 
+function parseDurationToSeconds(duration?: string): number | null {
+  if (!duration) return null;
+  const parts = duration.split(":").map((part) => Number(part));
+  if (parts.some((part) => Number.isNaN(part))) return null;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return null;
+}
+
+async function hydrateAlbumTracks(
+  tracks: PlaylistTrackItem[],
+): Promise<PlaylistTrackItem[]> {
+  return Promise.all(
+    tracks.map(async (track) => {
+      const fullTrack = await getTrackById(track.track_id).catch(() => null);
+      return {
+        ...track,
+        play_count: fullTrack?.playCount ?? track.play_count ?? 0,
+        duration:
+          parseDurationToSeconds(fullTrack?.duration) ?? track.duration ?? null,
+      };
+    }),
+  );
+}
+
+function isArtistFollowed(
+  currentUser: { following_ids: string[] } | null,
+  profile: PublicUser,
+): boolean {
+  if (!currentUser) return false;
+
+  const candidates = [profile.id, profile.username].filter(Boolean) as string[];
+  const followingIds = currentUser.following_ids ?? [];
+  return candidates.some((candidate) =>
+    followingIds.includes(candidate),
+  );
+}
+
 function AlbumsForYouSlugPage() {
   const { username, albumSlug } = useParams<{
     username: string;
@@ -89,6 +129,7 @@ function AlbumsForYouSlugPage() {
   const [error, setError] = useState<string | null>(null);
   const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
   const [backendPlaylistExists, setBackendPlaylistExists] = useState(false);
+  const { user: currentUser } = useAuthStore();
 
   const {
     setTrack: setPlayerTrack,
@@ -101,14 +142,15 @@ function AlbumsForYouSlugPage() {
     user: PublicUser,
     trackCount: number,
   ): MockUser => ({
-    id: user.id as unknown as number,
+    id: user.id,
     username: user.username ?? user.display_name,
     displayName: user.display_name,
     avatarUrl:
-      user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
+      user.profile_picture ??
+      `https://picsum.photos/seed/${encodeURIComponent(user.id)}/100/100`,
     followerCount: user.followers_count ?? 0,
     trackCount,
-    isFollowing: false,
+    isFollowing: isArtistFollowed(currentUser, user),
   });
 
   useEffect(() => {
@@ -135,7 +177,7 @@ function AlbumsForYouSlugPage() {
         }
 
         const playlistRes = await getPlaylist(album.id, { include_tracks: true });
-        const tracks = playlistRes.data.tracks;
+        const tracks = await hydrateAlbumTracks(playlistRes.data.tracks);
 
         if (!tracks.length) {
           throw new Error("Album not found.");
@@ -186,7 +228,7 @@ function AlbumsForYouSlugPage() {
     return () => {
       cancelled = true;
     };
-  }, [albumSlug]);
+  }, [albumSlug, currentUser?.id, currentUser?.following_ids?.join("|") ?? ""]);
 
   const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
     id: track.track_id,
@@ -266,6 +308,9 @@ function AlbumsForYouSlugPage() {
     isPlaying &&
     !!playlist &&
     playlist.tracks.some((track) => track.track_id === currentTrack?.id);
+  const totalTrackViews =
+    playlist?.tracks.reduce((sum, track) => sum + (track.play_count ?? 0), 0) ??
+    0;
 
   if (loading)
     return (
@@ -311,7 +356,7 @@ function AlbumsForYouSlugPage() {
             <div data-test="albums-for-you-slug-content" className="flex flex-col gap-6 mt-6 lg:flex-row lg:mt-8">
               <OwnerInfo
                 ownerUserId={playlist.owner_user_id}
-                trackNum={playlist.tracks.length}
+                trackNum={totalTrackViews}
                 followers={albumOwner?.followers_count ?? 0}
                 username={
                   albumOwner?.username ?? username ?? playlist.owner_user_id

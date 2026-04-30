@@ -161,7 +161,9 @@ export default function PlaylistSidebar({
         </div>
 
         {showSocialProof && (showLikes || showReposts) && (
+          <div data-test="playlist-sidebarforyou-social-proof" className="mt-6">
           <EngagementPlaylistSidebar playlist={playlist} />
+          </div>
         )}
 
         <div data-test="go-mobile-section-playlist-mix" className="mt-6">

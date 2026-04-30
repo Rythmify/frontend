@@ -16,6 +16,7 @@ import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { useMemo } from "react";
+import { useAuthStore } from "@/stores/auth.store";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -73,6 +74,35 @@ function getTopArtistTrackCountsFromRadioTracks(
   }
 
   return Array.from(counts.entries());
+}
+
+function isArtistFollowed(
+  currentUser: { following_ids: string[] } | null,
+  profile: PublicUser,
+): boolean {
+  if (!currentUser) return false;
+
+  const followingIds = currentUser.following_ids ?? [];
+  const candidates = [profile.id, profile.username].filter(Boolean) as string[];
+  return candidates.some((candidate) => followingIds.includes(candidate));
+}
+
+function toFeaturedArtist(
+  user: PublicUser,
+  trackCount: number,
+  currentUser: { following_ids: string[] } | null,
+): MockUser {
+  return {
+    id: user.id,
+    username: user.username ?? user.display_name,
+    displayName: user.display_name,
+    avatarUrl:
+      user.profile_picture ??
+      `https://picsum.photos/seed/${encodeURIComponent(user.id)}/100/100`,
+    followerCount: user.followers_count ?? 0,
+    trackCount,
+    isFollowing: isArtistFollowed(currentUser, user),
+  };
 }
 
 function buildPlaylist(
@@ -162,6 +192,7 @@ function MoreOfLikeSlugPage() {
     username: string;
     playlistSlug: string;
   }>();
+  const { user: currentUser } = useAuthStore();
   const isRadioPlaylistRoute =
     !!playlistSlug && !playlistSlug.includes(":") && UUID_RE.test(playlistSlug);
 
@@ -229,19 +260,9 @@ function MoreOfLikeSlugPage() {
           const artistIds = getTopArtistTrackCountsFromRadioTracks(payload.tracks);
           const artists = await Promise.all(
             artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-              const user = await getUserById(artistId).catch(() => null);
-              return user
-                ? {
-                    id: user.id as unknown as number,
-                    username: user.username ?? user.display_name,
-                    displayName: user.display_name,
-                    avatarUrl:
-                      user.profile_picture ??
-                      "https://picsum.photos/seed/default/100/100",
-                    followerCount: user.followers_count ?? 0,
-                    trackCount,
-                    isFollowing: false,
-                  }
+              const profile = await getUserById(artistId).catch(() => null);
+              return profile
+                ? toFeaturedArtist(profile, trackCount, currentUser)
                 : null;
             }),
           );
@@ -269,19 +290,9 @@ function MoreOfLikeSlugPage() {
           const artistIds = getTopArtistTrackCounts(tracks);
           const artists = await Promise.all(
             artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-              const user = await getUserById(artistId).catch(() => null);
-              return user
-                ? {
-                    id: user.id as unknown as number,
-                    username: user.username ?? user.display_name,
-                    displayName: user.display_name,
-                    avatarUrl:
-                      user.profile_picture ??
-                      "https://picsum.photos/seed/default/100/100",
-                    followerCount: user.followers_count ?? 0,
-                    trackCount,
-                    isFollowing: false,
-                  }
+              const profile = await getUserById(artistId).catch(() => null);
+              return profile
+                ? toFeaturedArtist(profile, trackCount, currentUser)
                 : null;
             }),
           );
@@ -322,7 +333,7 @@ function MoreOfLikeSlugPage() {
     return () => {
       cancelled = true;
     };
-  }, [playlistSlug, isRadioPlaylistRoute]);
+  }, [playlistSlug, isRadioPlaylistRoute, currentUser?.id, currentUser?.following_ids?.join("|") ?? ""]);
 
   const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
     id: track.track_id,

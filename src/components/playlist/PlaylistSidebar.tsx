@@ -130,7 +130,9 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
           )}
         </div>
         {playlist.owner_user_id !== user?.id && (
-          <EngagementPlaylistSidebar playlist={playlist} />
+          <div data-test="playlist-sidebar-social-proof" className="mt-6">
+            <EngagementPlaylistSidebar playlist={playlist} />
+          </div>
         )}
         <div data-test="go-mobile-section-playlist">
           <GoMobileSection showFooter={false} />

@@ -11,6 +11,7 @@ import {
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
+import { getTrackById } from "@/services/track.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../services/mocks/users";
@@ -36,6 +37,44 @@ function getTopArtistTrackCounts(
   return Array.from(counts.entries());
 }
 
+function parseDurationToSeconds(duration?: string): number | null {
+  if (!duration) return null;
+  const parts = duration.split(":").map((part) => Number(part));
+  if (parts.some((part) => Number.isNaN(part))) return null;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return null;
+}
+
+async function hydrateAlbumTracks(
+  tracks: PlaylistTrackItem[],
+): Promise<PlaylistTrackItem[]> {
+  return Promise.all(
+    tracks.map(async (track) => {
+      const fullTrack = await getTrackById(track.track_id).catch(() => null);
+      return {
+        ...track,
+        play_count: fullTrack?.playCount ?? track.play_count ?? 0,
+        duration:
+          parseDurationToSeconds(fullTrack?.duration) ?? track.duration ?? null,
+      };
+    }),
+  );
+}
+
+function isArtistFollowed(
+  currentUser: { following_ids: string[] } | null,
+  profile: PublicUser,
+): boolean {
+  if (!currentUser) return false;
+
+  const candidates = [profile.id, profile.username].filter(Boolean) as string[];
+  const followingIds = currentUser.following_ids ?? [];
+  return candidates.some((candidate) =>
+    followingIds.includes(candidate),
+  );
+}
+
 function AlbumSlugPage() {
   const { username, albumSlug } = useParams<{
     username: string;
@@ -55,7 +94,7 @@ function AlbumSlugPage() {
     isPlaying,
     currentTrack,
   } = usePlayerStore();
-  const { user } = useAuthStore();
+  const { user: currentUser } = useAuthStore();
   const totalTrackViews =
     playlist?.tracks.reduce((sum, track) => sum + (track.play_count ?? 0), 0) ??
     0;
@@ -83,7 +122,11 @@ function AlbumSlugPage() {
 
         if (cancelled) return;
 
-        setPlaylist(playlistRes.data);
+        const hydratedTracks = await hydrateAlbumTracks(playlistRes.data.tracks);
+        setPlaylist({
+          ...playlistRes.data,
+          tracks: hydratedTracks,
+        });
         const existing = await playlistExists(playlistRes.data.playlist_id);
         if (!cancelled) {
           setBackendPlaylistExists(existing);
@@ -96,21 +139,21 @@ function AlbumSlugPage() {
           if (!cancelled) setAlbumOwner(null);
         }
 
-        const artistIds = getTopArtistTrackCounts(playlistRes.data.tracks);
+        const artistIds = getTopArtistTrackCounts(hydratedTracks);
         const artists = await Promise.all(
           artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-            const user = await getUserById(artistId).catch(() => null);
-            return user
+            const profile = await getUserById(artistId).catch(() => null);
+            return profile
               ? ({
-                  id: user.id as unknown as number,
-                  username: user.username ?? user.display_name,
-                  displayName: user.display_name,
+                  id: profile.id,
+                  username: profile.username ?? profile.display_name,
+                  displayName: profile.display_name,
                   avatarUrl:
-                    user.profile_picture ??
-                    "https://picsum.photos/seed/default/100/100",
-                  followerCount: user.followers_count ?? 0,
+                    profile.profile_picture ??
+                    `https://picsum.photos/seed/${encodeURIComponent(profile.id)}/100/100`,
+                  followerCount: profile.followers_count ?? 0,
                   trackCount,
-                  isFollowing: false,
+                  isFollowing: isArtistFollowed(currentUser, profile),
                 } as MockUser)
               : null;
           }),
@@ -140,7 +183,7 @@ function AlbumSlugPage() {
     return () => {
       cancelled = true;
     };
-  }, [albumSlug]);
+  }, [albumSlug, currentUser?.id, currentUser?.following_ids?.join("|") ?? ""]);
   const handleHeroPlayPause = () => {
     if (!playlist || !playlist.tracks.length) return;
 
@@ -222,7 +265,7 @@ function AlbumSlugPage() {
     isPlaying &&
     !!playlist &&
     playlist.tracks.some((track) => track.track_id === currentTrack?.id);
-  const isOwner = user?.id === playlist?.owner_user_id;
+  const isOwner = currentUser?.id === playlist?.owner_user_id;
 
   if (loading)
     return (
