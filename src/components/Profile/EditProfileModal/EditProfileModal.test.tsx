@@ -330,9 +330,36 @@ describe("EditProfileModal", () => {
       />,
     );
 
-    expect(screen.queryByPlaceholderText("Support link")).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText("e.g. https://paypal.me/username"),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("add-support-link-button"));
-    expect(screen.getAllByPlaceholderText("Support link")).toHaveLength(1);
+    expect(
+      screen.getAllByPlaceholderText("e.g. https://paypal.me/username"),
+    ).toHaveLength(1);
+    expect(
+      screen.getByText(
+        /Supported platforms: PayPal, Cash app, Venmo, Bandcamp, Shopify, Kickstarter, Patreon, and Gofundme\./i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("add-support-link-button")).toBeDisabled();
+  });
+
+  it("re-enables Add support link after the support row is removed", () => {
+    render(
+      <EditProfileModal
+        user={defaultUser}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("add-support-link-button"));
+    fireEvent.click(screen.getByRole("button", { name: "Remove link" }));
+    expect(
+      screen.queryByPlaceholderText("e.g. https://paypal.me/username"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("add-support-link-button")).not.toBeDisabled();
   });
 
   it("includes links in the save payload", () => {

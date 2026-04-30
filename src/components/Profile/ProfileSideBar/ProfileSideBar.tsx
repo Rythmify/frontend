@@ -78,6 +78,8 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   const profileLinks = (user.links ?? []).filter(
     (link) => link.url.trim() || link.title.trim(),
   );
+  const supportLink = profileLinks.find((link) => link.isSupport);
+  const regularLinks = profileLinks.filter((link) => !link.isSupport);
 
   const bio = user.bio ?? "";
   const isBioLong = bio.length > BIO_CHAR_LIMIT;
@@ -96,6 +98,31 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 
   return (
     <div className="  flex-shrink-0 flex flex-col gap-9 pt-1 overflow-hidden min-w-0">
+      {supportLink && (
+        <div className="w-[300px] rounded-[4px] bg-[linear-gradient(135deg,#1b5fbf_0%,#0f3f88_100%)] p-4 text-white shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+          <p className="text-sm font-medium leading-5">
+            Show some love for your favourite artists.
+            <br />
+            Follow this link to their own support page.
+          </p>
+          <button
+            type="button"
+            className="mt-1 text-sm font-bold underline underline-offset-2 hover:opacity-80"
+          >
+            Learn more
+          </button>
+          <a
+            href={normalizeLinkHref(supportLink.url)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 flex h-9 items-center justify-center gap-2 rounded bg-white px-4 text-sm font-bold text-black hover:bg-gray-200 transition-colors"
+          >
+            <i className="fa-solid fa-dollar-sign text-black" />
+            <span>Support {user.displayName}</span>
+          </a>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="flex gap-13">
         <button
@@ -138,9 +165,9 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </button>
       </div>
 
-      {profileLinks.length > 0 && (
+      {regularLinks.length > 0 && (
         <div className="flex flex-col gap-2 w-[320px]">
-          {profileLinks.map((link) => {
+          {regularLinks.map((link) => {
             const label = link.title.trim() || link.url.trim();
             const href = normalizeLinkHref(link.url);
             const content = (

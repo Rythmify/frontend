@@ -103,6 +103,35 @@ describe("ProfileSideBar", () => {
     );
   });
 
+  it("renders a support banner for support links and points to the saved url", () => {
+    render(
+      <ProfileSideBar
+        {...defaultProps}
+        isOwner={false}
+        user={{
+          ...mockUser,
+          links: [
+            {
+              id: "support-1",
+              url: "https://paypal.me/rowida",
+              title: "Support",
+              isSupport: true,
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        /Show some love for your favourite artists\./i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /support test user/i }),
+    ).toHaveAttribute("href", "https://paypal.me/rowida");
+  });
+
   it("does not render bio section when bio is empty", () => {
     render(
       <ProfileSideBar {...defaultProps} user={{ ...mockUser, bio: "" }} />,

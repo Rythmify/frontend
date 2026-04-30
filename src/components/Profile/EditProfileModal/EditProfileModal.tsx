@@ -38,6 +38,9 @@ const createLink = (isSupport = false): ProfileLink => ({
   isSupport,
 });
 
+const supportPlatformsText =
+  "Supported platforms: PayPal, Cash app, Venmo, Bandcamp, Shopify, Kickstarter, Patreon, and Gofundme.";
+
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
   user,
   onClose,
@@ -177,6 +180,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   const currentAvatar = avatarPreview || user.avatar || null;
+  const hasSupportLink = links.some((link) => link.isSupport);
 
   const updateLink = (
     id: string,
@@ -189,6 +193,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   const addLinkRow = (isSupport = false) => {
+    if (isSupport && hasSupportLink) return;
     setLinks((prev) => [...prev, createLink(isSupport)]);
   };
 
@@ -398,41 +403,75 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
                 </div>
                 <div className="flex flex-col gap-3">
-                  {links.map((link) => (
-                    <div key={link.id} className="flex items-center gap-3">
-                      <span className="text-text-secondary text-lg shrink-0">
-                        <i className="fa-solid fa-link" />
-                      </span>
-                      <input
-                        value={link.url}
-                        onChange={(e) =>
-                          updateLink(link.id, "url", e.target.value)
-                        }
-                        placeholder={
-                          link.isSupport
-                            ? "Support link"
-                            : "Web or email address"
-                        }
-                        className="flex-1 min-w-0 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
-                      />
-                      <input
-                        value={link.title}
-                        onChange={(e) =>
-                          updateLink(link.id, "title", e.target.value)
-                        }
-                        placeholder="Short title"
-                        className="w-full sm:w-64 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
-                      />
-                      <button
-                        type="button"
-                        aria-label="Remove link"
-                        onClick={() => removeLinkRow(link.id)}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#333] text-white transition-opacity hover:opacity-70"
-                      >
-                        <i className="fa-solid fa-trash" />
-                      </button>
-                    </div>
-                  ))}
+                  {links.map((link) =>
+                    link.isSupport ? (
+                      <div key={link.id} className="flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-text-secondary text-lg shrink-0">
+                            <i className="fa-solid fa-dollar-sign" />
+                          </span>
+                          <input
+                            value={link.url}
+                            onChange={(e) =>
+                              updateLink(link.id, "url", e.target.value)
+                            }
+                            placeholder="e.g. https://paypal.me/username"
+                            className="flex-1 min-w-0 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
+                          />
+                          <span className="text-text-secondary text-sm shrink-0">
+                            <i className="fa-solid fa-circle-info" />
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Remove link"
+                            onClick={() => removeLinkRow(link.id)}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#333] text-white transition-opacity hover:opacity-70"
+                          >
+                            <i className="fa-solid fa-trash" />
+                          </button>
+                        </div>
+                        <div className="pl-7 text-sm leading-relaxed text-text-secondary">
+                          <span>{supportPlatformsText}</span>
+                          <button
+                            type="button"
+                            className="ml-1 cursor-pointer text-[#7da7ff] hover:underline"
+                          >
+                            Learn more
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div key={link.id} className="flex items-center gap-3">
+                        <span className="text-text-secondary text-lg shrink-0">
+                          <i className="fa-solid fa-link" />
+                        </span>
+                        <input
+                          value={link.url}
+                          onChange={(e) =>
+                            updateLink(link.id, "url", e.target.value)
+                          }
+                          placeholder="Web or email address"
+                          className="flex-1 min-w-0 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
+                        />
+                        <input
+                          value={link.title}
+                          onChange={(e) =>
+                            updateLink(link.id, "title", e.target.value)
+                          }
+                          placeholder="Short title"
+                          className="w-full sm:w-64 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
+                        />
+                        <button
+                          type="button"
+                          aria-label="Remove link"
+                          onClick={() => removeLinkRow(link.id)}
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#333] text-white transition-opacity hover:opacity-70"
+                        >
+                          <i className="fa-solid fa-trash" />
+                        </button>
+                      </div>
+                    ),
+                  )}
                 </div>
               </>
             )}
@@ -449,7 +488,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 type="button"
                 data-test="add-support-link-button"
                 onClick={() => addLinkRow(true)}
-                className="px-4 py-2 bg-white text-[#333] text-sm font-bold rounded hover:opacity-70"
+                disabled={hasSupportLink}
+                className={`px-4 py-2 text-sm font-bold rounded transition-opacity ${
+                  hasSupportLink
+                    ? "bg-[#666] text-[#bbb] cursor-not-allowed"
+                    : "bg-white text-[#333] hover:opacity-70"
+                }`}
               >
                 Add support link
               </button>
