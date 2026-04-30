@@ -78,55 +78,27 @@ describe("MadeForYou", () => {
     vi.clearAllMocks();
   });
 
+  // ── Null guard ───────────────────────────────────────────
+
+  it("renders nothing when madeForYou is null", () => {
+    const { container } = render(<MadeForYou madeForYou={null} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
   // ── Rendering ───────────────────────────────────────────
 
-  it("renders the section container", () => {
-    render(<MadeForYou madeForYou={null} />);
+  it("renders the section container when data is provided", () => {
+    render(
+      <MadeForYou madeForYou={{ daily_mix: mockDailyMix, weekly_mix: mockWeeklyMix }} />,
+    );
     expect(screen.getByTestId("section-made-for-you")).toBeInTheDocument();
   });
 
   it("renders the 'Made for you' carousel title", () => {
-    render(<MadeForYou madeForYou={null} />);
-    expect(screen.getByTestId("carousel-title")).toHaveTextContent(
-      "Made for you",
+    render(
+      <MadeForYou madeForYou={{ daily_mix: mockDailyMix, weekly_mix: mockWeeklyMix }} />,
     );
-  });
-
-  // ── Fallback (madeForYou = null) ─────────────────────────
-
-  it("renders exactly 2 fallback cards when madeForYou is null", () => {
-    render(<MadeForYou madeForYou={null} />);
-    expect(screen.getAllByTestId(/^made-for-you-card-/)).toHaveLength(2);
-  });
-
-  it("renders the daily-drops fallback card", () => {
-    render(<MadeForYou madeForYou={null} />);
-    expect(
-      screen.getByTestId("made-for-you-card-daily-drops"),
-    ).toBeInTheDocument();
-  });
-
-  it("renders the weekly-wave fallback card", () => {
-    render(<MadeForYou madeForYou={null} />);
-    expect(
-      screen.getByTestId("made-for-you-card-weekly-wave"),
-    ).toBeInTheDocument();
-  });
-
-  it("fallback daily card has correct badge words", () => {
-    render(<MadeForYou madeForYou={null} />);
-    const card = screen.getByTestId("made-for-you-card-daily-drops");
-    expect(card).toHaveAttribute("data-badge-0", "DAILY");
-    expect(card).toHaveAttribute("data-badge-1", "DROPS");
-    expect(card).toHaveAttribute("data-made-kind", "daily");
-  });
-
-  it("fallback weekly card has correct badge words", () => {
-    render(<MadeForYou madeForYou={null} />);
-    const card = screen.getByTestId("made-for-you-card-weekly-wave");
-    expect(card).toHaveAttribute("data-badge-0", "WEEKLY");
-    expect(card).toHaveAttribute("data-badge-1", "WAVE");
-    expect(card).toHaveAttribute("data-made-kind", "weekly");
+    expect(screen.getByTestId("carousel-title")).toHaveTextContent("Made for you");
   });
 
   // ── API data ─────────────────────────────────────────────
@@ -201,7 +173,7 @@ describe("MadeForYou", () => {
     ).toHaveAttribute("data-made-kind", "daily");
   });
 
-  it("falls back to the fallback coverUrl when mix.cover_url is null", () => {
+  it("passes empty string as coverUrl when mix.cover_url is null", () => {
     const mixNoCover: CuratedMixSummary = {
       ...mockDailyMix,
       cover_url: null,
@@ -212,8 +184,7 @@ describe("MadeForYou", () => {
       />,
     );
     const card = screen.getByTestId("made-for-you-card-mix-daily-001");
-    expect(card.getAttribute("data-cover")).not.toBe("");
-    expect(card.getAttribute("data-cover")).not.toBeNull();
+    expect(card.getAttribute("data-cover")).toBe("");
   });
 
   it("does not render any fallback-id cards when API data is provided", () => {

@@ -78,6 +78,15 @@ export interface ContentSettings {
   default_license_type?: "all_rights_reserved" | "creative_commons" | null;
 }
 
+export function normalizeDateOfBirth(value?: string | null): string | null {
+  if (!value) return null;
+
+  const trimmed = value.trim();
+  const isoDateMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+
+  return isoDateMatch?.[1] ?? trimmed;
+}
+
 // Token helpers
 
 function saveToken(token: string) {
@@ -246,12 +255,14 @@ export async function updateMyContentSettings(data: ContentSettings) {
   return res.data;
 }
 
-/** DELETE /users/me */
-export async function deleteMyAccount() {
+/** DELETE /auth/me */
+export async function deleteMyAccount(password: string) {
   const res = await axiosInstance.delete<{
     data?: { success?: boolean };
     message?: string;
-  }>("/users/me");
+  }>("/auth/me", {
+    data: { password },
+  });
   return res.data;
 }
 
