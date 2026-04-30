@@ -1,10 +1,15 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { Track } from "@/types/track";
 import type { Station } from "@/types/station";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
 import type { HomeData, DiscoveryAlbum } from "@/services/api/discover.service";
+import { useAuthStore } from "@/stores/auth.store";
+import {
+  createUserScopedStorage,
+  setUserScopedStorageOverride,
+} from "@/stores/userScopedStorage";
 import {
   likeTrack,
   unlikeTrack,
@@ -79,18 +84,25 @@ interface LikesStore {
   hydrateFromApi: () => Promise<void>;
 }
 
+const createEmptyLikesState = () => ({
+  likedTracks: [] as Track[],
+  likedStations: [] as Station[],
+  likedPlaylists: [] as PlaylistCardData[],
+  likedAlbums: [] as Playlist[],
+  likedMixes: [] as LikedMix[],
+  likedGenres: [] as LikedGenre[],
+  repostedTrackIds: [] as string[],
+  repostedPlaylistIds: [] as string[],
+  itemStats: {} as Record<
+    string,
+    { playCount?: number; likeCount?: number; repostCount?: number; isReposted?: boolean }
+  >,
+});
+
 export const useLikesStore = create<LikesStore>()(
   persist(
     (set, get) => ({
-      likedTracks: [],
-      likedStations: [],
-      likedPlaylists: [],
-      likedAlbums: [],
-      likedMixes: [],
-      likedGenres: [],
-      repostedTrackIds: [],
-      repostedPlaylistIds: [],
-      itemStats: {},
+      ...createEmptyLikesState(),
 
       toggleTrack: (track) => {
         const isLiked = get().likedTracks.some(
@@ -544,6 +556,41 @@ export const useLikesStore = create<LikesStore>()(
         }
       },
     }),
-    { name: "rythmify-likes", version: 1 },
+    {
+      name: "rythmify-likes", version: 1,
+      storage: createJSONStorage(() => createUserScopedStorage("rythmify-likes")),
+      partialize: (state) => ({
+        likedTracks: state.likedTracks,
+        likedStations: state.likedStations,
+        likedPlaylists: state.likedPlaylists,
+        likedAlbums: state.likedAlbums,
+        likedMixes: state.likedMixes,
+        likedGenres: state.likedGenres,
+        repostedTrackIds: state.repostedTrackIds,
+        repostedPlaylistIds: state.repostedPlaylistIds,
+        itemStats: state.itemStats,
+      }),
+    },
   ),
 );
+
+let likesAuthSyncInitialized = false;
+
+function initLikesAuthSync() {
+  if (likesAuthSyncInitialized) return;
+  likesAuthSyncInitialized = true;
+
+  useAuthStore.subscribe((state, prev) => {
+    const nextScope = state.user?.id || state.user?.username || "guest";
+    const prevScope = prev.user?.id || prev.user?.username || "guest";
+
+    if (nextScope === prevScope) return;
+
+    setUserScopedStorageOverride(`transient:${nextScope}`);
+    useLikesStore.setState(createEmptyLikesState());
+    setUserScopedStorageOverride(nextScope);
+    void useLikesStore.persist.rehydrate();
+  });
+}
+
+initLikesAuthSync();

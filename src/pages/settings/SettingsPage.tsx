@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import SettingsLayout from "@/pages/settings/SettingsLayout";
 import { useAuthStore, type User } from "@/stores/auth.store";
-import { getMe } from "@/services/auth.service";
+import { normalizeDateOfBirth } from "@/services/auth.service";
 import {
   changeEmail,
   deleteMyAccount,
@@ -41,6 +42,9 @@ function mapProfileToStoreUser(
     profile.cover_photo ?? profile.coverUrl ?? currentUser?.coverUrl;
   const city = profile.city ?? currentUser?.city;
   const country = profile.country ?? currentUser?.country;
+  const dateOfBirth = normalizeDateOfBirth(
+    profile.date_of_birth ?? currentUser?.date_of_birth,
+  );
 
   return {
     id: profile.id,
@@ -60,7 +64,7 @@ function mapProfileToStoreUser(
       [city, country].filter(Boolean).join(", ") || currentUser?.location,
     following_ids: profile.following_ids ?? currentUser?.following_ids ?? [],
     followers_ids: profile.followers_ids ?? currentUser?.followers_ids,
-    date_of_birth: profile.date_of_birth ?? currentUser?.date_of_birth ?? null,
+    date_of_birth: dateOfBirth,
     gender: profile.gender ?? currentUser?.gender ?? null,
   };
 }
@@ -128,49 +132,52 @@ function Toast({
   }, [onClose]);
 
   return (
-    <div
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-[var(--radius-md)] shadow-md text-sm text-white transition-all duration-300 ${
-        type === "success"
-          ? "bg-[var(--color-success)]"
-          : "bg-[var(--color-error)]"
-      }`}
-    >
-      {type === "success" ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M5 13l4 4L19 7"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M6 18L18 6M6 6l12 12"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      )}
-      {message}
-      <button
-        onClick={onClose}
-        data-test="settings-toast-close-button"
-        className="ml-2 opacity-70 hover:opacity-100"
+    createPortal(
+      <div
+        className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-[var(--radius-md)] shadow-md text-sm text-white transition-all duration-300 ${
+          type === "success"
+            ? "bg-[var(--color-success)]"
+            : "bg-[var(--color-error)]"
+        }`}
       >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path
-            d="M2 2l8 8M10 2l-8 8"
-            stroke="white"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      </button>
-    </div>
+        {type === "success" ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M5 13l4 4L19 7"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M6 18L18 6M6 6l12 12"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
+        {message}
+        <button
+          onClick={onClose}
+          data-test="settings-toast-close-button"
+          className="ml-2 opacity-70 hover:opacity-100"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path
+              d="M2 2l8 8M10 2l-8 8"
+              stroke="white"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </div>,
+      document.body,
+    )
   );
 }
 
@@ -302,8 +309,7 @@ function EmailAddresses({
 }: {
   onToast: (msg: string, type: "success" | "error") => void;
 }) {
-  const { user, setUser } = useAuthStore(); 
-  //const { user } = useAuthStore();
+  const { user } = useAuthStore();
   const [showInput, setShowInput] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -324,36 +330,6 @@ function EmailAddresses({
       JSON.stringify(pendingEmails),
     );
   }, [pendingEmails, user?.id]);
-
-  // Poll to check if any pending email got confirmed
-  useEffect(() => {
-  const unconfirmed = pendingEmails.filter((e) => !e.confirmed);
-  if (unconfirmed.length === 0) return;
-
-  // Capture current pending emails in the closure to avoid stale ref issues
-  const pendingSnapshot = pendingEmails.map((e) => e.email.toLowerCase());
-
-  const interval = setInterval(async () => {
-    try {
-      const response = await getMe();
-      const profile = response.data;
-
-      const freshEmail = profile.email?.toLowerCase();
-
-      if (freshEmail && pendingSnapshot.includes(freshEmail)) {
-        
-        setPendingEmails((prev) =>
-          prev.filter((e) => e.email.toLowerCase() !== freshEmail),
-        );
-        setUser({ ...user!, email: profile.email });
-      }
-    } catch (error) {
-      console.error("Failed to refresh email state:", error);
-    }
-  }, 5000);
-
-  return () => clearInterval(interval);
-}, [pendingEmails, setUser]);
 
   const handleAdd = async () => {
     const trimmedEmail = newEmail.trim();
@@ -852,13 +828,11 @@ function BasicInformation({
   const [lastSyncedGender, setLastSyncedGender] = useState<
     "" | "male" | "female"
   >("");
-  const [hasUserEdited, setHasUserEdited] = useState(false);
-  const [hasEditedBirthDate, setHasEditedBirthDate] = useState(false);
-  const [hasEditedGender, setHasEditedGender] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving">("idle");
 
   useEffect(() => {
-    const syncedDateOfBirth = user?.date_of_birth ?? "";
+    const syncedDateOfBirth = normalizeDateOfBirth(user?.date_of_birth) ?? "";
     const syncedGender = (user?.gender ?? "") as "" | "male" | "female";
 
     if (syncedDateOfBirth) {
@@ -878,129 +852,120 @@ function BasicInformation({
     setGender(syncedGender);
     setLastSyncedDateOfBirth(syncedDateOfBirth);
     setLastSyncedGender(syncedGender);
-    setHasUserEdited(false);
-    setHasEditedBirthDate(false);
-    setHasEditedGender(false);
+    setIsDirty(false);
+    setSaveState("idle");
   }, [currentYear, user?.date_of_birth, user?.gender]);
 
-  useEffect(() => {
-    if (!hasUserEdited || !gender) return;
+  const candidateDateOfBirth = `${year}-${String(
+    MONTHS.indexOf(month as (typeof MONTHS)[number]) + 1,
+  ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const normalizedDateOfBirth = `${String(
+    new Date(`${candidateDateOfBirth}T00:00:00`).getFullYear(),
+  )}-${String(
+    new Date(`${candidateDateOfBirth}T00:00:00`).getMonth() + 1,
+  ).padStart(2, "0")}-${String(
+    new Date(`${candidateDateOfBirth}T00:00:00`).getDate(),
+  ).padStart(2, "0")}`;
+  const isBirthDateDirty = lastSyncedDateOfBirth !== candidateDateOfBirth;
+  const isGenderDirty = lastSyncedGender !== gender;
+  const canSave = isDirty && saveState !== "saving";
 
+  const resetForm = () => {
+    const syncedDateOfBirth = normalizeDateOfBirth(user?.date_of_birth) ?? "";
+    const syncedGender = (user?.gender ?? "") as "" | "male" | "female";
+
+    if (syncedDateOfBirth) {
+      const [savedYear, savedMonth, savedDay] = syncedDateOfBirth.split("-");
+      const monthIndex = Number(savedMonth) - 1;
+      if (savedYear) setYear(savedYear);
+      if (savedDay) setDay(String(Number(savedDay)));
+      if (monthIndex >= 0 && monthIndex < MONTHS.length) {
+        setMonth(MONTHS[monthIndex]);
+      }
+    } else {
+      setMonth("January");
+      setDay("1");
+      setYear(String(currentYear));
+    }
+
+    setGender(syncedGender);
+    setIsDirty(false);
+  };
+
+  const handleSave = async () => {
     if (!localStorage.getItem("auth_token")) {
-      setHasUserEdited(false);
-      setHasEditedBirthDate(false);
-      setHasEditedGender(false);
-      setSaveState("idle");
+      logout();
       onToast("Session expired. Please sign in again.", "error");
       return;
     }
 
-    const candidateDateOfBirth = `${year}-${String(
-      MONTHS.indexOf(month as (typeof MONTHS)[number]) + 1,
-    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    if (gender === "") {
+      onToast("Please indicate your gender before saving.", "error");
+      return;
+    }
+
     const payload: {
       gender?: "male" | "female";
       date_of_birth?: string;
     } = {};
 
-    if (hasEditedGender && lastSyncedGender !== gender) {
+    if (isGenderDirty) {
       payload.gender = gender;
     }
 
-    if (hasEditedBirthDate && lastSyncedDateOfBirth !== candidateDateOfBirth) {
-      const normalizedCandidate = new Date(`${candidateDateOfBirth}T00:00:00`);
-      const normalizedDateOfBirth = `${String(
-        normalizedCandidate.getFullYear(),
-      )}-${String(normalizedCandidate.getMonth() + 1).padStart(2, "0")}-${String(
-        normalizedCandidate.getDate(),
-      ).padStart(2, "0")}`;
-
+    if (isBirthDateDirty) {
       if (normalizedDateOfBirth !== candidateDateOfBirth) {
-        setHasUserEdited(false);
         onToast("Please choose a valid birth date.", "error");
         return;
       }
-
       payload.date_of_birth = candidateDateOfBirth;
     }
 
     if (!payload.gender && !payload.date_of_birth) {
-      setHasUserEdited(false);
+      onToast("No changes to save.", "error");
       return;
     }
 
-    const timer = window.setTimeout(async () => {
-      setSaveState("saving");
-      setHasUserEdited(false);
-      try {
-        // const response = await updateMeAccount(payload);
-        // const nextUser = mapProfileToStoreUser(response.data, user);
-        // // setUser(nextUser);
-        // setUser({ ...nextUser });
-        const response = await updateMeAccount(payload);
+    setSaveState("saving");
+    try {
+      const response = await updateMeAccount(payload);
+      const profile = response?.data ?? response;
+      const mergedProfile = { ...profile, ...payload };
+      const nextUser = mapProfileToStoreUser(mergedProfile, user);
 
-        const profile = response?.data ?? response;
+      setUser({ ...nextUser });
+      setLastSyncedDateOfBirth(
+        payload.date_of_birth ?? nextUser.date_of_birth ?? "",
+      );
+      setLastSyncedGender((nextUser.gender ?? "") as "" | "male" | "female");
+      setIsDirty(false);
+      onToast("Basic information saved successfully.", "success");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const message =
+        err?.response?.data?.error?.message ??
+        err?.response?.data?.message ??
+        "Failed to update basic information.";
 
-        const nextUser = mapProfileToStoreUser(profile, user);
-
-        setUser({ ...nextUser });
-        setLastSyncedDateOfBirth(
-          nextUser.date_of_birth ??
-            payload.date_of_birth ??
-            lastSyncedDateOfBirth,
-        );
-        setLastSyncedGender(
-          (nextUser.gender ?? gender) as "" | "male" | "female",
-        );
-        setHasEditedBirthDate(false);
-        setHasEditedGender(false);
-      } catch (err: any) {
-        const status = err?.response?.status;
-        const message =
-          err?.response?.data?.error?.message ??
-          err?.response?.data?.message ??
-          "Failed to update basic information.";
-
-        if (status === 401) {
-          logout();
-          setHasEditedBirthDate(false);
-          setHasEditedGender(false);
-          onToast("Session expired. Please sign in again.", "error");
-          return;
-        }
-
-        if (status === 429) {
-          setHasEditedBirthDate(false);
-          setHasEditedGender(false);
-          onToast(
-            "Too many requests. Please wait a moment and try again.",
-            "error",
-          );
-          return;
-        }
-
-        onToast(message, "error");
-      } finally {
-        setSaveState("idle");
+      if (status === 401) {
+        logout();
+        onToast("Session expired. Please sign in again.", "error");
+        return;
       }
-    }, 500);
 
-    return () => window.clearTimeout(timer);
-  }, [
-    day,
-    gender,
-    hasEditedBirthDate,
-    hasEditedGender,
-    hasUserEdited,
-    lastSyncedDateOfBirth,
-    lastSyncedGender,
-    logout,
-    month,
-    onToast,
-    setUser,
-    user,
-    year,
-  ]);
+      if (status === 429) {
+        onToast(
+          "Too many requests. Please wait a moment and try again.",
+          "error",
+        );
+        return;
+      }
+
+      onToast(message, "error");
+    } finally {
+      setSaveState("idle");
+    }
+  };
 
   return (
     <div>
@@ -1016,8 +981,7 @@ function BasicInformation({
               dataTest="settings-birth-month-select"
               onChange={(value) => {
                 setMonth(value);
-                setHasUserEdited(true);
-                setHasEditedBirthDate(true);
+                setIsDirty(true);
               }}
             >
               {MONTHS.map((m) => (
@@ -1029,8 +993,7 @@ function BasicInformation({
               dataTest="settings-birth-day-select"
               onChange={(value) => {
                 setDay(value);
-                setHasUserEdited(true);
-                setHasEditedBirthDate(true);
+                setIsDirty(true);
               }}
             >
               {days.map((d) => (
@@ -1042,8 +1005,7 @@ function BasicInformation({
               dataTest="settings-birth-year-select"
               onChange={(value) => {
                 setYear(value);
-                setHasUserEdited(true);
-                setHasEditedBirthDate(true);
+                setIsDirty(true);
               }}
             >
               {years.map((y) => (
@@ -1061,8 +1023,7 @@ function BasicInformation({
             dataTest="settings-gender-select"
             onChange={(value) => {
               setGender(value as "" | "male" | "female");
-              setHasUserEdited(true);
-              setHasEditedGender(true);
+              setIsDirty(true);
             }}
           >
             <option value="">Indicate gender</option>
@@ -1076,11 +1037,29 @@ function BasicInformation({
           )}
         </div>
       </div>
-      {saveState === "saving" && (
-        <p className="mt-3 text-xs text-[var(--color-text)]">
-          Saving basic information...
-        </p>
-      )}
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={!canSave}
+          data-test="settings-basic-info-save-button"
+          className="rounded-[var(--radius-sm)] bg-[var(--color-input-bg)] px-4 py-2 text-sm font-semibold text-[var(--color-text-hover)] transition-all duration-150 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saveState === "saving" ? "Saving..." : "Save changes"}
+        </button>
+        <button
+          onClick={resetForm}
+          disabled={!isDirty || saveState === "saving"}
+          data-test="settings-basic-info-cancel-button"
+          className="text-sm font-semibold text-[var(--color-text)] transition hover:text-[var(--color-text-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        {saveState === "saving" && (
+          <p className="text-xs text-[var(--color-text)]">
+            Saving basic information...
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -1155,12 +1134,13 @@ function DeleteAccountModal({
   onConfirm,
 }: {
   onClose: () => void;
-  onConfirm: () => Promise<boolean>;
+  onConfirm: (password: string) => Promise<boolean>;
 }) {
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [otherReason, setOtherReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [password, setPassword] = useState("");
 
   const toggleReason = (reason: string) => {
     setSelectedReasons((current) =>
@@ -1171,10 +1151,10 @@ function DeleteAccountModal({
   };
 
   const handleDelete = async () => {
-    if (!confirmed || isDeleting) return;
+    if (!confirmed || isDeleting || !password.trim()) return;
     setIsDeleting(true);
     try {
-      const deleted = await onConfirm();
+      const deleted = await onConfirm(password.trim());
       if (deleted) {
         onClose();
       }
@@ -1265,6 +1245,28 @@ function DeleteAccountModal({
             </span>
           </label>
 
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="delete-account-password"
+              className="text-sm font-semibold text-[var(--color-text-hover)]"
+            >
+              Password
+            </label>
+            <input
+              id="delete-account-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password to confirm"
+              data-test="settings-delete-account-password-input"
+              autoComplete="current-password"
+              className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-text-hover)] placeholder:text-[var(--color-text)] focus:outline-none focus:border-[var(--color-border-light)]"
+            />
+            <p className="text-xs text-[var(--color-text)]">
+              Enter your password to confirm deletion.
+            </p>
+          </div>
+
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-1">
             <button
               onClick={onClose}
@@ -1276,7 +1278,7 @@ function DeleteAccountModal({
             </button>
             <button
               onClick={handleDelete}
-              disabled={!confirmed || isDeleting}
+              disabled={!confirmed || isDeleting || !password.trim()}
               data-test="settings-delete-account-confirm-button"
               className="rounded-[var(--radius-sm)] bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-border-light)] disabled:text-[var(--color-text)]"
             >
@@ -1298,7 +1300,7 @@ function DeleteAccount({
     <button
       onClick={onDeleteRequested}
       data-test="settings-delete-account-button"
-      className="text-sm self-start fint-bold text-[var(--color-error)] "
+      className="text-sm self-start font-bold text-[var(--color-error)]"
     >
       Delete account
     </button>
@@ -1320,9 +1322,9 @@ function AccountPage() {
     setToast({ message, type });
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (password: string) => {
     try {
-      await deleteMyAccount();
+      await deleteMyAccount(password);
       logout();
       navigate("/", { replace: true });
       return true;

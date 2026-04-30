@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import type { FeedItem } from "@/types/feedItem";
 import TrackCard from "@/components/track/TrackCard";
 import PlaylistComponent from "@/components/playlist/PlaylistComponent";
+import UserAvatar from "@/components/UI/UserAvatar";
 
 const timeAgo = (isoString: string): string => {
   const seconds = Math.floor(
@@ -42,12 +43,15 @@ const FeedItemCard = ({ item }: FeedItemCardProps) => {
         data-test={`feed-item-header-${item.id}`}
         className="flex items-center gap-2 mb-3"
       >
-        <img
-          data-test={`feed-item-avatar-${item.id}`}
-          src={item.user.avatar ?? ""}
+        <UserAvatar
+          src={item.user.avatar}
+          name={item.user.displayName ?? item.user.username}
           alt={item.user.displayName}
+          dataTest={`feed-item-avatar-${item.id}`}
+          wrapperClassName="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
+          imageClassName="h-full w-full object-cover"
+          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-700 text-white text-xs font-bold"
           onClick={() => navigate(`/${item.user.username}`)}
-          className="w-8 h-8 rounded-full object-cover bg-zinc-700 flex-shrink-0 cursor-pointer"
         />
         <span className="text-sm text-text-secondary pl-2">
           <button
