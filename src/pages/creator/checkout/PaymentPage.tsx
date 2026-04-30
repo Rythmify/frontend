@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
-import { confirmMockPayment } from "@/services/api/upload/subscription.service";
+import {
+  getSubscriptionPlans,
+  confirmMockPayment,
+} from "@/services/api/upload/subscription.service";
+import type { SubscriptionPlan } from "@/services/api/upload/subscription.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -505,8 +509,27 @@ export default function PaymentPage() {
   const { user, setUser } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const transactionId =
-    (location.state as { transaction_id?: string } | null)?.transaction_id ?? null;
+  const locationState = location.state as { transaction_id?: string; isPending?: boolean } | null;
+  const transactionId = locationState?.transaction_id ?? null;
+  const isPendingCheckout = locationState?.isPending === true;
+
+  const [premiumPlan, setPremiumPlan] = useState<SubscriptionPlan | null>(null);
+
+  useEffect(() => {
+    getSubscriptionPlans()
+      .then((plans) => {
+        const plan = plans.find((p) => p.name === "premium");
+        if (plan) setPremiumPlan(plan);
+      })
+      .catch(() => {});
+  }, []);
+
+  const monthlyPrice = premiumPlan ? parseFloat(premiumPlan.price) : null;
+  const yearlyPrice = monthlyPrice !== null ? monthlyPrice * 12 : null;
+  const yearlyTotal =
+    yearlyPrice !== null ? `EGP ${yearlyPrice.toFixed(2)}` : null;
+  const monthlyDisplay =
+    monthlyPrice !== null ? `EGP ${monthlyPrice.toFixed(2)}/month` : null;
 
   const [billing, setBilling] = useState<BillingCycle>("yearly");
   const [payment, setPayment] = useState<PaymentMethod>(null);
@@ -538,9 +561,7 @@ export default function PaymentPage() {
     addBillingAddress: false,
   });
 
-  const yearlyTotal = "EGP 359.88";
-  const monthlyTotal = "EGP 59.99/month";
-  const displayTotal = billing === "yearly" ? yearlyTotal : monthlyTotal;
+  const displayTotal = billing === "yearly" ? yearlyTotal : monthlyDisplay;
   const today = new Date();
   const yearlyRenewDate = formatRenewalDate(addMonthsClamped(today, 12));
   const monthlyRenewDate = formatRenewalDate(addMonthsClamped(today, 1));
@@ -575,8 +596,13 @@ export default function PaymentPage() {
     const errs: CardFieldErrors = {};
     if (!cardForm.firstName.trim()) errs.firstName = "Required";
     if (!cardForm.lastName.trim()) errs.lastName = "Required";
-    if (cardForm.cardNumber.length !== 16) errs.cardNumber = "Enter a valid 16-digit card number";
-    if (!cardForm.expiryMonth || Number(cardForm.expiryMonth) < 1 || Number(cardForm.expiryMonth) > 12)
+    if (cardForm.cardNumber.length !== 16)
+      errs.cardNumber = "Enter a valid 16-digit card number";
+    if (
+      !cardForm.expiryMonth ||
+      Number(cardForm.expiryMonth) < 1 ||
+      Number(cardForm.expiryMonth) > 12
+    )
       errs.expiryMonth = "Invalid month";
     if (!cardForm.expiryYear || cardForm.expiryYear.length !== 4)
       errs.expiryYear = "Invalid year";
@@ -596,25 +622,65 @@ export default function PaymentPage() {
     setSubmitError(null);
     try {
       await confirmMockPayment(transactionId);
-      sessionStorage.removeItem("pending_transaction_id");
       setUser({ ...user, isPro: true });
       navigate("/upload", { state: { premiumActivated: true } });
     } catch (err: any) {
       setSubmitError(
-        err.response?.data?.message ?? err.message ?? "Payment failed. Please try again.",
+        err.response?.data?.message ??
+          err.message ??
+          "Payment failed. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  if (user?.isPro) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="text-4xl">★</div>
+        <h1 className="text-[26px] font-black text-black">
+          You're already on Premium
+        </h1>
+        <p className="text-black/50 text-[15px]">
+          You already have an active Premium subscription.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate("/upload")}
+          className="mt-2 rounded-full bg-black px-8 py-3 text-[14px] font-bold text-white hover:opacity-80 transition-opacity"
+        >
+          Go to Upload
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <div className="mx-auto max-w-[1000px] px-6 pb-20 pt-12 md:px-10">
         {/* Page title */}
-        <h1 className="mb-10 text-[28px] font-black tracking-[-0.03em] text-black">
+        <h1 className="mb-4 text-[28px] font-black tracking-[-0.03em] text-black">
           Get Premium
         </h1>
+
+        {/* Pending checkout notice */}
+        {isPendingCheckout && (
+          <div className="mb-8 flex items-start gap-3 rounded-sm border border-[#f50]/30 bg-[#fff8f5] px-4 py-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="mt-0.5 flex-shrink-0 text-[#f50]">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+              <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <div>
+              <p className="m-0 text-[14px] font-semibold text-[#c94000]">
+                You have a pending checkout
+              </p>
+              <p className="m-0 mt-0.5 text-[13px] text-[#c94000]/70">
+                Select a payment method below and complete your purchase to activate Premium.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
           {/* ── Left column ── */}
@@ -641,7 +707,7 @@ export default function PaymentPage() {
                     Yearly billing
                   </span>
                   <span className="text-[14px] text-black/50">
-                    EGP 359.88, that's EGP 29.99/month
+                    {yearlyTotal}, that's {monthlyDisplay}
                   </span>
                 </div>
                 <span
@@ -671,7 +737,7 @@ export default function PaymentPage() {
                     Monthly billing
                   </span>
                   <span className="text-[14px] text-black/50">
-                    EGP 59.99/month
+                    {monthlyDisplay}
                   </span>
                 </div>
               </button>
@@ -828,9 +894,10 @@ export default function PaymentPage() {
               <p className="m-0 text-[13px] leading-[1.55] text-black/50">
                 {billing === "monthly" ? (
                   <>
-                    Subscription will automatically renew at EGP 59.99 every
-                    month, starting {monthlyRenewDate}, unless you cancel before
-                    the day of your next renewal in your subscription settings.
+                    Subscription will automatically renew at {monthlyDisplay}{" "}
+                    every month, starting {monthlyRenewDate}, unless you cancel
+                    before the day of your next renewal in your subscription
+                    settings.
                   </>
                 ) : (
                   <>
