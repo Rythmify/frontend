@@ -304,6 +304,7 @@ export interface PlaylistComponentProps {
   onCopyLink?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+   urlSegment?: "sets" | "album"; 
 }
 
 export default function PlaylistComponent({
@@ -312,6 +313,7 @@ export default function PlaylistComponent({
   onCopyLink,
   onEdit,
   onDelete,
+  urlSegment = "sets",
 }: PlaylistComponentProps) {
   const { currentTrack, isPlaying, setTrack, togglePlay, addTracksNext } = usePlayerStore();
   const { user } = useAuthStore();
@@ -520,7 +522,7 @@ export default function PlaylistComponent({
             {/* Playlist title */}
             <Link
               data-test="playlist-component-title-link"
-              to={`/${playlist.creatorUsername}/sets/${playlist.playlistSlug ?? ""}`}
+              to={`/${playlist.creatorUsername}/${urlSegment}/${playlist.playlistSlug ?? ""}`}
               className="block text-sm sm:text-lg font-bold text-white hover:text-[#f50] transition-colors truncate"
             >
               {playlist.title}

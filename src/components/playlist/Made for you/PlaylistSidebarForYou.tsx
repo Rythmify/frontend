@@ -6,12 +6,14 @@ import type { PlaylistDetails } from "../../../services/api/playlist/playlist.se
 import type { MockUser } from "../../../services/mocks/users";
 import GoMobileSection from "@/components/UI/GoMobile";
 import FollowButton from "@/components/UI/FollowButton";
+import UserAvatar from "@/components/UI/UserAvatar";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
   featuredArtists?: MockUser[];
   likedByUsers?: MockUser[];
   repostedByUsers?: MockUser[];
+  showSocialProof?: boolean;
   showLikes?: boolean;
   showReposts?: boolean;
 }
@@ -21,6 +23,7 @@ export default function PlaylistSidebar({
   featuredArtists,
   likedByUsers,
   repostedByUsers,
+  showSocialProof = true,
   showLikes = false,
   showReposts = false,
 }: PlaylistSidebarProps) {
@@ -99,19 +102,19 @@ export default function PlaylistSidebar({
           </div>
         </div>
 
-        {(likedByUsers?.length || repostedByUsers?.length) && (
+        {showSocialProof && (likedByUsers?.length || repostedByUsers?.length) && (
           <div className="mt-6 flex flex-col gap-5">
             {likedByUsers?.length ? (
-              <UserAvatarSection
-                title="Liked by"
+              <SocialAvatarStrip
+                title="Likes"
                 users={likedByUsers}
                 dataTest="sidebar-liked-by"
               />
             ) : null}
 
             {repostedByUsers?.length ? (
-              <UserAvatarSection
-                title="Reposted by"
+              <SocialAvatarStrip
+                title="Reposts"
                 users={repostedByUsers}
                 dataTest="sidebar-reposted-by"
               />
@@ -119,7 +122,7 @@ export default function PlaylistSidebar({
           </div>
         )}
 
-        {(showLikes || showReposts) && (
+        {showSocialProof && (showLikes || showReposts) && (
           <div className="mt-6 flex flex-col gap-4">
             {showLikes && (
               <div data-test="sidebar-playlist-likes">
@@ -147,7 +150,7 @@ export default function PlaylistSidebar({
   );
 }
 
-function UserAvatarSection({
+function SocialAvatarStrip({
   title,
   users,
   dataTest,
@@ -160,27 +163,43 @@ function UserAvatarSection({
   const remaining = Math.max(0, users.length - visibleUsers.length);
 
   return (
-    <div data-test={dataTest} className="flex flex-col gap-2">
-      <p className="text-[var(--color-text-hover)] text-[12px] font-bold uppercase tracking-widest">
-        {title}
-      </p>
+    <div data-test={dataTest} className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-white text-[12px] font-bold uppercase tracking-widest">
+          {users.length.toLocaleString()} {title}
+        </p>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {visibleUsers.map((user) => (
-          <Link key={String(user.id)} to={`/${user.username}`} className="shrink-0">
-            <img
+        <span className="text-[12px] text-text-secondary">View all</span>
+      </div>
+
+      <div className="flex items-center min-h-[56px] overflow-hidden">
+        {users.slice(0, 9).map((user, index) => (
+          <Link
+            key={String(user.id)}
+            to={`/${user.username}`}
+            className="shrink-0"
+            style={{
+              marginLeft: index === 0 ? 0 : -18,
+              zIndex: 20 - index,
+            }}
+          >
+            <UserAvatar
               src={user.avatarUrl}
+              name={user.displayName}
               alt={user.displayName}
-              title={user.displayName}
-              className="w-9 h-9 rounded-full object-cover border border-white/10"
+              dataTest={`sidebar-avatar-${user.username}`}
+              wrapperClassName="w-14 h-14 rounded-full overflow-hidden border-2 border-[#111] bg-zinc-800 transition-opacity hover:opacity-80"
             />
           </Link>
         ))}
 
         {remaining > 0 && (
-          <span className="text-[11px] text-text-secondary">
-            +{remaining} more
-          </span>
+          <div
+            className="w-14 h-14 rounded-full bg-[#2b2b2b] border-2 border-[#111] flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+            style={{ marginLeft: -18, zIndex: 1 }}
+          >
+            +{remaining}
+          </div>
         )}
       </div>
     </div>

@@ -116,6 +116,7 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: "auth-storage",
+      version: 1,
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

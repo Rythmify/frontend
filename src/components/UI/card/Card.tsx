@@ -15,6 +15,8 @@ interface TrackCardProps {
   widthClassName?: string;
   addToPlaylistTracks?: Track[];
   contextQueue?: Track[];
+  radioLikeMode?: boolean;
+  radioPlaylistId?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -107,12 +109,23 @@ const TrackCard = ({
   widthClassName,
   addToPlaylistTracks,
   contextQueue,
+  radioLikeMode = false,
+  radioPlaylistId,
 }: TrackCardProps) => {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { isTrackLiked, toggleTrack } = useLikesStore();
+  const {
+    isTrackLiked,
+    isRadioTrackLiked,
+    getRadioPlaylistId,
+    toggleTrack,
+    toggleRadioTrack,
+  } = useLikesStore();
 
+  const savedRadioPlaylistId = radioPlaylistId ?? getRadioPlaylistId(track.id);
+  const liked = radioLikeMode ? isRadioTrackLiked(track.id) : isTrackLiked(track.id);
+  
   const fetchTracksForModal = useCallback(async () => {
     if (addToPlaylistTracks?.length) {
       const { tracks } = await getRelatedTracks(String(track.id));
@@ -133,7 +146,6 @@ const TrackCard = ({
     ];
   }, [track.id, track.title, track.artistName, track.coverUrl, addToPlaylistTracks]);
 
-  const liked = isTrackLiked(track.id);
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
@@ -143,7 +155,9 @@ const TrackCard = ({
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
-  const playlistPath = `/discover/personalised/${playlistSlug}:${track.id}`;
+  const playlistPath = savedRadioPlaylistId
+    ? `/discover/personalised/${savedRadioPlaylistId}`
+    : `/discover/personalised/${playlistSlug}:${track.id}`;
   // Handler for play button click (play/pause toggle)
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -178,7 +192,11 @@ const TrackCard = ({
           isLiked={liked}
           onLike={(e) => {
             e.stopPropagation();
-            toggleTrack(track);
+            if (radioLikeMode) {
+              void toggleRadioTrack(track);
+            } else {
+              void toggleTrack(track);
+            }
           }}
           moreMenuItems={[
             {

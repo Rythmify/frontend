@@ -19,6 +19,31 @@ export async function unlikeTrack(trackId: string | number) {
   return data;
 }
 
+export interface RadioTrackLikeResponse {
+  data: {
+    playlist_id: string;
+    seed_track_id: string;
+    title: string;
+    description: string;
+    cover_image: string | null;
+  };
+  message: string;
+}
+
+export async function likeTrackRadio(trackId: string | number) {
+  const { data } = await axiosInstance.post<RadioTrackLikeResponse>(
+    `/tracks/${trackId}/like-radio`,
+  );
+  return data;
+}
+
+export async function unlikeTrackRadio(trackId: string | number) {
+  const { data } = await axiosInstance.delete(
+    `/tracks/${trackId}/like-radio`,
+  );
+  return data;
+}
+
 export async function repostTrack(trackId: string | number) {
   const { data } = await axiosInstance.post(`/tracks/${trackId}/repost`);
   return data;
@@ -27,6 +52,22 @@ export async function repostTrack(trackId: string | number) {
 export async function removeRepost(trackId: string | number) {
   const { data } = await axiosInstance.delete(`/tracks/${trackId}/repost`);
   return data;
+}
+
+export async function getTrackLikers(
+  trackId: string | number,
+  params?: { limit?: number; offset?: number },
+): Promise<{ data: { items: any[]; meta: any } }> {
+  const res = await axiosInstance.get(`/tracks/${trackId}/likers`, { params });
+  return res.data;
+}
+
+export async function getTrackReposters(
+  trackId: string | number,
+  params?: { limit?: number; offset?: number },
+): Promise<{ data: { items: any[]; meta: any } }> {
+  const res = await axiosInstance.get(`/tracks/${trackId}/reposters`, { params });
+  return res.data;
 }
 
 // ─── Liked Content Fetching ───────────────────────────────────────────────────

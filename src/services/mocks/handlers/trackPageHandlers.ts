@@ -268,6 +268,24 @@ export const trackPageHandlers = [
     return HttpResponse.json(mockTrackComments[params.id as string] ?? []);
   }),
 
+  http.get(`${BASE}/tracks/:id/likers`, () => {
+    return HttpResponse.json({
+      data: {
+        items: mockUsers.slice(0, 5),
+        meta: { limit: 5, offset: 0, total: 5 },
+      },
+    });
+  }),
+
+  http.get(`${BASE}/tracks/:id/reposters`, () => {
+    return HttpResponse.json({
+      data: {
+        items: mockUsers.slice(2, 4),
+        meta: { limit: 2, offset: 0, total: 2 },
+      },
+    });
+  }),
+
   http.post(`${BASE}/tracks/:id/comments`, async ({ request, params }) => {
     const body = (await request.json()) as { text: string; timestamp: number };
     return HttpResponse.json(

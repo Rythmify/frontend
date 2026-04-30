@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
+import TrackCard from "@/components/UI/card/Card";
 import MixCard from "@/components/UI/MixCard/MixCard";
 import GenreCard from "@/components/UI/GenreCard/GenreCard";
 import MadeForYouCard, {
@@ -66,6 +67,7 @@ export default function SetsPage() {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuthStore();
   const seedFromHomeData = useLikesStore((s) => s.seedFromHomeData);
+  const likedRadioTracks = useLikesStore((s) => s.likedRadioTracks);
 
   const filterOptions = ["All", "Created", "Liked"];
 
@@ -80,8 +82,9 @@ export default function SetsPage() {
       ]);
       setHomeData(home);
       seedFromHomeData(home);
-      setCreatedPlaylists(created.data.items.filter((p) => !p.is_album_view));
-      setLikedPlaylists(liked.data.items.filter((p) => !p.is_album_view));
+      const isSetPlaylist = (p: Playlist) => !p.is_album_view && p.subtype !== "album";
+      setCreatedPlaylists(created.data.items.filter(isSetPlaylist));
+      setLikedPlaylists(liked.data.items.filter(isSetPlaylist));
     } catch (err) {
       setError("Failed to load your library. Please try again.");
       console.error(err);
@@ -205,6 +208,19 @@ export default function SetsPage() {
     return mixItems.filter((mix) => mix.title.toLowerCase().includes(filterText.toLowerCase()));
   }, [activeFilter, filterText, mixItems]);
 
+  const visibleRadioItems = useMemo(() => {
+    if (activeFilter === "Created") return [];
+    const query = filterText.toLowerCase();
+    return likedRadioTracks.filter((item) => {
+      if (!query) return true;
+      return (
+        item.track.title.toLowerCase().includes(query) ||
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query)
+      );
+    });
+  }, [activeFilter, filterText, likedRadioTracks]);
+
   const isMadeForYouItem = (item: SetsCarouselItem): item is MadeForYouItem =>
     item.madeKind === "daily" || item.madeKind === "weekly";
 
@@ -232,7 +248,10 @@ export default function SetsPage() {
   ));
 
   const hasVisibleContent =
-    visiblePlaylists.length > 0 || visibleMixItems.length > 0 || genreItems.length > 0;
+    visiblePlaylists.length > 0 ||
+    visibleRadioItems.length > 0 ||
+    visibleMixItems.length > 0 ||
+    genreItems.length > 0;
 
   return (
     <div className="container min-h-screen flex flex-col">
@@ -302,6 +321,15 @@ export default function SetsPage() {
                   />
                 ),
               )}
+              {visibleRadioItems.map((item) => (
+                <TrackCard
+                  key={item.playlistId}
+                  track={item.track}
+                  widthClassName={CARD_WIDTH}
+                  radioLikeMode
+                  radioPlaylistId={item.playlistId}
+                />
+              ))}
               {genreItems.map((genre) => (
                 <GenreCard
                   key={genre.id}
