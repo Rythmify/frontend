@@ -13,6 +13,8 @@ interface TrackCardProps {
   widthClassName?: string;
   addToPlaylistTracks?: Track[];
   contextQueue?: Track[];
+  radioLikeMode?: boolean;
+  radioPlaylistId?: string;
 }
 
 function buildSourcePlaylist(track: Track, relatedTracks: Track[]) {
@@ -129,14 +131,23 @@ const TrackCard = ({
   widthClassName,
   addToPlaylistTracks,
   contextQueue,
+  radioLikeMode = false,
+  radioPlaylistId,
 }: TrackCardProps) => {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { isTrackLiked, toggleTrack } = useLikesStore();
+  const {
+    isTrackLiked,
+    isRadioTrackLiked,
+    getRadioPlaylistId,
+    toggleTrack,
+    toggleRadioTrack,
+  } = useLikesStore();
   const { addTrack } = useHistoryStore();
 
-  const liked = isTrackLiked(track.id);
+  const savedRadioPlaylistId = radioPlaylistId ?? getRadioPlaylistId(track.id);
+  const liked = radioLikeMode ? isRadioTrackLiked(track.id) : isTrackLiked(track.id);
   const sourcePlaylist = addToPlaylistTracks?.length
     ? buildSourcePlaylist(track, addToPlaylistTracks)
     : null;
@@ -149,7 +160,9 @@ const TrackCard = ({
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
-  const playlistPath = `/discover/personalised/${playlistSlug}:${track.id}`;
+  const playlistPath = savedRadioPlaylistId
+    ? `/discover/personalised/${savedRadioPlaylistId}`
+    : `/discover/personalised/${playlistSlug}:${track.id}`;
   // Handler for play button click (play/pause toggle)
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -182,7 +195,14 @@ const TrackCard = ({
           isPlaying={isThisTrackPlaying}
           onPlay={handlePlayClick}
           isLiked={liked}
-          onLike={(e) => { e.stopPropagation(); toggleTrack(track); }}
+          onLike={(e) => {
+            e.stopPropagation();
+            if (radioLikeMode) {
+              void toggleRadioTrack(track);
+            } else {
+              void toggleTrack(track);
+            }
+          }}
           moreMenuItems={[
             {
               label: "Add to playlist",

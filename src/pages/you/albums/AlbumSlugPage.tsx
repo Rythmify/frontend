@@ -264,7 +264,7 @@ function AlbumSlugPage() {
             ) : (
               <PlaylistActionsAlbum
                 playlist={playlist}
-                engagementKind="album"
+                engagementKind="playlist"
                 backendPlaylistExists={backendPlaylistExists}
                 onAddToNextUp={handleAddToNextUp}
                 onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>

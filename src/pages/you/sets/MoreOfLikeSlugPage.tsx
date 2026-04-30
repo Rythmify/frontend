@@ -6,6 +6,7 @@ import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   type PlaylistDetails,
   type PlaylistTrackItem,
+  getRadioTracks,
 } from "@/services/api/playlist/playlist.service";
 import { getRelatedTracks } from "@/services/track.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
@@ -84,6 +85,63 @@ function buildPlaylist(
   };
 }
 
+function mapRadioTrackToPlayerTrack(track: Awaited<ReturnType<typeof getRadioTracks>>["tracks"][number]): Track {
+  return {
+    id: track.id,
+    title: track.title,
+    artistName: track.artist_name ?? "Unknown Artist",
+    artistUsername: track.user_id,
+    coverUrl: track.cover_image ?? "",
+    genre: track.genre_name ?? "",
+    likeCount: track.like_count,
+    repostCount: track.repost_count,
+    playCount: track.play_count,
+    commentCount: 0,
+    duration:
+      typeof track.duration === "number"
+        ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}`
+        : "0:00",
+    postedAt: track.created_at,
+    waveformData: [],
+    audioUrl: track.stream_url ?? "",
+  };
+}
+
+function radioTracksToPlaylistDetails(
+  payload: Awaited<ReturnType<typeof getRadioTracks>>,
+): PlaylistDetails {
+  return {
+    playlist_id: payload.playlist_id,
+    owner_user_id: payload.reference_track.user_id,
+    name: payload.title,
+    description: payload.description,
+    is_public: true,
+    cover_image: payload.cover_image,
+    created_at: payload.tracks[0]?.created_at ?? new Date().toISOString(),
+    updated_at: null,
+    track_count: payload.tracks.length,
+    like_count: 0,
+    repost_count: 0,
+    tracks: payload.tracks.map(
+      (track, index) =>
+        ({
+          track_id: track.id,
+          position: index + 1,
+          added_at: track.created_at,
+          title: track.title,
+          duration: track.duration,
+          cover_image: track.cover_image,
+          artist_name: track.artist_name,
+          artist_id: track.user_id,
+          is_public: true,
+          deleted_at: null,
+          audio_url: track.stream_url,
+          play_count: track.play_count,
+        }) as PlaylistTrackItem & { audio_url?: string; play_count?: number },
+    ),
+  };
+}
+
 function MoreOfLikeSlugPage() {
   const { username, playlistSlug } = useParams<{
     username: string;
@@ -125,55 +183,71 @@ function MoreOfLikeSlugPage() {
         const trackId = playlistSlug.includes(":")
           ? (playlistSlug.split(":").pop() ?? playlistSlug)
           : playlistSlug;
+        const isRadioPlaylist = !playlistSlug.includes(":") && UUID_RE.test(trackId);
 
-        const { referenceTrack, tracks } = await getRelatedTracks(trackId);
+        if (isRadioPlaylist) {
+          const payload = await getRadioTracks(trackId);
+          if (cancelled) return;
 
-        if (cancelled) return;
-
-        setSeedTrack(referenceTrack);
-        setRelatedTracks(tracks);
-        setRelatedPlaylistTracks(
-          tracks.map((track: Track, index: number) =>
-            toPlaylistTrackItem(track, index + 1),
-          ),
-        );
-        setPlaylist(buildPlaylist(referenceTrack, tracks));
-
-        const artistIds = getTopArtistTrackCounts(tracks);
-        const artists = await Promise.all(
-          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-            const user = await getUserById(artistId).catch(() => null);
-            return user
-              ? {
-                  id: user.id as unknown as number,
-                  username: user.username ?? user.display_name,
-                  displayName: user.display_name,
-                  avatarUrl:
-                    user.profile_picture ??
-                    "https://picsum.photos/seed/default/100/100",
-                  followerCount: user.followers_count ?? 0,
-                  trackCount,
-                  isFollowing: false,
-                }
-              : null;
-          }),
-        );
-
-        if (!cancelled) {
-          setFeaturedArtists(
-            artists.filter((artist): artist is MockUser => !!artist),
+          const playlistData = radioTracksToPlaylistDetails(payload);
+          setPlaylist(playlistData);
+          setSeedTrack(
+            mapRadioTrackToPlayerTrack(payload.reference_track),
           );
-        }
+          setRelatedTracks(payload.tracks.map(mapRadioTrackToPlayerTrack));
+          setRelatedPlaylistTracks(playlistData.tracks);
+          setFeaturedArtists([]);
+          setAlbumOwner(null);
+        } else {
+          const { referenceTrack, tracks } = await getRelatedTracks(trackId);
 
-        try {
-          if (UUID_RE.test(referenceTrack.artistUsername)) {
-            const owner = await getUserById(referenceTrack.artistUsername);
-            if (!cancelled) setAlbumOwner(owner);
-          } else {
+          if (cancelled) return;
+
+          setSeedTrack(referenceTrack);
+          setRelatedTracks(tracks);
+          setRelatedPlaylistTracks(
+            tracks.map((track: Track, index: number) =>
+              toPlaylistTrackItem(track, index + 1),
+            ),
+          );
+          setPlaylist(buildPlaylist(referenceTrack, tracks));
+
+          const artistIds = getTopArtistTrackCounts(tracks);
+          const artists = await Promise.all(
+            artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
+              const user = await getUserById(artistId).catch(() => null);
+              return user
+                ? {
+                    id: user.id as unknown as number,
+                    username: user.username ?? user.display_name,
+                    displayName: user.display_name,
+                    avatarUrl:
+                      user.profile_picture ??
+                      "https://picsum.photos/seed/default/100/100",
+                    followerCount: user.followers_count ?? 0,
+                    trackCount,
+                    isFollowing: false,
+                  }
+                : null;
+            }),
+          );
+
+          if (!cancelled) {
+            setFeaturedArtists(
+              artists.filter((artist): artist is MockUser => !!artist),
+            );
+          }
+
+          try {
+            if (UUID_RE.test(referenceTrack.artistUsername)) {
+              const owner = await getUserById(referenceTrack.artistUsername);
+              if (!cancelled) setAlbumOwner(owner);
+            } else {
+              if (!cancelled) setAlbumOwner(null);
+            }
+          } catch {
             if (!cancelled) setAlbumOwner(null);
           }
-        } catch {
-          if (!cancelled) setAlbumOwner(null);
         }
       } catch (err) {
         console.error(err);
@@ -318,7 +392,8 @@ function MoreOfLikeSlugPage() {
               playlist={playlist}
               initialTracks={relatedPlaylistTracks}
               isGeneratedPlaylist
-              engagementKind="none"
+              engagementKind={playlistSlug?.includes(":") ? "radioTracks" : "playlist"}
+              radioSeedTrack={seedTrack ?? undefined}
               onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                 setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
               }

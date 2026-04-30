@@ -1,5 +1,7 @@
 import { http, HttpResponse } from "msw";
 import type { Track, TrackSummary } from "@/services/api/upload/track.service";
+import { createRadioPlaylist, deleteRadioPlaylistBySeedTrack } from "./radioPlaylists";
+import type { DiscoveryTrack } from "@/services/api/discover.service";
 
 // Mock Data 
 
@@ -46,6 +48,22 @@ const mockTrackSummary: TrackSummary = {
   duration: null,
   user_id: mockTrack.user_id,
 };
+
+const toDiscoveryTrack = (track: Track): DiscoveryTrack => ({
+  id: track.id,
+  title: track.title,
+  cover_image: null,
+  duration: track.duration,
+  genre_name: track.genre,
+  play_count: track.play_count,
+  like_count: track.like_count,
+  repost_count: track.repost_count,
+  user_id: track.user_id,
+  artist_name: "Mock Artist",
+  stream_url: track.stream_url,
+  created_at: track.created_at,
+  is_liked_by_me: false,
+});
 
 // Handlers 
 
@@ -101,6 +119,26 @@ export const trackHandlers = [
       data: { success: true },
       message: "Track deleted successfully.",
     });
+  }),
+
+  http.post("*/tracks/:track_id/like-radio", ({ params }) => {
+    const seedTrack = { ...mockTrack, id: params.track_id as string } as Track;
+    const playlist = createRadioPlaylist(toDiscoveryTrack(seedTrack));
+    return HttpResponse.json({
+      data: {
+        playlist_id: playlist.playlist_id,
+        seed_track_id: playlist.seed_track_id,
+        title: playlist.title,
+        description: playlist.description,
+        cover_image: playlist.cover_image,
+      },
+      message: "Track radio saved to library.",
+    });
+  }),
+
+  http.delete("*/tracks/:track_id/like-radio", ({ params }) => {
+    deleteRadioPlaylistBySeedTrack(params.track_id as string);
+    return new HttpResponse(null, { status: 204 });
   }),
 
   // PATCH /tracks/:id/visibility — toggle public/private

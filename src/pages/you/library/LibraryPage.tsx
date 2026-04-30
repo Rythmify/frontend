@@ -200,6 +200,7 @@ export default function LibraryPage() {
     likedStations,
     likedPlaylists,
     likedAlbums: storeLikedAlbums,
+    likedRadioTracks,
   } = useLikesStore();
   const { user } = useAuthStore();
   const { entries } = useHistoryStore();
@@ -377,6 +378,20 @@ export default function LibraryPage() {
           widthClassName={CARD_WIDTH}
         />
       </Section>
+
+      {likedRadioTracks.length > 0 && (
+        <Section title="More of what you like" data-test="library-radio">
+          {likedRadioTracks.map((item) => (
+            <TrackCard
+              key={item.playlistId}
+              track={item.track}
+              widthClassName={CARD_WIDTH}
+              radioLikeMode
+              radioPlaylistId={item.playlistId}
+            />
+          ))}
+        </Section>
+      )}
 
       {/* Playlists */}
       <Section
