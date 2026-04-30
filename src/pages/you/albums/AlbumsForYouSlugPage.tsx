@@ -23,50 +23,53 @@ import { playlistExists } from "@/services/api/playlist/playlist.service";
 
 function albumToPlaylistDetails(
   album: DiscoveryAlbum,
-  seedTrack: Track,
-  tracks: Track[],
+  firstTrack: PlaylistTrackItem,
+  albumTracks: PlaylistTrackItem[],
 ): PlaylistDetails {
   return {
     playlist_id: album.id,
     owner_user_id: album.owner_id,
-    name: album.name ?? seedTrack.title ?? "Album",
-    description: seedTrack.title
-      ? `Related tracks: ${seedTrack.title}`
-      : "Related tracks picked for you",
+    name: album.name ?? firstTrack.title ?? "Album",
+    description: firstTrack.title
+      ? `${album.name ?? "Album"} tracks`
+      : "Album tracks picked for you",
     is_public: true,
-    cover_image: album.cover_image ?? seedTrack.coverUrl ?? null,
+    cover_image: album.cover_image ?? firstTrack.cover_image ?? null,
     subtype: "album",
     created_at: album.created_at,
     updated_at: null,
-    track_count: tracks.length,
+    track_count: albumTracks.length,
     like_count: album.like_count,
     repost_count: 0,
     is_album_view: true,
-    tracks: tracks.map(
+    tracks: albumTracks.map(
       (track, index) =>
         ({
-          track_id: track.id,
+          track_id: track.track_id,
           position: index + 1,
-          added_at: track.postedAt,
+          added_at: track.added_at,
           title: track.title,
           duration: null,
-          cover_image: track.coverUrl || null,
-          artist_name: track.artistName,
-          artist_id: track.artistId || track.artistUsername,
-          is_public: !track.isPrivate,
+          cover_image: track.cover_image || null,
+          artist_name: track.artist_name,
+          artist_id: track.artist_id,
+          artist_username: track.artist_username,
+          is_public: track.is_public,
           deleted_at: null,
-          audio_url: track.audioUrl,
-          play_count: track.playCount,
+          audio_url: track.audio_url,
+          play_count: track.play_count,
         }) as PlaylistTrackItem & { audio_url?: string; play_count?: number },
     ),
   };
 }
 
-function getTopArtistTrackCounts(tracks: Track[]): [string, number][] {
+function getTopArtistTrackCounts(
+  tracks: PlaylistTrackItem[],
+): [string, number][] {
   const counts = new Map<string, number>();
 
   for (const track of tracks) {
-    const artistId = track.artistId?.trim();
+    const artistId = track.artist_id?.trim();
     if (!artistId) continue;
     counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
   }
@@ -140,34 +143,14 @@ function AlbumsForYouSlugPage() {
 
         if (cancelled) return;
 
-        const seedTrack = tracks[0] as unknown as Track;
-        setPlaylist(albumToPlaylistDetails(album, seedTrack, tracks));
+        const firstTrack = tracks[0];
+        setPlaylist(albumToPlaylistDetails(album, firstTrack, tracks));
         const existing = await playlistExists(album.id);
         if (!cancelled) {
           setBackendPlaylistExists(existing);
         }
 
-        const artistIds = getTopArtistTrackCounts(
-          tracks.map((track) => ({
-            id: track.track_id,
-            title: track.title ?? "",
-            artistName: track.artist_name ?? "",
-            artistUsername: track.artist_id ?? "",
-            coverUrl: track.cover_image ?? "",
-            genre: "",
-            likeCount: 0,
-            repostCount: 0,
-            playCount: track.play_count ?? 0,
-            commentCount: 0,
-            duration:
-              typeof track.duration === "number"
-                ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}`
-                : "0:00",
-            postedAt: track.added_at ?? "",
-            waveformData: [],
-            audioUrl: track.audio_url ?? "",
-          })),
-        );
+        const artistIds = getTopArtistTrackCounts(tracks);
         const artists = await Promise.all(
           artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
             const user = await getUserById(artistId).catch(() => null);
@@ -229,12 +212,12 @@ function AlbumsForYouSlugPage() {
   const handleHeroPlayPause = () => {
     if (!playlist || !playlist.tracks.length) return;
 
-    const tracks = playlist.tracks as Array<
+    const albumTracks = playlist.tracks as Array<
       PlaylistTrackItem & { audio_url?: string; play_count?: number }
     >;
-    const firstTrack = tracks[0];
+    const firstTrack = albumTracks[0];
     const playerTrack = toPlayerTrack(firstTrack);
-    const queue = tracks.map(toPlayerTrack);
+    const queue = albumTracks.map(toPlayerTrack);
     const isThisAlbumPlaying =
       (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
 
@@ -247,7 +230,7 @@ function AlbumsForYouSlugPage() {
           context: {
             type: "playlist",
             playlist_id: playlist.playlist_id,
-            queue: tracks.map((t) => t.track_id),
+            queue: albumTracks.map((t) => t.track_id),
           },
         } as any,
         queue,
@@ -258,7 +241,7 @@ function AlbumsForYouSlugPage() {
   const handleTrackPlay = (track: PlaylistTrackItem) => {
     if (!playlist) return;
 
-    const tracks = playlist.tracks;
+    const albumTracks = playlist.tracks;
     const playerTrack = toPlayerTrack(track);
 
     if (currentTrack?.id === playerTrack.id) {
@@ -272,10 +255,10 @@ function AlbumsForYouSlugPage() {
         context: {
           type: "playlist",
           playlist_id: playlist.playlist_id,
-          queue: tracks.map((t) => t.track_id),
+          queue: albumTracks.map((t) => t.track_id),
         },
       } as any,
-      tracks.map(toPlayerTrack),
+      albumTracks.map(toPlayerTrack),
     );
   };
 
