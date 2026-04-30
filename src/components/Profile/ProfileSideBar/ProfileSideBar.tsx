@@ -60,6 +60,16 @@ const formatCount = (n: number = 0) => {
 
 const BIO_CHAR_LIMIT = 140;
 
+const normalizeLinkHref = (url: string) => {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    return `https://${trimmed.replace(/^\/+/, "")}`;
+  }
+};
+
 const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   user,
   isOwner = false,
@@ -83,21 +93,10 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 
   const bio = user.bio ?? "";
   const isBioLong = bio.length > BIO_CHAR_LIMIT;
-  const displayedBio =
-    isBioLong && !bioExpanded ? bio.slice(0, BIO_CHAR_LIMIT) + "…" : bio;
-
-  const normalizeLinkHref = (url: string) => {
-    const trimmed = url.trim();
-    if (!trimmed) return "";
-    try {
-      return new URL(trimmed).toString();
-    } catch {
-      return `https://${trimmed.replace(/^\/+/, "")}`;
-    }
-  };
+  const displayedBio = isBioLong && !bioExpanded ? `${bio.slice(0, BIO_CHAR_LIMIT)}...` : bio;
 
   return (
-    <div className="  flex-shrink-0 flex flex-col gap-9 pt-1 overflow-hidden min-w-0">
+    <div className="flex-shrink-0 flex flex-col gap-9 pt-1 overflow-hidden min-w-0">
       {supportLink && (
         <div className="w-[300px] rounded-[4px] bg-[linear-gradient(135deg,#1b5fbf_0%,#0f3f88_100%)] p-4 text-white shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
           <p className="text-sm font-medium leading-5">
@@ -220,7 +219,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       )}
 
-      {/* Liked tracks — sourced from the profile being viewed, passed in as props */}
+      {/* Liked tracks */}
       {displayedLikedTracksCount > 0 && (
         <div>
           <div className="flex items-center justify-between w-full hover:opacity-70 transition-opacity">

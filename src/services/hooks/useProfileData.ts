@@ -66,6 +66,35 @@ const inferPlatformFromUrl = (url: string, isSupport?: boolean): WebProfilePlatf
   return "website";
 };
 
+const readPublicProfilePremiumFlag = (profile: PublicUser | null): boolean => {
+  if (!profile) return false;
+
+  const rawProfile = profile as PublicUser & {
+    is_premium?: boolean;
+    is_pro?: boolean;
+    isPremium?: boolean;
+    isPro?: boolean;
+    premium?: boolean;
+    subscription_plan?: { name?: string | null };
+    subscription?: { plan?: { name?: string | null } };
+  };
+
+  if (typeof rawProfile.is_user_premium === "boolean") return rawProfile.is_user_premium;
+  if (typeof rawProfile.is_premium === "boolean") return rawProfile.is_premium;
+  if (typeof rawProfile.is_pro === "boolean") return rawProfile.is_pro;
+  if (typeof rawProfile.isPremium === "boolean") return rawProfile.isPremium;
+  if (typeof rawProfile.isPro === "boolean") return rawProfile.isPro;
+  if (typeof rawProfile.premium === "boolean") return rawProfile.premium;
+
+  const planName =
+    rawProfile.subscription_plan?.name ?? rawProfile.subscription?.plan?.name;
+  if (typeof planName === "string") {
+    return planName.toLowerCase() === "premium";
+  }
+
+  return rawProfile.role === "artist";
+};
+
 const mapBackendWebProfilesToLinks = (
   profiles: WebProfile[],
   fallbackLinks: ProfileLink[] = [],
@@ -519,7 +548,7 @@ export function useProfileData(
         coverUrl: profileData?.cover_photo ?? undefined,
         location: (profileData as PublicUser | null)?.location ?? "",
         role: profileData?.role ?? "listener",
-        isPro: Boolean((profileData as PublicUser | null)?.is_user_premium),
+        isPro: readPublicProfilePremiumFlag(profileData as PublicUser | null),
         links: (profileData as PublicUser & { links?: ProfileLink[] } | null)
           ?.links ?? [],
         following_ids: currentUser?.following_ids ?? [],
