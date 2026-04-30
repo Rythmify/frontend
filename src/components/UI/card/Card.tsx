@@ -114,23 +114,25 @@ const TrackCard = ({
   const { isTrackLiked, toggleTrack } = useLikesStore();
 
   const fetchTracksForModal = useCallback(async () => {
+    const previewTrack = {
+      id: String(track.id),
+      title: track.title,
+      artistName: track.artistName ?? "",
+      coverUrl: track.coverUrl ?? undefined,
+    };
+
     if (addToPlaylistTracks?.length) {
       const { tracks } = await getRelatedTracks(String(track.id));
-      return tracks.map((t) => ({
+      const related = tracks.map((t) => ({
         id: String(t.id),
         title: t.title,
         artistName: t.artistName ?? "",
         coverUrl: t.coverUrl ?? undefined,
       }));
+      return [previewTrack, ...related];
     }
-    return [
-      {
-        id: String(track.id),
-        title: track.title,
-        artistName: track.artistName,
-        coverUrl: track.coverUrl ?? undefined,
-      },
-    ];
+
+    return [previewTrack];
   }, [track.id, track.title, track.artistName, track.coverUrl, addToPlaylistTracks]);
 
   const liked = isTrackLiked(track.id);
