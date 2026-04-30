@@ -13,6 +13,10 @@ export default defineConfig({
   },
   server: {
     allowedHosts: ['sublacunose-shelley-tegularly.ngrok-free.dev'],
+    hmr: {
+      host: 'sublacunose-shelley-tegularly.ngrok-free.dev',
+      protocol: 'wss',
+    },
   },
   test: {
     environment: 'jsdom',
