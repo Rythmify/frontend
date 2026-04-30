@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuthStore } from "@/stores/auth.store";
+import { useAuthStore, type ProfileLink } from "@/stores/auth.store";
 import { uploadAvatar } from "@/services/user.service";
 
 interface EditProfileModalProps {
@@ -12,6 +12,7 @@ interface EditProfileModalProps {
     country?: string;
     avatar?: string;
     username?: string;
+    links?: ProfileLink[];
   };
   onClose: () => void;
   onSave: (data: {
@@ -23,8 +24,22 @@ interface EditProfileModalProps {
     country: string;
     location: string;
     avatarFile: File | null;
-  }) => void;
+    links?: ProfileLink[];
+  }) => void | Promise<void>;
 }
+
+const formControlClass =
+  "w-full h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white";
+
+const createLink = (isSupport = false): ProfileLink => ({
+  id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+  url: "",
+  title: "",
+  isSupport,
+});
+
+const supportPlatformsText =
+  "Supported platforms: PayPal, Cash app, Venmo, Bandcamp, Shopify, Kickstarter, Patreon, and Gofundme.";
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
   user,
@@ -47,6 +62,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [bio, setBio] = useState(user.bio || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const existingLinks = user.links ?? [];
+  const [links, setLinks] = useState<ProfileLink[]>(
+    existingLinks.length > 0 ? existingLinks.map((link) => ({ ...link })) : [],
+  );
   const [errors, setErrors] = useState<{
     displayName?: string;
     firstName?: string;
@@ -136,22 +155,51 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    onSave({
-      displayName: displayName.trim(),
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      bio: bio.trim(),
-      city: city.trim(),
-      country: country.trim(),
-      location: city && country ? `${city}, ${country}` : city || country || "",
-      avatarFile: null,
-    });
+    await Promise.resolve(
+      onSave({
+        displayName: displayName.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        bio: bio.trim(),
+        city: city.trim(),
+        country: country.trim(),
+        location: city && country ? `${city}, ${country}` : city || country || "",
+        avatarFile: null,
+        links: links
+          .map((link) => ({
+            ...link,
+            url: link.url.trim(),
+            title: link.title.trim(),
+          }))
+          .filter((link) => link.url),
+      }),
+    );
     onClose();
   };
 
   const currentAvatar = avatarPreview || user.avatar || null;
+  const hasSupportLink = links.some((link) => link.isSupport);
+
+  const updateLink = (
+    id: string,
+    field: keyof Pick<ProfileLink, "url" | "title">,
+    value: string,
+  ) => {
+    setLinks((prev) =>
+      prev.map((link) => (link.id === id ? { ...link, [field]: value } : link)),
+    );
+  };
+
+  const addLinkRow = (isSupport = false) => {
+    if (isSupport && hasSupportLink) return;
+    setLinks((prev) => [...prev, createLink(isSupport)]);
+  };
+
+  const removeLinkRow = (id: string) => {
+    setLinks((prev) => prev.filter((link) => link.id !== id));
+  };
 
   return (
     <>
@@ -254,7 +302,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         setErrors(rest);
                       }
                     }}
-                    className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
+                    className={formControlClass}
                   />
                   {errors.firstName && (
                     <span className="text-red-500 text-xs">
@@ -276,7 +324,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         setErrors(rest);
                       }
                     }}
-                    className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
+                    className={formControlClass}
                   />
                   {errors.lastName && (
                     <span className="text-red-500 text-xs">
@@ -299,7 +347,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         setErrors(rest);
                       }
                     }}
-                    className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
+                    className={formControlClass}
                   />
                   {errors.city && (
                     <span className="text-red-500 text-xs">
@@ -321,7 +369,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         setErrors(rest);
                       }
                     }}
-                    className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
+                    className={formControlClass}
                   />
                   {errors.country && (
                     <span className="text-red-500 text-xs">
@@ -346,20 +394,106 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
           {/* Your links */}
           <div className="mt-6 flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-white text-sm font-bold">Your links</span>
-              <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
-            </div>
+            {links.length > 0 && (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="text-white text-sm font-bold">
+                    Your links
+                  </span>
+                  <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
+                </div>
+                <div className="flex flex-col gap-3">
+                  {links.map((link) =>
+                    link.isSupport ? (
+                      <div key={link.id} className="flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-text-secondary text-lg shrink-0">
+                            <i className="fa-solid fa-dollar-sign" />
+                          </span>
+                          <input
+                            value={link.url}
+                            onChange={(e) =>
+                              updateLink(link.id, "url", e.target.value)
+                            }
+                            placeholder="e.g. https://paypal.me/username"
+                            className="flex-1 min-w-0 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
+                          />
+                          <span className="text-text-secondary text-sm shrink-0">
+                            <i className="fa-solid fa-circle-info" />
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Remove link"
+                            onClick={() => removeLinkRow(link.id)}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#333] text-white transition-opacity hover:opacity-70"
+                          >
+                            <i className="fa-solid fa-trash" />
+                          </button>
+                        </div>
+                        <div className="pl-7 text-sm leading-relaxed text-text-secondary">
+                          <span>{supportPlatformsText}</span>
+                          <button
+                            type="button"
+                            className="ml-1 cursor-pointer text-[#7da7ff] hover:underline"
+                          >
+                            Learn more
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div key={link.id} className="flex items-center gap-3">
+                        <span className="text-text-secondary text-lg shrink-0">
+                          <i className="fa-solid fa-link" />
+                        </span>
+                        <input
+                          value={link.url}
+                          onChange={(e) =>
+                            updateLink(link.id, "url", e.target.value)
+                          }
+                          placeholder="Web or email address"
+                          className="flex-1 min-w-0 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
+                        />
+                        <input
+                          value={link.title}
+                          onChange={(e) =>
+                            updateLink(link.id, "title", e.target.value)
+                          }
+                          placeholder="Short title"
+                          className="w-full sm:w-64 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
+                        />
+                        <button
+                          type="button"
+                          aria-label="Remove link"
+                          onClick={() => removeLinkRow(link.id)}
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#333] text-white transition-opacity hover:opacity-70"
+                        >
+                          <i className="fa-solid fa-trash" />
+                        </button>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </>
+            )}
             <div className="flex gap-3">
               <button
+                type="button"
                 data-test="add-link-button"
+                onClick={() => addLinkRow(false)}
                 className="px-4 py-2 bg-[#333] text-white text-sm font-bold rounded hover:opacity-70"
               >
                 Add link
               </button>
               <button
+                type="button"
                 data-test="add-support-link-button"
-                className="px-4 py-2 bg-white text-[#333] text-sm font-bold rounded hover:opacity-70"
+                onClick={() => addLinkRow(true)}
+                disabled={hasSupportLink}
+                className={`px-4 py-2 text-sm font-bold rounded transition-opacity ${
+                  hasSupportLink
+                    ? "bg-[#666] text-[#bbb] cursor-not-allowed"
+                    : "bg-white text-[#333] hover:opacity-70"
+                }`}
               >
                 Add support link
               </button>

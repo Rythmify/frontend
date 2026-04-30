@@ -5,6 +5,7 @@ import ShareLayout from "../../[username]/shareLayout";
 import TrackCard from "@/components/track/TrackCard";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
+import NotFound from "@/pages/not-found/NotFound";
 import { useProfileData } from "@/services/hooks/useProfileData";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
 import type { Track } from "@/types/track";
@@ -13,6 +14,7 @@ export default function TracksPage() {
   const { username } = useParams();
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
+  const [profileLookupStarted, setProfileLookupStarted] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -25,9 +27,20 @@ export default function TracksPage() {
     followers,
     following,
     isOwner,
+    isLoadingProfile,
     handleTabChange,
     handleSave,
   } = useProfileData(username);
+
+  useEffect(() => {
+    setProfileLookupStarted(false);
+  }, [username]);
+
+  useEffect(() => {
+    if (isLoadingProfile) {
+      setProfileLookupStarted(true);
+    }
+  }, [isLoadingProfile]);
 
   // Fetch the full track list (useProfileData fetches count via the same call,
   // but we need the actual Track[] objects for rendering cards here)
@@ -60,6 +73,10 @@ export default function TracksPage() {
       cancelled = true;
     };
   }, [isOwner, profileData?.id]);
+
+  if (!isOwner && profileLookupStarted && !isLoadingProfile && !profileData) {
+    return <NotFound />;
+  }
 
   if (!currentUser) return null;
 

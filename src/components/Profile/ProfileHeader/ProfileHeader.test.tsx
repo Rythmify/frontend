@@ -193,4 +193,14 @@ describe("ProfileHeader", () => {
     render(<ProfileHeader user={{ ...mockUser, displayName: "" }} />);
     expect(screen.getAllByText("testuser").length).toBeGreaterThan(0);
   });
+
+  it("renders premium badge for pro users", () => {
+    render(<ProfileHeader user={{ ...mockUser, isPro: true }} />);
+    expect(screen.getByTestId("premium-badge")).toHaveTextContent("Premium");
+  });
+
+  it("does not render premium badge for non-pro users", () => {
+    render(<ProfileHeader user={{ ...mockUser, isPro: false }} />);
+    expect(screen.queryByTestId("premium-badge")).not.toBeInTheDocument();
+  });
 });
