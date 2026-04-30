@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   getContentSettings,
   updateContentSettings,
@@ -20,31 +21,34 @@ function Toast({
   }, [onClose]);
 
   return (
-    <div
-      data-test="settings-content-toast"
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white shadow-md ${
-        type === "success"
-          ? "bg-[var(--color-success)]"
-          : "bg-[var(--color-error)]"
-      }`}
-    >
-      <span>{message}</span>
-      <button
-        onClick={onClose}
-        data-test="settings-content-toast-close-button"
-        aria-label="Close toast"
-        className="opacity-80 transition hover:opacity-100"
+    createPortal(
+      <div
+        data-test="settings-content-toast"
+        className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 rounded-[var(--radius-md)] px-4 py-3 text-sm text-white shadow-md ${
+          type === "success"
+            ? "bg-[var(--color-success)]"
+            : "bg-[var(--color-error)]"
+        }`}
       >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path
-            d="M2 2l8 8M10 2l-8 8"
-            stroke="white"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      </button>
-    </div>
+        <span>{message}</span>
+        <button
+          onClick={onClose}
+          data-test="settings-content-toast-close-button"
+          aria-label="Close toast"
+          className="opacity-80 transition hover:opacity-100"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path
+              d="M2 2l8 8M10 2l-8 8"
+              stroke="white"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </div>,
+      document.body,
+    )
   );
 }
 

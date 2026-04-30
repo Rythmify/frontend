@@ -1,7 +1,6 @@
 import HorizontalCarousel from "../HorizontalCarousel";
 import CuratedMixCard from "@/components/UI/MixCard/CuratedMixCard";
 import type { CuratedHomeMixPreview } from "@/services/api/discover.service";
-import { mockCuratedMixes } from "@/services/mocks/discover";
 
 interface Props {
   mixes: CuratedHomeMixPreview[];

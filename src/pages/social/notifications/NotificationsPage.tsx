@@ -118,13 +118,13 @@ const NotificationsPage = () => {
 
           {status === 'loading' && <Spinner data-test="notifications-loading" />}
 
-{status === 'success' && (
-  <div data-test="notifications-list" className="flex flex-col gap-2">
-    {notifications.map(n => (
-      <NotificationCard key={n.id} notification={n} showActions={true} onMarkRead={handleMarkRead} data-test={`notification-card-${n.id}`} />
-    ))}
-  </div>
-)}
+  {status === 'success' && (
+            <div data-test="notifications-list" className="flex flex-col gap-2">
+              {notifications.map(n => (
+                <NotificationCard key={n.id} notification={n} showActions={true} onMarkRead={handleMarkRead} data-test={`notification-card-${n.id}`} />
+              ))}
+            </div>
+          )}
 
 {/* sentinel: observed by IntersectionObserver to trigger loadMore */}
 <div ref={sentinelRef} className="h-4" />

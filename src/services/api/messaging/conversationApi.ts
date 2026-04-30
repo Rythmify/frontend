@@ -597,3 +597,22 @@ export const fetchMyRepostedAlbums = async (
   )
   return response.data
 }
+
+// GET /users/:userId/follow-status
+export interface FollowStatus {
+  is_following: boolean;
+  is_followed_by: boolean;
+  is_blocking: boolean;
+  is_blocked_by: boolean;
+}
+
+export interface FollowStatusResponse {
+  data: FollowStatus;
+}
+
+export const fetchFollowStatus = async (userId: string): Promise<FollowStatusResponse> => {
+  const response = await axiosInstance.get<FollowStatusResponse>(
+    `/users/${userId}/follow-status`
+  );
+  return response.data;
+};

@@ -2,7 +2,6 @@ import { type ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import CuratedByRythmify from "./CuratedByRythmify";
-import { mockCuratedMixes } from "@/services/mocks/discover";
 import type { CuratedHomeMixPreview } from "@/services/api/discover.service";
 
 // ─── Mocks ────────────────────────────────────────────────
@@ -142,30 +141,13 @@ describe("CuratedByRythmify", () => {
     );
   });
 
-  it("falls back to mockCuratedMixes when mixes prop is empty", () => {
+  it("renders no cards when mixes prop is empty", () => {
     render(<CuratedByRythmify mixes={[]} />);
-    expect(screen.getAllByTestId(/^curated-mix-card-/)).toHaveLength(
-      mockCuratedMixes.length,
-    );
+    expect(screen.queryAllByTestId(/^curated-mix-card-/)).toHaveLength(0);
   });
 
-  it("renders mock cards with correct mix_ids when falling back", () => {
-    render(<CuratedByRythmify mixes={[]} />);
-    mockCuratedMixes.forEach((mix) => {
-      expect(
-        screen.getByTestId(`curated-mix-card-${mix.mix_id}`),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("prefers API data over mock data when mixes are provided", () => {
+  it("renders only the provided mixes, not any others", () => {
     render(<CuratedByRythmify mixes={mockMixes} />);
-    mockCuratedMixes
-      .filter((m) => !mockMixes.find((a) => a.mix_id === m.mix_id))
-      .forEach((mix) => {
-        expect(
-          screen.queryByTestId(`curated-mix-card-${mix.mix_id}`),
-        ).not.toBeInTheDocument();
-      });
+    expect(screen.getAllByTestId(/^curated-mix-card-/)).toHaveLength(mockMixes.length);
   });
 });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import type { Comment } from "../../../../types/comment";
 import { likeComment, unlikeComment, deleteComment } from "../../../../services/engagement.service";
 import { postReply, getReplies } from "../../../../services/track.service";
@@ -331,16 +332,21 @@ export default function TrackCommentList({
     return (
       <div key={commentIdStr} className={`group ${isReply ? 'mt-4 animate-in slide-in-from-left-4 duration-300' : 'relative'}`}>
         <div className="flex gap-4">
-          <img
-            src={comment.author.avatar_url || "https://picsum.photos/seed/user/80/80"}
-            className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-full object-cover shrink-0 border border-[var(--color-border)] hover:brightness-110 transition-all cursor-pointer`}
-            alt={comment.author.display_name}
-          />
+          <Link to={`/${comment.author.username}`} className="shrink-0">
+            <img
+              src={comment.author.avatar_url || "https://picsum.photos/seed/user/80/80"}
+              className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-full object-cover border border-[var(--color-border)] hover:brightness-110 transition-all cursor-pointer`}
+              alt={comment.author.display_name}
+            />
+          </Link>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[var(--color-text-muted)] ${isReply ? 'text-[12px]' : 'text-[13px]'} font-bold hover:text-white cursor-pointer transition-colors text-orange-500/80`}>
+              <Link 
+                to={`/${comment.author.username}`}
+                className={`text-[var(--color-text-muted)] ${isReply ? 'text-[12px]' : 'text-[13px]'} font-bold hover:text-white cursor-pointer transition-colors text-orange-500/80`}
+              >
                 {comment.author.display_name}
-              </span>
+              </Link>
               {!isReply && (
                 <span className="text-[var(--color-text-muted)] text-[11px] opacity-70">
                   at {formatTime(comment.track_timestamp)}

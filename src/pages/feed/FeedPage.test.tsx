@@ -135,4 +135,110 @@ describe("FeedPage", () => {
     const feedList = screen.getByTestId("feed-list");
     expect(feedList.children).toHaveLength(3);
   });
+
+  // ── Loading state ─────────────────────────────────────────
+
+  it("shows loading text while fetching", () => {
+    vi.mocked(getActivityFeed).mockReturnValue(new Promise(() => {}));
+    render(<FeedPage />);
+    expect(screen.getByText("Loading feed...")).toBeInTheDocument();
+  });
+
+  // ── Empty state ───────────────────────────────────────────
+
+  it("shows empty feed image when there are no items", async () => {
+    vi.mocked(getActivityFeed).mockResolvedValue({ items: [], hasMore: false, total: 0 });
+    render(<FeedPage />);
+    await waitFor(() => {
+      expect(screen.getByAltText("Empty feed")).toBeInTheDocument();
+    });
+  });
+
+  it("shows empty feed message when there are no items", async () => {
+    vi.mocked(getActivityFeed).mockResolvedValue({ items: [], hasMore: false, total: 0 });
+    render(<FeedPage />);
+    await waitFor(() => {
+      expect(screen.getByText("Your feed is empty.")).toBeInTheDocument();
+    });
+  });
+
+  it("shows follow suggestion when feed is empty", async () => {
+    vi.mocked(getActivityFeed).mockResolvedValue({ items: [], hasMore: false, total: 0 });
+    render(<FeedPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/Follow some artists/)).toBeInTheDocument();
+    });
+  });
+
+  // ── Load more button ──────────────────────────────────────
+
+  it("shows load more button when hasMore is true", async () => {
+    vi.mocked(getActivityFeed).mockResolvedValue({ items: mockFeedItems, hasMore: true, total: 10 });
+    render(<FeedPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId("feed-load-more")).toBeInTheDocument();
+    });
+  });
+
+  it("does not show load more button when hasMore is false", async () => {
+    render(<FeedPage />);
+    await waitFor(() => expect(screen.getByTestId("mock-feed-item-t1")).toBeInTheDocument());
+    expect(screen.queryByTestId("feed-load-more")).not.toBeInTheDocument();
+  });
+
+  // ── Load more interaction ─────────────────────────────────
+
+  it("calls getActivityFeed with the correct offset on load more click", async () => {
+    const extraItems: FeedItem[] = [
+      { id: "t4", type: "post", content_type: "track", created_at: "2024-01-01T12:03:00Z" } as any,
+    ];
+    vi.mocked(getActivityFeed)
+      .mockResolvedValueOnce({ items: mockFeedItems, hasMore: true, total: 10 })
+      .mockResolvedValueOnce({ items: extraItems, hasMore: false, total: 10 });
+    render(<FeedPage />);
+    await waitFor(() => screen.getByTestId("feed-load-more"));
+    fireEvent.click(screen.getByTestId("feed-load-more"));
+    await waitFor(() => {
+      expect(getActivityFeed).toHaveBeenCalledWith(20, 3);
+    });
+  });
+
+  it("appends items after load more", async () => {
+    const extraItems: FeedItem[] = [
+      { id: "t4", type: "post", content_type: "track", created_at: "2024-01-01T12:03:00Z" } as any,
+      { id: "t5", type: "post", content_type: "track", created_at: "2024-01-01T12:04:00Z" } as any,
+    ];
+    vi.mocked(getActivityFeed)
+      .mockResolvedValueOnce({ items: mockFeedItems, hasMore: true, total: 10 })
+      .mockResolvedValueOnce({ items: extraItems, hasMore: false, total: 10 });
+    render(<FeedPage />);
+    await waitFor(() => screen.getByTestId("feed-load-more"));
+    fireEvent.click(screen.getByTestId("feed-load-more"));
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-feed-item-t4")).toBeInTheDocument();
+      expect(screen.getByTestId("mock-feed-item-t5")).toBeInTheDocument();
+      expect(screen.getByTestId("mock-feed-item-t1")).toBeInTheDocument();
+    });
+  });
+
+  it("disables load more button while loading more", async () => {
+    vi.mocked(getActivityFeed)
+      .mockResolvedValueOnce({ items: mockFeedItems, hasMore: true, total: 10 })
+      .mockReturnValueOnce(new Promise(() => {}));
+    render(<FeedPage />);
+    await waitFor(() => screen.getByTestId("feed-load-more"));
+    fireEvent.click(screen.getByTestId("feed-load-more"));
+    expect(screen.getByTestId("feed-load-more")).toBeDisabled();
+    expect(screen.getByTestId("feed-load-more")).toHaveTextContent("Loading...");
+  });
+
+  // ── Error resilience ──────────────────────────────────────
+
+  it("does not crash when getActivityFeed rejects", async () => {
+    vi.mocked(getActivityFeed).mockRejectedValue(new Error("Network error"));
+    render(<FeedPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId("feed-page")).toBeInTheDocument();
+    });
+  });
 });
