@@ -368,7 +368,7 @@ function ShareTab({
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="text-[10px] text-[var(--color-text-muted)] whitespace-nowrap">
-                {formatTimeAgo(track?.postedAt || playlist?.created_at)}
+                {formatTimeAgo(track?.postedAt || (playlist as FrontendPlaylist)?.postedAt || (playlist as BackendPlaylist)?.created_at)}
               </span>
               {track?.genre && (
                 <span className="bg-[#333] text-[10px] font-bold px-2 py-0.5 rounded-full text-gray-300">
