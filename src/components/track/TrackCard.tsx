@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import EditTrackModal from "./EditTrackModal";
 import DeleteTrackModal from "./DeleteTrackModal";
 import ReplaceAudioModal from "./ReplaceAudioModal";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 
 // helpers
 
@@ -495,6 +496,7 @@ export default function TrackCard({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   // Local overrides applied after a successful edit (so title/cover/genre update instantly)
   const [trackPatch, setTrackPatch] = useState<Partial<Track>>({});
   const displayTrack = { ...track, ...trackPatch };
@@ -837,7 +839,7 @@ export default function TrackCard({
                   className="absolute bottom-full left-0 mb-2 w-48 bg-[#222] border border-white/10 rounded shadow-xl z-50 py-1"
                 >
                   <button
-                    onClick={() => { onAddToPlaylist?.(); setShowMore(false) }}
+                    onClick={() => { setShowPlaylistModal(true); setShowMore(false); }}
                     className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/5 flex items-center gap-2"
                   >
                     <MdPlaylistAdd size={18} /> Add to playlist
@@ -885,6 +887,15 @@ export default function TrackCard({
           </div>
         )}
       </div>
+      {showPlaylistModal && (
+        <AddToPlaylistModal
+          trackId={String(track.id)}
+          trackTitle={displayTrack.title}
+          trackCoverUrl={displayTrack.coverUrl}
+          artistName={track.artistName}
+          onClose={() => setShowPlaylistModal(false)}
+        />
+      )}
     </div>
   );
 }

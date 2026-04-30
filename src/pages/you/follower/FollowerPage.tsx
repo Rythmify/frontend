@@ -3,6 +3,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 import UserAvatar from "@/components/UI/UserAvatar";
+import NotFound from "@/pages/not-found/NotFound";
 import {
   getFollowers,
   getFollowStatus,
@@ -52,7 +53,9 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
       followers: profile.followers_count ?? 0,
-      isVerified: profile.is_verified ?? u.is_verified,
+      // Keep verification tied to the relationship list item itself.
+      // The profile fetch is only used for richer display data.
+      isVerified: u.is_verified,
       isFollowing: followStatus.is_following,
       profilePath: `/${uname}`,
     };
@@ -84,6 +87,7 @@ export default function FollowerPage() {
     : profileUsername || "Profile";
   const profilePath = profileUsername ? `/${profileUsername}` : "/you";
   const profileAvatar = isOwner ? (currentUser?.avatar ?? "") : "";
+  const [profileNotFound, setProfileNotFound] = useState(false);
 
   const [rawFollowers, setRawFollowers] = useState<UserSummary[] | null>(null);
   const [enriched, setEnriched] = useState<EnrichedUser[]>([]);
@@ -94,6 +98,7 @@ export default function FollowerPage() {
     setLoaded(false);
     setRawFollowers(null);
     setEnriched([]);
+    setProfileNotFound(false);
 
     async function load() {
       try {
@@ -111,7 +116,10 @@ export default function FollowerPage() {
         if (!cancelled) setRawFollowers(res.items);
       } catch (err) {
         console.error("FollowerPage: failed to load", err);
-        if (!cancelled) setRawFollowers([]);
+        if (!cancelled) {
+          setProfileNotFound(true);
+          setRawFollowers([]);
+        }
       }
     }
 
@@ -144,6 +152,7 @@ export default function FollowerPage() {
   }, [rawFollowers]);
 
   if (!currentUser && isOwner) return null;
+  if (!isOwner && profileNotFound) return <NotFound />;
 
   const handleTabChange = (tab: string) => {
     const base = `/${profileUsername}`;

@@ -40,6 +40,7 @@ const defaultVisitorProps = {
   username: "travis-scott",
   displayName: "Travis Scott",
   tracks: 174,
+  isBlocked: false,
 };
 
 describe("ProfileTabs", () => {
@@ -135,6 +136,28 @@ describe("ProfileTabs", () => {
     fireEvent.click(screen.getByTestId("more-button"));
     expect(screen.getByTestId("block-button")).toBeInTheDocument();
     expect(screen.getByTestId("report-button")).toBeInTheDocument();
+  });
+
+  it("shows Unblock when the profile is blocked", () => {
+    render(<ProfileTabs {...defaultVisitorProps} isBlocked />);
+    fireEvent.click(screen.getByTestId("more-button"));
+    expect(screen.getByTestId("block-button")).toHaveTextContent(
+      "Unblock Travis Scott",
+    );
+  });
+
+  it("calls onUnblock when Unblock is clicked", () => {
+    const onUnblock = vi.fn();
+    render(
+      <ProfileTabs
+        {...defaultVisitorProps}
+        isBlocked
+        onUnblock={onUnblock}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("more-button"));
+    fireEvent.click(screen.getByTestId("block-button"));
+    expect(onUnblock).toHaveBeenCalled();
   });
 
   it("opens the report modal when Report is clicked", () => {

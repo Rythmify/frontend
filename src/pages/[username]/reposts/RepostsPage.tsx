@@ -1,29 +1,21 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
-import { useAuthStore } from "@/stores/auth.store";
+import { useNavigate, useParams } from "react-router-dom";
 import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
+import NotFound from "@/pages/not-found/NotFound";
 import { useProfileData } from "@/services/hooks/useProfileData";
-import { getMyRepostedTracks } from "@/services/engagement.service";
-
-interface RawRepostTrack {
-  id: string;
-  title: string;
-  cover_image?: string | null;
-  like_count?: number;
-  artist_name?: string;
-  user?: { display_name?: string };
-}
+import { getUserRepostedTracks } from "@/services/engagement.service";
+import type { TrackSummary } from "@/services/user.service";
 
 export default function RepostsPage() {
   const { username } = useParams();
-  const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
+  const [profileLookupStarted, setProfileLookupStarted] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [repostedTracks, setRepostedTracks] = useState<RawRepostTrack[]>([]);
-  const [loadingReposts, setLoadingReposts] = useState(false);
+  const [repostedTracks, setRepostedTracks] = useState<TrackSummary[]>([]);
+  const [loadingReposts, setLoadingReposts] = useState(true);
 
   const {
     user,
@@ -32,30 +24,43 @@ export default function RepostsPage() {
     followers,
     following,
     isOwner,
+    isLoadingProfile,
     handleTabChange,
     handleSave,
   } = useProfileData(username);
 
   useEffect(() => {
-    // The API only exposes GET /me/reposted-tracks for the owner.
-    // There is no public endpoint to fetch another user's reposts.
-    if (!isOwner) return;
+    setProfileLookupStarted(false);
+  }, [username]);
 
+  useEffect(() => {
+    if (isLoadingProfile) {
+      setProfileLookupStarted(true);
+    }
+  }, [isLoadingProfile]);
+
+  useEffect(() => {
     let cancelled = false;
+    const userId = user.id;
+
+    if (!userId) {
+      return;
+    }
+
     setLoadingReposts(true);
 
-    getMyRepostedTracks({ limit: 50 })
+    getUserRepostedTracks(userId, { limit: 50 })
       .then((res) => {
         if (cancelled) return;
-        const raw = res.data;
-        const items: RawRepostTrack[] = Array.isArray(raw)
-          ? raw
-          : Array.isArray((raw as any)?.items)
-            ? (raw as any).items
-            : [];
+        const items = Array.isArray(res.data) ? res.data : [];
         setRepostedTracks(items);
       })
-      .catch(console.error)
+      .catch((error) => {
+        console.error(error);
+        if (!cancelled) {
+          setRepostedTracks([]);
+        }
+      })
       .finally(() => {
         if (!cancelled) setLoadingReposts(false);
       });
@@ -63,9 +68,11 @@ export default function RepostsPage() {
     return () => {
       cancelled = true;
     };
-  }, [isOwner]);
+  }, [user.id]);
 
-  if (!currentUser) return null;
+  if (!isOwner && profileLookupStarted && !isLoadingProfile && !profileData) {
+    return <NotFound />;
+  }
 
   const followersMapped = followers.map((u) => ({
     userId: u.id,
@@ -89,26 +96,10 @@ export default function RepostsPage() {
   }));
 
   const renderContent = () => {
-    // Non-owner: API doesn't expose this endpoint, show a clear empty state
-    if (!isOwner) {
+    if (isLoadingProfile && !profileData && !user.id) {
       return (
-        <div className="flex flex-col items-center justify-center gap-4 py-16 opacity-50">
-          <svg
-            className="w-16 h-16 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1"
-              d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"
-            />
-          </svg>
-          <p data-test="empty-state-message" className="text-white text-17px">
-            No reposts yet
-          </p>
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
         </div>
       );
     }
@@ -152,25 +143,19 @@ export default function RepostsPage() {
             className="p-4 bg-[#111111] rounded-lg border border-[#222222] hover:border-orange-500/30 transition-all"
           >
             <div className="flex gap-4">
-              <Link to={`/${track.artist_name || track.user?.display_name || "share"}/${track.id}`}>
-                <img
-                  src={
-                    track.cover_image ||
-                    "https://picsum.photos/seed/rythmify/200/200"
-                  }
-                  alt={track.title}
-                  className="w-24 h-24 rounded object-cover shadow-lg hover:opacity-80 transition-opacity"
-                />
-              </Link>
+              <img
+                src={
+                  track.cover_image ||
+                  "https://picsum.photos/seed/rythmify/200/200"
+                }
+                alt={track.title}
+                className="w-24 h-24 rounded object-cover shadow-lg"
+              />
               <div className="flex flex-col justify-center">
-                <Link to={`/${track.artist_name || track.user?.display_name || "share"}/${track.id}`}>
-                  <h3 className="text-white font-bold text-lg hover:text-orange-500 transition-colors">{track.title}</h3>
-                </Link>
-                <Link to={`/${track.artist_name || track.user?.display_name || "share"}`}>
-                  <p className="text-gray-400 text-sm hover:text-white transition-colors">
-                    {track.artist_name || track.user?.display_name}
-                  </p>
-                </Link>
+                <h3 className="text-white font-bold text-lg">{track.title}</h3>
+                <p className="text-gray-400 text-sm">
+                  {track.artist_name}
+                </p>
                 <div className="flex gap-4 mt-2">
                   <span className="text-xs text-gray-500 flex items-center gap-1">
                     <svg
