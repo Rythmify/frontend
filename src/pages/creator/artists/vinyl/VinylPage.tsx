@@ -4,7 +4,7 @@ export default function VinylPage() {
   const navigate = useNavigate();
 
   return (
-    <div className=" pb-20">
+    <div className=" pb-20" data-test="vinyl-page">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
         {/* Left: text */}
         <div className="max-w-3xl">
@@ -40,6 +40,7 @@ export default function VinylPage() {
               type="button"
               onClick={() => navigate("/premium")}
               className="bg-bg-inverted text-bg font-bold text-sm px-6 py-3 rounded-full hover:opacity-85 transition-opacity cursor-pointer"
+              data-test="vinyl-get-premium-btn"
             >
               Get Premium
             </button>

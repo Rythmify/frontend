@@ -10,7 +10,7 @@ export default function ArtistsCommentsPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="pt-10 pb-20">
+    <div className="pt-10 pb-20" data-test="artists-comments-page">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
         {/* Left: text */}
         <div className="max-w-3xl">
@@ -40,6 +40,7 @@ export default function ArtistsCommentsPage() {
             type="button"
             onClick={() => navigate("/premium")}
             className="bg-bg-inverted text-bg font-bold text-sm px-6 py-3 rounded-full hover:opacity-85 transition-opacity cursor-pointer"
+            data-test="comments-get-premium-btn"
           >
             Get Premium
           </button>

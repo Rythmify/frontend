@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { getMyTracks, type Track } from "@/services/api/upload/track.service";
+import { getMyTracks, deleteTrack, type Track } from "@/services/api/upload/track.service";
 import { EmptyState } from "@/components/artistpage/EmptyState";
 import { TrackToolbar } from "@/components/artistpage/TrackToolbar";
 import { TrackTable } from "@/components/artistpage/TrackTable";
+import { MembershipBenefits } from "@/components/artistpage/MembershipBenefits";
 import Spinner from "@/components/UI/Spinner";
 
 type FilterMode = "Public" | "Private";
@@ -20,6 +21,11 @@ export default function ArtistsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  async function handleDeleteTrack(id: string) {
+    await deleteTrack(id).catch(() => {});
+    setTracks((prev) => prev.filter((t) => t.id !== id));
+  }
+
   const filteredTracks = tracks.filter((t) => {
     const matchFilter =
       filter === "Public" ? t.is_public !== false : t.is_public === false;
@@ -31,7 +37,7 @@ export default function ArtistsPage() {
   if (loading) return <Spinner />;
 
   return (
-    <div className="pt-6">
+    <div className="pt-6" data-test="artists-page">
       {tracks.length === 0 ? (
         <EmptyState />
       ) : (
@@ -43,7 +49,12 @@ export default function ArtistsPage() {
             onFilterChange={setFilter}
             trackCount={filteredTracks.length}
           />
-          <TrackTable tracks={filteredTracks} filter={filter} />
+          <TrackTable
+            tracks={filteredTracks}
+            filter={filter}
+            onDeleteTrack={handleDeleteTrack}
+          />
+          <MembershipBenefits />
         </>
       )}
     </div>

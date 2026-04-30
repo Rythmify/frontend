@@ -4,7 +4,7 @@ export default function DistributionPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="pt-10 pb-20">
+    <div className="pt-10 pb-20" data-test="distribution-page">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
         {/* Left: text content */}
         <div className="max-w-4xl">
@@ -22,8 +22,9 @@ export default function DistributionPage() {
             type="button"
             onClick={() => navigate("/premium")}
             className="bg-bg-inverted text-bg font-bold text-sm px-6 py-3 rounded-full hover:opacity-85 transition-opacity cursor-pointer"
+            data-test="distribution-get-premium-btn"
           >
-            
+
             Get Premium
           </button>
           <span className="text-[13px] font-bold mx-4 text-text border border-[#444] rounded-xl px-2.5 py-0.5">
