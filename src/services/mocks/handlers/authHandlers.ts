@@ -31,6 +31,23 @@ const mockRegisterData: AuthRegisterResponseData = {
   created_at: new Date().toISOString(),
 };
 
+let mockMeProfile = {
+  id: mockUser.user_id,
+  username: 'demouser',
+  display_name: mockUser.display_name,
+  first_name: 'Demo',
+  last_name: 'User',
+  bio: '',
+  email: mockUser.email,
+  role: mockUser.role,
+  profile_picture: undefined as string | undefined,
+  cover_photo: undefined as string | undefined,
+  city: undefined as string | undefined,
+  country: undefined as string | undefined,
+  gender: mockUser.gender,
+  date_of_birth: undefined as string | undefined,
+};
+
 // Emails treated as "existing" for the check-email stub
 const EXISTING_EMAILS = ['test@test.com', 'user@rythmify.com', 'user@example.com'];
 
@@ -140,55 +157,37 @@ export const authHandlers = [
 
   // PATCH /users/me
   http.patch('*/users/me', async ({ request }) => {
-    const body = await request.json() as { display_name?: string; gender?: string; date_of_birth?: string };
+    const body = await request.json() as {
+      display_name?: string;
+      first_name?: string | null;
+      last_name?: string | null;
+      bio?: string | null;
+      city?: string | null;
+      country?: string | null;
+      gender?: string;
+      date_of_birth?: string;
+    };
+    mockMeProfile = {
+      ...mockMeProfile,
+      display_name: body.display_name ?? mockMeProfile.display_name,
+      first_name: body.first_name ?? mockMeProfile.first_name,
+      last_name: body.last_name ?? mockMeProfile.last_name,
+      bio: body.bio ?? mockMeProfile.bio,
+      city: body.city ?? mockMeProfile.city,
+      country: body.country ?? mockMeProfile.country,
+      gender: (body.gender ?? mockMeProfile.gender) as 'male' | 'female',
+      date_of_birth: body.date_of_birth ?? mockMeProfile.date_of_birth,
+    };
     return HttpResponse.json({
-      data: {
-        id: mockUser.user_id,
-        username: 'demouser',
-        display_name: body.display_name ?? mockUser.display_name,
-        email: mockUser.email,
-        role: mockUser.role,
-        gender: body.gender ?? mockUser.gender,
-        date_of_birth: body.date_of_birth,
-      },
+      data: mockMeProfile,
       message: 'Profile updated successfully.',
-    });
-  }),
-
-  // PATCH /users/me
-  http.patch('*/users/me', async ({ request }) => {
-    const body = await request.json() as { display_name?: string; gender?: string; date_of_birth?: string };
-    return HttpResponse.json({
-      data: {
-        id: mockUser.user_id,
-        username: 'demouser',
-        display_name: body.display_name ?? mockUser.display_name,
-        email: mockUser.email,
-        role: mockUser.role,
-        profile_picture: undefined,
-        cover_photo: undefined,
-      },
-      message: 'User updated successfully.',
     });
   }),
 
   // GET /users/me
   http.get('*/users/me', () => {
     return HttpResponse.json({
-      data: {
-        id: mockUser.user_id,
-        username: 'demouser',
-        display_name: mockUser.display_name,
-        first_name: 'Demo',
-        last_name: 'User',
-        bio: '',
-        email: mockUser.email,
-        role: mockUser.role,
-        profile_picture: undefined,
-        cover_photo: undefined,
-        city: undefined,
-        country: undefined,
-      },
+      data: mockMeProfile,
       message: 'User fetched successfully.',
     });
   }),

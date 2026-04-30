@@ -23,7 +23,7 @@ interface EditProfileModalProps {
     country: string;
     location: string;
     avatarFile: File | null;
-  }) => void;
+  }) => void | Promise<void>;
 }
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
@@ -136,18 +136,20 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    onSave({
-      displayName: displayName.trim(),
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      bio: bio.trim(),
-      city: city.trim(),
-      country: country.trim(),
-      location: city && country ? `${city}, ${country}` : city || country || "",
-      avatarFile: null,
-    });
+    await Promise.resolve(
+      onSave({
+        displayName: displayName.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        bio: bio.trim(),
+        city: city.trim(),
+        country: country.trim(),
+        location: city && country ? `${city}, ${country}` : city || country || "",
+        avatarFile: null,
+      }),
+    );
     onClose();
   };
 

@@ -140,9 +140,16 @@ export function useProfileData(
         const latestUser = useAuthStore.getState().user ?? currentUser;
         setUser({
           ...latestUser,
+          displayName: profile.display_name || latestUser.displayName,
+          firstName:
+            (profile as OwnUser).first_name ?? latestUser.firstName ?? "",
+          lastName:
+            (profile as OwnUser).last_name ?? latestUser.lastName ?? "",
           bio: profile.bio || "",
           avatar: profile.profile_picture ?? latestUser.avatar,
           coverUrl: profile.cover_photo ?? latestUser.coverUrl,
+          city: (profile as OwnUser).city ?? latestUser.city,
+          country: (profile as OwnUser).country ?? latestUser.country,
           location:
             [(profile as OwnUser).city, (profile as OwnUser).country]
               .filter(Boolean)
@@ -275,7 +282,7 @@ export function useProfileData(
   };
 
   // ── Edit profile save ─────────────────────────────────────
-  const handleSave = (
+  const handleSave = async (
     data: {
       displayName: string;
       firstName: string;
@@ -288,26 +295,32 @@ export function useProfileData(
     },
     onDone: () => void,
   ) => {
-    updateMyProfile({
+    const updatedProfile = await updateMyProfile({
       display_name: data.displayName,
       first_name: data.firstName,
       last_name: data.lastName,
       bio: data.bio,
       city: data.city,
       country: data.country,
-    }).catch(console.error);
+    }).catch((error) => {
+      console.error(error);
+      throw error;
+    });
 
     const latestUser = useAuthStore.getState().user;
     if (!latestUser) return;
 
     setUser({
       ...latestUser,
-      displayName: data.displayName,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      bio: data.bio,
-      city: data.city,
-      country: data.country,
+      displayName:
+        updatedProfile.display_name ?? data.displayName ?? latestUser.displayName,
+      firstName:
+        updatedProfile.first_name ?? data.firstName ?? latestUser.firstName,
+      lastName:
+        updatedProfile.last_name ?? data.lastName ?? latestUser.lastName,
+      bio: updatedProfile.bio ?? data.bio ?? latestUser.bio,
+      city: updatedProfile.city ?? data.city ?? latestUser.city,
+      country: updatedProfile.country ?? data.country ?? latestUser.country,
       location: data.location,
       avatar: data.avatarFile
         ? URL.createObjectURL(data.avatarFile)
