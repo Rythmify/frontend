@@ -13,7 +13,7 @@ const TABS = [
   { label: "Distribution", to: "/artists/distribution", end: false },
   { label: "Vinyl Records", to: "/artists/vinyl", end: false },
   { label: "Comments", to: "/artists/comments", end: false },
-  { label: "Benefits", to: "/artists/benefits", end: false },
+  
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ const ArtistStudioLayout = () => {
       .then((res) => setTracks(res.data as unknown as Track[]))
       .catch(() => {});
 
-    const timer = setTimeout(() => setReady(true), 2000);
+    const timer = setTimeout(() => setReady(true), 1000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -208,7 +208,7 @@ const ArtistStudioLayout = () => {
       </div>
 
       {/* Tab navigation */}
-      <div className="container px-4 md:px-8 lg:px-12 xl:px-20">
+      <div className="container sticky top-10 px-4 md:px-8 lg:px-12 xl:px-20">
       <div className="border-b border-[#2a2a2a] bg-bg">
         <div className=" flex items-center overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => (
