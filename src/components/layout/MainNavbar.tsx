@@ -180,14 +180,14 @@ const MainNavbar = () => {
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-md font-bold px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
+    `text-md font-semibold px-1 py-1 border-b-2 transition-colors hover:text-text-hover ${
       isActive
         ? "text-text-hover border-text-hover"
         : "text-text-secondary border-transparent"
     }`;
 
   const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `block px-4 py-3 text-md font-bold transition-colors ${
+    `block px-4 py-3 text-md font-semibold transition-colors ${
       isActive ? "text-tex-hover" : "text-text-secondary hover:text-white"
     }`;
 
@@ -232,20 +232,20 @@ const MainNavbar = () => {
           {/* Text links — desktop only */}
           <Link
             to={user?.isPro ? "/subscriptions" : "/premium"}
-            className="hidden lg:block text-accent text-md font-bold hover:text-text-hover transition-colors"
+            className="hidden lg:block text-accent text-md font-semibold hover:text-text-hover transition-colors"
           >
             {user?.isPro ? "Manage Premium" : "Try Artist Pro"}
           </Link>
           <Link
             to="/artists"
-            className="hidden lg:block text-text-secondary text-md mx-4 font-bold hover:text-text-hover transition-colors"
+            className="hidden lg:block text-text-secondary text-md mx-4 font-semibold hover:text-text-hover transition-colors"
           >
             For Artists
           </Link>
           <Link
             data-test="link-upload"
             to="/upload"
-            className="hidden lg:block text-text-secondary text-md me-4 font-bold hover:text-text-hover transition-colors"
+            className="hidden lg:block text-text-secondary text-md me-4 font-semibold hover:text-text-hover transition-colors"
           >
             Upload
           </Link>
@@ -262,7 +262,7 @@ const MainNavbar = () => {
                 name={user?.displayName ?? user?.username ?? ""}
                 alt={user?.displayName ?? user?.username ?? "User"}
                 wrapperClassName="w-[30px] h-[30px] rounded-full overflow-hidden"
-                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-semibold"
               />
               <ChevronDown
                 size={25}
@@ -348,7 +348,7 @@ const MainNavbar = () => {
               {unreadCount > 0 && (
                 <span
                   data-test="notification-unread-badge"
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-semibold flex items-center justify-center text-white"
                 >
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
@@ -441,7 +441,7 @@ const MainNavbar = () => {
             >
               <Mail size={22} className="mt-2 hover:text-text-hover" />
               {unreadMessages > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-semibold flex items-center justify-center text-white">
                   {unreadMessages > 99 ? "99+" : unreadMessages}
                 </span>
               )}
