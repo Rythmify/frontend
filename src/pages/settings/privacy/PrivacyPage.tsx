@@ -1,11 +1,19 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { Link } from "react-router-dom";
 import {
   getPrivacySettings,
   updatePrivacySettings,
   type PrivacySettings,
 } from "@/services/settings.service";
-import { unblockUser, type UserSummary } from "@/services/user.service";
 import { getBlockedUsers } from "@/services/user.service";
+import { unblockUser } from "@/services/api/messaging/conversationApi";
+import type { UserSummary } from "@/services/user.service";
+
+type BlockedUser = UserSummary & {
+  user_id?: string;
+};
+
+const getBlockedUserId = (user: BlockedUser) => user.id || user.user_id || "";
 
 function Toggle({
   checked,
@@ -70,16 +78,25 @@ function BlockedUserRow({
   user,
   onUnblock,
 }: {
-  user: UserSummary;
+  user: BlockedUser;
   onUnblock: (id: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const profilePath = user.username ? `/${user.username}` : null;
+  const userId = getBlockedUserId(user);
 
   const handleUnblock = async () => {
+    if (!userId) return;
     setLoading(true);
     try {
-      await unblockUser(user.id);
-      onUnblock(user.id);
+      await unblockUser(userId);
+      const refreshed = await getBlockedUsers();
+      const stillBlocked = refreshed.items.some((blockedUser) =>
+        getBlockedUserId(blockedUser as BlockedUser) === userId,
+      );
+      if (!stillBlocked) {
+        onUnblock(userId);
+      }
     } catch {
       // Keep the row visible if the API call fails.
     } finally {
@@ -89,44 +106,53 @@ function BlockedUserRow({
 
   return (
     <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3 last:border-0">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-[var(--color-input-bg)]">
-          <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[var(--color-text)]">
-            {user.display_name?.[0]?.toUpperCase() ?? "?"}
+      {profilePath ? (
+        <Link to={profilePath} className="flex items-center gap-3 group">
+          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-[var(--color-input-bg)]">
+            {user.profile_picture ? (
+              <img
+                src={user.profile_picture}
+                alt={user.display_name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[var(--color-text)]">
+                {user.display_name?.[0]?.toUpperCase() ?? "?"}
+              </div>
+            )}
           </div>
+          <span className="text-sm font-semibold text-[var(--color-text-hover)] transition-colors group-hover:text-white">
+            {user.display_name}
+          </span>
+        </Link>
+      ) : (
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-[var(--color-input-bg)]">
+            {user.profile_picture ? (
+              <img
+                src={user.profile_picture}
+                alt={user.display_name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[var(--color-text)]">
+                {user.display_name?.[0]?.toUpperCase() ?? "?"}
+              </div>
+            )}
+          </div>
+          <span className="text-sm font-semibold text-[var(--color-text-hover)]">
+            {user.display_name}
+          </span>
         </div>
-        <span className="text-sm font-semibold text-[var(--color-text-hover)]">
-          {user.display_name}
-        </span>
-      </div>
+      )}
 
       <button
         onClick={handleUnblock}
         disabled={loading}
-        className="flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-error)] px-3 py-1.5 text-sm font-semibold text-[var(--color-error)] transition-all duration-150 hover:bg-[var(--color-error)] hover:text-white disabled:opacity-50"
+        className="flex items-center gap-3 rounded-[var(--radius-sm)] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-50"
       >
-        <svg
-          width="13"
-          height="13"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M4.93 4.93l14.14 14.14"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-        {loading ? "Unblocking..." : "Blocked"}
+        <i className="fa-solid fa-ban text-xs w-4" />
+        {loading ? "Unblocking..." : "Unblock"}
       </button>
     </div>
   );
@@ -140,7 +166,7 @@ export default function PrivacyPage() {
     show_as_top_fan: true,
     show_top_fans_on_tracks: true,
   });
-  const [blockedUsers, setBlockedUsers] = useState<UserSummary[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
 
   useEffect(() => {
     getPrivacySettings()
@@ -152,7 +178,12 @@ export default function PrivacyPage() {
       .catch(() => {});
     getBlockedUsers()
       .then((res) => {
-        setBlockedUsers(res.items);
+        setBlockedUsers(
+          res.items.map((item) => ({
+            ...item,
+            id: item.id || (item as BlockedUser).user_id || "",
+          })),
+        );
       })
       .catch(() => {});
   }, []);
@@ -218,7 +249,7 @@ export default function PrivacyPage() {
           <div>
             {blockedUsers.map((user) => (
               <BlockedUserRow
-                key={user.id}
+                key={getBlockedUserId(user)}
                 user={user}
                 onUnblock={handleUnblock}
               />
