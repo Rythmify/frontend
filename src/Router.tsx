@@ -45,8 +45,8 @@ const GitHubCallbackPage = lazy(
   () => import("@/pages/signin/GitHubCallbackPage"),
 );
 
-// Download
-const DownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
+// Download (the /download route — app download page, NOT offline downloads)
+const AppDownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
 
 // People
 const PeoplePage = lazy(() => import("@/pages/people/PeoplePage"));
@@ -131,6 +131,11 @@ const PlaylistSlugPage = lazy(
 );
 const AlbumSlugPage = lazy(() => import("@/pages/you/albums/AlbumSlugPage"));
 
+// ── Offline Downloads (new) ────────────────────────────────
+const OfflineDownloadsPage = lazy(
+  () => import("@/pages/you/downloads/DownloadsPage"),
+);
+
 // Settings
 const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage"));
 const SubscriptionsPage = lazy(
@@ -163,6 +168,7 @@ const VinylPage = lazy(() => import("@/pages/creator/artists/vinyl/VinylPage"));
 const CommentsArtistPage = lazy(
   () => import("@/pages/creator/artists/comments/ArtistsCommentsPage"),
 );
+
 const CheckoutPage = lazy(
   () => import("@/pages/creator/checkout/CheckoutPage"),
 );
@@ -171,10 +177,16 @@ const PlanPage = lazy(() => import("@/pages/premium/PlanPage"));
 
 // Admin
 const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
-const AdminDashboardPage = lazy(() => import("@/pages/admin/dashboard/AdminDashboardPage"));
-const AdminReportsPage = lazy(() => import("@/pages/admin/reports/AdminReportsPage"));
+const AdminDashboardPage = lazy(
+  () => import("@/pages/admin/dashboard/AdminDashboardPage"),
+);
+const AdminReportsPage = lazy(
+  () => import("@/pages/admin/reports/AdminReportsPage"),
+);
 const AdminUsersPage = lazy(() => import("@/pages/admin/users/AdminUsersPage"));
-const AdminTracksPage = lazy(() => import("@/pages/admin/tracks/AdminTracksPage"));
+const AdminTracksPage = lazy(
+  () => import("@/pages/admin/tracks/AdminTracksPage"),
+);
 
 // Not Found
 const NotFound = lazy(() => import("@/pages/not-found/NotFound"));
@@ -197,7 +209,8 @@ const LogoutPage = () => {
     logout();
   }, [logout]);
 
-  return <Lazy component={DownloadPage} />;
+  // Redirect to home after logout — not to the download page
+  return <Navigate to="/" replace />;
 };
 
 // Router
@@ -261,7 +274,7 @@ export const router = createBrowserRouter([
         element: <Lazy component={TrendingByGenreSlugPage} />,
       },
       { path: "people", element: <Lazy component={PeoplePage} /> },
-      { path: "download", element: <Lazy component={DownloadPage} /> },
+      { path: "download", element: <Lazy component={AppDownloadPage} /> },
       { path: "logout", element: <LogoutPage /> },
 
       // Search
@@ -358,12 +371,17 @@ export const router = createBrowserRouter([
                     path: "following",
                     element: <Lazy component={YouFollowingPage} />,
                   },
+                  // ── Offline Downloads tab ──────────────────
+                  {
+                    path: "downloads",
+                    element: <Lazy component={OfflineDownloadsPage} />,
+                  },
                 ],
               },
               { path: "follower", element: <Lazy component={FollowerPage} /> },
               { path: "insights", element: <Lazy component={InsightsPage} /> },
 
-              // Track Slug / Playlist Slug/ Album view
+              // Track Slug / Playlist Slug / Album view
               {
                 path: "sets/:playlistSlug",
                 element: <Lazy component={PlaylistSlugPage} />,
@@ -375,11 +393,11 @@ export const router = createBrowserRouter([
             ],
           },
 
-            // Settings
-            {
-              path: "settings",
-              element: <Lazy component={SettingsPage} />,
-              children: [
+          // Settings
+          {
+            path: "settings",
+            element: <Lazy component={SettingsPage} />,
+            children: [
               { index: true, element: <Navigate to="content" replace /> },
               { path: "content", element: <Lazy component={ContentPage} /> },
               {
@@ -455,6 +473,7 @@ export const router = createBrowserRouter([
             path: "artists/comments",
             element: <Lazy component={CommentsArtistPage} />,
           },
+          
         ],
       },
     ],
@@ -483,7 +502,7 @@ export const router = createBrowserRouter([
     element: <Lazy component={GitHubCallbackPage} />,
   },
 
-  // 10. Admin
+  // 11. Admin
   {
     path: "admin",
     element: <Lazy component={AdminLayout} />,
@@ -495,7 +514,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 11. Not Found
+  // 12. Not Found
   {
     path: "*",
     element: <Lazy component={NotFound} />,

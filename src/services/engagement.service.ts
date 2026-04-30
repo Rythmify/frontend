@@ -19,6 +19,31 @@ export async function unlikeTrack(trackId: string | number) {
   return data;
 }
 
+export interface RadioTrackLikeResponse {
+  data: {
+    playlist_id: string;
+    seed_track_id: string;
+    title: string;
+    description: string;
+    cover_image: string | null;
+  };
+  message: string;
+}
+
+export async function likeTrackRadio(trackId: string | number) {
+  const { data } = await axiosInstance.post<RadioTrackLikeResponse>(
+    `/tracks/${trackId}/like-radio`,
+  );
+  return data;
+}
+
+export async function unlikeTrackRadio(trackId: string | number) {
+  const { data } = await axiosInstance.delete(
+    `/tracks/${trackId}/like-radio`,
+  );
+  return data;
+}
+
 export async function repostTrack(trackId: string | number) {
   const { data } = await axiosInstance.post(`/tracks/${trackId}/repost`);
   return data;

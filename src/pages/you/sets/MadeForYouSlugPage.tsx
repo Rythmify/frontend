@@ -45,10 +45,7 @@ function getTopArtistTrackCounts(
   return Array.from(counts.entries());
 }
 
-function toFeaturedArtist(
-  user: PublicUser,
-  trackCount: number,
-): MockUser {
+function toFeaturedArtist(user: PublicUser, trackCount: number): MockUser {
   return {
     id: user.id as unknown as number,
     username: user.username ?? user.display_name,
@@ -105,8 +102,7 @@ function MadeForYouSlugPage() {
     playlistSlug?: string;
   }>();
   const user = useAuthStore((state) => state.user);
-  const currentUserId =
-    user?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890";
+  const currentUserId = user?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890";
   const normalizedSlug = normalizeMadeSlug(kind ?? madeSlug ?? playlistSlug);
   const madeForYouKind = getMadeForYouKind(normalizedSlug);
   const madeForYouBadgeWords: [string, string] =
@@ -149,7 +145,7 @@ function MadeForYouSlugPage() {
           madeForYouToPlaylistDetails(
             payload,
             currentUserId,
-            payload.mix_id?? playlistSlug,
+            payload.mix_id ?? playlistSlug,
           ),
         );
 
@@ -213,7 +209,8 @@ function MadeForYouSlugPage() {
     playlist.tracks.some((track) => track.track_id === currentTrack?.id);
 
   const coverImages = useMemo(
-    () => playlist?.tracks.slice(0, 3).map((track) => track.cover_image ?? null),
+    () =>
+      playlist?.tracks.slice(0, 3).map((track) => track.cover_image ?? null),
     [playlist],
   );
 
@@ -271,14 +268,20 @@ function MadeForYouSlugPage() {
 
   if (loading)
     return (
-      <div data-test="made-for-you-slug-loading" className="animate-pulse p-20 text-center text-white">
+      <div
+        data-test="made-for-you-slug-loading"
+        className="animate-pulse p-20 text-center text-white"
+      >
         Loading made for you...
       </div>
     );
 
   if (error || !playlist)
     return (
-      <div data-test="made-for-you-slug-error" className="p-20 text-center text-red-500">
+      <div
+        data-test="made-for-you-slug-error"
+        className="p-20 text-center text-red-500"
+      >
         {error || "Made for you mix not found."}
       </div>
     );
@@ -305,12 +308,12 @@ function MadeForYouSlugPage() {
           <div className="flex-1 min-w-0" data-test="made-for-you-slug-main">
             <div data-test="made-for-you-slug-actions">
               <PlaylistActions
-              playlist={playlist}
-              initialTracks={playlist.tracks}
-              isGeneratedPlaylist
-              engagementKind="mix"
-              generatedPlaylistTitle={playlist.name}
-            />
+                playlist={playlist}
+                initialTracks={playlist.tracks}
+                isGeneratedPlaylist
+                engagementKind="mix"
+                generatedPlaylistTitle={playlist.name}
+              />
             </div>
 
             <div className="mt-8" data-test="made-for-you-slug-tracklist">
@@ -323,8 +326,14 @@ function MadeForYouSlugPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-[280px] shrink-0" data-test="made-for-you-slug-sidebar">
+          <div
+            className="w-full lg:w-[280px] shrink-0"
+            data-test="made-for-you-slug-sidebar"
+          >
             <PlaylistSidebar
+              showLikes={false}
+              showReposts={false}
+              showSocialProof={false}
               playlist={playlist}
               featuredArtists={featuredArtists}
             />
