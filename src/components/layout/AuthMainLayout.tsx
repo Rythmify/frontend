@@ -6,6 +6,12 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { getMe, normalizeDateOfBirth } from "@/services/auth.service";
 import { getMySubscription } from "@/services/api/upload/subscription.service";
+import { getMyWebProfiles } from "@/services/user.service";
+
+const formatProfileTitle = (platform: string) => {
+  if (platform === "other") return "Support";
+  return platform.charAt(0).toUpperCase() + platform.slice(1);
+};
 
 const AuthMainLayout = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -18,10 +24,27 @@ const AuthMainLayout = () => {
 
     // Refresh user profile from backend on every app load so persisted
     // data (following_ids, avatar, etc.) never stays stale across sessions.
-    Promise.allSettled([getMe(), getMySubscription()])
-      .then(([profileResult, subResult]) => {
+    Promise.allSettled([getMe(), getMySubscription(), getMyWebProfiles({ limit: 100, offset: 0 })])
+      .then(([profileResult, subResult, webProfilesResult]) => {
         if (profileResult.status !== "fulfilled") return;
         const p = profileResult.value.data;
+        const currentLinks = currentUser?.links ?? [];
+        const mergedLinks =
+          webProfilesResult.status === "fulfilled"
+            ? webProfilesResult.value.map((profile) => {
+                const fallback = currentLinks.find(
+                  (link) =>
+                    link.id === profile.id ||
+                    link.url.trim() === profile.url.trim(),
+                );
+                return {
+                  id: profile.id,
+                  url: profile.url,
+                  title: fallback?.title || formatProfileTitle(profile.platform),
+                  isSupport: fallback?.isSupport ?? profile.platform === "other",
+                };
+              })
+            : currentLinks;
         const isPro =
           subResult.status === "fulfilled"
             ? subResult.value.data.user_subscription_id !== null
@@ -44,7 +67,7 @@ const AuthMainLayout = () => {
             [p.city ?? currentUser?.city, p.country ?? currentUser?.country]
               .filter(Boolean)
               .join(", ") || currentUser?.location,
-          links: currentUser?.links ?? [],
+          links: mergedLinks,
           following_ids: p.following_ids ?? currentUser?.following_ids ?? [],
           followers_ids: p.followers_ids ?? currentUser?.followers_ids ?? [],
           date_of_birth:

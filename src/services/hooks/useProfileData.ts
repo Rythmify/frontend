@@ -3,15 +3,20 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
 import {
   getMyProfile,
+  getMyWebProfiles,
   getUserById,
   getUserByUsername,
   getFollowers,
   getFollowing,
   getFollowStatus,
   getBlockedUsers,
+  addWebProfile,
+  deleteWebProfile,
   updateMyProfile,
   type OwnUser,
   type PublicUser,
+  type WebProfile,
+  type WebProfilePlatform,
   type UserSummary,
 } from "@/services/user.service";
 import type { User } from "@/stores/auth.store";
@@ -22,6 +27,115 @@ export interface ProfileStats {
   following: number;
   tracks: number;
 }
+
+const normalizeLinkHref = (url: string) => {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    return `https://${trimmed.replace(/^\/+/, "")}`;
+  }
+};
+
+const platformLabel: Record<WebProfilePlatform, string> = {
+  instagram: "Instagram",
+  twitter: "Twitter",
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  soundcloud: "SoundCloud",
+  website: "Website",
+  other: "Support",
+};
+
+const inferPlatformFromUrl = (url: string, isSupport?: boolean): WebProfilePlatform => {
+  if (isSupport) return "other";
+
+  const href = normalizeLinkHref(url);
+  try {
+    const host = new URL(href).hostname.toLowerCase();
+    if (host.includes("instagram.com")) return "instagram";
+    if (host.includes("twitter.com") || host.includes("x.com")) return "twitter";
+    if (host.includes("youtube.com") || host.includes("youtu.be")) return "youtube";
+    if (host.includes("tiktok.com")) return "tiktok";
+    if (host.includes("soundcloud.com")) return "soundcloud";
+  } catch {
+    // fall through to website
+  }
+
+  return "website";
+};
+
+const mapBackendWebProfilesToLinks = (
+  profiles: WebProfile[],
+  fallbackLinks: ProfileLink[] = [],
+): ProfileLink[] => {
+  return profiles.map((profile) => {
+    const fallback = fallbackLinks.find(
+      (link) =>
+        link.id === profile.id ||
+        normalizeLinkHref(link.url) === normalizeLinkHref(profile.url),
+    );
+
+    return {
+      id: profile.id,
+      url: profile.url,
+      title: fallback?.title?.trim() || platformLabel[profile.platform],
+      isSupport: fallback?.isSupport ?? profile.platform === "other",
+    };
+  });
+};
+
+const syncWebProfiles = async (
+  desiredLinks: ProfileLink[],
+  fallbackLinks: ProfileLink[] = [],
+): Promise<ProfileLink[]> => {
+  const cleaned = desiredLinks
+    .map((link) => ({
+      ...link,
+      url: normalizeLinkHref(link.url),
+      title: link.title.trim(),
+    }))
+    .filter((link) => link.url);
+
+  const existingProfiles = await getMyWebProfiles({ limit: 100, offset: 0 }).catch(
+    () => [],
+  );
+
+  await Promise.all(existingProfiles.map((profile) => deleteWebProfile(profile.id)));
+
+  if (cleaned.length === 0) return [];
+
+  const createdProfiles = await Promise.all(
+    cleaned.map((link) =>
+      addWebProfile({
+        platform: inferPlatformFromUrl(link.url, link.isSupport),
+        url: link.url,
+      }),
+    ),
+  );
+
+  return createdProfiles.map((profile, index) => ({
+    id: profile.id,
+    url: profile.url,
+    title:
+      cleaned[index].title ||
+      fallbackLinks.find(
+        (link) =>
+          normalizeLinkHref(link.url) === normalizeLinkHref(profile.url) ||
+          link.id === profile.id,
+      )?.title ||
+      platformLabel[profile.platform],
+    isSupport:
+      cleaned[index].isSupport ??
+      fallbackLinks.find(
+        (link) =>
+          normalizeLinkHref(link.url) === normalizeLinkHref(profile.url) ||
+          link.id === profile.id,
+      )?.isSupport ??
+      profile.platform === "other",
+  }));
+};
 
 // UserSummary enriched with sidebar-specific metadata.
 export type EnrichedUserSummary = UserSummary & {
@@ -57,6 +171,7 @@ export interface ProfileDataResult {
       country: string;
       location: string;
       avatarFile?: File | null;
+      links?: ProfileLink[];
     },
     onDone: () => void,
   ) => void;
@@ -137,6 +252,14 @@ export function useProfileData(
         if (cancelled) return;
 
         setProfileData(profile);
+        const webProfilesResult = await getMyWebProfiles({
+          limit: 100,
+          offset: 0,
+        })
+          .then((value) => ({ status: "fulfilled" as const, value }))
+          .catch((reason) => ({ status: "rejected" as const, reason }));
+        if (cancelled) return;
+
         const blockedIds = new Set(blockedRes.items.map((u) => u.id));
         const filteredFollowers = followersRes.items.filter(
           (u) => !blockedIds.has(u.id),
@@ -148,6 +271,14 @@ export function useProfileData(
           followersRes.items.length - filteredFollowers.length;
         const hiddenFollowingCount =
           followingResult.items.length - filteredFollowing.length;
+        const latestUser = useAuthStore.getState().user ?? currentUser;
+        const mergedLinks =
+          webProfilesResult.status === "fulfilled"
+            ? mapBackendWebProfilesToLinks(
+                webProfilesResult.value,
+                latestUser.links ?? currentUser.links ?? [],
+              )
+            : latestUser.links ?? currentUser.links ?? [];
         setFollowers(filteredFollowers);
         setFollowing(filteredFollowing);
 
@@ -159,7 +290,6 @@ export function useProfileData(
         });
 
         // Sync auth store
-        const latestUser = useAuthStore.getState().user ?? currentUser;
         setUser({
           ...latestUser,
           displayName: profile.display_name || latestUser.displayName,
@@ -176,6 +306,7 @@ export function useProfileData(
             [(profile as OwnUser).city, (profile as OwnUser).country]
               .filter(Boolean)
               .join(", ") || latestUser.location,
+          links: mergedLinks,
         });
 
         // Sync following_ids into the auth store without duplicates
@@ -344,6 +475,14 @@ export function useProfileData(
     const latestUser = useAuthStore.getState().user;
     if (!latestUser) return;
 
+    const syncedLinks = await syncWebProfiles(
+      data.links ?? [],
+      latestUser.links ?? [],
+    ).catch((error) => {
+      console.error(error);
+      throw error;
+    });
+
     setUser({
       ...latestUser,
       displayName:
@@ -356,7 +495,7 @@ export function useProfileData(
       city: updatedProfile.city ?? data.city ?? latestUser.city,
       country: updatedProfile.country ?? data.country ?? latestUser.country,
       location: data.location,
-      links: data.links ?? latestUser.links ?? [],
+      links: syncedLinks,
       avatar: data.avatarFile
         ? URL.createObjectURL(data.avatarFile)
         : latestUser.avatar,

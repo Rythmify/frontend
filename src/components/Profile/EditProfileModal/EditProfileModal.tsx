@@ -173,7 +173,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             url: link.url.trim(),
             title: link.title.trim(),
           }))
-          .filter((link) => link.url || link.title),
+          .filter((link) => link.url),
       }),
     );
     onClose();

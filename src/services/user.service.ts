@@ -1,5 +1,20 @@
 import axiosInstance from "./api/axiosInstance";
 
+export type WebProfilePlatform =
+  | "instagram"
+  | "twitter"
+  | "youtube"
+  | "tiktok"
+  | "soundcloud"
+  | "website"
+  | "other";
+
+export interface WebProfile {
+  id: string;
+  platform: WebProfilePlatform;
+  url: string;
+}
+
 export interface OwnUser {
   id: string;
   email: string;
@@ -50,6 +65,11 @@ export interface PublicUser {
     title: string;
     isSupport?: boolean;
   }>;
+}
+
+export interface WebProfileListResponse {
+  data: WebProfile[];
+  pagination: ListMeta;
 }
 
 export interface UserSummary {
@@ -114,6 +134,32 @@ export async function getMyProfile(): Promise<OwnUser> {
 export async function getUserById(userId: string): Promise<PublicUser> {
   const res = await axiosInstance.get<{ data: PublicUser }>(`/users/${userId}`);
   return res.data.data;
+}
+
+export async function getMyWebProfiles(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<WebProfile[]> {
+  const res = await axiosInstance.get<WebProfileListResponse>(
+    "/users/me/web-profiles",
+    { params },
+  );
+  return res.data.data;
+}
+
+export async function addWebProfile(payload: {
+  platform: WebProfilePlatform;
+  url: string;
+}): Promise<WebProfile> {
+  const res = await axiosInstance.post<{ data: WebProfile }>(
+    "/users/me/web-profiles",
+    payload,
+  );
+  return res.data.data;
+}
+
+export async function deleteWebProfile(profileId: string): Promise<void> {
+  await axiosInstance.delete(`/users/me/web-profiles/${profileId}`);
 }
 
 /**
