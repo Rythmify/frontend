@@ -39,8 +39,9 @@ export interface NotificationPreferences {
   recommended_content_in_app: boolean;
   recommended_content_push: boolean;
   recommended_content_email: boolean;
-  new_message_in_app: boolean;
+  new_message_email: boolean;
   new_message_push: boolean;
+  messages_from: "everyone" | "followers_only" | "nobody";
   feature_updates_push: boolean;
   feature_updates_email: boolean;
   surveys_and_feedback_push: boolean;
