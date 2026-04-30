@@ -222,7 +222,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 />
               ) : (
                 <span
-                  className={`text-6xl sm:text-8xl font-bold text-bg transition-opacity ${hoveringAvatar ? "opacity-30" : "opacity-100"}`}
+                  className={`text-6xl sm:text-8xl font-bold text-white transition-opacity ${hoveringAvatar ? "opacity-30" : "opacity-100"}`}
                 >
                   {username.charAt(0).toUpperCase()}
                 </span>
