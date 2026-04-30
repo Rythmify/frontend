@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import PlaylistSidebar from "../PlaylistSidebar";
 import PlaylistComponent from "../PlaylistComponent";
 import { getPlaylistsByUser } from "@/services/api/playlist/playlist.service";
+import { getUserById } from "@/services/user.service";
 import { usePlayerStore } from "@/stores/player.store";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -14,8 +15,14 @@ vi.mock("@/services/api/playlist/playlist.service", () => ({
   getPlaylistsByUser: vi.fn(),
 }));
 
+vi.mock("@/services/user.service", () => ({
+  getUserById: vi.fn(),
+}));
+
 vi.mock("@/stores/auth.store", () => ({
-  useAuthStore: vi.fn(),
+  useAuthStore: Object.assign(vi.fn(), {
+    subscribe: vi.fn(),
+  }),
 }));
 
 vi.mock("@/stores/player.store", () => ({
@@ -68,6 +75,11 @@ describe("PlaylistSidebar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useAuthStore).mockReturnValue({ user: mockUser } as any);
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "u-1",
+      username: "testuser",
+      display_name: "Test User",
+    } as any);
     vi.mocked(getPlaylistsByUser).mockResolvedValue({
       data: { items: sidebarPlaylists, meta: { total: 2 } },
     } as any);
@@ -102,15 +114,17 @@ describe("PlaylistSidebar", () => {
     expect(screen.getByText("View all")).toBeInTheDocument();
   });
 
-  it("navigates 'View all' to the user's sets page", () => {
+  it("navigates 'View all' to the user's sets page", async () => {
     render(
       <MemoryRouter>
         <PlaylistSidebar playlist={mockPlaylistDetails as any} />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("link", { name: "View all" })).toHaveAttribute(
-      "href",
-      "/u-1/sets",
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "View all" })).toHaveAttribute(
+        "href",
+        "/testuser",
+      ),
     );
   });
 

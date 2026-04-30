@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PlaylistSidebarForYou from "../Made for you/PlaylistSidebarForYou";
+import { getUserById } from "@/services/user.service";
 
 vi.mock("@/components/UI/FollowButton", () => ({
   default: ({
@@ -19,6 +20,10 @@ vi.mock("@/components/UI/FollowButton", () => ({
 
 vi.mock("@/components/UI/GoMobile", () => ({
   default: () => <div data-test="go-mobile-section" />,
+}));
+
+vi.mock("@/services/user.service", () => ({
+  getUserById: vi.fn(),
 }));
 
 const mockPlaylist = {
@@ -49,6 +54,14 @@ const featuredArtists = [
 ] as any;
 
 describe("PlaylistSidebarForYou", () => {
+  beforeEach(() => {
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "artist-one",
+      username: "artist-one",
+      display_name: "Artist One",
+    } as any);
+  });
+
   it("renders featured artists with the shared follow button", () => {
     render(
       <MemoryRouter>

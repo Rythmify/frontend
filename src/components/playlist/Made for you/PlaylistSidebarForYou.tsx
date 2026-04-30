@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { FaMusic, FaUserFriends } from "react-icons/fa";
 import type { PlaylistDetails } from "../../../services/api/playlist/playlist.service";
 import type { MockUser } from "../../../services/mocks/users";
+import { getUserById, type PublicUser } from "@/services/user.service";
 import GoMobileSection from "@/components/UI/GoMobile";
 import FollowButton from "@/components/UI/FollowButton";
 import UserAvatar from "@/components/UI/UserAvatar";
@@ -18,6 +19,56 @@ interface PlaylistSidebarProps {
   showReposts?: boolean;
 }
 
+type ArtistCardData = {
+  id: string | number;
+  username: string;
+  displayName: string;
+  avatarUrl: string;
+  followerCount: number;
+  trackCount: number;
+  isFollowing: boolean;
+};
+
+function buildArtistsFromTracks(playlist: PlaylistDetails): ArtistCardData[] {
+  const artists = new Map<string, ArtistCardData>();
+
+  for (const track of playlist.tracks ?? []) {
+    const rawKey =
+      track.artist_id?.trim() ||
+      track.artist_username?.trim() ||
+      track.artist_name?.trim();
+    if (!rawKey) continue;
+
+    const key = rawKey.toLowerCase();
+    const displayName =
+      track.artist_name?.trim() ||
+      track.artist_username?.trim() ||
+      "Unknown Artist";
+    const username =
+      track.artist_username?.trim() ||
+      (track.artist_name?.trim() || "").toLowerCase().replace(/\s+/g, "-") ||
+      rawKey;
+
+    const existing = artists.get(key);
+    if (existing) {
+      existing.trackCount += 1;
+      continue;
+    }
+
+    artists.set(key, {
+      id: track.artist_id ?? track.artist_username ?? rawKey,
+      username,
+      displayName,
+      avatarUrl: `https://picsum.photos/seed/${encodeURIComponent(key)}/100/100`,
+      followerCount: 0,
+      trackCount: 1,
+      isFollowing: false,
+    });
+  }
+
+  return Array.from(artists.values()).slice(0, 3);
+}
+
 export default function PlaylistSidebar({
   playlist,
   featuredArtists,
@@ -27,63 +78,73 @@ export default function PlaylistSidebar({
   showLikes = false,
   showReposts = false,
 }: PlaylistSidebarProps) {
+  const [artistsToShow, setArtistsToShow] = useState<ArtistCardData[]>(() =>
+    Array.isArray(featuredArtists) && featuredArtists.length > 0
+      ? featuredArtists.slice(0, 3)
+      : buildArtistsFromTracks(playlist),
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (Array.isArray(featuredArtists) && featuredArtists.length > 0) {
+      setArtistsToShow(featuredArtists.slice(0, 3));
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const baseArtists = buildArtistsFromTracks(playlist);
+    setArtistsToShow(baseArtists);
+
+    const idsToResolve: string[] = [];
+    for (const track of playlist.tracks ?? []) {
+      const artistId = track.artist_id?.trim();
+      if (!artistId || track.artist_username?.trim()) continue;
+      if (!idsToResolve.includes(artistId)) {
+        idsToResolve.push(artistId);
+      }
+    }
+
+    if (!idsToResolve.length) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    (async () => {
+      const resolved = await Promise.all(
+        idsToResolve.map((id) => getUserById(id).catch(() => null)),
+      );
+
+      if (cancelled) return;
+
+      const profiles = new Map(
+        resolved.filter((user): user is PublicUser => Boolean(user)).map((user) => [user.id, user]),
+      );
+
+      setArtistsToShow((current) =>
+        current.map((artist) => {
+          const profile = profiles.get(String(artist.id));
+          if (!profile) return artist;
+
+          return {
+            ...artist,
+            username: profile.username ?? artist.username,
+            displayName: profile.display_name ?? artist.displayName,
+            avatarUrl: profile.profile_picture ?? artist.avatarUrl,
+          };
+        }),
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [featuredArtists, playlist]);
+
   const formatCount = (n: number | undefined) =>
     !n ? "0" : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
-
-  const artistsToShow = useMemo(() => {
-    if (Array.isArray(featuredArtists) && featuredArtists.length > 0) {
-      return featuredArtists.slice(0, 3);
-    }
-
-    const artists = new Map<
-      string,
-      {
-        id: string | number;
-        username: string;
-        displayName: string;
-        avatarUrl: string;
-        followerCount: number;
-        trackCount: number;
-        isFollowing: boolean;
-      }
-    >();
-
-    for (const track of playlist.tracks ?? []) {
-      const rawKey =
-        track.artist_id?.trim() ||
-        track.artist_username?.trim() ||
-        track.artist_name?.trim();
-      if (!rawKey) continue;
-
-      const key = rawKey.toLowerCase();
-      const displayName =
-        track.artist_name?.trim() ||
-        track.artist_username?.trim() ||
-        "Unknown Artist";
-      const username =
-        track.artist_username?.trim() ||
-        (track.artist_name?.trim() || "").toLowerCase().replace(/\s+/g, "-") ||
-        rawKey;
-
-      const existing = artists.get(key);
-      if (existing) {
-        existing.trackCount += 1;
-        continue;
-      }
-
-      artists.set(key, {
-        id: track.artist_id ?? track.artist_username ?? rawKey,
-        username,
-        displayName,
-        avatarUrl: `https://picsum.photos/seed/${encodeURIComponent(key)}/100/100`,
-        followerCount: 0,
-        trackCount: 1,
-        isFollowing: false,
-      });
-    }
-
-    return Array.from(artists.values()).slice(0, 3);
-  }, [featuredArtists, playlist.tracks]);
 
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>
