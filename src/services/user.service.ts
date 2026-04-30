@@ -104,6 +104,11 @@ export async function getUserById(userId: string): Promise<PublicUser> {
   return res.data.data;
 }
 
+export async function getUsernameFromId(userId: string): Promise<string> {
+  const user = await getUserById(userId);
+  return user.username ?? userId;
+}
+
 /**
  * Resolves a username to a full PublicUser profile without using /resolve.
  * Uses GET /search?type=users to find an exact username match, then fetches
