@@ -2,7 +2,7 @@
  * PlaylistComponent - reusable component for Search (Playlists tab)
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import WaveSurfer from "wavesurfer.js";
 import { FaPlay, FaPause, FaHeart, FaLock } from "react-icons/fa";
@@ -21,12 +21,16 @@ import { usePlayerStore } from "../../stores/player.store";
 import { useAuthStore } from "../../stores/auth.store";
 import { useLikesStore } from "../../stores/likes.store";
 import type { PlaylistCardData } from "../UI/PlaylistCard/PlaylistCard";
-import { audio, seekAudio, setGlobalWaveSurfer, setTrackLoadedLocally } from "../../services/audioService";
+import {
+  audio,
+  seekAudio,
+  setGlobalWaveSurfer,
+  setTrackLoadedLocally,
+} from "../../services/audioService";
 import * as engagementService from "../../services/engagement.service";
 import { getTrackWaveform } from "../../services/track.service";
 import { formatPostedAt } from "../../services/Time";
 import { toast } from "sonner";
-
 
 //  Helpers
 function fmtN(n?: number) {
@@ -51,31 +55,55 @@ function parseDur(s: string) {
 
 function buildGradients(ctx: CanvasRenderingContext2D) {
   const g = ctx.createLinearGradient(0, 0, 0, 100);
-  g.addColorStop(0, "#656666"); g.addColorStop(0.7, "#656666");
-  g.addColorStop(0.71, "#ffffff"); g.addColorStop(0.72, "#ffffff");
-  g.addColorStop(0.73, "#B1B1B1"); g.addColorStop(1, "#B1B1B1");
+  g.addColorStop(0, "#656666");
+  g.addColorStop(0.7, "#656666");
+  g.addColorStop(0.71, "#ffffff");
+  g.addColorStop(0.72, "#ffffff");
+  g.addColorStop(0.73, "#B1B1B1");
+  g.addColorStop(1, "#B1B1B1");
   const pg = ctx.createLinearGradient(0, 0, 0, 100);
-  pg.addColorStop(0, "#F6B094"); pg.addColorStop(0.7, "#F6B094");
-  pg.addColorStop(0.71, "#ffffff"); pg.addColorStop(0.72, "#ffffff");
-  pg.addColorStop(0.73, "#EB4926"); pg.addColorStop(1, "#EE772F");
+  pg.addColorStop(0, "#F6B094");
+  pg.addColorStop(0.7, "#F6B094");
+  pg.addColorStop(0.71, "#ffffff");
+  pg.addColorStop(0.72, "#ffffff");
+  pg.addColorStop(0.73, "#EB4926");
+  pg.addColorStop(1, "#EE772F");
   return { g, pg };
 }
 
-//  Shared button 
+//  Shared button
 const SC_BTN: React.CSSProperties = {
-  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-  height: 32, padding: "0 12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  height: 32,
+  padding: "0 12px",
   background: "#222",
-  border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4,
-  cursor: "pointer", color: "#fff",
-  fontSize: 13, fontWeight: 600,
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 4,
+  cursor: "pointer",
+  color: "#fff",
+  fontSize: 13,
+  fontWeight: 600,
   transition: "background 0.15s",
   minWidth: 32,
 };
 
-function ScBtn({ icon, label, tooltip, onClick, active = false, dataTest }: {
-  icon: React.ReactNode; label?: string; tooltip?: string;
-  onClick?: () => void; active?: boolean; dataTest?: string;
+function ScBtn({
+  icon,
+  label,
+  tooltip,
+  onClick,
+  active = false,
+  dataTest,
+}: {
+  icon: React.ReactNode;
+  label?: string;
+  tooltip?: string;
+  onClick?: () => void;
+  active?: boolean;
+  dataTest?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -85,18 +113,36 @@ function ScBtn({ icon, label, tooltip, onClick, active = false, dataTest }: {
         onClick={onClick}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        style={{ ...SC_BTN, color: active ? "var(--color-accent,#eb4926)" : "#fff", background: hovered ? "#333" : "#222" }}
+        style={{
+          ...SC_BTN,
+          color: active ? "var(--color-accent,#eb4926)" : "#fff",
+          background: hovered ? "#333" : "#222",
+        }}
       >
         {icon}
-        {label != null && <span style={{ fontSize: 13, fontWeight: 600 }}>{label}</span>}
+        {label != null && (
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{label}</span>
+        )}
       </button>
       {tooltip && hovered && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
-          background: "#222", color: "#fff", fontSize: 11, fontWeight: 600,
-          padding: "4px 10px", borderRadius: 3, zIndex: 9999,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.5)", whiteSpace: "nowrap", pointerEvents: "none",
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#222",
+            color: "#fff",
+            fontSize: 11,
+            fontWeight: 600,
+            padding: "4px 10px",
+            borderRadius: 3,
+            zIndex: 9999,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+          }}
+        >
           {tooltip}
         </div>
       )}
@@ -122,7 +168,14 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
 
     const initWaveform = async () => {
       if (!containerRef.current) return;
-      if (wsRef.current) { try { wsRef.current.destroy(); } catch { /* ok */ } wsRef.current = null; }
+      if (wsRef.current) {
+        try {
+          wsRef.current.destroy();
+        } catch {
+          /* ok */
+        }
+        wsRef.current = null;
+      }
 
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
@@ -200,18 +253,69 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
 
     return () => {
       isMounted = false;
-      try { if (ws) ws.destroy(); } catch { /* ok */ }
+      try {
+        if (ws) ws.destroy();
+      } catch {
+        /* ok */
+      }
       wsRef.current = null;
     };
   }, [isActive, track.id, track.audioUrl]);
 
   return (
-    <div data-test="playlist-component-waveform" style={{ position: "relative", width: "100%" }}>
-      <div style={{ position: "relative", cursor: isActive ? "pointer" : "default" }}>
+    <div
+      data-test="playlist-component-waveform"
+      style={{ position: "relative", width: "100%" }}
+    >
+      <div
+        style={{
+          position: "relative",
+          cursor: isActive ? "pointer" : "default",
+        }}
+      >
         <div ref={containerRef} style={{ transform: "scaleY(-1)" }} />
-        <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.08)", pointerEvents: "none", opacity: 0.5, borderRadius: 2 }} />
-        <div ref={timeRef} style={{ position: "absolute", left: 0, top: "55%", transform: "translateY(-50%)", fontSize: 11, background: "rgba(0,0,0,0.75)", color: "#fff", padding: "2px", zIndex: 10 }}>0:00</div>
-        <div ref={durRef} style={{ position: "absolute", right: 0, top: "55%", transform: "translateY(-50%)", fontSize: 11, background: "rgba(0,0,0,0.75)", color: "#fff", padding: "2px", zIndex: 10 }}>0:00</div>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(255,255,255,0.08)",
+            pointerEvents: "none",
+            opacity: 0.5,
+            borderRadius: 2,
+          }}
+        />
+        <div
+          ref={timeRef}
+          style={{
+            position: "absolute",
+            left: 0,
+            top: "55%",
+            transform: "translateY(-50%)",
+            fontSize: 11,
+            background: "rgba(0,0,0,0.75)",
+            color: "#fff",
+            padding: "2px",
+            zIndex: 10,
+          }}
+        >
+          0:00
+        </div>
+        <div
+          ref={durRef}
+          style={{
+            position: "absolute",
+            right: 0,
+            top: "55%",
+            transform: "translateY(-50%)",
+            fontSize: 11,
+            background: "rgba(0,0,0,0.75)",
+            color: "#fff",
+            padding: "2px",
+            zIndex: 10,
+          }}
+        >
+          0:00
+        </div>
       </div>
     </div>
   );
@@ -226,7 +330,13 @@ interface TrackRowProps {
   onPlay: () => void;
 }
 
-function TrackRow({ track, index, isActiveRow, isPlayingRow, onPlay }: TrackRowProps) {
+function TrackRow({
+  track,
+  index,
+  isActiveRow,
+  isPlayingRow,
+  onPlay,
+}: TrackRowProps) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -235,7 +345,9 @@ function TrackRow({ track, index, isActiveRow, isPlayingRow, onPlay }: TrackRowP
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: "flex", alignItems: "center", gap: 10,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
         padding: "6px 0",
         borderTop: "1px solid rgba(255,255,255,0.04)",
         cursor: "pointer",
@@ -250,8 +362,20 @@ function TrackRow({ track, index, isActiveRow, isPlayingRow, onPlay }: TrackRowP
         {hovered || isActiveRow ? (
           <button
             data-test={`playlist-component-track-row-play-${index}`}
-            onClick={(e) => { e.stopPropagation(); onPlay(); }}
-            style={{ background: "none", border: "none", cursor: "pointer", color: isActiveRow ? "#eb4926" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay();
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: isActiveRow ? "#eb4926" : "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+            }}
           >
             {isPlayingRow ? <FaPause size={10} /> : <FaPlay size={10} />}
           </button>
@@ -261,35 +385,90 @@ function TrackRow({ track, index, isActiveRow, isPlayingRow, onPlay }: TrackRowP
       </div>
 
       {/* Thumbnail */}
-      <div style={{ width: 32, height: 32, borderRadius: 2, overflow: "hidden", flexShrink: 0, background: "#1a1a1a" }}>
-        {track.coverUrl
-          ? <img src={track.coverUrl} alt={track.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#2d2d2d,#111)" }} />
-        }
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 2,
+          overflow: "hidden",
+          flexShrink: 0,
+          background: "#1a1a1a",
+        }}
+      >
+        {track.coverUrl ? (
+          <img
+            src={track.coverUrl}
+            alt={track.title}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              background: "linear-gradient(135deg,#2d2d2d,#111)",
+            }}
+          />
+        )}
       </div>
 
       {/* Artist & title */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, color: "#999", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div
+          style={{
+            fontSize: 12,
+            color: "#999",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {track.artistName}
         </div>
-        <div style={{
-          fontSize: 13, fontWeight: 600,
-          color: isActiveRow ? "#eb4926" : "#fff",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: isActiveRow ? "#eb4926" : "#fff",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {track.title}
         </div>
       </div>
 
       {/* Play count */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#666", fontSize: 12, flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          color: "#666",
+          fontSize: 12,
+          flexShrink: 0,
+        }}
+      >
         <FaPlayCount size={9} />
         {fmtN(track.playCount)}
       </div>
 
       {/* Duration */}
-      <div style={{ fontSize: 12, color: "#666", flexShrink: 0, minWidth: 36, textAlign: "right" }}>
+      <div
+        style={{
+          fontSize: 12,
+          color: "#666",
+          flexShrink: 0,
+          minWidth: 36,
+          textAlign: "right",
+        }}
+      >
         {track.duration}
       </div>
     </div>
@@ -304,6 +483,10 @@ export interface PlaylistComponentProps {
   onCopyLink?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  urlSegment?: "sets" | "album";
+  variant?: "default" | "compact";
+  isEmbedded?: boolean;
+  uniqueId?: string;
 }
 
 export default function PlaylistComponent({
@@ -312,59 +495,66 @@ export default function PlaylistComponent({
   onCopyLink,
   onEdit,
   onDelete,
+  urlSegment = "sets",
+  variant = "default",
+  isEmbedded = false,
+  uniqueId,
 }: PlaylistComponentProps) {
-  const { currentTrack, isPlaying, setTrack, togglePlay, addTracksNext } = usePlayerStore();
+  const {
+    currentTrack,
+    isPlaying,
+    setTrack,
+    togglePlay,
+    addTracksNext,
+    activeSourceId,
+  } = usePlayerStore();
   const { user } = useAuthStore();
+
+  const instanceId = useMemo(
+    () =>
+      uniqueId ??
+      `playlist-instance-${Math.random().toString(36).substr(2, 9)}`,
+    [uniqueId],
+  );
 
   const isOwner = !!user && user.username === playlist.creatorUsername;
 
   const firstTrack = playlist.tracks[0] ?? null;
 
   // The "active" track for this component: whichever playlist track is currently playing
-  const activeTrack = playlist.tracks.find((t) => t.id === currentTrack?.id) ?? null;
+  // AND this specific instance was the one that started it.
+  const isMatch = !activeSourceId || activeSourceId === instanceId;
+  const activeTrack = isMatch
+    ? (playlist.tracks.find((t) => t.id === currentTrack?.id) ?? null)
+    : null;
   const isComponentActive = !!activeTrack;
   const componentIsPlaying = isComponentActive && isPlaying;
 
-  const { 
-    isPlaylistLiked, 
-    togglePlaylist, 
-    isPlaylistReposted, 
+  const {
+    isPlaylistLiked,
+    togglePlaylist,
+    isPlaylistReposted,
     togglePlaylistRepost,
     getItemStats,
-    updateItemStats 
+    updateItemStats,
   } = useLikesStore();
 
   const globalStats = getItemStats(playlist.id);
   const liked = isPlaylistLiked(playlist.id);
-  const reposted = isPlaylistReposted(playlist.id) || (globalStats.isReposted ?? false);
+  const reposted =
+    isPlaylistReposted(playlist.id) || (globalStats.isReposted ?? false);
 
   const likeCount = globalStats.likeCount ?? playlist.likeCount ?? 0;
   const repostCount = globalStats.repostCount ?? playlist.repostCount ?? 0;
 
   const [showSharePopup, setShowSharePopup] = useState(false);
 
-  // Synthetic Track object fed to SharePopup
-  const shareTrack = {
-    id: `playlist-${playlist.id}`,
-    title: playlist.title,
-    artistName: playlist.creatorName,
-    artistUsername: playlist.creatorUsername,
-    coverUrl: playlist.coverUrl ?? firstTrack?.coverUrl ?? "",
-    audioUrl: firstTrack?.audioUrl ?? "",
-    duration: firstTrack?.duration ?? "0:00",
-    waveformData: firstTrack?.waveformData,
-    playCount: playlist.tracks.reduce((acc, t) => acc + (t.playCount ?? 0), 0),
-    genre: firstTrack?.genre ?? "",
-    likeCount: playlist.likeCount ?? 0,
-    repostCount: playlist.repostCount ?? 0,
-  } as unknown as Track;
-
   useEffect(() => {
     if (globalStats.likeCount === undefined) {
       updateItemStats(playlist.id, {
         likeCount: playlist.likeCount,
         repostCount: playlist.repostCount,
-        isReposted: !!reposted
+        isReposted: !!reposted,
       });
     }
   }, [playlist.id]);
@@ -399,12 +589,18 @@ export default function PlaylistComponent({
     }
 
     try {
-      await togglePlaylistRepost(playlist.id, { repostCount: playlist.repostCount });
+      await togglePlaylistRepost(playlist.id, {
+        repostCount: playlist.repostCount,
+      });
     } catch (err: any) {
       if (err.response?.status === 404) {
-        toast.error("Reposting is not supported by the Rythmify backend API yet!");
+        toast.error(
+          "Reposting is not supported by the Rythmify backend API yet!",
+        );
       } else if (err.response?.status === 401) {
-        toast.error("Session expired or unauthorized. Please log out and back in.");
+        toast.error(
+          "Session expired or unauthorized. Please log out and back in.",
+        );
       } else {
         toast.error("Failed to repost playlist");
       }
@@ -417,20 +613,89 @@ export default function PlaylistComponent({
     if (isComponentActive) {
       togglePlay();
     } else if (firstTrack) {
-      setTrack(firstTrack, playlist.tracks);
+      setTrack(firstTrack, playlist.tracks, 0, instanceId);
     }
   };
 
   const handleTrackPlay = (track: Track) => {
-    if (currentTrack?.id === track.id) {
+    if (currentTrack?.id === track.id && isComponentActive) {
       togglePlay();
     } else {
-      setTrack(track, playlist.tracks);
+      setTrack(track, playlist.tracks, 0, instanceId);
     }
   };
 
   // Track shown in waveform: currently active track in the playlist, or first track
   const waveformTrack = activeTrack ?? firstTrack;
+
+  if (variant === "compact") {
+    return (
+      <div
+        data-test="playlist-component-compact"
+        className="flex items-center gap-3 p-3 bg-[#1a1a1a] border border-white/5 rounded-lg group/compact"
+      >
+        <div className="relative w-12 h-12 shrink-0 rounded overflow-hidden bg-[#333]">
+          {playlist.coverUrl ? (
+            <img
+              src={playlist.coverUrl}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-zinc-700 to-black" />
+          )}
+          <button
+            onClick={handlePlayPause}
+            className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/compact:opacity-100 transition-opacity"
+          >
+            {componentIsPlaying ? (
+              <FaPause size={12} className="text-white" />
+            ) : (
+              <FaPlay size={12} className="text-white ml-0.5" />
+            )}
+          </button>
+        </div>
+        <div className="flex-1 min-w-0">
+          <Link
+            to={`/${playlist.creatorUsername}/sets/${playlist.playlistSlug}`}
+            className="block text-sm font-bold text-white hover:text-[#f50] truncate"
+          >
+            {playlist.title}
+          </Link>
+          <div className="flex items-center gap-2 text-xs text-white/50">
+            <Link
+              to={`/${playlist.creatorUsername}`}
+              className="hover:text-white truncate"
+            >
+              {playlist.creatorName}
+            </Link>
+            <span>•</span>
+            <span>{playlist.trackCount} tracks</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-white/40">
+          <button
+            onClick={handleLike}
+            className={`p-1.5 hover:text-white transition-colors ${liked ? "text-[#f50]" : ""}`}
+          >
+            <FaHeart size={14} />
+          </button>
+          <button
+            onClick={() => setShowSharePopup(true)}
+            className="p-1.5 hover:text-white transition-colors"
+          >
+            <HiArrowUpOnSquare size={16} />
+          </button>
+        </div>
+        {showSharePopup && (
+          <SharePopup
+            playlist={playlist}
+            onClose={() => setShowSharePopup(false)}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -442,32 +707,40 @@ export default function PlaylistComponent({
         data-test="playlist-component-cover"
         className="relative w-20 h-20 sm:w-[160px] sm:h-[160px] shrink-0 rounded overflow-hidden bg-[#1a1a1a]"
       >
-        {playlist.coverUrl
-          ? <img src={playlist.coverUrl} alt={playlist.title} className="w-full h-full object-cover block" />
-          : (
-            // Mosaic fallback: first 4 track covers
-            <div className="grid grid-cols-2 w-full h-full">
-              {[0, 1, 2, 3].map((i) => {
-                const t = playlist.tracks[i];
-                return (
-                  <div key={i} className="bg-[#1a1a1a] overflow-hidden">
-                    {t?.coverUrl && (
-                      <img src={t.coverUrl} alt="" className="w-full h-full object-cover block" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )
-        }
+        {playlist.coverUrl ? (
+          <img
+            src={playlist.coverUrl}
+            alt={playlist.title}
+            className="w-full h-full object-cover block"
+          />
+        ) : (
+          // Mosaic fallback: first 4 track covers
+          <div className="grid grid-cols-2 w-full h-full">
+            {[0, 1, 2, 3].map((i) => {
+              const t = playlist.tracks[i];
+              return (
+                <div key={i} className="bg-[#1a1a1a] overflow-hidden">
+                  {t?.coverUrl && (
+                    <img
+                      src={t.coverUrl}
+                      alt=""
+                      className="w-full h-full object-cover block"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Play overlay */}
         <button
           data-test="playlist-component-play-btn"
           onClick={handlePlayPause}
-          className={`absolute inset-0 flex items-center justify-center transition-background duration-150 ${componentIsPlaying ? 'bg-black/45' : 'bg-transparent hover:bg-black/45'}`}
+          className={`absolute inset-0 flex items-center justify-center transition-background duration-150 ${componentIsPlaying ? "bg-black/45" : "bg-transparent hover:bg-black/45"}`}
         >
-          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center shadow-xl transition-opacity duration-150 play-icon-circle ${componentIsPlaying ? 'opacity-100' : 'opacity-0'}`}
+          <div
+            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center shadow-xl transition-opacity duration-150 play-icon-circle ${componentIsPlaying ? "opacity-100" : "opacity-0"}`}
           >
             {componentIsPlaying ? (
               <FaPause className="text-[#111] text-[10px] sm:text-[13px]" />
@@ -490,7 +763,6 @@ export default function PlaylistComponent({
 
       {/* Right column */}
       <div className="flex-1 min-w-0 flex flex-col justify-center sm:justify-start gap-1 sm:gap-1.5">
-
         {/* Row 1: creator / repostedBy  ·  title  ·  timestamp */}
         <div className="flex flex-col sm:flex-row items-start justify-between gap-0.5 sm:gap-4">
           <div className="flex-1 min-w-0">
@@ -529,7 +801,10 @@ export default function PlaylistComponent({
 
           {/* Timestamp + track count */}
           <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1.5 shrink-0">
-            <span data-test="playlist-component-posted-at" className="text-[10px] sm:text-xs text-white/40">
+            <span
+              data-test="playlist-component-posted-at"
+              className="text-[10px] sm:text-xs text-white/40"
+            >
               {formatPostedAt(playlist.postedAt)}
             </span>
             <span
@@ -546,28 +821,49 @@ export default function PlaylistComponent({
           <div className="hidden md:block mt-4">
             <PlaylistWaveform
               track={waveformTrack}
-              isActive={!!(activeTrack && activeTrack.id === waveformTrack.id)}
+              isActive={
+                !!(activeTrack && activeTrack.id === waveformTrack.id) &&
+                !isEmbedded
+              }
             />
           </div>
         )}
 
         {/* Track list - Hidden on mobile for professional look */}
         {playlist.tracks.length > 0 && (
-          <div data-test="playlist-component-track-list" className="hidden md:block mt-4 space-y-1">
+          <div
+            data-test="playlist-component-track-list"
+            className="hidden md:block mt-4 space-y-1"
+          >
             {playlist.tracks.slice(0, 5).map((t, i) => (
               <TrackRow
                 key={t.id}
                 track={t}
                 index={i}
-                isActiveRow={currentTrack?.id === t.id}
-                isPlayingRow={currentTrack?.id === t.id && isPlaying}
+                isActiveRow={
+                  !!(
+                    currentTrack?.id &&
+                    t.id &&
+                    currentTrack.id === t.id &&
+                    isMatch
+                  )
+                }
+                isPlayingRow={
+                  !!(
+                    currentTrack?.id &&
+                    t.id &&
+                    currentTrack.id === t.id &&
+                    isPlaying &&
+                    isMatch
+                  )
+                }
                 onPlay={() => handleTrackPlay(t)}
               />
             ))}
             {playlist.trackCount > 5 && (
               <Link
                 data-test="playlist-component-view-all-link"
-                to={`/${playlist.creatorUsername}/sets/${playlist.playlistSlug ?? ""}`}
+                to={`/${playlist.creatorUsername}/${urlSegment}/${playlist.playlistSlug ?? ""}`}
                 className="inline-block text-xs text-white/40 hover:text-white transition-colors mt-2"
               >
                 View all {playlist.trackCount} tracks →
@@ -581,27 +877,65 @@ export default function PlaylistComponent({
           <div className="flex flex-wrap items-center gap-2">
             {!isOwner ? (
               <>
-                <ScBtn icon={<FaHeart size={13} />} label={fmtN(likeCount)} active={liked} tooltip="Like" onClick={handleLike} dataTest="playlist-component-btn-like" />
-                <ScBtn icon={<BiRepost size={18} />} label={fmtN(repostCount)} active={reposted} tooltip="Repost" onClick={handleRepost} dataTest="playlist-component-btn-repost" />
+                <ScBtn
+                  icon={<FaHeart size={13} />}
+                  label={fmtN(likeCount)}
+                  active={liked}
+                  tooltip="Like"
+                  onClick={handleLike}
+                  dataTest="playlist-component-btn-like"
+                />
+                <ScBtn
+                  icon={<BiRepost size={18} />}
+                  label={fmtN(repostCount)}
+                  active={reposted}
+                  tooltip="Repost"
+                  onClick={handleRepost}
+                  dataTest="playlist-component-btn-repost"
+                />
               </>
             ) : (
               <>
-                <ScBtn icon={<LuPencil size={14} />} label="Edit" onClick={onEdit} tooltip="Edit Playlist" dataTest="playlist-component-btn-edit" />
-                <ScBtn icon={<LuTrash2 size={14} />} label="Delete" onClick={onDelete} tooltip="Delete Playlist" dataTest="playlist-component-btn-delete" />
+                <ScBtn
+                  icon={<LuPencil size={14} />}
+                  label="Edit"
+                  onClick={onEdit}
+                  tooltip="Edit Playlist"
+                  dataTest="playlist-component-btn-edit"
+                />
+                <ScBtn
+                  icon={<LuTrash2 size={14} />}
+                  label="Delete"
+                  onClick={onDelete}
+                  tooltip="Delete Playlist"
+                  dataTest="playlist-component-btn-delete"
+                />
               </>
             )}
-            <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowSharePopup(true)} dataTest="playlist-component-btn-share" />
-            <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} dataTest="playlist-component-btn-copy" />
-            <ScBtn 
-              icon={<MdQueueMusic size={17} />} 
-              tooltip="Add to Next up" 
+            <ScBtn
+              icon={<HiArrowUpOnSquare size={17} />}
+              tooltip="Share"
+              onClick={() => setShowSharePopup(true)}
+              dataTest="playlist-component-btn-share"
+            />
+            <ScBtn
+              icon={<LuCopy size={14} />}
+              tooltip="Copy Link"
+              onClick={onCopyLink}
+              dataTest="playlist-component-btn-copy"
+            />
+            <ScBtn
+              icon={<MdQueueMusic size={17} />}
+              tooltip="Add to Next up"
               onClick={() => {
                 if (playlist.tracks.length > 0) {
                   addTracksNext(playlist.tracks);
-                  toast.success(`Playlist "${playlist.title}" added to Next up`);
+                  toast.success(
+                    `Playlist "${playlist.title}" added to Next up`,
+                  );
                 }
-              }} 
-              dataTest="playlist-component-btn-add-to-next" 
+              }}
+              dataTest="playlist-component-btn-add-to-next"
             />
           </div>
 
@@ -609,7 +943,9 @@ export default function PlaylistComponent({
           <div className="flex items-center gap-1.5 text-xs text-white/40">
             <FaPlayCount size={10} />
             <span data-test="playlist-component-total-plays">
-              {fmtN(playlist.tracks.reduce((acc, t) => acc + (t.playCount ?? 0), 0))}
+              {fmtN(
+                playlist.tracks.reduce((acc, t) => acc + (t.playCount ?? 0), 0),
+              )}
             </span>
           </div>
         </div>
@@ -620,9 +956,11 @@ export default function PlaylistComponent({
         }
       `}</style>
 
-      {/* Share popup */}
       {showSharePopup && (
-        <SharePopup track={shareTrack} onClose={() => setShowSharePopup(false)} />
+        <SharePopup
+          playlist={playlist}
+          onClose={() => setShowSharePopup(false)}
+        />
       )}
     </div>
   );

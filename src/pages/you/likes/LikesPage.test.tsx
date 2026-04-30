@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import LikesPage from "@/pages/you/likes/LikesPage";
 import type { Track } from "@/types/track";
-import { getMyLikedTracks } from "@/services/user.service";
+import { getMyLikedTracks, getUserLikedTracks } from "@/services/user.service";
 
 const { mockNavigate, mockTrack, mockAlbum, mockPlaylistCard, mockLikesState, mockSetState } =
   vi.hoisted(() => {
@@ -142,6 +142,22 @@ vi.mock("@/services/user.service", () => ({
     profile_picture: null,
     username: "travis-scott",
   }),
+  getUserLikedTracks: vi.fn().mockResolvedValue({
+    items: [
+      {
+        id: "track-2",
+        title: "Public Like",
+        artist_name: "Artist Two",
+        cover_image: null,
+        stream_url: null,
+        duration: 180,
+        play_count: 8,
+        like_count: 2,
+        genre: "Pop",
+      },
+    ],
+    pagination: { limit: 100, offset: 0, total: 1 },
+  }),
 }));
 
 vi.mock("@/components/Profile/ShareModal/ShareModal", () => ({
@@ -274,6 +290,25 @@ describe("LikesPage", () => {
     );
   });
 
+  it("renders public liked tracks for non-owner", async () => {
+    (useParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      username: "travis-scott",
+    });
+    (useLocation as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      pathname: "/travis-scott/likes",
+    });
+
+    render(<LikesPage />);
+
+    await waitFor(() => {
+      expect(getUserLikedTracks).toHaveBeenCalledWith("travis-scott", {
+        limit: 100,
+      });
+    });
+
+    expect(screen.getByTestId("likes-content")).toHaveTextContent("Public Like");
+  });
+
   it("renders liked tracks, playlists, and albums for owner", () => {
     render(<LikesPage />);
 
@@ -305,7 +340,11 @@ describe("LikesPage", () => {
     );
   });
 
-  it("shows empty state for non-owner", () => {
+  it("shows empty state for non-owner when there are no liked tracks", async () => {
+    vi.mocked(getUserLikedTracks).mockResolvedValueOnce({
+      items: [],
+      pagination: { limit: 100, offset: 0, total: 0 },
+    } as any);
     (useParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       username: "travis-scott",
     });
