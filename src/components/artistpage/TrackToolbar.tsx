@@ -21,7 +21,8 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2 rounded-sm border border-[#333] text-text text-sm font-bold hover:border-[#555] hover:text-text-hover transition-colors cursor-pointer bg-transparent"
+      className="flex items-center gap-1.5 p-4 rounded-lg bg-[#212121] text-[#a4a4a4] text-md font-bold hover:text-text-hover transition-colors cursor-pointer"
+      data-test={`toolbar-action-${label.toLowerCase().replace(/\s+/g, "-")}`}
     >
       {icon}
       {label}
@@ -34,7 +35,7 @@ export function TrackToolbar({ search, onSearchChange, filter, onFilterChange, t
 
   return (
     <>
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="flex flex-wrap gap-5 mb-6" data-test="track-toolbar-actions">
         <ActionButton
           icon={
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
@@ -64,7 +65,7 @@ export function TrackToolbar({ search, onSearchChange, filter, onFilterChange, t
         />
       </div>
 
-      <div className="flex items-center justify-between mb-1 gap-4 flex-wrap">
+      <div className="flex items-center justify-between mb-1 gap-4 flex-wrap" data-test="track-toolbar-filters">
         <div className="flex items-center gap-3">
           <div className="relative">
             <input
@@ -72,18 +73,19 @@ export function TrackToolbar({ search, onSearchChange, filter, onFilterChange, t
               placeholder="Search tracks"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="bg-input-bg text-text-hover text-sm pl-8 pr-3 py-1.5 rounded-sm outline-none border border-[#333] focus:border-[#555] placeholder:text-text w-48 transition-colors"
+              className="bg-bg text-text-hover text-md pl-8 px-3 py-1.5 rounded-full outline-none border border-[#e6e0e0] focus:border-[#555] placeholder:text-text w-90 transition-colors"
+              data-test="track-search-input"
             />
             <svg
               viewBox="0 0 24 24"
-              className="w-4 h-4 text-text absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+              className="w-4 h-4 text-text absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
               fill="currentColor"
             >
               <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
             </svg>
           </div>
 
-          <div className="flex rounded-sm overflow-hidden border border-[#333]">
+          <div className="flex rounded-sm overflow-hidden border border-[#333]" data-test="track-visibility-filter">
             {(["Public", "Private"] as const).map((f) => (
               <button
                 key={f}
@@ -92,6 +94,7 @@ export function TrackToolbar({ search, onSearchChange, filter, onFilterChange, t
                 className={`px-4 py-1.5 text-sm font-bold transition-colors cursor-pointer ${
                   filter === f ? "bg-input-bg text-text-hover" : "text-text hover:text-text-hover"
                 }`}
+                data-test={`filter-${f.toLowerCase()}`}
               >
                 {f}
               </button>
@@ -100,12 +103,13 @@ export function TrackToolbar({ search, onSearchChange, filter, onFilterChange, t
         </div>
 
         <div className="flex items-center gap-4 text-sm text-text">
-          <span>
+          <span data-test="track-count">
             {trackCount} track{trackCount !== 1 ? "s" : ""}
           </span>
           <button
             type="button"
             className="flex items-center gap-1 hover:text-text-hover transition-colors cursor-pointer"
+            data-test="sort-by-date-btn"
           >
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
               <path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z" />
