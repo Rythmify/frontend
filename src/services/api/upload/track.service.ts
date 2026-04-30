@@ -141,10 +141,10 @@ export async function getTrack(trackId: string) {
   return res.data;
 }
 
-/** PATCH /tracks/:id — update track metadata */
+/** PATCH /tracks/:id — update track metadata (JSON, no files) */
 export async function updateTrack(
   trackId: string,
-  payload: Partial<Omit<UploadTrackPayload, "audio_file">>,
+  payload: Partial<Omit<UploadTrackPayload, "audio_file" | "cover_image">>,
 ) {
   const res = await axiosInstance.patch<{
     data: Track;
@@ -152,6 +152,56 @@ export async function updateTrack(
   }>(`/tracks/${trackId}`, payload);
 
   return res.data;
+}
+
+/** PATCH /tracks/:id/cover — replace cover artwork (multipart/form-data) */
+export async function updateTrackCover(trackId: string, coverFile: File) {
+  const formData = new FormData();
+  formData.append("cover_image", coverFile);
+
+  const res = await axiosInstance.patch<{
+    data: Track;
+    message: string;
+  }>(`/tracks/${trackId}/cover`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return res.data;
+}
+
+/** PATCH /tracks/:id/audio — replace the audio file and re-queue processing (multipart/form-data) */
+export async function replaceTrackAudio(
+  trackId: string,
+  audioFile: File,
+  onProgress?: (pct: number) => void,
+) {
+  const formData = new FormData();
+  formData.append("audio_file", audioFile);
+
+  let fakeProgress = 0;
+  let interval: ReturnType<typeof setInterval> | null = null;
+  if (onProgress) {
+    interval = setInterval(() => {
+      fakeProgress = Math.min(fakeProgress + Math.random() * 8, 90);
+      onProgress(Math.round(fakeProgress));
+    }, 500);
+  }
+
+  try {
+    const res = await axiosInstance.patch<{
+      data: { track_id: string; status: string; audio_url: string };
+      message: string;
+    }>(`/tracks/${trackId}/audio`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (interval) clearInterval(interval);
+    onProgress?.(100);
+    return res.data;
+  } catch (err) {
+    if (interval) clearInterval(interval);
+    throw err;
+  }
 }
 
 /** DELETE /tracks/:id — delete a track */
