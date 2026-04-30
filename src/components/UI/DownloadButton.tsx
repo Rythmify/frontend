@@ -6,7 +6,6 @@ import type { Track } from "@/types/track";
 
 interface DownloadButtonProps {
   track: Track;
-
   variant?: "sc" | "icon";
 }
 
@@ -28,26 +27,6 @@ const SC_BTN: React.CSSProperties = {
   minWidth: 32,
 };
 
-// Simple CSS spinner
-function Spinner({ size = 13 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      style={{ animation: "spin 0.75s linear infinite" }}
-    >
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-      <path d="M12 2a10 10 0 0 1 10 10" />
-    </svg>
-  );
-}
-
-// Download arrow icon (outline = not downloaded)
 function DownloadOutlineIcon({ size = 14 }: { size?: number }) {
   return (
     <svg
@@ -66,7 +45,6 @@ function DownloadOutlineIcon({ size = 14 }: { size?: number }) {
   );
 }
 
-// Download arrow icon (filled = downloaded)
 function DownloadFilledIcon({ size = 14 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
@@ -82,42 +60,37 @@ export default function DownloadButton({
 }: DownloadButtonProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { isDownloaded, isDownloading, toggleDownload } = useDownloadStore();
+  const { isDownloaded, toggleDownload } = useDownloadStore();
   const [hovered, setHovered] = useState(false);
 
   const isPro = user?.isPro ?? false;
   const downloaded = isDownloaded(track.id);
-  const loading = isDownloading(track.id);
 
   const handleClick = () => {
     if (!isPro) {
       navigate("/premium");
       return;
     }
-    toggleDownload(track);
+    toggleDownload(track, isPro);
   };
 
-  const tooltip = loading
-    ? "Downloading…"
-    : !isPro
-      ? "Premium feature — upgrade to download"
-      : downloaded
-        ? "Remove download"
-        : "Save for offline";
+  const tooltip = !isPro
+    ? "Premium feature"
+    : downloaded
+      ? "Remove download"
+      : "Save for offline";
 
+  // ── Icon variant (TrackItem) ───────────────────────────────
   if (variant === "icon") {
     return (
       <button
         onClick={handleClick}
-        disabled={loading}
         title={tooltip}
         className={`w-9 h-8 cursor-pointer flex items-center justify-center rounded bg-input-bg hover:bg-border transition-colors ${
           downloaded ? "text-[#1D9E75]" : "text-text-hover"
-        } ${!isPro || loading ? "opacity-60" : ""} disabled:cursor-not-allowed`}
+        } ${!isPro ? "opacity-50" : ""}`}
       >
-        {loading ? (
-          <Spinner size={13} />
-        ) : downloaded ? (
+        {downloaded ? (
           <DownloadFilledIcon size={14} />
         ) : (
           <DownloadOutlineIcon size={14} />
@@ -126,11 +99,11 @@ export default function DownloadButton({
     );
   }
 
+  // ── SC variant (TrackCard) ─────────────────────────────────
   return (
     <div style={{ position: "relative", display: "inline-flex" }}>
       <button
         onClick={handleClick}
-        disabled={loading}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
@@ -141,20 +114,16 @@ export default function DownloadButton({
               ? "rgba(255,255,255,0.35)"
               : "#fff",
           background: hovered ? "#333" : "#222",
-          opacity: loading ? 0.7 : 1,
-          cursor: loading ? "not-allowed" : "pointer",
         }}
       >
-        {loading ? (
-          <Spinner size={13} />
-        ) : downloaded ? (
+        {downloaded ? (
           <DownloadFilledIcon size={14} />
         ) : (
           <DownloadOutlineIcon size={14} />
         )}
       </button>
 
-      {hovered && !loading && (
+      {hovered && (
         <div
           style={{
             position: "absolute",
