@@ -149,7 +149,7 @@ export default function EngagementPlaylistSidebar({
   }, [playlist.playlist_id]);
 
   return (
-    <>
+    <div className="flex flex-col gap-4">
       <AvatarStrip
         title="Likes"
         count={playlist.like_count ?? likers.length}
@@ -163,6 +163,6 @@ export default function EngagementPlaylistSidebar({
         users={reposters}
         dataTest="sidebar-reposted-by"
       />
-    </>
+    </div>
   );
 }
