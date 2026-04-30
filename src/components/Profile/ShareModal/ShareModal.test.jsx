@@ -23,13 +23,23 @@ describe("ShareModal", () => {
 
   it("shows Share tab as active by default", () => {
     render(<ShareModal url={testUrl} onClose={mockOnClose} />);
-    expect(screen.getByTestId("share-tab-share")).toHaveClass("text-white");
+    expect(screen.getByTestId("share-tab-share")).toHaveClass(
+      "text-bg-inverted",
+    );
+    expect(screen.getByTestId("share-tab-share")).toHaveClass(
+      "border-bg-inverted",
+    );
   });
 
   it("switches to Message tab on click", () => {
     render(<ShareModal url={testUrl} onClose={mockOnClose} />);
     fireEvent.click(screen.getByTestId("share-tab-message"));
-    expect(screen.getByTestId("share-tab-message")).toHaveClass("text-white");
+    expect(screen.getByTestId("share-tab-message")).toHaveClass(
+      "text-bg-inverted",
+    );
+    expect(screen.getByTestId("share-tab-message")).toHaveClass(
+      "border-bg-inverted",
+    );
   });
 
   it("shows message form when Message tab is active", () => {

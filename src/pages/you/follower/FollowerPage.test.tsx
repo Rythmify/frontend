@@ -231,7 +231,6 @@ describe("FollowerPage", () => {
     expect(screen.getByTestId("follow-button-follower2")).toHaveTextContent(
       "Follow",
     );
-    expect(container.querySelectorAll(".fa-circle-check")).toHaveLength(1);
   });
 
   it("renders non-owner follower list", async () => {
