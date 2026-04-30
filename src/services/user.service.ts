@@ -59,6 +59,7 @@ export interface PublicUser {
   followers_count: number;
   following_count: number;
   created_at: string;
+  is_user_premium?: boolean;
   links?: Array<{
     id: string;
     url: string;

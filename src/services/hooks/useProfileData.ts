@@ -519,7 +519,7 @@ export function useProfileData(
         coverUrl: profileData?.cover_photo ?? undefined,
         location: (profileData as PublicUser | null)?.location ?? "",
         role: profileData?.role ?? "listener",
-        isPro: false,
+        isPro: Boolean((profileData as PublicUser | null)?.is_user_premium),
         links: (profileData as PublicUser & { links?: ProfileLink[] } | null)
           ?.links ?? [],
         following_ids: currentUser?.following_ids ?? [],
