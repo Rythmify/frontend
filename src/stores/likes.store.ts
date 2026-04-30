@@ -13,6 +13,8 @@ import {
 import {
   likeTrack,
   unlikeTrack,
+  likeTrackRadio,
+  unlikeTrackRadio,
   likePlaylist,
   unlikePlaylist,
   likeAlbum,
@@ -45,6 +47,15 @@ export interface LikedGenre {
   cover_image: string | null;
 }
 
+export interface LikedRadioTrack {
+  seedTrackId: string;
+  playlistId: string;
+  title: string;
+  description: string;
+  coverImage: string | null;
+  track: Track;
+}
+
 interface LikesStore {
   likedTracks: Track[];
   likedStations: Station[];
@@ -52,6 +63,7 @@ interface LikesStore {
   likedAlbums: Playlist[];
   likedMixes: LikedMix[];
   likedGenres: LikedGenre[];
+  likedRadioTracks: LikedRadioTrack[];
   repostedTrackIds: string[];
   repostedPlaylistIds: string[];
   itemStats: Record<string, { playCount?: number; likeCount?: number; repostCount?: number; isReposted?: boolean }>;
@@ -67,8 +79,11 @@ interface LikesStore {
   toggleAlbum: (album: Playlist) => Promise<void>;
   toggleMix: (mix: LikedMix) => Promise<void>;
   toggleGenre: (genre: LikedGenre) => Promise<void>;
+  toggleRadioTrack: (track: Track) => Promise<void>;
 
   isTrackLiked: (id: number | string) => boolean;
+  isRadioTrackLiked: (id: number | string) => boolean;
+  getRadioPlaylistId: (id: number | string) => string | undefined;
   isTrackReposted: (id: number | string) => boolean;
   isPlaylistReposted: (id: string) => boolean;
   getItemStats: (id: number | string) => { playCount?: number; likeCount?: number; repostCount?: number; isReposted?: boolean };
@@ -91,6 +106,7 @@ const createEmptyLikesState = () => ({
   likedAlbums: [] as Playlist[],
   likedMixes: [] as LikedMix[],
   likedGenres: [] as LikedGenre[],
+  likedRadioTracks: [] as LikedRadioTrack[],
   repostedTrackIds: [] as string[],
   repostedPlaylistIds: [] as string[],
   itemStats: {} as Record<
@@ -340,6 +356,71 @@ export const useLikesStore = create<LikesStore>()(
         });
       },
 
+      toggleRadioTrack: async (track) => {
+        const seedTrackId = String(track.id);
+        const existing = get().likedRadioTracks.find(
+          (item) => item.seedTrackId === seedTrackId,
+        );
+        const isLiked = !!existing;
+
+        set((s) => ({
+          likedRadioTracks: isLiked
+            ? s.likedRadioTracks.filter((item) => item.seedTrackId !== seedTrackId)
+            : [
+                {
+                  seedTrackId,
+                  playlistId: seedTrackId,
+                  title: `${track.title} Radio`,
+                  description: `Tracks inspired by ${track.title}`,
+                  coverImage: track.coverUrl ?? null,
+                  track,
+                },
+                ...s.likedRadioTracks,
+              ],
+        }));
+
+        try {
+          if (isLiked) {
+            await unlikeTrackRadio(track.id);
+            return;
+          }
+
+          const response = await likeTrackRadio(track.id);
+          const saved = response.data;
+          set((s) => ({
+            likedRadioTracks: s.likedRadioTracks.map((item) =>
+              item.seedTrackId === seedTrackId
+                ? {
+                    ...item,
+                    playlistId: saved.playlist_id,
+                    title: saved.title,
+                    description: saved.description,
+                    coverImage: saved.cover_image ?? item.coverImage,
+                  }
+                : item,
+            ),
+          }));
+        } catch (err) {
+          set((s) => ({
+            likedRadioTracks: isLiked
+              ? [
+                  {
+                    seedTrackId,
+                    playlistId: existing?.playlistId ?? seedTrackId,
+                    title: existing?.title ?? `${track.title} Radio`,
+                    description:
+                      existing?.description ?? `Tracks inspired by ${track.title}`,
+                    coverImage: existing?.coverImage ?? track.coverUrl ?? null,
+                    track: existing?.track ?? track,
+                  },
+                  ...s.likedRadioTracks,
+                ]
+              : s.likedRadioTracks.filter((item) => item.seedTrackId !== seedTrackId),
+          }));
+          throw err;
+        }
+      },
+
       toggleAlbum: (album) => {
         const isLiked = get().likedAlbums.some(
           (a) => a.playlist_id === album.playlist_id,
@@ -369,6 +450,11 @@ export const useLikesStore = create<LikesStore>()(
 
       isTrackLiked: (id) =>
         get().likedTracks.some((t) => String(t.id) === String(id)),
+      isRadioTrackLiked: (id) =>
+        get().likedRadioTracks.some((item) => item.seedTrackId === String(id)),
+      getRadioPlaylistId: (id) =>
+        get().likedRadioTracks.find((item) => item.seedTrackId === String(id))
+          ?.playlistId,
       isTrackReposted: (id) =>
         get().repostedTrackIds.includes(String(id)) || !!get().itemStats[String(id)]?.isReposted,
       isPlaylistReposted: (id) =>
@@ -566,6 +652,7 @@ export const useLikesStore = create<LikesStore>()(
         likedAlbums: state.likedAlbums,
         likedMixes: state.likedMixes,
         likedGenres: state.likedGenres,
+        likedRadioTracks: state.likedRadioTracks,
         repostedTrackIds: state.repostedTrackIds,
         repostedPlaylistIds: state.repostedPlaylistIds,
         itemStats: state.itemStats,
