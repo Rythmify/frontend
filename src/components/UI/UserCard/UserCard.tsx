@@ -109,18 +109,12 @@ const UserCard = ({
         )}
       </div>
 
-      {/* Display Name + Verified Badge */}
+      {/* Display Name */}
       <div
         className={styles.displayName}
         data-test={`user-card-name-${user.username}`}
       >
         <span className="truncate">{user.displayName}</span>
-        {user.isVerified && (
-          <i
-            className={styles.verifiedIcon}
-            data-test={`user-card-verified-${user.username}`}
-          />
-        )}
       </div>
 
       {/* Follower Count with Icon */}

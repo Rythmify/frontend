@@ -54,6 +54,22 @@ export async function removeRepost(trackId: string | number) {
   return data;
 }
 
+export async function getTrackLikers(
+  trackId: string | number,
+  params?: { limit?: number; offset?: number },
+): Promise<{ data: { items: any[]; meta: any } }> {
+  const res = await axiosInstance.get(`/tracks/${trackId}/likers`, { params });
+  return res.data;
+}
+
+export async function getTrackReposters(
+  trackId: string | number,
+  params?: { limit?: number; offset?: number },
+): Promise<{ data: { items: any[]; meta: any } }> {
+  const res = await axiosInstance.get(`/tracks/${trackId}/reposters`, { params });
+  return res.data;
+}
+
 // ─── Liked Content Fetching ───────────────────────────────────────────────────
 
 /**
