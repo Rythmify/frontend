@@ -143,12 +143,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       newErrors.lastName = "Last name cannot be numbers only.";
     }
 
-    if (city.trim() && isNumericOnly(city)) {
-      newErrors.city = "City cannot be numbers only.";
+    if (city.trim() && /\d/.test(city)) {
+      newErrors.city = "City cannot contain numbers.";
     }
 
-    if (country.trim() && isNumericOnly(country)) {
-      newErrors.country = "Country cannot be numbers only.";
+    if (country.trim() && /\d/.test(country)) {
+      newErrors.country = "Country cannot contain numbers.";
+    } else if (country.trim() && country.trim().length > 2) {
+      newErrors.country = "Country must be 2 letters.";
     }
 
     setErrors(newErrors);

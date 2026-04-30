@@ -6,6 +6,7 @@ interface FollowButtonProps {
   username: string;
   userId?: string;
   isFollowingOverride?: boolean;
+  blocked?: boolean;
   className?: string;
 }
 
@@ -13,6 +14,7 @@ export default function FollowButton({
   username,
   userId,
   isFollowingOverride,
+  blocked = false,
   className,
 }: FollowButtonProps) {
   const { user, setUser, toggleFollow } = useAuthStore();
@@ -55,6 +57,10 @@ export default function FollowButton({
       data-test={`follow-button-${username}`}
       onClick={async (e) => {
         e.stopPropagation();
+        if (blocked && !isFollowing) {
+          window.alert("You are not able to follow this user.");
+          return;
+        }
         if (!userId) {
           toggleFollow(username);
           return;
@@ -71,6 +77,17 @@ export default function FollowButton({
             syncFollowingIds(true);
           }
         } catch (error) {
+          const message =
+            (error as any)?.response?.data?.error?.message ??
+            (error as any)?.response?.data?.message ??
+            "";
+          if (
+            (error as any)?.response?.status === 403 ||
+            /blocked/i.test(message)
+          ) {
+            window.alert("You are not able to follow this user.");
+            return;
+          }
           console.error("Failed to update follow status:", error);
         } finally {
           setIsLoading(false);
