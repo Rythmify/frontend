@@ -152,7 +152,6 @@ export default function MessageIdPage() {
       })
       .catch(() => setError("Could not load conversations."))
       .finally(() => setLoadingConvs(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ─── 2. Socket room management ───────────────────────────────────────────

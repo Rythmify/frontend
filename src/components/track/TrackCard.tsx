@@ -35,6 +35,9 @@ import * as engagementService from "../../services/engagement.service";
 import * as trackService from "../../services/track.service";
 import TrackCommentList from "../../pages/[username]/[trackSlug]/components/TrackCommentList";
 import { toast } from "sonner";
+import EditTrackModal from "./EditTrackModal";
+import DeleteTrackModal from "./DeleteTrackModal";
+import ReplaceAudioModal from "./ReplaceAudioModal";
 
 // helpers
 
@@ -488,6 +491,14 @@ export default function TrackCard({
   const [comments, setComments] = useState<Comment[]>([]);
   const [showDiscussion, setShowDiscussion] = useState(false);
 
+  // Track edit / delete modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
+  // Local overrides applied after a successful edit (so title/cover/genre update instantly)
+  const [trackPatch, setTrackPatch] = useState<Partial<Track>>({});
+  const displayTrack = { ...track, ...trackPatch };
+
   // Seed initial stats from track prop
   useEffect(() => {
     if (globalStats.likeCount === undefined) {
@@ -612,14 +623,50 @@ export default function TrackCard({
       data-test="track-card"
     >
       {showShare && (
-        <SharePopup track={track} onClose={() => setShowShare(false)} />
+        <SharePopup track={displayTrack} onClose={() => setShowShare(false)} />
+      )}
+
+      {showEditModal && (
+        <EditTrackModal
+          track={displayTrack}
+          onClose={() => setShowEditModal(false)}
+          onSaved={(updated) => {
+            setTrackPatch((prev) => ({ ...prev, ...updated }));
+            toast.success("Track updated successfully");
+          }}
+        />
+      )}
+
+      {showReplaceModal && (
+        <ReplaceAudioModal
+          trackId={track.id}
+          trackTitle={displayTrack.title}
+          onClose={() => setShowReplaceModal(false)}
+          onReplaced={() => {
+            toast.info("Audio replaced — track is processing", {
+              description: "Playback will resume once processing completes.",
+            });
+          }}
+        />
+      )}
+
+      {showDeleteModal && (
+        <DeleteTrackModal
+          trackId={track.id}
+          trackTitle={displayTrack.title}
+          onClose={() => setShowDeleteModal(false)}
+          onDeleted={() => {
+            toast.success(`"${displayTrack.title}" deleted`);
+            onDelete?.();
+          }}
+        />
       )}
 
       {/* Cover Art */}
       <div className="relative w-20 h-20 sm:w-[160px] sm:h-[160px] shrink-0 overflow-hidden rounded bg-black/40">
         <img
-          src={track.coverUrl || "https://picsum.photos/seed/rythmify/160/160"}
-          alt={track.title}
+          src={displayTrack.coverUrl || "https://picsum.photos/seed/rythmify/160/160"}
+          alt={displayTrack.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <button
@@ -665,16 +712,16 @@ export default function TrackCard({
               data-test="track-card-title-link"
               className="block text-sm sm:text-lg font-bold text-white hover:text-[#f50] transition-colors truncate"
             >
-              {track.title}
+              {displayTrack.title}
             </Link>
           </div>
           <div className="flex flex-col items-end gap-1">
             <div data-test="track-card-posted-at" className="text-[10px] sm:text-xs text-white/40 whitespace-nowrap pt-1">
               {track.postedAt}
             </div>
-            {track.genre && (
+            {displayTrack.genre && (
               <span data-test="track-card-genre" className="bg-white/10 text-white/60 text-[9px] uppercase px-1.5 py-0.5 rounded-full">
-                {track.genre}
+                {displayTrack.genre}
               </span>
             )}
           </div>
@@ -747,14 +794,14 @@ export default function TrackCard({
                 <ScBtn
                   icon={<LuPencil size={14} />}
                   label="Edit"
-                  onClick={onEdit}
+                  onClick={() => setShowEditModal(true)}
                   tooltip="Edit Track"
                   data-test="track-card-btn-edit"
                 />
                 <ScBtn
                   icon={<TbUpload size={16} />}
                   label="Replace File"
-                  onClick={onReplaceFile}
+                  onClick={() => setShowReplaceModal(true)}
                   tooltip="Replace Audio File"
                   data-test="track-card-btn-replace"
                 />
@@ -797,7 +844,7 @@ export default function TrackCard({
                   </button>
                   {isOwner && (
                     <button
-                      onClick={() => { onDelete?.(); setShowMore(false) }}
+                      onClick={() => { setShowDeleteModal(true); setShowMore(false); }}
                       className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-white/5 flex items-center gap-2"
                     >
                       <LuTrash2 size={16} /> Delete track

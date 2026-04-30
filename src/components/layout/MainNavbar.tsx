@@ -133,7 +133,6 @@ const MainNavbar = () => {
   // of the session whenever the user navigates away and back.
   useEffect(() => {
     setupSocketListeners();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Poll every 30s + refresh on tab focus as fallback ───────────────────
