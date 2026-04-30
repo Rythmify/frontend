@@ -11,9 +11,6 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  server: {
-    allowedHosts: ['sublacunose-shelley-tegularly.ngrok-free.dev'],
-  },
   test: {
     environment: 'jsdom',
     globals: true,

@@ -19,11 +19,12 @@ interface PlaylistActionsProps {
   playlist: Playlist & Partial<Pick<PlaylistDetails, "tracks">>;
   initialTracks?: PlaylistTrackItem[];
   isGeneratedPlaylist?: boolean;
-  engagementKind?: "playlist" | "mix" | "station" | "none";
+  engagementKind?: "playlist" | "mix" | "station" | "radioTracks" | "none";
   generatedPlaylistTitle?: string;
   onAddToNextUp?: () => void;
   onPlaylistUpdated?: (updated: Playlist) => void;
   isStation?: boolean;
+  radioSeedTrack?: Track;
 }
 
 export default function PlaylistActions({
@@ -35,25 +36,30 @@ export default function PlaylistActions({
   onAddToNextUp,
   onPlaylistUpdated,
   isStation = false,
+  radioSeedTrack,
 }: PlaylistActionsProps) {
   const {
     isPlaylistLiked,
     isMixLiked,
     isStationLiked,
+    isRadioTrackLiked,
     togglePlaylist,
     toggleMix,
     toggleStation,
+    toggleRadioTrack,
   } = useLikesStore();
   const { addToQueue } = usePlayerStore();
   const resolvedEngagementKind =
     engagementKind ??
     (isStation ? "station" : isGeneratedPlaylist ? "mix" : "playlist");
   const liked =
-    resolvedEngagementKind === "mix"
-      ? isMixLiked(playlist.playlist_id)
-      : resolvedEngagementKind === "station"
-        ? isStationLiked(playlist.playlist_id)
-        : isPlaylistLiked(playlist.playlist_id);
+    resolvedEngagementKind === "radioTracks"
+      ? isRadioTrackLiked(radioSeedTrack?.id ?? playlist.playlist_id)
+      : resolvedEngagementKind === "mix"
+        ? isMixLiked(playlist.playlist_id)
+        : resolvedEngagementKind === "station"
+          ? isStationLiked(playlist.playlist_id)
+          : isPlaylistLiked(playlist.playlist_id);
 
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -148,6 +154,15 @@ export default function PlaylistActions({
           id: playlist.playlist_id,
           mix_id: playlist.playlist_id,
         });
+        return;
+      }
+
+      if (resolvedEngagementKind === "radioTracks") {
+        const seedTrack = radioSeedTrack ?? (initialTracks?.[0]
+          ? toPlayerTrack(initialTracks[0])
+          : null);
+        if (!seedTrack) return;
+        await toggleRadioTrack(seedTrack);
         return;
       }
 

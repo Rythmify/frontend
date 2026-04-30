@@ -137,6 +137,52 @@ export interface StationTracksResponse {
   };
 }
 
+export interface RadioTracksResponse {
+  data: {
+    playlist_id: string;
+    seed_track_id: string;
+    title: string;
+    description: string;
+    cover_image: string | null;
+    reference_track: {
+      id: string;
+      title: string;
+      cover_image: string | null;
+      duration: number | null;
+      genre_name: string | null;
+      play_count: number;
+      like_count: number;
+      repost_count: number;
+      user_id: string;
+      artist_name: string | null;
+      stream_url: string | null;
+      created_at: string;
+      is_liked_by_me?: boolean;
+    };
+    tracks: Array<{
+      id: string;
+      title: string;
+      cover_image: string | null;
+      duration: number | null;
+      genre_name: string | null;
+      play_count: number;
+      like_count: number;
+      repost_count: number;
+      user_id: string;
+      artist_name: string | null;
+      stream_url: string | null;
+      created_at: string;
+      is_liked_by_me?: boolean;
+    }>;
+    meta: {
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+  message: string;
+}
+
 export interface MadeForYouTrackItem {
   id: string;
   title: string;
@@ -415,6 +461,14 @@ export async function getMadeForYouDaily() {
 /** GET /home/made-for-you/weekly */
 export async function getMadeForYouWeekly() {
   return getMadeForYou("weekly");
+}
+
+/** GET /playlists/{playlist_id}/radio-tracks */
+export async function getRadioTracks(playlistId: string) {
+  const res = await axiosInstance.get<RadioTracksResponse>(
+    `/playlists/${playlistId}/radio-tracks`,
+  );
+  return res.data.data;
 }
 
 /** GET /home/trending-by-genre/{genre_id} */

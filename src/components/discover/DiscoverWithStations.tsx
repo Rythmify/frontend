@@ -1,7 +1,6 @@
 import HorizontalCarousel from "./HorizontalCarousel";
 import StationCard from "@/components/UI/StationCard/StationCard";
 import { mapDiscoveryStation } from "@/services/api/discover.mapper";
-import { mockRecentlyPlayedStations } from "@/services/mocks/discover";
 import type { DiscoveryStation } from "@/services/api/discover.service";
 
 interface Props {
@@ -9,7 +8,7 @@ interface Props {
 }
 
 const DiscoverWithStations = ({ stations }: Props) => {
-  const items = stations.length ? stations.map(mapDiscoveryStation) : mockRecentlyPlayedStations;
+  const items = stations.map(mapDiscoveryStation);
 
   return (
     <div data-test="section-discover-with-stations">

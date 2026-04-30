@@ -363,6 +363,7 @@ export const usePlayerStore = create<PlayerState>()(
     }),
     {
       name: "rythmify-player-storage",
+      version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         currentTrack: state.currentTrack,
