@@ -4,7 +4,11 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PlaylistSidebar from "../PlaylistSidebar";
 import PlaylistComponent from "../PlaylistComponent";
-import { getPlaylistsByUser } from "@/services/api/playlist/playlist.service";
+import {
+  getPlaylistsByUser,
+  getPlaylistLikers,
+  getPlaylistReposters,
+} from "@/services/api/playlist/playlist.service";
 import { getUserById } from "@/services/user.service";
 import { usePlayerStore } from "@/stores/player.store";
 import { useAuthStore } from "@/stores/auth.store";
@@ -13,6 +17,8 @@ import { useAuthStore } from "@/stores/auth.store";
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
   getPlaylistsByUser: vi.fn(),
+  getPlaylistLikers: vi.fn(),
+  getPlaylistReposters: vi.fn(),
 }));
 
 vi.mock("@/services/user.service", () => ({
@@ -82,6 +88,12 @@ describe("PlaylistSidebar", () => {
     } as any);
     vi.mocked(getPlaylistsByUser).mockResolvedValue({
       data: { items: sidebarPlaylists, meta: { total: 2 } },
+    } as any);
+    vi.mocked(getPlaylistLikers).mockResolvedValue({
+      data: [],
+    } as any);
+    vi.mocked(getPlaylistReposters).mockResolvedValue({
+      data: [],
     } as any);
   });
 

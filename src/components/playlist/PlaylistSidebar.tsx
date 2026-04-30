@@ -10,6 +10,7 @@ import { getPlaylistsByUser } from "@/services/api/playlist/playlist.service";
 import { getUserById } from "@/services/user.service";
 import { useAuthStore } from "@/stores/auth.store";
 import GoMobileSection from "../UI/GoMobile";
+import EngagementPlaylistSidebar from "./EngagementPlaylistSidebar";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
@@ -18,8 +19,12 @@ interface PlaylistSidebarProps {
 export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
   const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ownerUsername, setOwnerUsername] = useState<string>(playlist.owner_user_id);
-  const [ownerDisplayName, setOwnerDisplayName] = useState<string>(playlist.owner_user_id);
+  const [ownerUsername, setOwnerUsername] = useState<string>(
+    playlist.owner_user_id,
+  );
+  const [ownerDisplayName, setOwnerDisplayName] = useState<string>(
+    playlist.owner_user_id,
+  );
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -31,7 +36,9 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
         if (!isMounted) return;
 
         setOwnerUsername(owner.username ?? playlist.owner_user_id);
-        setOwnerDisplayName(owner.display_name ?? owner.username ?? playlist.owner_user_id);
+        setOwnerDisplayName(
+          owner.display_name ?? owner.username ?? playlist.owner_user_id,
+        );
       } catch {
         if (!isMounted) return;
         setOwnerUsername(playlist.owner_user_id);
@@ -81,14 +88,19 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
             View all
           </Link>
         </div>
-
         <div data-test="sidebar-user-playlists" className="px-1">
           {loading ? (
-            <div data-test="playlist-sidebar-loading" className="py-4 flex justify-center">
+            <div
+              data-test="playlist-sidebar-loading"
+              className="py-4 flex justify-center"
+            >
               <div className="w-4 h-4 rounded-full border-2 border-[#555] border-t-white animate-spin" />
             </div>
           ) : userPlaylists.length === 0 ? (
-            <p data-test="playlist-sidebar-empty" className="text-[var(--color-text-muted)] text-xs ">
+            <p
+              data-test="playlist-sidebar-empty"
+              className="text-[var(--color-text-muted)] text-xs "
+            >
               No other playlists.
             </p>
           ) : (
@@ -117,6 +129,9 @@ export default function PlaylistSidebar({ playlist }: PlaylistSidebarProps) {
             </div>
           )}
         </div>
+        {playlist.owner_user_id !== user?.id && (
+          <EngagementPlaylistSidebar playlist={playlist} />
+        )}
         <div data-test="go-mobile-section-playlist">
           <GoMobileSection showFooter={false} />
         </div>

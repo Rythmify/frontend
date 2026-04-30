@@ -8,12 +8,11 @@ import { getUserById, type PublicUser } from "@/services/user.service";
 import GoMobileSection from "@/components/UI/GoMobile";
 import FollowButton from "@/components/UI/FollowButton";
 import UserAvatar from "@/components/UI/UserAvatar";
+import EngagementPlaylistSidebar from "../EngagementPlaylistSidebar";
 
 interface PlaylistSidebarProps {
   playlist: PlaylistDetails;
   featuredArtists?: MockUser[];
-  likedByUsers?: MockUser[];
-  repostedByUsers?: MockUser[];
   showSocialProof?: boolean;
   showLikes?: boolean;
   showReposts?: boolean;
@@ -72,8 +71,6 @@ function buildArtistsFromTracks(playlist: PlaylistDetails): ArtistCardData[] {
 export default function PlaylistSidebar({
   playlist,
   featuredArtists,
-  likedByUsers,
-  repostedByUsers,
   showSocialProof = true,
   showLikes = false,
   showReposts = false,
@@ -163,44 +160,8 @@ export default function PlaylistSidebar({
           </div>
         </div>
 
-        {showSocialProof && (likedByUsers?.length || repostedByUsers?.length) && (
-          <div className="mt-6 flex flex-col gap-5">
-            {likedByUsers?.length ? (
-              <SocialAvatarStrip
-                title="Likes"
-                users={likedByUsers}
-                dataTest="sidebar-liked-by"
-              />
-            ) : null}
-
-            {repostedByUsers?.length ? (
-              <SocialAvatarStrip
-                title="Reposts"
-                users={repostedByUsers}
-                dataTest="sidebar-reposted-by"
-              />
-            ) : null}
-          </div>
-        )}
-
         {showSocialProof && (showLikes || showReposts) && (
-          <div className="mt-6 flex flex-col gap-4">
-            {showLikes && (
-              <div data-test="sidebar-playlist-likes">
-                <p className="text-white text-[12px] font-bold uppercase tracking-widest">
-                  {formatCount(playlist.like_count)} Likes
-                </p>
-              </div>
-            )}
-
-            {showReposts && (
-              <div data-test="sidebar-playlist-reposts">
-                <p className="text-white text-[12px] font-bold uppercase tracking-widest">
-                  {formatCount(playlist.repost_count)} Reposts
-                </p>
-              </div>
-            )}
-          </div>
+          <EngagementPlaylistSidebar playlist={playlist} />
         )}
 
         <div data-test="go-mobile-section-playlist-mix" className="mt-6">
@@ -211,61 +172,6 @@ export default function PlaylistSidebar({
   );
 }
 
-function SocialAvatarStrip({
-  title,
-  users,
-  dataTest,
-}: {
-  title: string;
-  users: MockUser[];
-  dataTest: string;
-}) {
-  const visibleUsers = users.slice(0, 3);
-  const remaining = Math.max(0, users.length - visibleUsers.length);
-
-  return (
-    <div data-test={dataTest} className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-white text-[12px] font-bold uppercase tracking-widest">
-          {users.length.toLocaleString()} {title}
-        </p>
-
-        <span className="text-[12px] text-text-secondary">View all</span>
-      </div>
-
-      <div className="flex items-center min-h-[56px] overflow-hidden">
-        {users.slice(0, 9).map((user, index) => (
-          <Link
-            key={String(user.id)}
-            to={`/${user.username}`}
-            className="shrink-0"
-            style={{
-              marginLeft: index === 0 ? 0 : -18,
-              zIndex: 20 - index,
-            }}
-          >
-            <UserAvatar
-              src={user.avatarUrl}
-              name={user.displayName}
-              alt={user.displayName}
-              dataTest={`sidebar-avatar-${user.username}`}
-              wrapperClassName="w-14 h-14 rounded-full overflow-hidden border-2 border-[#111] bg-zinc-800 transition-opacity hover:opacity-80"
-            />
-          </Link>
-        ))}
-
-        {remaining > 0 && (
-          <div
-            className="w-14 h-14 rounded-full bg-[#2b2b2b] border-2 border-[#111] flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-            style={{ marginLeft: -18, zIndex: 1 }}
-          >
-            +{remaining}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function ArtistCard({
   artist,
