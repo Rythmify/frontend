@@ -234,7 +234,10 @@ export default function FollowingPage() {
                 className="w-full cursor-pointer truncate px-1 text-center text-sm font-bold text-white"
                 onClick={() => navigate(u.profilePath)}
               >
-                {u.displayName || u.username}
+                {u.displayName || u.username}{" "}
+                {u.isVerified && (
+                  <i className="fa-solid fa-circle-check text-xs text-[#2196F3]" />
+                )}
               </span>
 
               <span

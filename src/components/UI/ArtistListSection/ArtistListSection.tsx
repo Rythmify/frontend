@@ -36,6 +36,7 @@ const styles = {
   details: `flex flex-col`,
   nameRow: `flex items-center gap-1`,
   username: `cursor-pointer text-sm font-bold text-text-hover hover:opacity-70 transition-opacity`,
+  verifiedIcon: `fa-solid fa-circle-check text-[#2196F3] text-xs`,
   stats: `flex items-center gap-2 text-xs text-text-secondary`,
   stat: `flex cursor-pointer items-center gap-0.5 hover:opacity-70 transition-opacity`,
   statIcon: `fa-solid text-[10px]`,
@@ -127,6 +128,12 @@ const ArtistListSection = ({
                   >
                     {artist.username}
                   </button>
+                  {artist.isVerified && (
+                    <i
+                      data-test={`artist-verified-${artist.username}`}
+                      className={styles.verifiedIcon}
+                    />
+                  )}
                 </div>
 
                 {/* Stats */}

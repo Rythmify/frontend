@@ -172,12 +172,6 @@
     }
   }
   
-/* ── Waveform loader ──────────────────────────── */
-@keyframes waveform {
-  0%   { transform: scaleY(0.3); }
-  100% { transform: scaleY(1); }
-}
-
 /* ── Scrollbar ────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 4px;

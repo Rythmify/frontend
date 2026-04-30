@@ -35,40 +35,6 @@ const DownloadIcon = () => (
   </svg>
 );
 
-const AdFreeIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    aria-hidden="true"
-  >
-    <rect
-      x="3.5"
-      y="5.5"
-      width="17"
-      height="13"
-      rx="2.25"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    />
-    <path d="M6.5 9.25H12.75" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    <path d="M6.5 12H10.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    <path
-      d="M17 8L21 12"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-    />
-    <path
-      d="M21 8L17 12"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
 const ProBadgeIcon = () => (
   <svg
     width="30"
@@ -147,7 +113,6 @@ function PlanCard({ onGetStarted, isStarting, startError, disabled, monthlyPrice
           {[
             { icon: <UploadIcon />, label: "Unlimited uploads" },
             { icon: <DownloadIcon />, label: "Offline listening downloads" },
-            { icon: <AdFreeIcon />, label: "Ad-free listening" },
           ].map((feature) => (
             <li
               key={feature.label}

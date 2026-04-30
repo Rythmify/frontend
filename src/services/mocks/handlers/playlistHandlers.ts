@@ -3,7 +3,6 @@ import type {
   Playlist,
   PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
-import { getRadioPlaylist } from "./radioPlaylists";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -775,20 +774,6 @@ export const mockAlbumPlaylists = [...mockPlaylists, ...mockLikedPlaylists]
 
 export const playlistHandlers = [
   // ── POST /playlists — create a playlist ──────────────────────────────────────
-  http.post("*/albums/:album_id/like", ({ params }) => {
-    return HttpResponse.json({
-      data: { album_id: params.album_id },
-      message: "Album liked successfully.",
-    });
-  }),
-
-  http.delete("*/albums/:album_id/like", ({ params }) => {
-    return HttpResponse.json({
-      data: { album_id: params.album_id },
-      message: "Album unliked successfully.",
-    });
-  }),
-
   http.post("*/playlists", async ({ request }) => {
     let body: { name?: string; description?: string; is_public?: boolean };
     try {
@@ -927,40 +912,6 @@ export const playlistHandlers = [
   }),
 
   // ── GET /playlists/:id/share-link — private share link (owner only) ───────────
-  http.get("*/playlists/:playlist_id/radio-tracks", ({ params }) => {
-    const playlist = getRadioPlaylist(params.playlist_id as string);
-
-    if (!playlist) {
-      return HttpResponse.json(
-        {
-          error: {
-            code: "PLAYLIST_NOT_FOUND",
-            message: "Radio playlist not found.",
-          },
-        },
-        { status: 404 },
-      );
-    }
-
-    return HttpResponse.json({
-      data: {
-        playlist_id: playlist.playlist_id,
-        seed_track_id: playlist.seed_track_id,
-        title: playlist.title,
-        description: playlist.description,
-        cover_image: playlist.cover_image,
-        reference_track: playlist.reference_track,
-        tracks: playlist.tracks,
-        meta: {
-          limit: playlist.tracks.length,
-          offset: 0,
-          total: playlist.tracks.length,
-        },
-      },
-      message: "Track radio tracks fetched successfully.",
-    });
-  }),
-
   http.get("*/playlists/:playlist_id/share-link", ({ params }) => {
     const { playlist_id } = params;
 

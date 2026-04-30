@@ -9,6 +9,7 @@ import type {
 } from "@/services/api/playlist/playlist.service";
 import {
   getAlbumsForYou,
+  getAlbumPreviewTrackId,
   type DiscoveryAlbum,
 } from "@/services/api/discover.service";
 import { usePlayerStore } from "../../../stores/player.store";
@@ -16,60 +17,57 @@ import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { getUserById, type PublicUser } from "@/services/user.service";
-import { getPlaylist } from "@/services/api/playlist/playlist.service";
+import { getRelatedTracks } from "@/services/track.service";
 import type { Track } from "@/types/track";
 import OwnerInfo from "@/components/playlist/OwnerInfo";
 import { playlistExists } from "@/services/api/playlist/playlist.service";
 
 function albumToPlaylistDetails(
   album: DiscoveryAlbum,
-  firstTrack: PlaylistTrackItem,
-  albumTracks: PlaylistTrackItem[],
+  seedTrack: Track,
+  tracks: Track[],
 ): PlaylistDetails {
   return {
     playlist_id: album.id,
     owner_user_id: album.owner_id,
-    name: album.name ?? firstTrack.title ?? "Album",
-    description: firstTrack.title
-      ? `${album.name ?? "Album"} tracks`
-      : "Album tracks picked for you",
+    name: album.name ?? seedTrack.title ?? "Album",
+    description: seedTrack.title
+      ? `Related tracks: ${seedTrack.title}`
+      : "Related tracks picked for you",
     is_public: true,
-    cover_image: album.cover_image ?? firstTrack.cover_image ?? null,
+    cover_image: album.cover_image ?? seedTrack.coverUrl ?? null,
     subtype: "album",
     created_at: album.created_at,
     updated_at: null,
-    track_count: albumTracks.length,
+    track_count: tracks.length,
     like_count: album.like_count,
     repost_count: 0,
     is_album_view: true,
-    tracks: albumTracks.map(
+    tracks: tracks.map(
       (track, index) =>
         ({
-          track_id: track.track_id,
+          track_id: track.id,
           position: index + 1,
-          added_at: track.added_at,
+          added_at: track.postedAt,
           title: track.title,
           duration: null,
-          cover_image: track.cover_image || null,
-          artist_name: track.artist_name,
-          artist_id: track.artist_id,
-          artist_username: track.artist_username,
-          is_public: track.is_public,
+          cover_image: track.coverUrl || null,
+          artist_name: track.artistName,
+          artist_id: track.artistId || track.artistUsername,
+          is_public: !track.isPrivate,
           deleted_at: null,
-          audio_url: track.audio_url,
-          play_count: track.play_count,
+          audio_url: track.audioUrl,
+          play_count: track.playCount,
         }) as PlaylistTrackItem & { audio_url?: string; play_count?: number },
     ),
   };
 }
 
-function getTopArtistTrackCounts(
-  tracks: PlaylistTrackItem[],
-): [string, number][] {
+function getTopArtistTrackCounts(tracks: Track[]): [string, number][] {
   const counts = new Map<string, number>();
 
   for (const track of tracks) {
-    const artistId = track.artist_id?.trim();
+    const artistId = track.artistId?.trim();
     if (!artistId) continue;
     counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
   }
@@ -134,8 +132,13 @@ function AlbumsForYouSlugPage() {
           throw new Error("Album not found.");
         }
 
-        const playlistRes = await getPlaylist(album.id, { include_tracks: true });
-        const tracks = playlistRes.data.tracks;
+        const previewTrackId = getAlbumPreviewTrackId(album);
+        if (!previewTrackId) {
+          throw new Error("Album preview track not found.");
+        }
+
+        const { referenceTrack, tracks } =
+          await getRelatedTracks(previewTrackId);
 
         if (!tracks.length) {
           throw new Error("Album not found.");
@@ -143,8 +146,7 @@ function AlbumsForYouSlugPage() {
 
         if (cancelled) return;
 
-        const firstTrack = tracks[0];
-        setPlaylist(albumToPlaylistDetails(album, firstTrack, tracks));
+        setPlaylist(albumToPlaylistDetails(album, referenceTrack, tracks));
         const existing = await playlistExists(album.id);
         if (!cancelled) {
           setBackendPlaylistExists(existing);
@@ -212,12 +214,12 @@ function AlbumsForYouSlugPage() {
   const handleHeroPlayPause = () => {
     if (!playlist || !playlist.tracks.length) return;
 
-    const albumTracks = playlist.tracks as Array<
+    const tracks = playlist.tracks as Array<
       PlaylistTrackItem & { audio_url?: string; play_count?: number }
     >;
-    const firstTrack = albumTracks[0];
+    const firstTrack = tracks[0];
     const playerTrack = toPlayerTrack(firstTrack);
-    const queue = albumTracks.map(toPlayerTrack);
+    const queue = tracks.map(toPlayerTrack);
     const isThisAlbumPlaying =
       (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
 
@@ -230,7 +232,7 @@ function AlbumsForYouSlugPage() {
           context: {
             type: "playlist",
             playlist_id: playlist.playlist_id,
-            queue: albumTracks.map((t) => t.track_id),
+            queue: tracks.map((t) => t.track_id),
           },
         } as any,
         queue,
@@ -241,7 +243,7 @@ function AlbumsForYouSlugPage() {
   const handleTrackPlay = (track: PlaylistTrackItem) => {
     if (!playlist) return;
 
-    const albumTracks = playlist.tracks;
+    const tracks = playlist.tracks;
     const playerTrack = toPlayerTrack(track);
 
     if (currentTrack?.id === playerTrack.id) {
@@ -255,10 +257,10 @@ function AlbumsForYouSlugPage() {
         context: {
           type: "playlist",
           playlist_id: playlist.playlist_id,
-          queue: albumTracks.map((t) => t.track_id),
+          queue: tracks.map((t) => t.track_id),
         },
       } as any,
-      albumTracks.map(toPlayerTrack),
+      tracks.map(toPlayerTrack),
     );
   };
 
