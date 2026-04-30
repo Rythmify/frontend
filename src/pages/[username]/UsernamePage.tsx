@@ -141,10 +141,20 @@ export default function UsernamePage() {
       try {
         if (isOwner) {
           const { tracks } = await getMyTracks(1, 100);
-          if (!cancelled) setProfileTracks(tracks);
+          if (!cancelled) {
+            setProfileTracks(tracks.map(t => ({
+              ...t,
+              artistUsername: t.artistUsername || username || ""
+            })));
+          }
         } else if (profileData?.id) {
           const { tracks } = await getUserTracks(profileData.id, 1, 3);
-          if (!cancelled) setProfileTracks(tracks);
+          if (!cancelled) {
+            setProfileTracks(tracks.map(t => ({
+              ...t,
+              artistUsername: t.artistUsername || username || ""
+            })));
+          }
         }
       } catch (error) {
         console.error(error);
