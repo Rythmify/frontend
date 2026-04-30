@@ -245,7 +245,7 @@ function MixForYouSlugPage() {
   return (
     <div
       data-test="playlist-slug-page"
-      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen"
+      className="container px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen overflow-x-hidden"
     >
       <PlaylistHero
         playlist={playlist}
@@ -256,9 +256,9 @@ function MixForYouSlugPage() {
         isMix={true}
       />
 
-      <div className="mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div data-test="mix-for-you-slug-main" className="flex-1 min-w-0">
+      <div className="mx-auto w-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 w-full">
+          <div data-test="mix-for-you-slug-main" className="flex-1 min-w-0 w-full">
             <PlaylistActions playlist={playlist} engagementKind="mix" />
             <div data-test="mix-for-you-slug-tracklist" className="mt-8">
               <TrackList

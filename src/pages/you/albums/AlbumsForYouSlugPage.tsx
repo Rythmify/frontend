@@ -284,7 +284,7 @@ function AlbumsForYouSlugPage() {
   return (
     <div
       data-test="album-slug-page"
-      className="flex-1 w-full bg-bg min-h-screen px-4 md:px-8 lg:px-12 xl:px-20 mx-auto"
+      className="flex-1 w-full bg-bg min-h-screen px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 mx-auto overflow-x-hidden"
     >
       <PlaylistHero
         key={playlist.playlist_id}
@@ -296,8 +296,8 @@ function AlbumsForYouSlugPage() {
         ownerUsername={albumOwner?.username}
       />
 
-      <div className="container mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
+      <div className="container mx-auto w-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 w-full">
           <div data-test="albums-for-you-slug-main" className="flex-1 min-w-0">
             <PlaylistActionsAlbum
               playlist={playlist}
@@ -308,7 +308,7 @@ function AlbumsForYouSlugPage() {
               }
             />
 
-            <div data-test="albums-for-you-slug-content" className="flex flex-1 gap-6 mt-8">
+            <div data-test="albums-for-you-slug-content" className="flex flex-col gap-6 mt-6 lg:flex-row lg:mt-8">
               <OwnerInfo
                 ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}

@@ -289,7 +289,7 @@ function MadeForYouSlugPage() {
   return (
     <div
       data-test="made-for-you-slug-page"
-      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen"
+      className="container px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen overflow-x-hidden"
     >
       <PlaylistHero
         playlist={playlist}
@@ -303,9 +303,9 @@ function MadeForYouSlugPage() {
         coverImages={coverImages}
       />
 
-      <div className="mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div className="flex-1 min-w-0" data-test="made-for-you-slug-main">
+      <div className="mx-auto w-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 w-full">
+          <div className="flex-1 min-w-0 w-full" data-test="made-for-you-slug-main">
             <div data-test="made-for-you-slug-actions">
               <PlaylistActions
                 playlist={playlist}
