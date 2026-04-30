@@ -184,19 +184,15 @@ export async function getUserByUsername(username: string): Promise<PublicUser> {
 
   const users = res.data.data.users ?? [];
 
-  // Prefer an exact username match; fall back to the first result as a
-  // best-effort when the search engine returns close-but-not-exact results.
   const exactMatch = users.find(
     (u) => u.username?.toLowerCase() === username.toLowerCase(),
   );
-  const candidate = exactMatch ?? users[0];
-
-  if (!candidate) {
+  if (!exactMatch) {
     throw new Error(`User not found: ${username}`);
   }
 
   // Fetch the full PublicUser profile (search only returns a slim summary).
-  return getUserById(candidate.id);
+  return getUserById(exactMatch.id);
 }
 
 // ─────────────────────────────────────────────────────────────

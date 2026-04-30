@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useNavigate, useParams } from "react-router-dom";
+import NotFound from "@/pages/not-found/NotFound";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import UserAvatar from "@/components/UI/UserAvatar";
@@ -66,12 +67,14 @@ export default function LikesPage() {
   const [profileUsername, setProfileUsername] = useState("");
   const [profileId, setProfileId] = useState("");
   const [publicLikedTracks, setPublicLikedTracks] = useState<Track[]>([]);
+  const [profileNotFound, setProfileNotFound] = useState(false);
 
   const isOwner = !username || username === currentUser?.username;
 
   // Resolve profile info
   useEffect(() => {
     if (isOwner) {
+      setProfileNotFound(false);
       setProfileDisplayName(
         currentUser?.displayName ?? currentUser?.username ?? "",
       );
@@ -82,6 +85,7 @@ export default function LikesPage() {
     }
 
     if (!username) return;
+    setProfileNotFound(false);
 
     getUserByUsername(username)
       .then((profile) => {
@@ -90,7 +94,10 @@ export default function LikesPage() {
         setProfileUsername(profile.username ?? username);
         setProfileId(profile.id);
       })
-      .catch(console.error);
+      .catch((error) => {
+        console.error(error);
+        setProfileNotFound(true);
+      });
   }, [username, isOwner, currentUser]);
 
   // Fetch liked tracks.
@@ -155,6 +162,7 @@ export default function LikesPage() {
   };
 
   if (!currentUser && isOwner) return null;
+  if (!isOwner && profileNotFound) return <NotFound />;
 
   return (
     <div className="py-8 container px-4 md:px-8 lg:px-20">

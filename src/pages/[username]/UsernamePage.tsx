@@ -11,6 +11,7 @@ import { BlockUserModal } from "@/components/UI/BlockModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
+import NotFound from "@/pages/not-found/NotFound";
 import type { Track } from "../../types/track";
 import {
   getMyLikedTracks,
@@ -32,6 +33,7 @@ export default function UsernamePage() {
   const { username } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [profileLookupStarted, setProfileLookupStarted] = useState(false);
 
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -55,6 +57,16 @@ export default function UsernamePage() {
     handleTabChange,
     handleSave,
   } = useProfileData(username);
+
+  useEffect(() => {
+    setProfileLookupStarted(false);
+  }, [username]);
+
+  useEffect(() => {
+    if (isLoadingProfile) {
+      setProfileLookupStarted(true);
+    }
+  }, [isLoadingProfile]);
 
   useEffect(() => {
     setBlockedState(isBlocked);
@@ -202,6 +214,9 @@ export default function UsernamePage() {
       cancelled = true;
     };
   }, [isOwner, activeUser?.id, profileData?.id]);
+  if (!isOwner && profileLookupStarted && !isLoadingProfile && !profileData) {
+    return <NotFound />;
+  }
 
   // ── Sidebar mappings ──────────────────────────────────────
   const likedTracksMapped = (Array.isArray(likedTracks) ? likedTracks : []).map(

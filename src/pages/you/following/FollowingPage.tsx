@@ -3,6 +3,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 import UserAvatar from "@/components/UI/UserAvatar";
+import NotFound from "@/pages/not-found/NotFound";
 import {
   getFollowing,
   getFollowStatus,
@@ -83,6 +84,7 @@ export default function FollowingPage() {
     : profileUsername || "Profile";
   const profilePath = profileUsername ? `/${profileUsername}` : "/you";
   const profileAvatar = isOwner ? (currentUser?.avatar ?? "") : "";
+  const [profileNotFound, setProfileNotFound] = useState(false);
 
   const [rawFollowing, setRawFollowing] = useState<UserSummary[] | null>(null);
   const [following, setFollowing] = useState<EnrichedUser[]>([]);
@@ -94,6 +96,7 @@ export default function FollowingPage() {
     setLoaded(false);
     setRawFollowing(null);
     setFollowing([]);
+    setProfileNotFound(false);
 
     async function load() {
       try {
@@ -113,7 +116,10 @@ export default function FollowingPage() {
         if (!cancelled) setRawFollowing(res.items);
       } catch (err) {
         console.error("FollowingPage: failed to load", err);
-        if (!cancelled) setRawFollowing([]);
+        if (!cancelled) {
+          setProfileNotFound(true);
+          setRawFollowing([]);
+        }
       }
     }
 
@@ -147,6 +153,7 @@ export default function FollowingPage() {
   }, [rawFollowing]);
 
   if (!currentUser && isOwner) return null;
+  if (!isOwner && profileNotFound) return <NotFound />;
 
   const handleTabChange = (tab: string) => {
     const base = `/${profileUsername}`;

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
+import NotFound from "@/pages/not-found/NotFound";
 import { useProfileData } from "@/services/hooks/useProfileData";
 import { getUserRepostedTracks } from "@/services/engagement.service";
 import type { TrackSummary } from "@/services/user.service";
@@ -10,6 +11,7 @@ import type { TrackSummary } from "@/services/user.service";
 export default function RepostsPage() {
   const { username } = useParams();
   const navigate = useNavigate();
+  const [profileLookupStarted, setProfileLookupStarted] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [repostedTracks, setRepostedTracks] = useState<TrackSummary[]>([]);
@@ -26,6 +28,16 @@ export default function RepostsPage() {
     handleTabChange,
     handleSave,
   } = useProfileData(username);
+
+  useEffect(() => {
+    setProfileLookupStarted(false);
+  }, [username]);
+
+  useEffect(() => {
+    if (isLoadingProfile) {
+      setProfileLookupStarted(true);
+    }
+  }, [isLoadingProfile]);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +69,10 @@ export default function RepostsPage() {
       cancelled = true;
     };
   }, [user.id]);
+
+  if (!isOwner && profileLookupStarted && !isLoadingProfile && !profileData) {
+    return <NotFound />;
+  }
 
   const followersMapped = followers.map((u) => ({
     userId: u.id,
