@@ -4,6 +4,7 @@ import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { useDownloadStore } from "@/stores/useDownload";
 import * as engagementService from "@/services/engagement.service";
 import { getRelatedTracks } from "@/services/track.service";
 import SharePopup from "@/pages/[username]/[trackSlug]/components/SharePopup";
@@ -73,38 +74,40 @@ const TrackItem: React.FC<TrackItemProps> = ({
   const toggleTrack = useLikesStore((s) => s.toggleTrack);
   const { addTrack } = useHistoryStore();
   const { user } = useAuthStore();
+  const { isDownloaded, toggleDownload } = useDownloadStore();
 
   const liked = isTrackLiked(id);
-
-  const handleLike = () => {
-    const trackObj: Track = {
-      id,
-      title,
-      artistName: artist,
-      artistUsername:
-        artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-"),
-      coverUrl: coverUrl || "",
-      audioUrl: audioUrl ?? "",
-      genre: genre || "",
-      likeCount: likes || 0,
-      repostCount: reposts || 0,
-      playCount: plays || 0,
-      commentCount: comments || 0,
-      duration: duration || "0:00",
-      postedAt: postedAt || "",
-      waveformData: [],
-      isPrivate,
-    };
-    toggleTrack(trackObj);
-    if (liked) onUnlike?.(id);
-  };
-
-  const isThisTrackPlaying = currentTrack?.id === id && isPlaying;
-
   const finalArtistSlug =
     artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-");
 
   const trackPath = `/discover/personalised/${trackSlug ?? ""}:${id}`;
+  const trackForActions: Track = {
+    id,
+    title,
+    artistName: artist,
+    artistUsername: finalArtistSlug,
+    coverUrl: coverUrl || "",
+    audioUrl: audioUrl ?? "",
+    genre: genre || "",
+    likeCount: likes || 0,
+    repostCount: reposts || 0,
+    playCount: plays || 0,
+    commentCount: comments || 0,
+    duration: duration || "0:00",
+    postedAt: postedAt || "",
+    waveformData: [],
+    isPrivate,
+    artistId: artistId || "",
+  };
+
+  const handleLike = () => {
+    toggleTrack(trackForActions);
+    if (liked) onUnlike?.(id);
+  };
+
+  const isThisTrackPlaying = currentTrack?.id === id && isPlaying;
+  const downloaded = isDownloaded(id);
+  const canRemoveDownload = downloaded && !!user?.isPro;
 
   const handleRepost = async () => {
     if (!!user && user.username === finalArtistSlug) {
@@ -289,48 +292,71 @@ const TrackItem: React.FC<TrackItemProps> = ({
             </button>
             {showMore && (
               <div className="absolute right-0 top-10 z-50 bg-input-bg border border-border rounded shadow-lg w-48 py-1">
-                {[
-                  {
-                    key: "repost",
-                    icon: "fa-retweet",
-                    label: reposted ? "Unrepost" : "Repost",
-                    onClick: handleRepost,
-                  },
-                  {
-                    key: "share",
-                    icon: "fa-arrow-up-from-bracket",
-                    label: "Share",
-                    onClick: () => {
-                      setShareOpen(true);
-                      setShowMore(false);
-                    },
-                  },
-                  {
-                    key: "copy-link",
-                    icon: "fa-copy",
-                    label: "Copy Link",
-                    onClick: handleCopyLink,
-                  },
-                  {
-                    key: "add-to-playlist",
-                    icon: "fa-list",
-                    label: "Add to Playlist",
-                    onClick: () => {
-                      setPlaylistModalOpen(true);
-                      setShowMore(false);
-                    },
-                  },
-                ].map(({ key, icon, label, onClick }) => (
-                  <button
-                    key={key}
-                    data-test={`track-more-${key}-${id}`}
-                    onClick={onClick}
-                    className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-text-hover hover:bg-border/50 transition-colors"
-                  >
-                    <i className={`fa-solid ${icon} text-xs w-4`} />
-                    {label}
-                  </button>
-                ))}
+                <button
+                  data-test={`track-more-repost-${id}`}
+                  onClick={handleRepost}
+                  className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-text-hover hover:bg-border/50 transition-colors"
+                >
+                  <i
+                    className={`fa-solid fa-retweet text-xs w-4 ${
+                      reposted ? "text-[#1D9E75]" : ""
+                    }`}
+                  />
+                  {reposted ? "Unrepost" : "Repost"}
+                </button>
+
+                <button
+                  data-test={`track-more-share-${id}`}
+                  onClick={() => {
+                    setShareOpen(true);
+                    setShowMore(false);
+                  }}
+                  className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-text-hover hover:bg-border/50 transition-colors"
+                >
+                  <i className="fa-solid fa-arrow-up-from-bracket text-xs w-4" />
+                  Share
+                </button>
+
+                <button
+                  data-test={`track-more-copy-link-${id}`}
+                  onClick={handleCopyLink}
+                  className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-text-hover hover:bg-border/50 transition-colors"
+                >
+                  <i className="fa-solid fa-copy text-xs w-4" />
+                  Copy Link
+                </button>
+
+                <button
+                  data-test={`track-more-download-${id}`}
+                  onClick={() => {
+                    if (!user?.isPro) {
+                      navigate("/premium");
+                    } else {
+                      toggleDownload(trackForActions, true);
+                    }
+                    setShowMore(false);
+                  }}
+                  className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-text-hover hover:bg-border/50 transition-colors"
+                >
+                  <i
+                    className={`fa-solid ${
+                      canRemoveDownload ? "fa-check" : "fa-download"
+                    } text-xs w-4 ${canRemoveDownload ? "text-[#1D9E75]" : ""}`}
+                  />
+                  {canRemoveDownload ? "Remove Download" : "Download"}
+                </button>
+
+                <button
+                  data-test={`track-more-add-to-playlist-${id}`}
+                  onClick={() => {
+                    setPlaylistModalOpen(true);
+                    setShowMore(false);
+                  }}
+                  className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-text-hover hover:bg-border/50 transition-colors"
+                >
+                  <i className="fa-solid fa-list text-xs w-4" />
+                  Add to Playlist
+                </button>
               </div>
             )}
           </div>
@@ -354,23 +380,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
       )}
       {shareOpen && (
         <SharePopup
-          track={{
-            id,
-            title,
-            artistName: artist,
-            artistUsername: finalArtistSlug,
-            coverUrl: coverUrl || "",
-            audioUrl: audioUrl ?? "",
-            genre: genre || "",
-            likeCount: likes || 0,
-            repostCount: reposts || 0,
-            playCount: plays || 0,
-            commentCount: comments || 0,
-            duration: duration || "0:00",
-            postedAt: postedAt || "",
-            waveformData: [],
-            isPrivate,
-          }}
+          track={trackForActions}
           onClose={() => setShareOpen(false)}
         />
       )}

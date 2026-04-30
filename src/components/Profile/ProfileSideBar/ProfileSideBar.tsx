@@ -168,7 +168,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col gap-4 w-[320px] overflow-hidden">
+      <div className="flex flex-col gap-4 w-[320px] overflow-visible">
         {likedTracks.slice(0, 3).map((track) => (
           <TrackItem
             key={track.id}
