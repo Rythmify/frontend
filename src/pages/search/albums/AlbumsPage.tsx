@@ -4,7 +4,7 @@ import { searchAlbums } from "@/services/api/search/Searchapi";
 import PlaylistComponent from "@/components/playlist/PlaylistComponent";
 import { mapPlaylist } from "@/services/api/search/searchMappers";
 import type { Playlist } from "@/types/playlist";
-
+import { useSearchFilters } from "@/pages/search/SearchPage";
 const PAGE_SIZE = 10;
 
 export default function AlbumsPage() {
@@ -22,6 +22,7 @@ export default function AlbumsPage() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const hasMoreRef  = useRef(false);
   const loadingRef  = useRef(false);
+  const { setFilters } = useSearchFilters();
 
   const fetchPage = useCallback(
     async (pageOffset: number, replace: boolean) => {
@@ -46,6 +47,7 @@ export default function AlbumsPage() {
         setAlbums((prev) => (replace ? mapped : [...prev, ...mapped]));
         setTotal(res.pagination.total);
         setOffset(pageOffset);
+        setFilters(res.filters);
         hasMoreRef.current = pageOffset + PAGE_SIZE < res.pagination.total;
       } catch (err: any) {
         if (err?.name === "CanceledError" || err?.name === "AbortError") return;
@@ -119,6 +121,10 @@ export default function AlbumsPage() {
       </div>
     );
   }
+
+  useEffect(() => {
+  return () => setFilters(null);
+}, []);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
