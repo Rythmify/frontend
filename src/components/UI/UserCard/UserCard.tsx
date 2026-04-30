@@ -41,10 +41,6 @@ const styles = {
     flex items-center justify-center gap-1
     transition-colors duration-200 hover:text-text-muted
   `,
-  verifiedIcon: `
-    fa-solid fa-circle-check text-[#2196F3] text-xs
-    flex-shrink-0
-  `,
   followers: `
     text-text-secondary text-xs text-center
     w-full

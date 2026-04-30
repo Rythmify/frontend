@@ -92,6 +92,7 @@ export default function TrackEngagementPage() {
     if (!username || !trackId) return;
 
     async function loadTrack() {
+      if (!username || !trackId) return;
       try {
         const fetchedTrack = await getTrackBySlug(username, trackId);
         setTrack(fetchedTrack);
@@ -114,10 +115,13 @@ export default function TrackEngagementPage() {
     async function loadUsers() {
       try {
         let res;
+        const currentTrack = track;
+        if (!currentTrack) return;
+
         if (activeTab === "Likes") {
-          res = await getTrackLikers(track.id, { limit: 100, offset: 0 });
+          res = await getTrackLikers(currentTrack.id, { limit: 100, offset: 0 });
         } else {
-          res = await getTrackReposters(track.id, { limit: 100, offset: 0 });
+          res = await getTrackReposters(currentTrack.id, { limit: 100, offset: 0 });
         }
         
         if (!cancelled) {
@@ -159,6 +163,7 @@ export default function TrackEngagementPage() {
   }, [users]);
 
   const handleTabChange = (tab: string) => {
+    if (!username || !trackId) return;
     const base = `/${username}/${trackId}`;
     if (tab === "Likes") navigate(`${base}/likes`);
     if (tab === "Reposts") navigate(`${base}/reposts`);
