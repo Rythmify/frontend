@@ -86,7 +86,7 @@ export default function MixCard({
       togglePlay();
     } else {
       setTrack(previewTrack);
-      addMix({ ...mix, id: mixId });
+      addMix({ ...mix, id: mixId, label: displayLabel });
     }
   };
 

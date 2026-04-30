@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, Children } from "react";
 
 // ─── Props ────────────────────────────────────────────────
 interface HorizontalCarouselProps {
@@ -138,6 +138,8 @@ const HorizontalCarousel = ({
     setNudgeClass(direction === "right" ? "nudge-right" : "nudge-left");
     setTimeout(() => setNudgeClass(""), 400);
   };
+
+  if (Children.count(children) === 0) return null;
 
   return (
     <div
