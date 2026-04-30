@@ -25,7 +25,8 @@ interface EnrichedUser {
 }
 
 async function enrich(u: UserSummary): Promise<EnrichedUser> {
-  const resolvedId = u.id || (u as UserSummary & { user_id?: string }).user_id || "";
+  const resolvedId =
+    u.id || (u as UserSummary & { user_id?: string }).user_id || "";
   if (!resolvedId) {
     console.warn("enrich: received item with no id", u);
     return {
@@ -50,7 +51,7 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
       followers: profile.followers_count ?? 0,
-      isVerified: profile.is_verified ?? u.is_verified,
+      isVerified: u.is_verified,
       isFollowing: followStatus.is_following,
       profilePath: `/${uname}`,
     };
@@ -256,13 +257,13 @@ export default function FollowingPage() {
 
               <div className="flex h-8 items-center justify-center">
                 <div className="hidden group-hover:block">
-              <FollowButton
-                username={u.username}
-                userId={u.userId}
-                initialIsFollowing={u.isFollowing}
-                onFollowChange={(next) => {
-                  if (isOwner && !next) {
-                    setFollowing((prev) =>
+                  <FollowButton
+                    username={u.username}
+                    userId={u.userId}
+                    initialIsFollowing={u.isFollowing}
+                    onFollowChange={(next) => {
+                      if (isOwner && !next) {
+                        setFollowing((prev) =>
                           prev.filter((f) => f.userId !== u.userId),
                         );
                       }

@@ -35,7 +35,6 @@ const mockUser = {
   avatar: "",
   coverUrl: "",
   location: "Cairo, Egypt",
-  isPro: false,
 };
 
 describe("ProfileHeader", () => {

@@ -52,7 +52,9 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
       followers: profile.followers_count ?? 0,
-      isVerified: profile.is_verified ?? u.is_verified,
+      // Keep verification tied to the relationship list item itself.
+      // The profile fetch is only used for richer display data.
+      isVerified: u.is_verified,
       isFollowing: followStatus.is_following,
       profilePath: `/${uname}`,
     };
