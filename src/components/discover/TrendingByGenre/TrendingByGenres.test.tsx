@@ -30,14 +30,22 @@ vi.mock("@/components/UI/GenreCard/GenreCard", () => ({
   ),
 }));
 
-// ─── Known image URLs (from GENRE_IMAGES map in component) ─
+// ─── Test data ───────────────────────────────────────────
 
-const HIP_HOP_IMG =
-  "https://images.unsplash.com/photo-1547355253-ff0740f859b4?w=400&q=80";
-const POP_IMG =
-  "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&q=80";
-const DEFAULT_IMG =
-  "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&q=80";
+const makePreviewTrack = (coverImage: string) => ({
+  id: "t-001",
+  title: "Track",
+  artist_name: "Artist",
+  user_id: "u-001",
+  genre_name: "Pop",
+  duration: 200,
+  play_count: 1000,
+  like_count: 100,
+  repost_count: 10,
+  cover_image: coverImage,
+  stream_url: "/audio/track.mp3",
+  created_at: "2026-01-01T00:00:00Z",
+});
 
 // ─── Tests ────────────────────────────────────────────────
 
@@ -102,68 +110,51 @@ describe("TrendingByGenres", () => {
       { genre_id: "g-003", genre_name: "Jazz" },
     ];
     render(<TrendingByGenres genres={genres} />);
-    expect(screen.getByTestId("genre-card-g-001")).toHaveAttribute("data-index", "0");
-    expect(screen.getByTestId("genre-card-g-002")).toHaveAttribute("data-index", "1");
-    expect(screen.getByTestId("genre-card-g-003")).toHaveAttribute("data-index", "2");
+    expect(screen.getByTestId("genre-card-g-001")).toHaveAttribute(
+      "data-index",
+      "0",
+    );
+    expect(screen.getByTestId("genre-card-g-002")).toHaveAttribute(
+      "data-index",
+      "1",
+    );
+    expect(screen.getByTestId("genre-card-g-003")).toHaveAttribute(
+      "data-index",
+      "2",
+    );
   });
 
-  // ── Genre image mapping ──────────────────────────────────
+  // ── Cover image from preview_track ──────────────────────
 
-  it("maps a known genre name to its specific cover image", () => {
+  it("uses preview_track.cover_image as the card cover", () => {
+    render(
+      <TrendingByGenres
+        genres={[{
+          genre_id: "g-001",
+          genre_name: "Hip-Hop",
+          preview_track: makePreviewTrack("https://example.com/cover.jpg"),
+        }]}
+      />,
+    );
+    expect(screen.getByTestId("genre-card-g-001")).toHaveAttribute(
+      "data-cover",
+      "https://example.com/cover.jpg",
+    );
+  });
+
+  it("passes empty string as cover when genre has no preview_track", () => {
     render(
       <TrendingByGenres
         genres={[{ genre_id: "g-001", genre_name: "Hip-Hop" }]}
       />,
     );
-    expect(screen.getByTestId("genre-card-g-001")).toHaveAttribute(
-      "data-cover",
-      HIP_HOP_IMG,
-    );
+    expect(screen.getByTestId("genre-card-g-001")).toHaveAttribute("data-cover", "");
   });
 
-  it("is case-insensitive when resolving the genre image", () => {
-    render(
-      <TrendingByGenres genres={[{ genre_id: "g-001", genre_name: "POP" }]} />,
-    );
-    expect(screen.getByTestId("genre-card-g-001")).toHaveAttribute(
-      "data-cover",
-      POP_IMG,
-    );
-  });
+  // ── Empty genres ─────────────────────────────────────────
 
-  it("falls back to the default image for an unknown genre", () => {
-    render(
-      <TrendingByGenres
-        genres={[{ genre_id: "g-001", genre_name: "Afro Jazz Fusion" }]}
-      />,
-    );
-    expect(screen.getByTestId("genre-card-g-001")).toHaveAttribute(
-      "data-cover",
-      DEFAULT_IMG,
-    );
-  });
-
-  // ── Mock fallback ────────────────────────────────────────
-
-  it("falls back to the 8 built-in mock genres when genres prop is empty", () => {
+  it("renders no cards when genres prop is empty", () => {
     render(<TrendingByGenres genres={[]} />);
-    expect(screen.getAllByTestId(/^genre-card-/)).toHaveLength(8);
-  });
-
-  it("mock genre cards have a non-empty cover image", () => {
-    render(<TrendingByGenres genres={[]} />);
-    screen.getAllByTestId(/^genre-card-/).forEach((card) => {
-      expect(card.getAttribute("data-cover")).not.toBe("");
-    });
-  });
-
-  it("prefers API genres over mock data when genres are provided", () => {
-    render(
-      <TrendingByGenres
-        genres={[{ genre_id: "g-001", genre_name: "Hip-Hop" }]}
-      />,
-    );
-    expect(screen.getAllByTestId(/^genre-card-/)).toHaveLength(1);
-    expect(screen.queryByTestId("genre-card-genre-1")).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId(/^genre-card-/)).toHaveLength(0);
   });
 });

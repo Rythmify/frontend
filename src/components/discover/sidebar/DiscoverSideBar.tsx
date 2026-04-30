@@ -93,6 +93,7 @@ const DiscoverSidebar = () => {
     postedAt: t.postedAt,
     isPrivate: t.isPrivate,
     trackSlug: t.trackSlug,
+    artistId: t.artistId,
     initialReposted: t.isReposted,
   });
 

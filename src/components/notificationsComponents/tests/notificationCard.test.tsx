@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, configure } from '@testing-library/react'
+import { render, screen, fireEvent, configure, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import NotificationCard from '../notificationCard'
 import type { Notification, NotificationResourceDetails } from '@/services/api/notifications/notificationsAPI'
@@ -20,6 +20,10 @@ vi.mock('@/components/UI/FollowButton', () => ({
   default: ({ username }: { username: string }) => (
     <button data-test={`follow-btn-${username}`}>Follow</button>
   ),
+}))
+
+vi.mock('@/services/api/notifications/notificationsAPI', () => ({
+  markNotificationRead: vi.fn().mockResolvedValue({ success: true }),
 }))
 
 // Modal mock exposes onClose via a data-test button so tests can trigger it directly
@@ -301,28 +305,31 @@ describe('NotificationCard', () => {
   // ── Navigation ────────────────────────────────────────────────────────────
 
   describe('navigation', () => {
-    it('navigates to user profile on click for follow notifications', () => {
+    beforeEach(() => {
+      vi.useRealTimers()
+    })
+    it('navigates to user profile on click for follow notifications', async () => {
       renderCard(makeNotification({ type: 'follow' }))
       fireEvent.click(screen.getByTestId('notification-card-notif-1'))
-      expect(mockNavigate).toHaveBeenCalledWith('/johndoe')
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/johndoe'))
     })
 
-    it('navigates to track page on click for like notifications', () => {
+    it('navigates to track page on click for like notifications', async () => {
       renderCard(makeNotification({ type: 'like', resource_id: 'track-99' }))
       fireEvent.click(screen.getByTestId('notification-card-notif-1'))
-      expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-99')
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-99'))
     })
 
-    it('navigates to track page on click for comment notifications', () => {
+    it('navigates to track page on click for comment notifications', async () => {
       renderCard(makeNotification({ type: 'comment', resource_id: 'track-5' }))
       fireEvent.click(screen.getByTestId('notification-card-notif-1'))
-      expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-5')
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-5'))
     })
 
-    it('navigates to track page on click for repost notifications', () => {
+    it('navigates to track page on click for repost notifications', async () => {
       renderCard(makeNotification({ type: 'repost', resource_id: 'track-8', resource_details: makeResource({ title: 'Remix' }) }))
       fireEvent.click(screen.getByTestId('notification-card-notif-1'))
-      expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-8')
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-8'))
     })
   })
 

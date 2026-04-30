@@ -20,14 +20,15 @@ function SetsHeader({
   title,
 }: SetsHeaderProps) {
   return (
-    <div className="flex justify-between items-center py-2 px-4 ">
-      <div className=" text-white text-[17px] font-bold ">{title}</div>
+    <div data-test="sets-header" className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center py-2 px-4">
+      <div data-test="sets-header-title" className="text-white text-[17px] font-bold">{title}</div>
 
       <div className="flex-1" />
 
       {/* Search / Filter Input */}
-      <div className="relative group ">
+      <div className="relative group w-full md:w-auto">
         <input
+          data-test="input-filter-text"
           type="text"
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
@@ -49,11 +50,11 @@ function SetsHeader({
 
       <div className="flex items-center  gap-2">
         {/* Dropdown Menu */}
-        <div className="relative">
+        <div className="relative w-full md:w-auto">
           <button
             data-test="button-filter-dropdown"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center justify-between min-w-25 border border-transparent rounded-sm py-2 px-3 
+            className="flex items-center justify-between w-full md:min-w-25 border border-transparent rounded-sm py-2 px-3 
               bg-[#303030] focus:outline-none focus:border-text-secondary transition-all text-[14px] text-white font-bold hover:text-[#838383] cursor-pointer"
           >
             <span>{activeFilter}</span>

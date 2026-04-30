@@ -102,7 +102,7 @@ export default function PlaylistStatsWaveform({
   }, [activeTrackId, commentsProp, showComments]);
 
   return (
-    <div className="flex flex-col items-start gap-2 w-full min-w-0">
+    <div data-test="playlist-stats-waveform" className="flex flex-col items-start gap-2 w-full min-w-0">
       {waveformTrack ? (
         <div className="w-full min-w-0 overflow-hidden">
           <div

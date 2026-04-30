@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import { getPlaylist } from "@/services/api/playlist/playlist.service";
 import type { Track } from "@/types/track";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
 
@@ -20,6 +21,7 @@ export interface AlbumCardItem {
   likeCount: number;
   createdAt?: string;
   previewTrack?: Track;
+  previewTrackId?: string | null;
 }
 
 interface AlbumCardProps {
@@ -34,14 +36,28 @@ export default function AlbumCard({
   const navigate = useNavigate();
   const { isAlbumLiked, toggleAlbum } = useLikesStore();
   const { currentTrack, isPlaying, togglePlay, setTrack } = usePlayerStore();
-  const { addPlaylist } = useHistoryStore();
+  const { addAlbum } = useHistoryStore();
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
-  const liked = isAlbumLiked(item.id);
-  const isThisPlaying =
-    isPlaying && !!item.previewTrack && currentTrack?.id === item.previewTrack.id;
+  const fetchTracksForModal = useCallback(
+    async () => {
+      const res = await getPlaylist(item.id, { include_tracks: true });
+      return (res.data.tracks || []).map((t) => ({
+        id: t.track_id,
+        title: t.title ?? "Untitled track",
+        artistName: t.artist_name ?? "Unknown Artist",
+        coverUrl: t.cover_image ?? undefined,
+      }));
+    },
+    [item.id],
+  );
 
-  const albumPath = `/${item.ownerUsername || item.ownerId}/album/${item.slug || item.id}`;
+  const liked = isAlbumLiked(item.id);
+  const previewTrackId = item.previewTrack?.id ?? item.previewTrackId ?? null;
+  const isThisPlaying =
+    isPlaying && !!previewTrackId && currentTrack?.id === previewTrackId;
+
+  const albumPath = `/discover/albums/:${item.slug ?? item.id}`;
 
   const buildPayload = (): Playlist => ({
     playlist_id: item.id,
@@ -59,11 +75,11 @@ export default function AlbumCard({
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!item.previewTrack) return;
-    if (currentTrack?.id === item.previewTrack.id) {
+    if (currentTrack?.id === previewTrackId) {
       togglePlay();
     } else {
       setTrack(item.previewTrack);
-      addPlaylist({ id: item.id, title: item.title, owner: item.owner, coverUrl: item.coverUrl, isAlbumView: true });
+      addAlbum(item);
     }
   };
 
@@ -113,7 +129,7 @@ export default function AlbumCard({
 
       {showPlaylistModal && (
         <AddToPlaylistModal
-          playlistId={item.id}
+          fetchTracks={fetchTracksForModal}
           trackTitle={item.title}
           onClose={() => setShowPlaylistModal(false)}
         />

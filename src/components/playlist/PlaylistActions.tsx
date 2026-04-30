@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { HiUpload, HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
@@ -6,7 +6,6 @@ import { IoCopyOutline } from "react-icons/io5";
 import { LuListEnd } from "react-icons/lu";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import type {
-  Playlist,
   PlaylistDetails,
   PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
@@ -27,17 +26,16 @@ export default function PlaylistActions({
 }: PlaylistActionsProps) {
   const navigate = useNavigate();
   const { isPlaylistLiked, togglePlaylist } = useLikesStore();
-  const { addToQueue, queue } = usePlayerStore();
+  const { addToQueue } = usePlayerStore();
   const liked = isPlaylistLiked(playlist.playlist_id);
-  const isQueued =
-    playlist.tracks.length > 0 &&
-    playlist.tracks.some((track) =>
-      queue.some((queuedTrack) => queuedTrack.id === track.track_id),
-    );
 
   const [shareOpen, setShareOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [addedToQueue, setAddedToQueue] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const parseDuration = (duration?: number | null): string => {
     if (typeof duration !== "number" || Number.isNaN(duration)) return "0:00";
@@ -68,7 +66,36 @@ export default function PlaylistActions({
     const tracks = playlist.tracks.map(toPlayerTrack);
     if (!tracks.length) return;
     tracks.forEach((track) => addToQueue(track));
+
+    setAddedToQueue(true);
+    if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+    queueTimerRef.current = setTimeout(() => {
+      setAddedToQueue(false);
+      queueTimerRef.current = null;
+    }, 3000);
   };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopySuccess(true);
+
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => {
+        setCopySuccess(false);
+        copyTimerRef.current = null;
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy playlist link:", err);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   return (
     <>
@@ -90,9 +117,7 @@ export default function PlaylistActions({
         <ActionButton
           tooltip="Copy Link"
           data-test="button-copy-link"
-          onClick={() => {
-            navigator.clipboard.writeText(window.location.href);
-          }}
+          onClick={handleCopyLink}
         >
           <IoCopyOutline className="text-[18px]" />
         </ActionButton>
@@ -108,17 +133,21 @@ export default function PlaylistActions({
 
         {/* Like */}
         <ActionButton
-          tooltip={liked ? "Unlike" : "Like"}
+          tooltip={liked ? "Liked" : "Like"}
           data-test="button-like"
           active={liked}
-          onClick={() =>
-            togglePlaylist({
+          onClick={async () => {
+            try {
+              await togglePlaylist({
               id: playlist.playlist_id,
               title: playlist.name,
               owner: playlist.owner_user_id,
               coverUrl: playlist.cover_image || null,
-            })
-          }
+              });
+            } catch (err) {
+              console.error("Failed to toggle playlist like:", err);
+            }
+          }}
         >
           {liked ? (
             <FaHeart className="text-[16px] text-[var(--color-accent)]" />
@@ -132,7 +161,7 @@ export default function PlaylistActions({
           tooltip="Add to Next Up"
           data-test="button-add-next-up"
           onClick={handleAddToNextUp}
-          active={isQueued}
+          active={addedToQueue}
         >
           <LuListEnd className="text-[18px]" />
         </ActionButton>
@@ -170,6 +199,16 @@ export default function PlaylistActions({
           onClose={() => setDeleteOpen(false)}
           onDeleted={() => navigate(-1)}
         />
+      )}
+
+      {copySuccess && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 z-[9999] -translate-x-1/2 rounded-md bg-black/90 px-3 py-2 text-xs font-semibold text-white shadow-lg"
+        >
+          Link copied
+        </div>
       )}
     </>
   );

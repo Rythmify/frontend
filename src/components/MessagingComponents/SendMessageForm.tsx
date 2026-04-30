@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { sendMessage } from '../../services/api/messaging/conversationApi';
 import type { Message } from '../../services/api/messaging/conversationApi';
 import { MessageBox } from './MessageBox';
 import type { ResolvedEmbed } from './MessageBox';
 import MessageCell from './messagecell';
-import { useAuthStore } from '@/stores/auth.store'
+import { useAuthStore } from '@/stores/auth.store';
 import { emitMessageSent, emitStopTyping } from '@/services/api/messaging/socketService';
 
 interface SendMessageFormProps {
   conversationId: string;
   existingMessages: Message[];
   loadingMessages: boolean;
+  hasMoreMessages: boolean;
+  onLoadMore: () => void;
   onMessageSent: (msg: Message) => void;
   isTyping?: boolean;
   ParticipantInfo: {
@@ -19,22 +21,88 @@ interface SendMessageFormProps {
   };
 }
 
+type MessageWithEmbed = Message & {
+  _embedResource?: ResolvedEmbed['resource'];
+};
+
 export default function SendMessageForm({
   conversationId,
   existingMessages,
   loadingMessages,
+  hasMoreMessages,
+  onLoadMore,
   onMessageSent,
   isTyping,
   ParticipantInfo,
 }: SendMessageFormProps) {
+  // `value` here is already URL-stripped (MessageBox calls onValueChange with clean text)
   const [value, setValue]         = useState('');
   const [embeds, setEmbeds]       = useState<ResolvedEmbed[]>([]);
   const [error, setError]         = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [boxKey, setBoxKey]       = useState(0);
 
+  const scrollContainerRef  = useRef<HTMLDivElement>(null);
+  const sentinelRef         = useRef<HTMLDivElement>(null);
+  const prevMsgCountRef     = useRef(0);
+  const prevScrollHeightRef = useRef(0);
+  const isLoadingMoreRef    = useRef(false);
+
+  // ─── Scroll to bottom on initial load & new messages ─────────────────────
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const prev    = prevMsgCountRef.current;
+    const current = existingMessages.length;
+
+    if (isLoadingMoreRef.current) {
+      const newScrollHeight = container.scrollHeight;
+      container.scrollTop   = newScrollHeight - prevScrollHeightRef.current;
+      isLoadingMoreRef.current = false;
+    } else if (prev === 0 && current > 0) {
+      container.scrollTop = container.scrollHeight;
+    } else if (current > prev) {
+      container.scrollTop = container.scrollHeight;
+    }
+
+    prevMsgCountRef.current = current;
+  }, [existingMessages]);
+
+  // ─── IntersectionObserver — load older messages ───────────────────────────
+  const handleIntersect = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (!entries[0].isIntersecting) return;
+      if (!hasMoreMessages || loadingMessages) return;
+
+      const container = scrollContainerRef.current;
+      if (container) {
+        prevScrollHeightRef.current = container.scrollHeight;
+        isLoadingMoreRef.current    = true;
+      }
+      onLoadMore();
+    },
+    [hasMoreMessages, loadingMessages, onLoadMore],
+  );
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(handleIntersect, {
+      root: scrollContainerRef.current,
+      threshold: 0.1,
+    });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [handleIntersect]);
+
+  // ─── Send handler ─────────────────────────────────────────────────────────
   const handleSend = async () => {
-    if (value.trim() === '' && embeds.length === 0) {
+    // `value` is already stripped of embed URLs by MessageBox
+    const cleanBody = value.trim();
+
+    if (cleanBody === '' && embeds.length === 0) {
       setError('Enter a message or paste a track/playlist link');
       return;
     }
@@ -42,53 +110,45 @@ export default function SendMessageForm({
     setIsSending(true);
 
     try {
-      /**
-       * The API accepts one resource per message.
-       * If the user pasted multiple permalinks we send one message per embed
-       * (body only on the first, empty body on subsequent ones), then one
-       * final text-only message if there's body text without any embed.
-       *
-       * Strategy:
-       *   - If embeds exist: first message carries the text body + first embed,
-       *     each additional embed is a separate resource-only message.
-       *   - If no embeds: single text message.
-       */
-      const sentMessages: Message[] = [];
+      const sentMessages: MessageWithEmbed[] = [];
 
       if (embeds.length > 0) {
         for (let i = 0; i < embeds.length; i++) {
           const embed = embeds[i];
-          const res = await sendMessage(conversationId, {
-            // Only attach the text body to the first message
-            ...(i === 0 && value.trim() ? { body: value.trim() } : {}),
+
+          // Only attach the text body to the first message
+          const payload = {
+            ...(i === 0 && cleanBody ? { body: cleanBody } : {}),
             resource: { type: embed.type, id: embed.id },
-          });
-          // Attach embed metadata so MessageCell can render it
-          const msg: Message = {
+          };
+
+          const res = await sendMessage(conversationId, payload);
+
+          const msg: MessageWithEmbed = {
             ...res.data,
-            body: i === 0 ? value.trim() : '',
-            embed_type: embed.type,
-            embed_id: embed.id,
-            // Store serialised resource for immediate rendering without a re-fetch
+            body:           i === 0 ? cleanBody : '',
+            embed_type:     embed.type,
+            embed_id:       embed.id,
             _embedResource: embed.resource,
-          } as Message & { _embedResource: ResolvedEmbed['resource'] };
+          };
+
           sentMessages.push(msg);
         }
       } else {
-        // Text-only message
-        const res = await sendMessage(conversationId, { body: value.trim() });
-        sentMessages.push({ ...res.data, body: value.trim() });
+        // Plain text — no embed
+        const res = await sendMessage(conversationId, { body: cleanBody });
+        sentMessages.push({ ...res.data, body: cleanBody });
       }
 
       for (const msg of sentMessages) {
-        onMessageSent(msg);
-        emitMessageSent(conversationId, msg);
+        onMessageSent(msg as Message);
+        emitMessageSent(conversationId, msg as Message);
       }
       emitStopTyping(conversationId);
 
       setValue('');
       setEmbeds([]);
-      setBoxKey(k => k + 1);
+      setBoxKey((k) => k + 1);
     } catch (err: unknown) {
       const axiosError = err as { response?: { status: number } };
       if (axiosError.response?.status === 403) {
@@ -101,49 +161,84 @@ export default function SendMessageForm({
     }
   };
 
-  const user = useAuthStore(state => state.user);
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  const user = useAuthStore((state) => state.user);
+
   const getSenderInfo = (senderId: string) => {
     if (senderId === user?.id) {
       return {
-        display_name: user?.displayName ?? user?.username ?? 'Me',
+        display_name:    user?.displayName ?? user?.username ?? 'Me',
         profile_picture: user?.avatar ?? null,
       };
     }
     return ParticipantInfo;
   };
 
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col h-full min-h-0">
+      {/* ── Scrollable message list ── */}
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto flex flex-col gap-4 px-3 py-3 min-h-0"
+      >
+        <div ref={sentinelRef} className="h-1 w-full shrink-0" />
 
-      {loadingMessages ? (
-        <div className="text-sm text-[#666] text-center py-4">Loading messages…</div>
-      ) : (
-        existingMessages.map(msg => (
-          <MessageCell
-            key={msg.id}
-            message={msg}
-            displayName={getSenderInfo(msg.sender_id).display_name}
-            profilePicture={getSenderInfo(msg.sender_id).profile_picture}
-          />
-        ))
-      )}
+        {loadingMessages && hasMoreMessages && (
+          <div className="text-xs text-[#666] text-center py-2 shrink-0">
+            Loading older messages…
+          </div>
+        )}
 
-      {isTyping && (
-        <p className="text-xs text-[#999] italic px-3 pb-1">typing...</p>
-      )}
+        {loadingMessages && existingMessages.length === 0 ? (
+          <div className="text-sm text-[#666] text-center py-4">
+            Loading messages…
+          </div>
+        ) : (
+          existingMessages.map((msg) => (
+            <MessageCell
+              key={msg.id}
+              message={msg}
+              displayName={getSenderInfo(msg.sender_id).display_name}
+              profilePicture={getSenderInfo(msg.sender_id).profile_picture}
+            />
+          ))
+        )}
 
-      <div className="flex flex-col gap-2">
+        {isTyping && (
+          <p className="text-xs text-[#999] italic px-1 pb-1 shrink-0">
+            typing…
+          </p>
+        )}
+      </div>
+
+      {/* ── Composer ── */}
+      <div className="shrink-0 flex flex-col gap-2 px-3 pb-3 pt-2 bg-bg border-t border-white/10"
+      onKeyDown={(e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }}
+      >
+
         <label className="text-sm font-bold text-white">
           Write your message and add tracks or playlists{' '}
           <span className="text-red-500">*</span>
         </label>
+
         <MessageBox
           key={boxKey}
           onValueChange={setValue}
-          onIsEmptyChange={(empty) => { if (empty) setError(null); }}
-          onEmbedsResolved={setEmbeds}  
+          onIsEmptyChange={(empty) => {
+            if (empty) setError(null);
+          }}
+          onEmbedsResolved={setEmbeds}
+          hasError={!!error}
         />
+
         {error && <p className="text-xs text-red-400">{error}</p>}
+
         <div className="flex justify-end">
           <button
             onClick={handleSend}

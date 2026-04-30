@@ -10,6 +10,7 @@ import {
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
+import { getTrackById } from "@/services/track.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
 import TrackList from "../../../components/playlist/TrackList";
@@ -61,7 +62,20 @@ function PlaylistSlugPage() {
 
         if (cancelled) return;
 
-        setPlaylist(playlistRes.data);
+        const hydratedTracks = await Promise.all(
+          playlistRes.data.tracks.map(async (track) => {
+            const fullTrack = await getTrackById(track.track_id).catch(() => null);
+            return {
+              ...track,
+              play_count: fullTrack?.playCount ?? track.play_count ?? 0,
+            };
+          }),
+        );
+
+        setPlaylist({
+          ...playlistRes.data,
+          tracks: hydratedTracks,
+        });
 
         try {
           const owner = await getUserById(playlistRes.data.owner_user_id);
@@ -183,7 +197,7 @@ function PlaylistSlugPage() {
 
   if (loading) {
     return (
-      <div className="animate-pulse p-20 text-center text-white">
+      <div data-test="playlist-slug-loading" className="animate-pulse p-20 text-center text-white">
         Loading playlist...
       </div>
     );
@@ -191,7 +205,7 @@ function PlaylistSlugPage() {
 
   if (error || !playlist) {
     return (
-      <div className="p-20 text-center text-red-500">
+      <div data-test="playlist-slug-error" className="p-20 text-center text-red-500">
         {error || "Playlist not found."}
       </div>
     );
@@ -212,10 +226,10 @@ function PlaylistSlugPage() {
         ownerUsername={albumOwner?.username ?? username}
       />
 
-      <div className=" mx-auto">
+      <div className="mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           {/* Left Column: Actions and Track List */}
-          <div className="flex-1 min-w-0">
+          <div data-test="playlist-slug-main" className="flex-1 min-w-0">
             {showOwnerActions ? (
               <PlaylistActions
                 playlist={playlist}
@@ -227,7 +241,7 @@ function PlaylistSlugPage() {
               <PlaylistActionsForYou playlist={playlist} />
             )}
 
-            <div className="flex flex-col lg:flex-row gap-6 mt-8">
+            <div data-test="playlist-slug-content" className="flex flex-col lg:flex-row gap-6 mt-8">
               <OwnerInfo
                 ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}
@@ -249,7 +263,7 @@ function PlaylistSlugPage() {
             </div>
           </div>
 
-          <div className="w-full lg:w-[280px] shrink-0">
+          <div data-test="playlist-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
             <PlaylistSidebar playlist={playlist} />
             <GuestPageFooter />
           </div>

@@ -14,12 +14,16 @@ export type PlaylistCardData = {
   id: string;
   title: string;
   owner: string;
+  ownerDisplayName?: string;
   ownerUsername?: string;
   slug?: string | null;
   coverUrl: string | null;
   isPrivate?: boolean;
   isLiked?: boolean;
   isAlbumView?: boolean;
+  linkTo?: string;
+  onLike?: (e: React.MouseEvent) => void;
+  isLikedOverride?: boolean;
 };
 
 interface PlaylistCardProps {
@@ -43,15 +47,22 @@ export default function PlaylistCard({
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // Derived State
-  const liked = item.isAlbumView ? isAlbumLiked(item.id) : isPlaylistLiked(item.id);
+  const liked =
+    item.isLikedOverride !== undefined
+      ? item.isLikedOverride
+      : item.isAlbumView
+        ? isAlbumLiked(item.id)
+        : isPlaylistLiked(item.id);
   const isThisPlaylistPlaying =
     isPlaying &&
     (currentTrack as any)?.context?.type === "playlist" &&
     (currentTrack as any)?.context?.playlist_id === item.id;
 
-  const ownerDisplay = UUID_RE.test(item.owner)
-    ? (user?.displayName ?? user?.username ?? item.owner)
-    : item.ownerUsername?? item.owner;
+  const ownerDisplay =
+    item.ownerDisplayName ??
+    (UUID_RE.test(item.owner)
+      ? (user?.displayName ?? user?.username ?? item.owner)
+      : item.ownerUsername ?? item.owner);
     
 
   // SoundCloud navigation format: /[username]/sets/[slug]
@@ -88,7 +99,7 @@ export default function PlaylistCard({
   return (
     <div
       className={`group flex flex-col gap-2 ${widthClassName} shrink-0 cursor-pointer`}
-      onClick={() => navigate(playlistPath)}
+      onClick={() => navigate(item.linkTo ?? playlistPath)}
       data-test="playlist-card"
     >
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
@@ -110,7 +121,9 @@ export default function PlaylistCard({
           isLiked={liked}
           onLike={(e) => {
             e.stopPropagation();
-            if (item.isAlbumView) {
+            if (item.onLike) {
+              item.onLike(e);
+            } else if (item.isAlbumView) {
               toggleAlbum({ playlist_id: item.id, name: item.title, cover_image: item.coverUrl } as any);
             } else {
               togglePlaylist(item);

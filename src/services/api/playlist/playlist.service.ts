@@ -86,6 +86,7 @@ export interface UpdatePlaylistPayload {
   genre_id?: string | null;
   /** Replaces all existing playlist tags when provided */
   tags?: string[];
+  is_album_view?: boolean;
 }
 
 export interface PlaylistTracksPage {
@@ -160,6 +161,30 @@ export interface MadeForYouResponse {
   };
 }
 
+export interface TrendingByGenreTrack {
+  id: string;
+  title: string;
+  cover_image: string | null;
+  duration: number | null;
+  genre_name: string | null;
+  play_count: number;
+  like_count: number;
+  repost_count: number | null;
+  user_id: string;
+  artist_name: string | null;
+  stream_url: string | null;
+  created_at: string;
+}
+
+export interface TrendingByGenreResponse {
+  data: {
+    genre_id: string;
+    genre_name: string;
+    tracks: TrendingByGenreTrack[];
+  };
+  message: string;
+}
+
 export function formatDuration(totalSeconds: number) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds));
   const hours = Math.floor(safeSeconds / 3600);
@@ -223,6 +248,16 @@ export async function getPlaylist(
   return res.data;
 }
 
+export async function playlistExists(playlistId: string): Promise<boolean> {
+  if (!playlistId) return false;
+  try {
+    await getPlaylist(playlistId, { include_tracks: false });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * PATCH /playlists/:id — update playlist metadata.
  * Sends multipart/form-data as required by the API spec.
@@ -245,6 +280,8 @@ export async function updatePlaylist(
     formData.append("release_date", payload.release_date ?? "");
   if (payload.genre_id !== undefined)
     formData.append("genre_id", payload.genre_id ?? "");
+  if (payload.is_album_view !== undefined)
+    formData.append("is_album_view", String(payload.is_album_view));
   if (payload.tags?.length)
     payload.tags.forEach((id) => formData.append("tags[]", id));
 
@@ -254,6 +291,18 @@ export async function updatePlaylist(
   }>(`/playlists/${playlistId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return res.data;
+}
+
+/** POST /playlists/:id/convert — convert a playlist to a track */
+export async function convertPlaylist(
+  playlistId: string,
+  payload: { name?: string; is_public?: boolean },
+) {
+  const res = await axiosInstance.post<{
+    data: Playlist;
+    message: string;
+  }>(`/playlists/${playlistId}/convert`, payload);
   return res.data;
 }
 
@@ -366,6 +415,18 @@ export async function getMadeForYouDaily() {
 /** GET /home/made-for-you/weekly */
 export async function getMadeForYouWeekly() {
   return getMadeForYou("weekly");
+}
+
+/** GET /home/trending-by-genre/{genre_id} */
+export async function getTrendingByGenre(
+  genreId: string,
+  params?: { limit?: number; offset?: number },
+) {
+  const res = await axiosInstance.get<TrendingByGenreResponse>(
+    `/home/trending-by-genre/${genreId}`,
+    { params },
+  );
+  return res.data.data;
 }
 
 /** DELETE /playlists/:id/tracks/:trackId — remove a track from a playlist */

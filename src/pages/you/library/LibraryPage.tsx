@@ -4,7 +4,6 @@ import TrackCard from "@/components/UI/card/Card";
 import UserCard from "@/components/UI/UserCard/UserCard";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
-import AlbumCard from "@/components/playlist/PlaylistCard";
 import StationCard from "@/components/UI/StationCard/StationCard";
 import MadeForYouCard from "@/components/UI/MadeForYouCard/MadeForYouCard";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
@@ -31,6 +30,7 @@ import { useHistoryStore } from "@/stores/history.store";
 import { useAuthStore } from "@/stores/auth.store";
 import MixedForYou from "@/components/discover/MixedForYou";
 import MixCard from "@/components/UI/MixCard/MixCard";
+import GenreCard from "@/components/UI/GenreCard/GenreCard";
 
 // ─── Constants ────────────────────────────────────────────
 
@@ -135,9 +135,26 @@ function mapPlaylistToCard(
     id: p.playlist_id,
     title: p.name,
     owner: displayName,
+    ownerUsername: displayName,
     coverUrl: p.cover_image,
     isPrivate: !p.is_public,
     isLiked: p.like_count > 0,
+  };
+}
+
+function mapAlbumToCard(
+  p: Playlist,
+  displayName: string,
+): PlaylistCardData {
+  return {
+    id: p.playlist_id,
+    title: p.name,
+    owner: displayName,
+    ownerUsername: p.owner_user_id,
+    coverUrl: p.cover_image ?? null,
+    isPrivate: !p.is_public,
+    isLiked: p.like_count > 0,
+    isAlbumView: true,
   };
 }
 
@@ -184,6 +201,8 @@ export default function LibraryPage() {
     likedStations,
     likedPlaylists,
     likedAlbums: storeLikedAlbums,
+    likedMixes,
+    likedGenres,
   } = useLikesStore();
   const { user } = useAuthStore();
   const { entries } = useHistoryStore();
@@ -230,8 +249,12 @@ export default function LibraryPage() {
       getLikedPlaylists({ limit: 50 }),
     ])
       .then(([created, liked]) => {
-        const createdAlbums = created.data.items.filter((p) => p.is_album_view);
-        const likedAlbums = liked.data.items.filter((p) => p.is_album_view);
+        const createdAlbums = created.data.items.filter(
+          (p) => p.is_album_view || p.subtype === "album",
+        );
+        const likedAlbums = liked.data.items.filter(
+          (p) => p.is_album_view || p.subtype === "album",
+        );
         const merged = [...createdAlbums, ...likedAlbums];
         const seen = new Set<string>();
         const unique = merged.filter((p) => {
@@ -245,13 +268,23 @@ export default function LibraryPage() {
   }, []);
 
   // History entries (all types) take priority; fall back to API/mock tracks
-  const recentEntries =
-    entries.length > 0
-      ? entries
-      : (recentlyPlayedApi.length > 0
-          ? recentlyPlayedApi
-          : mockRecentlyPlayedTracks
-        ).map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
+  const recentEntries = (() => {
+    const list =
+      entries.length > 0
+        ? entries
+        : (recentlyPlayedApi.length > 0
+            ? recentlyPlayedApi
+            : mockRecentlyPlayedTracks
+          ).map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
+
+    const seen = new Set<string>();
+    return list.filter((e) => {
+      const key = `${e.type}-${e.item.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
 
   const likesDisplay = likedTracks;
   const stationsDisplay = likedStations;
@@ -267,7 +300,28 @@ export default function LibraryPage() {
     });
   })();
 
-  const displayedFollowing = followingUsers;
+  const showMixesAndGenres = playlistFilter !== "Created";
+
+  const displayedFollowing = (() => {
+    // API result is authoritative; show all of them
+    const seenUsernames = new Set(followingUsers.map((u) => u.username));
+
+    // Supplement with any following_ids entries not yet returned by the API (optimistic)
+    const synthetic: User[] = (user?.following_ids ?? [])
+      .filter((username) => !seenUsernames.has(username))
+      .map((username, i) => ({
+        id: String(-(i + 1)),
+        username,
+        displayName: username,
+        followers: 0,
+      }));
+
+    return [...followingUsers, ...synthetic];
+  })();
+
+  const recentTracks = recentEntries
+    .filter((e) => e.type === "track")
+    .map((e) => e.item as Track);
 
   return (
     <div className="flex flex-col gap-8 sm:gap-10 md:gap-12">
@@ -280,6 +334,7 @@ export default function LibraryPage() {
                 key={`track-${entry.item.id}`}
                 track={entry.item}
                 widthClassName={CARD_WIDTH}
+                contextQueue={recentTracks}
               />
             );
           if (entry.type === "station")
@@ -335,6 +390,59 @@ export default function LibraryPage() {
         {visiblePlaylists.map((item) => (
           <PlaylistCard key={item.id} item={item} widthClassName={CARD_WIDTH} />
         ))}
+
+        {showMixesAndGenres && likedMixes.map((mix, mixIndex) => {
+          const mixId = mix.mix_id ?? mix.id;
+          if (mix.kind === "daily" || mix.kind === "weekly") {
+            return (
+              <MadeForYouCard
+                key={mixId}
+                item={{
+                  id: mix.id,
+                  title: mix.title || (mix.kind === "daily" ? "Daily Drops" : "Weekly Wave"),
+                  subtitle: mix.kind === "daily" ? "Daily mix" : "Weekly mix",
+                  coverUrl: mix.cover_image ?? "",
+                  madeKind: mix.kind,
+                  badgeWords: mix.kind === "daily" ? ["DAILY", "DROPS"] : ["WEEKLY", "WAVE"],
+                  badgeBg: mix.kind === "daily" ? "#1a237e" : "#1b5e20",
+                }}
+                widthClassName={CARD_WIDTH}
+              />
+            );
+          }
+          return (
+            <MixCard
+              key={mixId}
+              mix={{
+                id: mix.id,
+                mix_id: mix.mix_id,
+                label: mix.title || `Mix ${mixIndex + 1}`,
+                flavor: "listening_history",
+                genre_name: null,
+                cover_image: mix.cover_image ?? null,
+                track_count: 0,
+                generated_at: "",
+                preview_track: null as any,
+                is_liked_by_me: true,
+              }}
+              widthClassName={CARD_WIDTH}
+            />
+          );
+        })}
+
+        {showMixesAndGenres && likedGenres.map((genre, i) => (
+          <GenreCard
+            key={genre.id}
+            item={{
+              id: genre.id,
+              genre: genre.genre,
+              cover_image: genre.cover_image,
+              track_count: 0,
+            }}
+            index={i}
+            widthClassName={CARD_WIDTH}
+          />
+        ))}
       </Section>
 
       {/* Albums */}
@@ -342,15 +450,16 @@ export default function LibraryPage() {
         {(() => {
           const seen = new Set<string>();
           return [...albums, ...storeLikedAlbums]
+            .filter((p) => p.is_album_view || p.subtype === "album")
             .filter((p) => {
               if (seen.has(p.playlist_id)) return false;
               seen.add(p.playlist_id);
               return true;
             })
             .map((p) => (
-              <AlbumCard
+              <PlaylistCard
                 key={p.playlist_id}
-                playlist={p}
+                item={mapAlbumToCard(p, user?.displayName ?? user?.username ?? p.owner_user_id)}
                 widthClassName={CARD_WIDTH}
               />
             ));

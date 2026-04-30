@@ -22,8 +22,8 @@ export default function LikesContent({ tracks, showControls = true, maxItems, wi
 
   const filtered = filter.trim()
     ? tracks.filter(t =>
-        t.title.toLowerCase().includes(filter.toLowerCase()) ||
-        t.artistName.toLowerCase().includes(filter.toLowerCase()))
+        (t.title?.toLowerCase() || "").includes(filter.toLowerCase()) ||
+        (t.artistName?.toLowerCase() || "").includes(filter.toLowerCase()))
     : tracks;
 
   const displayed = maxItems ? filtered.slice(0, maxItems) : filtered;
@@ -63,7 +63,7 @@ export default function LikesContent({ tracks, showControls = true, maxItems, wi
       ) : view === "grid" ? (
         <div className="flex flex-wrap gap-6">
           {displayed.map((track) => (
-            <GridTrackCard key={track.id} track={track} widthClassName={CARD_WIDTH} />
+            <GridTrackCard key={track.id} track={track} widthClassName={CARD_WIDTH} contextQueue={displayed} />
           ))}
           {maxItems && Array.from({ length: Math.max(0, maxItems - displayed.length) }).map((_, i) => (
             <div key={`empty-${i}`} className={`flex flex-col ${CARD_WIDTH}`}>
@@ -74,7 +74,7 @@ export default function LikesContent({ tracks, showControls = true, maxItems, wi
       ) : (
         <div className="flex flex-col">
           {displayed.map((track) => (
-            <WaveformTrackCard key={track.id} track={track} />
+            <WaveformTrackCard key={track.id} track={track} contextQueue={displayed} />
           ))}
         </div>
       )}

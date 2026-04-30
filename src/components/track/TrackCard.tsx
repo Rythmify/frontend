@@ -18,6 +18,7 @@ import {
 import { MdQueueMusic, MdPlaylistAdd, MdComment } from "react-icons/md";
 import { FaPlay as FaPlayCount } from "react-icons/fa6";
 import { IoSend } from "react-icons/io5";
+import FollowButton from "../UI/FollowButton";
 import type { Track } from "../../types/track";
 import type { Comment } from "../../types/comment";
 import type { TrackCardProps } from "./types";
@@ -33,6 +34,10 @@ import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup
 import * as engagementService from "../../services/engagement.service";
 import * as trackService from "../../services/track.service";
 import TrackCommentList from "../../pages/[username]/[trackSlug]/components/TrackCommentList";
+import { toast } from "sonner";
+import EditTrackModal from "./EditTrackModal";
+import DeleteTrackModal from "./DeleteTrackModal";
+import ReplaceAudioModal from "./ReplaceAudioModal";
 
 // helpers
 
@@ -97,19 +102,19 @@ function CommentMarker({
         zIndex: 6,
       }}
     >
-        <img
-            src={c.author.avatar_url || "https://picsum.photos/seed/user/20/20"}
-            alt={c.author.display_name}
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: "1.5px solid rgba(255,255,255,0.5)",
-              opacity: hovered ? 1 : 0.8,
-              transition: "opacity 0.2s"
-            }}
-          />
+      <img
+        src={c.author.avatar_url || "https://picsum.photos/seed/user/20/20"}
+        alt={c.author.display_name}
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: "50%",
+          objectFit: "cover",
+          border: "1.5px solid rgba(255,255,255,0.5)",
+          opacity: hovered ? 1 : 0.8,
+          transition: "opacity 0.2s"
+        }}
+      />
       {hovered && (
         <div
           style={{
@@ -270,7 +275,7 @@ function CardWaveform({
         });
       }
 
-      ws.on("error", () => {});
+      ws.on("error", () => { });
       wsRef.current = ws;
     };
 
@@ -356,7 +361,7 @@ function CardWaveform({
             const ratio = durSec > 0 ? c.track_timestamp / durSec : 0;
             return <CommentMarker key={c.comment_id} comment={c} ratio={ratio} />;
           })}
-          
+
           {pendingRatio !== null && (
             <div
               style={{
@@ -452,6 +457,7 @@ function ScBtn({ icon, label, tooltip, onClick, active = false, "data-test": dat
 
 export default function TrackCard({
   track,
+  contextQueue,
   repostedBy,
   disableComments,
   onCopyLink,
@@ -461,34 +467,49 @@ export default function TrackCard({
   onReplaceFile,
   onDistribute,
 }: TrackCardProps) {
-  const { currentTrack, isPlaying, setTrack, togglePlay, addToQueue } = usePlayerStore();
+  const { currentTrack, isPlaying, setTrack, togglePlay, addNextInQueue } = usePlayerStore();
   const { user } = useAuthStore();
   const loves = useLikesStore();
-
+  const globalStats = loves.getItemStats(track.id);
+  
   const isOwner = !!user && (user.username === track.artistUsername || user.id === track.artistId);
   const isActive = currentTrack?.id === track.id;
 
-  const [likeCount, setLikeCount] = useState(track.likeCount ?? 0);
-  const [repostCount, setRepostCount] = useState(track.repostCount ?? 0);
-  const [playCount, setPlayCount] = useState(track.playCount ?? 0);
-  const [isLiked, setIsLiked] = useState(false); // Initially from backend normalize
-  const [isReposted, setIsReposted] = useState(false);
+  // Global derived values
+  const isLiked = loves.isTrackLiked(track.id);
+  const isReposted = loves.isTrackReposted(track.id) || (globalStats.isReposted ?? track.isReposted ?? false);
+  const playCount = globalStats.playCount ?? track.playCount ?? 0;
+  const likeCount = globalStats.likeCount ?? track.likeCount ?? 0;
+  const repostCount = globalStats.repostCount ?? track.repostCount ?? 0;
+
   const [showShare, setShowShare] = useState(false);
   const [addedToQueue, setAddedToQueue] = useState(false);
+  const [showMore, setShowMore] = useState(false);
 
   const [commentText, setCommentText] = useState("");
   const [showCommentBar, setShowCommentBar] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [showDiscussion, setShowDiscussion] = useState(false);
 
-  // Sync state with track props
+  // Track edit / delete modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
+  // Local overrides applied after a successful edit (so title/cover/genre update instantly)
+  const [trackPatch, setTrackPatch] = useState<Partial<Track>>({});
+  const displayTrack = { ...track, ...trackPatch };
+
+  // Seed initial stats from track prop
   useEffect(() => {
-    setIsLiked(track.isLiked || false);
-    setIsReposted(track.isReposted || false);
-    setLikeCount(track.likeCount || 0);
-    setRepostCount(track.repostCount || 0);
-    setPlayCount(track.playCount || 0);
-  }, [track]);
+    if (globalStats.likeCount === undefined) {
+      loves.updateItemStats(track.id, {
+        likeCount: track.likeCount,
+        repostCount: track.repostCount,
+        playCount: track.playCount,
+        isReposted: track.isReposted
+      });
+    }
+  }, [track.id]);
 
   // Fetch comments for waveform avatars
   useEffect(() => {
@@ -503,12 +524,50 @@ export default function TrackCard({
     fetchComments();
   }, [track.id]);
 
+  // Click outside more dropdown
+  const moreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setShowMore(false);
+      }
+    };
+    if (showMore) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showMore]);
+
+  // View counting logic
+  useEffect(() => {
+    let hasCounted = false;
+    if (currentTrack?.id !== track.id) return;
+
+    const unsubscribe = usePlayerStore.subscribe((state) => {
+      if (!hasCounted && state.currentTrack?.id === track.id) {
+        const durationSec = parseDur(track.duration);
+        const threshold = durationSec > 0 && durationSec < 30 ? durationSec * 0.9 : 30;
+        
+        if (state.currentTime >= threshold && state.currentTime > 0) {
+          hasCounted = true;
+          trackService.incrementPlayCount(track.id);
+          loves.incrementPlayCount(track.id);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [track.id, currentTrack?.id, track.duration]);
+
   const handlePlayPause = () => {
     if (isActive) {
       togglePlay();
     } else {
-      setTrack(track);
-      setPlayCount(prev => prev + 1); // Optimistic increment
+      if (contextQueue) {
+        setTrack(track, contextQueue);
+      } else {
+        usePlayerStore.getState().playContext("track", track.id, track);
+      }
     }
   };
 
@@ -519,51 +578,35 @@ export default function TrackCard({
     if (!isActive) {
       const dur = parseDur(track.duration);
       const startTime = dur * ratio;
-      setTrack(track, undefined, startTime);
-      setPlayCount(prev => prev + 1); // Optimistic increment
+      if (contextQueue) {
+        setTrack(track, contextQueue, startTime);
+      } else {
+        usePlayerStore.getState().playContext("track", track.id, track, startTime);
+      }
     }
   };
 
   const handleLike = async () => {
-    const wasLiked = isLiked;
-    setIsLiked(!wasLiked);
-    setLikeCount(prev => wasLiked ? prev - 1 : prev + 1);
-    
-    try {
-      if (wasLiked) await engagementService.unlikeTrack(track.id);
-      else await engagementService.likeTrack(track.id);
-    } catch (err) {
-      setIsLiked(wasLiked);
-      setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
-      console.error("Like toggle failed", err);
-    }
+    // Toggle in global store
+    loves.toggleTrack(track);
   };
 
   const handleRepost = async () => {
     if (isOwner) {
-      alert("You cannot repost your own track!");
+      toast.error("You cannot repost your own track!");
       return;
     }
-    const wasReposted = isReposted;
-    setIsReposted(!wasReposted);
-    setRepostCount(prev => wasReposted ? prev - 1 : prev + 1);
-
-    try {
-      if (wasReposted) await engagementService.removeRepost(track.id);
-      else await engagementService.repostTrack(track.id);
-    } catch (err) {
-      setIsReposted(wasReposted);
-      setRepostCount(prev => wasReposted ? prev - 1 : prev + 1);
-      console.error("Repost toggle failed", err);
-    }
+    loves.toggleRepost(track).catch(() => {
+      toast.error("Failed to repost track");
+    });
   };
 
   const handleCommentSubmit = async () => {
     if (!commentText.trim()) return;
-    
+
     // Captured at the second of clicking Post
     const tsSec = isActive ? Math.floor(usePlayerStore.getState().currentTime) : 0;
-    
+
     try {
       const newComment = await trackService.postComment(track.id, commentText, tsSec);
       setComments(prev => [...prev, newComment]);
@@ -575,22 +618,58 @@ export default function TrackCard({
   };
 
   return (
-    <div 
+    <div
       className="group relative flex gap-3 sm:gap-6 py-4 sm:py-6 border-b border-white/5"
       data-test="track-card"
     >
       {showShare && (
-        <SharePopup track={track} onClose={() => setShowShare(false)} />
+        <SharePopup track={displayTrack} onClose={() => setShowShare(false)} />
+      )}
+
+      {showEditModal && (
+        <EditTrackModal
+          track={displayTrack}
+          onClose={() => setShowEditModal(false)}
+          onSaved={(updated) => {
+            setTrackPatch((prev) => ({ ...prev, ...updated }));
+            toast.success("Track updated successfully");
+          }}
+        />
+      )}
+
+      {showReplaceModal && (
+        <ReplaceAudioModal
+          trackId={track.id}
+          trackTitle={displayTrack.title}
+          onClose={() => setShowReplaceModal(false)}
+          onReplaced={() => {
+            toast.info("Audio replaced — track is processing", {
+              description: "Playback will resume once processing completes.",
+            });
+          }}
+        />
+      )}
+
+      {showDeleteModal && (
+        <DeleteTrackModal
+          trackId={track.id}
+          trackTitle={displayTrack.title}
+          onClose={() => setShowDeleteModal(false)}
+          onDeleted={() => {
+            toast.success(`"${displayTrack.title}" deleted`);
+            onDelete?.();
+          }}
+        />
       )}
 
       {/* Cover Art */}
       <div className="relative w-20 h-20 sm:w-[160px] sm:h-[160px] shrink-0 overflow-hidden rounded bg-black/40">
-        <img 
-          src={track.coverUrl || "https://picsum.photos/seed/rythmify/160/160"} 
-          alt={track.title}
+        <img
+          src={displayTrack.coverUrl || "https://picsum.photos/seed/rythmify/160/160"}
+          alt={displayTrack.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
-        <button 
+        <button
           onClick={handlePlayPause}
           className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
         >
@@ -606,36 +685,51 @@ export default function TrackCard({
 
       {/* Main Content */}
       <div className="flex-1 min-w-0 flex flex-col justify-center sm:justify-start gap-1 sm:gap-4">
-        
+
         {/* Header: Artist & Title */}
         <div className="flex items-start justify-between gap-2 sm:gap-4">
           <div className="flex-1 min-w-0">
-             <div className="flex items-center gap-2 text-[10px] sm:text-xs text-white/50 mb-0.5 sm:mb-1">
-                <Link to={`/${track.artistUsername}`} className="hover:text-white transition-colors truncate">
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-white/50 mb-0.5 sm:mb-1">
+              <div className="flex items-center gap-2">
+                <Link to={`/${track.artistUsername}`} data-test="track-card-artist-link" className="hover:text-white transition-colors truncate">
                   {track.artistName}
                 </Link>
-                {repostedBy && (
-                  <span className="hidden sm:flex items-center gap-1">
-                    <BiRepost size={14} className="text-[#f50]" />
-                    reposted by <span className="text-white/80">{repostedBy}</span>
-                  </span>
-                )}
-             </div>
-             <Link 
+                <FollowButton
+                  username={track.artistUsername}
+                  userId={track.artistId}
+                  className="scale-75 origin-left py-0.5 px-2 h-5 flex items-center"
+                />
+              </div>
+              {repostedBy && (
+                <span className="hidden sm:flex items-center gap-1">
+                  <BiRepost size={14} className="text-[#f50]" />
+                  reposted by <span data-test="track-card-reposted-by-link" className="text-white/80">{repostedBy}</span>
+                </span>
+              )}
+            </div>
+            <Link
               to={`/${track.artistUsername}/${track.trackSlug}`}
+              data-test="track-card-title-link"
               className="block text-sm sm:text-lg font-bold text-white hover:text-[#f50] transition-colors truncate"
-             >
-               {track.title}
-             </Link>
+            >
+              {displayTrack.title}
+            </Link>
           </div>
-          <div className="text-[10px] sm:text-xs text-white/40 whitespace-nowrap pt-1">
-            {track.postedAt}
+          <div className="flex flex-col items-end gap-1">
+            <div data-test="track-card-posted-at" className="text-[10px] sm:text-xs text-white/40 whitespace-nowrap pt-1">
+              {track.postedAt}
+            </div>
+            {displayTrack.genre && (
+              <span data-test="track-card-genre" className="bg-white/10 text-white/60 text-[9px] uppercase px-1.5 py-0.5 rounded-full">
+                {displayTrack.genre}
+              </span>
+            )}
           </div>
         </div>
 
         {/* Waveform Area - Hidden on mobile for professional look */}
         <div className="hidden md:block relative">
-          <CardWaveform 
+          <CardWaveform
             track={track}
             isActive={isActive}
             comments={comments}
@@ -647,72 +741,131 @@ export default function TrackCard({
         {/* Comment Input Bar (Slides in on click) */}
         {showCommentBar && (
           <div className="flex items-center gap-3 bg-[#111] border border-white/10 rounded-sm p-1 animate-in slide-in-from-top-2 duration-300">
-             <img src={user?.avatar || "https://picsum.photos/seed/me/40/40"} className="w-8 h-8 rounded-sm object-cover" alt="Me" />
-             <input 
-               autoFocus
-               value={commentText}
-               onChange={(e) => setCommentText(e.target.value)}
-               placeholder={`Write a comment...`}
-               className="flex-1 bg-transparent border-none outline-none text-sm text-white py-1 px-2"
-               onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit()}
-             />
-             <div className="flex items-center gap-2 pr-2">
-                <button 
-                  onClick={() => setShowCommentBar(false)}
-                  className="text-xs text-white/40 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button 
-                   onClick={handleCommentSubmit}
-                   className="bg-[#f50] text-white text-[11px] font-bold uppercase rounded-sm px-4 py-1.5 hover:brightness-110"
-                >
-                  Post
-                </button>
-             </div>
+            <img src={user?.avatar || "https://picsum.photos/seed/me/40/40"} className="w-8 h-8 rounded-sm object-cover" alt="Me" />
+            <input
+              autoFocus
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder={`Write a comment...`}
+              className="flex-1 bg-transparent border-none outline-none text-sm text-white py-1 px-2"
+              onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit()}
+            />
+            <div className="flex items-center gap-2 pr-2">
+              <button
+                onClick={() => setShowCommentBar(false)}
+                className="text-xs text-white/40 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCommentSubmit}
+                className="bg-[#f50] text-white text-[11px] font-bold uppercase rounded-sm px-4 py-1.5 hover:brightness-110"
+              >
+                Post
+              </button>
+            </div>
           </div>
         )}
 
         {/* Footer Actions */}
         <div className="flex flex-wrap items-center justify-between gap-y-3 mt-auto">
           <div className="flex flex-wrap items-center gap-2">
-            <ScBtn 
-              icon={<FaHeart size={14} />} 
-              label={fmtN(likeCount)} 
-              active={isLiked} 
-              onClick={handleLike} 
-              tooltip="Like"
-            />
-            <ScBtn 
-              icon={<BiRepost size={20} />} 
-              label={fmtN(repostCount)} 
-              active={isReposted} 
-              onClick={handleRepost} 
-              tooltip="Repost"
-            />
-            <ScBtn icon={<HiArrowUpOnSquare size={16} />} tooltip="Share" onClick={() => setShowShare(true)} />
-            <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} />
+            {!isOwner ? (
+              <>
+                <ScBtn
+                  icon={<FaHeart size={14} />}
+                  label={fmtN(likeCount)}
+                  active={isLiked}
+                  onClick={handleLike}
+                  tooltip="Like"
+                  data-test="track-card-btn-like"
+                />
+                <ScBtn
+                  icon={<BiRepost size={20} />}
+                  label={fmtN(repostCount)}
+                  active={isReposted}
+                  onClick={handleRepost}
+                  tooltip="Repost"
+                  data-test="track-card-btn-repost"
+                />
+              </>
+            ) : (
+              <>
+                <ScBtn
+                  icon={<LuPencil size={14} />}
+                  label="Edit"
+                  onClick={() => setShowEditModal(true)}
+                  tooltip="Edit Track"
+                  data-test="track-card-btn-edit"
+                />
+                <ScBtn
+                  icon={<TbUpload size={16} />}
+                  label="Replace File"
+                  onClick={() => setShowReplaceModal(true)}
+                  tooltip="Replace Audio File"
+                  data-test="track-card-btn-replace"
+                />
+              </>
+            )}
+            <ScBtn icon={<HiArrowUpOnSquare size={16} />} tooltip="Share" onClick={() => setShowShare(true)} data-test="track-card-btn-share" />
+            <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} data-test="track-card-btn-copy" />
             <ScBtn
               icon={<MdQueueMusic size={16} />}
               tooltip={addedToQueue ? "Added!" : "Add to Next up"}
               active={addedToQueue}
+              data-test="track-card-btn-queue"
               onClick={() => {
-                addToQueue(track);
+                addNextInQueue(track);
                 setAddedToQueue(true);
+                toast.success(`"${track.title}" added to Next up`, {
+                  description: "You can view your queue in the player",
+                });
                 setTimeout(() => setAddedToQueue(false), 2000);
               }}
             />
-            <button 
-               onClick={() => setShowDiscussion(!showDiscussion)}
-               className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${showDiscussion ? 'text-[#f50]' : 'text-white/60 hover:text-white'}`}
+
+            <div className="relative" ref={moreRef}>
+              <ScBtn
+                icon={<HiDotsHorizontal size={16} />}
+                tooltip="More"
+                data-test="track-card-btn-more"
+                onClick={() => setShowMore(!showMore)}
+              />
+              {showMore && (
+                <div
+                  data-test="track-card-more-dropdown"
+                  className="absolute bottom-full left-0 mb-2 w-48 bg-[#222] border border-white/10 rounded shadow-xl z-50 py-1"
+                >
+                  <button
+                    onClick={() => { onAddToPlaylist?.(); setShowMore(false) }}
+                    className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/5 flex items-center gap-2"
+                  >
+                    <MdPlaylistAdd size={18} /> Add to playlist
+                  </button>
+                  {isOwner && (
+                    <button
+                      onClick={() => { setShowDeleteModal(true); setShowMore(false); }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-white/5 flex items-center gap-2"
+                    >
+                      <LuTrash2 size={16} /> Delete track
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowDiscussion(!showDiscussion)}
+              data-test="track-card-btn-comments"
+              className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${showDiscussion ? 'text-[#f50]' : 'text-white/60 hover:text-white'}`}
             >
               <MdComment size={16} />
-              {comments.length} Comments
+              <span data-test="track-card-comment-count">{comments.length}</span> Comments
             </button>
           </div>
 
           <div className="flex items-center gap-4 text-xs text-white/40">
-            <span className="flex items-center gap-1">
+            <span data-test="track-card-play-count" className="flex items-center gap-1">
               <FaPlayCount size={10} />
               {fmtN(playCount)}
             </span>
@@ -722,9 +875,9 @@ export default function TrackCard({
         {/* Expandable Discussion Section */}
         {showDiscussion && (
           <div className="mt-4 pt-4 border-t border-white/5 animate-in fade-in duration-500">
-            <TrackCommentList 
-              comments={comments} 
-              trackId={track.id} 
+            <TrackCommentList
+              comments={comments}
+              trackId={track.id}
               onCommentDeleted={(id) => {
                 setComments(prev => prev.filter(c => String(c.comment_id) !== String(id)));
               }}

@@ -56,11 +56,11 @@ const FeedPage = () => {
               Hear the latest posts from the people you're following:
             </h1>
             <div
-              data-test="button-feed-reposts-toggle"
               className="flex items-center gap-2 shrink-0"
             >
               <span className="text-sm text-white/50">Reposts</span>
               <button
+                data-test="button-feed-reposts-toggle"
                 onClick={() => setShowReposts((prev) => !prev)}
                 className={`relative inline-flex items-center w-10.5 h-6.5 rounded-full transition-colors duration-200 ${
                   showReposts ? "bg-[#f50]" : "bg-zinc-600"
@@ -98,15 +98,23 @@ const FeedPage = () => {
                 )}
               </>
             ) : (
-              <p className="text-white/40 text-center mt-10">
-                Your feed is empty. Follow some artists!
-              </p>
+              <div className="flex flex-col items-center gap-6 mt-16 text-center">
+                <img
+                  src="/images/hero-slide-1.jpg"
+                  alt="Empty feed"
+                  className="w-64 h-40 object-cover rounded-xl opacity-40"
+                />
+                <div>
+                  <p className="text-white/60 font-semibold text-base">Your feed is empty.</p>
+                  <p className="text-white/30 text-sm mt-1">Follow some artists to see their latest posts here.</p>
+                </div>
+              </div>
             )}
           </div>
         </div>
 
         {/* Sidebar - Hidden on mobile/tablet, shown on desktop */}
-        <div data-test="feed-sidebar" className="hidden lg:block lg:flex-[3] xl:flex-[2] pt-8 sticky top-0 h-fit">
+        <div data-test="feed-sidebar" className="hidden lg:block lg:flex-[3] xl:flex-[2] pt-8">
           <DiscoverSideBar />
         </div>
       </div>

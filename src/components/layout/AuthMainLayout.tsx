@@ -4,10 +4,12 @@ import MainNavbar from "./MainNavbar";
 import StickyPlayer from "../player/StickyPlayer";
 import { useAuthStore } from "@/stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
-import { getMe } from "@/services/auth.service";
+import { getMe, normalizeDateOfBirth } from "@/services/auth.service";
+import { getMySubscription } from "@/services/api/upload/subscription.service";
 
 const AuthMainLayout = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const currentUser = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const hydrateFromApi = useLikesStore((s) => s.hydrateFromApi);
 
@@ -16,9 +18,14 @@ const AuthMainLayout = () => {
 
     // Refresh user profile from backend on every app load so persisted
     // data (following_ids, avatar, etc.) never stays stale across sessions.
-    getMe()
-      .then((res) => {
-        const p = res.data;
+    Promise.allSettled([getMe(), getMySubscription()])
+      .then(([profileResult, subResult]) => {
+        if (profileResult.status !== "fulfilled") return;
+        const p = profileResult.value.data;
+        const isPro =
+          subResult.status === "fulfilled"
+            ? subResult.value.data.user_subscription_id !== null
+            : p.isPro ?? false;
         setUser({
           id: p.id,
           username: p.username,
@@ -28,18 +35,27 @@ const AuthMainLayout = () => {
           bio: p.bio,
           email: p.email,
           role: p.role,
-          isPro: p.isPro ?? false,
-          avatar: p.profile_picture,
-          coverUrl: p.cover_photo,
-          city: p.city,
-          country: p.country,
-          following_ids: p.following_ids ?? [],
+          isPro,
+          avatar: p.profile_picture ?? currentUser?.avatar,
+          coverUrl: p.cover_photo ?? currentUser?.coverUrl,
+          city: p.city ?? currentUser?.city,
+          country: p.country ?? currentUser?.country,
+          location:
+            [p.city ?? currentUser?.city, p.country ?? currentUser?.country]
+              .filter(Boolean)
+              .join(", ") || currentUser?.location,
+          following_ids: p.following_ids ?? currentUser?.following_ids ?? [],
+          followers_ids: p.followers_ids ?? currentUser?.followers_ids ?? [],
+          date_of_birth:
+            normalizeDateOfBirth(p.date_of_birth) ??
+            currentUser?.date_of_birth ??
+            null,
+          gender: p.gender ?? currentUser?.gender ?? null,
         });
-      })
-      .catch(() => {/* keep persisted data on failure */});
+    });
 
     hydrateFromApi();
-  }, [isAuthenticated]);
+  }, [hydrateFromApi, isAuthenticated, setUser]);
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -19,6 +19,12 @@ vi.mock("@/components/playlist/PlaylistComponent", () => ({
   default: () => <div data-test="mock-playlist-component" />,
 }));
 
+vi.mock("@/components/UI/UserAvatar", () => ({
+  default: ({ src, alt, dataTest, onClick }: any) => (
+    <img src={src} alt={alt} data-test={dataTest} onClick={onClick} />
+  ),
+}));
+
 // ─── Fixtures ─────────────────────────────────────────────
 
 const trackItem: TrackFeedItem = {
@@ -167,6 +173,16 @@ describe("FeedItemCard", () => {
   it("shows time ago in header", () => {
     render(<FeedItemCard item={trackItem} />);
     expect(screen.getByTestId("feed-item-header-f1")).toHaveTextContent("ago");
+  });
+
+  it("shows days ago for items older than 24 hours", () => {
+    const oldItem: TrackFeedItem = {
+      ...trackItem,
+      id: "f3",
+      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+    render(<FeedItemCard item={oldItem} />);
+    expect(screen.getByTestId("feed-item-header-f3")).toHaveTextContent("2 days ago");
   });
 
   // ── Card body ────────────────────────────────────────────

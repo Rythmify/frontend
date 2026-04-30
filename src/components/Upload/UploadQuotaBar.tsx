@@ -6,16 +6,25 @@ import {
 } from "@/services/api/upload/quota.service";
 import { useNavigate } from "react-router-dom";
 
-const UploadQuotaBar = () => {
-  const [quota, setQuota] = useState<QuotaData | null>(null);
-  const [loading, setLoading] = useState(true);
+interface Props {
+  quota?: QuotaData;
+}
+
+const UploadQuotaBar = ({ quota: quotaProp }: Props) => {
+  const [quota, setQuota] = useState<QuotaData | null>(quotaProp ?? null);
+  const [loading, setLoading] = useState(!quotaProp);
 
   useEffect(() => {
+    if (quotaProp !== undefined) {
+      setQuota(quotaProp);
+      setLoading(false);
+      return;
+    }
     getUploadQuota()
       .then(setQuota)
       .catch((err) => console.error("Failed to fetch quota:", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [quotaProp]);
 
   const isUnlimited = quota?.trackLimit === null;
   const percentage =
@@ -62,16 +71,18 @@ const UploadQuotaBar = () => {
       </div>
 
       {/*Button*/}
-      <button
-        data-test="get-unlimited-uploads-button-quota-bar"
-        type="button"
-        onClick={() => navigate("/premium")}
-        className="shrink-0 flex items-center justify-center bg-bg py-2.5 px-6
-          outline-[#383838] outline-[0.2px] light:hover:bg-[#e8e8e8] hover:bg-[#353535] text-text-upload text-sm font-bold
-          outline-offset-[-1.5px] rounded-full transition-all whitespace-nowrap cursor-pointer"
-      >
-        Get unlimited uploads
-      </button>
+      {!isUnlimited && !quota?.canUpload && (
+        <button
+          data-test="get-unlimited-uploads-button-quota-bar"
+          type="button"
+          onClick={() => navigate("/premium")}
+          className="shrink-0 flex items-center justify-center bg-bg py-2.5 px-6
+            outline-[#383838] outline-[0.2px] light:hover:bg-[#e8e8e8] hover:bg-[#353535] text-text-upload text-sm font-bold
+            outline-offset-[-1.5px] rounded-full transition-all whitespace-nowrap cursor-pointer"
+        >
+          Get unlimited uploads
+        </button>
+      )}
     </div>
   );
 };

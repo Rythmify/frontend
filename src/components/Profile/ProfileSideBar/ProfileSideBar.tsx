@@ -31,6 +31,7 @@ interface LikedTrack {
   reposts?: number;
   comments?: number;
   audioUrl?: string;
+  artistId?: string;
 }
 
 interface ProfileSideBarProps {

@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 
 interface UserAvatarProps {
   src?: string | null;
@@ -30,11 +30,18 @@ export default function UserAvatar({
   style,
 }: UserAvatarProps) {
   const label = alt ?? name;
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div data-test={dataTest} className={wrapperClassName} onClick={onClick} style={style}>
-      {src ? (
-        <img data-test={imageDataTest} src={src} alt={label} className={imageClassName} />
+      {src && !imgError ? (
+        <img
+          data-test={imageDataTest}
+          src={src}
+          alt={label}
+          className={imageClassName}
+          onError={() => setImgError(true)}
+        />
       ) : (
         <div data-test={fallbackDataTest} className={initialsClassName}>
           {getInitial(name || label)}

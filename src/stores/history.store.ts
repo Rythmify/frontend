@@ -7,12 +7,14 @@ import type { PersonalMix } from "@/services/api/discover.service";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
 import type { BuzzingPlaylist } from "@/components/UI/GenreCard/GenreCard";
 import type { MadeForYouItem } from "@/components/UI/MadeForYouCard/MadeForYouCard";
+import type { AlbumCardItem } from "@/components/UI/AlbumCard";
 
 export type HistoryEntry =
   | { type: "track"; item: Track; playedAt: string }
   | { type: "station"; item: Station; playedAt: string }
   | { type: "mix"; item: PersonalMix; playedAt: string }
   | { type: "playlist"; item: PlaylistCardData; playedAt: string }
+  | { type: "album"; item: AlbumCardItem; playedAt: string }
   | { type: "genre"; item: BuzzingPlaylist; playedAt: string }
   | { type: "madeForYou"; item: MadeForYouItem; playedAt: string };
 
@@ -22,9 +24,11 @@ interface HistoryStore {
   addStation: (station: Station) => void;
   addMix: (mix: PersonalMix) => void;
   addPlaylist: (playlist: PlaylistCardData) => void;
+  addAlbum: (item: AlbumCardItem) => void;
   addGenre: (genre: BuzzingPlaylist) => void;
   addMadeForYou: (item: MadeForYouItem) => void;
-  clearHistory: () => void;
+  clearHistory: () => Promise<void>;
+  hydrateFromBackend: () => Promise<void>;
   getRecentTracks: () => Track[];
   getRecentStations: () => Station[];
 }
@@ -33,7 +37,7 @@ const MAX_ENTRIES = 50;
 
 function dedupeAndPrepend(entries: HistoryEntry[], entry: HistoryEntry): HistoryEntry[] {
   const filtered = entries.filter(
-    (e) => !(e.type === entry.type && e.item.id === entry.item.id),
+    (e) => !(e.type === entry.type && String(e.item.id) === String(entry.item.id)),
   );
   return [entry, ...filtered].slice(0, MAX_ENTRIES);
 }
@@ -52,7 +56,7 @@ export const useHistoryStore = create<HistoryStore>()(
             playedAt,
           }),
         }));
-        writeListeningHistory(String(track.id), playedAt).catch(() => {
+        writeListeningHistory(String(track.id)).catch(() => {
           // best-effort — don't surface errors to the user
         });
       },
@@ -84,6 +88,15 @@ export const useHistoryStore = create<HistoryStore>()(
           }),
         })),
 
+      addAlbum: (item) =>
+        set((s) => ({
+          entries: dedupeAndPrepend(s.entries, {
+            type: "album",
+            item,
+            playedAt: new Date().toISOString(),
+          }),
+        })),
+
       addGenre: (genre) =>
         set((s) => ({
           entries: dedupeAndPrepend(s.entries, {
@@ -102,7 +115,54 @@ export const useHistoryStore = create<HistoryStore>()(
           }),
         })),
 
-      clearHistory: () => set({ entries: [] }),
+      clearHistory: async () => {
+        set({ entries: [] });
+        const { default: axiosInstance } = await import("@/services/api/axiosInstance");
+        try {
+          await axiosInstance.delete("/me/history");
+        } catch (e) {
+          console.error("Failed to clear backend history", e);
+        }
+      },
+
+      hydrateFromBackend: async () => {
+        try {
+          const { getListeningHistory } = await import("@/services/api/discover.service");
+          const { mapListeningHistoryEntry } = await import("@/services/api/discover.mapper");
+          const res = await getListeningHistory({ limit: 50 });
+          
+          if (res && res.data) {
+            const backendEntries: HistoryEntry[] = res.data.map(entry => {
+              const mapped = mapListeningHistoryEntry(entry);
+              return {
+                type: "track",
+                item: mapped,
+                playedAt: mapped.playedAt
+              };
+            });
+
+            set((s) => {
+              // Merge local non-track entries with backend track entries
+              const localNonTracks = s.entries.filter(e => e.type !== "track");
+              const merged = [...backendEntries, ...localNonTracks]
+                .sort((a, b) => new Date(b.playedAt).getTime() - new Date(a.playedAt).getTime());
+              
+              // Deduplicate merged list (keep newest)
+              const seen = new Set<string>();
+              const unique = merged.filter((e) => {
+                const key = `${e.type}-${e.item.id}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+
+              return { entries: unique.slice(0, MAX_ENTRIES) };
+            });
+          }
+        } catch (e) {
+          console.error("Failed to hydrate history from backend", e);
+        }
+      },
 
       getRecentTracks: () =>
         get()

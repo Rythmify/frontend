@@ -6,17 +6,31 @@ import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import UserAvatar from "@/components/UI/UserAvatar";
 import PlaylistCard from "@/components/UI/PlaylistCard/PlaylistCard";
-import AlbumCard from "@/components/playlist/PlaylistCard";
+import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
 import {
   getMyLikedTracks,
   getUserByUsername,
   getUserLikedTracks,
   type TrackSummary,
 } from "@/services/user.service";
+import type { Playlist } from "@/services/api/playlist/playlist.service";
 import type { Track } from "@/types/track";
 
 const tabs = ["Likes", "Following", "Followers"];
 const CARD_WIDTH = "w-[180px] sm:w-[200px] md:w-[220px] lg:w-[230px]";
+
+function mapAlbumToCardData(album: Playlist): PlaylistCardData {
+  return {
+    id: album.playlist_id,
+    title: album.name,
+    owner: album.owner_user_id,
+    ownerUsername: album.owner_user_id,
+    coverUrl: album.cover_image ?? null,
+    isPrivate: !album.is_public,
+    isLiked: true,
+    isAlbumView: true,
+  };
+}
 
 function mapToTrack(t: TrackSummary): Track {
   return {
@@ -232,9 +246,9 @@ export default function LikesPage() {
               </h2>
               <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1 scrollbar-hide">
                 {displayedAlbums.map((album) => (
-                  <AlbumCard
+                  <PlaylistCard
                     key={album.playlist_id}
-                    playlist={album}
+                    item={mapAlbumToCardData(album)}
                     widthClassName={CARD_WIDTH}
                   />
                 ))}

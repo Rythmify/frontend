@@ -17,7 +17,7 @@ const UploadLayout = () => {
     } else if (isDetailsMode) {
       setShowQuitModal(true);
     } else {
-      navigate("/artists");
+      navigate("/discover");
     }
   };
 
@@ -97,7 +97,7 @@ const UploadLayout = () => {
           onClose={() => setShowQuitModal(false)}
           onConfirm={() => {
             setShowQuitModal(false);
-            navigate("/artists");
+            navigate("/discover");
           }}
         />
       </header>

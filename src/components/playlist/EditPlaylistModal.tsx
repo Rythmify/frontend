@@ -122,6 +122,7 @@ export default function EditPlaylistModal({
         description: description.trim() || null,
         is_public: isPublic,
         subtype,
+        is_album_view: subtype === "album",
         slug: slug || undefined,
         release_date: releaseDate || null,
         genre_id: genreId || null,
@@ -134,6 +135,12 @@ export default function EditPlaylistModal({
         tracks: currentTracks,
         track_count: currentTracks.length,
       } as PlaylistDetails);
+
+      window.dispatchEvent(
+        new CustomEvent("playlist-updated", {
+          detail: { playlistId: playlist.playlist_id, updated: res.data },
+        }),
+      );
 
       onClose();
     } catch {
@@ -150,7 +157,10 @@ export default function EditPlaylistModal({
 
   return (
     <Modal isOpen onClose={onClose}>
-      <div className=" bg-bg flex flex-col">
+      <div
+        data-test="edit-playlist-modal"
+        className="bg-bg flex flex-col w-full max-w-[95vw] lg:max-w-[920px]"
+      >
         {/* ── Tab bar ── */}
         <div className="flex">
           {tabs.map((tab) => (
@@ -173,12 +183,13 @@ export default function EditPlaylistModal({
         </div>
 
         {/* ── Tab content ── */}
-        <div className="p-3 min-w-[800px] overflow-y-auto ">
+        <div className="p-3 w-full overflow-y-auto">
           {activeTab === "basic" && (
-            <div className="flex gap-6">
+            <div data-test="edit-playlist-basic-tab" className="flex flex-col lg:flex-row gap-6">
               {/* Cover image */}
               <div className="shrink-0">
                 <div
+                  data-test="edit-playlist-cover"
                   className="w-[180px] h-[180px] bg-[#2a2a2a] rounded-sm overflow-hidden relative cursor-pointer group"
                   onClick={() => fileRef.current?.click()}
                 >
@@ -214,6 +225,7 @@ export default function EditPlaylistModal({
                 {/* Title */}
                 <Field label="Title" required>
                   <input
+                    data-test="input-playlist-title-edit"
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
                     maxLength={100}
@@ -236,9 +248,10 @@ export default function EditPlaylistModal({
                 </Field>
 
                 {/* Type + Release date */}
-                <div className="flex gap-4">
+                <div data-test="edit-playlist-type-release-row" className="flex flex-col md:flex-row gap-4">
                   <Field label="Playlist type" className="flex-1">
                     <select
+                      data-test="select-playlist-type"
                       value={subtype}
                       onChange={(e) =>
                         setSubtype(e.target.value as PlaylistSubtype)
@@ -255,6 +268,7 @@ export default function EditPlaylistModal({
 
                   <Field label="Release date" className="flex-1">
                     <input
+                      data-test="input-release-date"
                       type="date"
                       value={releaseDate}
                       onChange={(e) => setReleaseDate(e.target.value)}
@@ -266,6 +280,7 @@ export default function EditPlaylistModal({
                 {/* Genre */}
                 <Field label="Genre">
                   <select
+                    data-test="select-playlist-genre"
                     value={genreId}
                     onChange={(e) => setGenreId(e.target.value)}
                     className="w-full bg-[#2a2a2a] text-white text-sm px-3 py-2.5 rounded-sm outline-none border border-transparent focus:border-[#555] transition-colors appearance-none cursor-pointer"
@@ -315,8 +330,9 @@ export default function EditPlaylistModal({
 
                 {/* Description */}
                 <Field label="Description">
-                  <textarea
-                    value={description}
+                    <textarea
+                      data-test="textarea-playlist-description"
+                      value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
                     maxLength={500}

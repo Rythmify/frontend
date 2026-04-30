@@ -86,15 +86,15 @@ export default function StationSlugPage() {
 
       try {
         const parts = stationSlug.split(":");
-        const primaryId = parts.at(-1) || stationSlug;
+        const primaryId = parts[0] || stationSlug;
+        const secondaryId = parts.length > 1 ? parts.at(-1) : null;
         
         let stationRes;
         try {
           stationRes = await getStationTracks(primaryId);
         } catch (err) {
-          // If we have a complex slug (e.g. slug:id or id1:id2), try the other part as fallback
-          if (parts.length > 1) {
-            stationRes = await getStationTracks(parts[0]);
+          if (secondaryId) {
+            stationRes = await getStationTracks(secondaryId);
           } else {
             throw err;
           }
@@ -204,6 +204,7 @@ export default function StationSlugPage() {
                 initialTracks={stationTracks}
                 onAddToNextUp={handlePlayStation}
                 isStation={true}
+                engagementKind="station"
               />
             </div>
 

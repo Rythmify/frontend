@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import HorizontalCarousel from "@/components/discover/HorizontalCarousel";
 import SetsHeader from "@/components/playlist/SetsHeader";
 import {
@@ -10,6 +10,8 @@ import PlaylistCard, {
   type PlaylistCardData,
 } from "@/components/UI/PlaylistCard/PlaylistCard";
 import { useAuthStore } from "@/stores/auth.store";
+import { useLikesStore } from "@/stores/likes.store";
+import { getUserById } from "@/services/user.service";
 
 const CARD_WIDTH = "w-[140px] sm:w-[165px] md:w-[185px] lg:w-[200px]";
 
@@ -32,60 +34,131 @@ export default function AlbumsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const { user: currentUser } = useAuthStore();
+  const storeLikedAlbums = useLikesStore((state) => state.likedAlbums);
+  const [albumOwners, setAlbumOwners] = useState<
+    Record<string, { displayName: string; username?: string }>
+  >({});
   const filterOptions = ["All", "Created", "Liked"];
 
-  useEffect(() => {
-    const fetchAlbums = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [created, liked] = await Promise.all([
-          getMyPlaylists({ limit: 50 }),
-          getLikedPlaylists({ limit: 50 }),
-        ]);
-        setCreatedAlbums(created.data.items.filter((p) => p.is_album_view));
-        setLikedAlbums(liked.data.items.filter((p) => p.is_album_view));
-      } catch (err) {
-        setError("Failed to load albums.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAlbums();
+  const fetchAlbums = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [created, liked] = await Promise.all([
+        getMyPlaylists({ limit: 50 }),
+        getLikedPlaylists({ limit: 50 }),
+      ]);
+      const createdList = created.data.items.filter(
+        (p) => p.is_album_view || p.subtype === "album",
+      );
+      const likedList = liked.data.items.filter(
+        (p) => p.is_album_view || p.subtype === "album",
+      );
+
+      setCreatedAlbums(createdList);
+      setLikedAlbums(likedList);
+
+      const ownerIds = Array.from(
+        new Set(
+          [...createdList, ...likedList]
+            .map((p) => p.owner_user_id)
+            .filter(Boolean),
+        ),
+      );
+
+      const owners = await Promise.all(
+        ownerIds.map(async (ownerId) => {
+          const profile = await getUserById(ownerId).catch(() => null);
+          return profile
+            ? {
+                ownerId,
+                displayName: profile.display_name,
+                username: profile.username ?? undefined,
+              }
+            : null;
+        }),
+      );
+
+      setAlbumOwners(
+        Object.fromEntries(
+          owners.filter(Boolean).map((owner) => {
+            const resolved = owner as {
+              ownerId: string;
+              displayName: string;
+              username?: string;
+            };
+            return [
+              resolved.ownerId,
+              {
+                displayName: resolved.displayName,
+                username: resolved.username,
+              },
+            ] as const;
+          }),
+        ),
+      );
+    } catch (err) {
+      setError("Failed to load albums.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchAlbums();
+
+    const handlePlaylistUpdated = () => {
+      fetchAlbums();
+    };
+
+    window.addEventListener("playlist-updated", handlePlaylistUpdated);
+    return () => {
+      window.removeEventListener("playlist-updated", handlePlaylistUpdated);
+    };
+  }, [fetchAlbums]);
 
   const visibleAlbums = useMemo(() => {
     const match = (name: string) =>
       name.toLowerCase().includes(filterText.toLowerCase());
+    const merged = [...createdAlbums, ...likedAlbums, ...storeLikedAlbums];
+    const seen = new Set<string>();
+    const allAlbums = merged.filter((p) => {
+      if (seen.has(p.playlist_id)) return false;
+      seen.add(p.playlist_id);
+      return true;
+    });
     let list: Playlist[] = [];
 
     if (activeFilter === "Created") {
       list = createdAlbums;
     } else if (activeFilter === "Liked") {
-      list = likedAlbums;
-    } else {
-      const merged = [...createdAlbums, ...likedAlbums];
-      const seen = new Set<string>();
-      list = merged.filter((p) => {
-        if (seen.has(p.playlist_id)) return false;
-        seen.add(p.playlist_id);
+      const likedSeen = new Set<string>();
+      list = [...likedAlbums, ...storeLikedAlbums].filter((p) => {
+        if (likedSeen.has(p.playlist_id)) return false;
+        likedSeen.add(p.playlist_id);
         return true;
       });
+    } else {
+      list = allAlbums;
     }
     return list.filter((p) => match(p.name));
-  }, [activeFilter, filterText, createdAlbums, likedAlbums]);
+  }, [activeFilter, filterText, createdAlbums, likedAlbums, storeLikedAlbums]);
 
   const mapToCardData = (p: Playlist): PlaylistCardData => ({
     id: p.playlist_id,
     title: p.name,
-    owner: p.owner_user_id,
+    owner: albumOwners[p.owner_user_id]?.displayName ?? p.owner_user_id,
     ownerUsername:
-      currentUser && p.owner_user_id === currentUser.id
+      albumOwners[p.owner_user_id]?.username ??
+      (currentUser && p.owner_user_id === currentUser.id
         ? currentUser.username
-        : undefined,
+        : undefined),
+    ownerDisplayName: albumOwners[p.owner_user_id]?.displayName,
     coverUrl: p.cover_image || null,
     isPrivate: !p.is_public,
-    isLiked: likedAlbums.some((la) => la.playlist_id === p.playlist_id),
+    isLiked:
+      likedAlbums.some((la) => la.playlist_id === p.playlist_id) ||
+      storeLikedAlbums.some((la) => la.playlist_id === p.playlist_id),
     isAlbumView: true,
   });
 
@@ -106,7 +179,7 @@ export default function AlbumsPage() {
         filterOptions={filterOptions}
       />
 
-      <div className="px-4 pt-2 pb-10">
+      <div data-test="albums-page-content" className="px-4 pt-2 pb-10">
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         {loading ? (
@@ -122,7 +195,7 @@ export default function AlbumsPage() {
             ))}
           </HorizontalCarousel>
         ) : (
-          <div className="flex flex-1 justify-center items-center py-20">
+          <div data-test="albums-page-empty" className="flex flex-1 justify-center items-center py-20">
             <p className="text-text-upload text-2xl font-bold text-center">
               {filterText
                 ? "No albums match your search."
