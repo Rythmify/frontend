@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
+import NotFound from "@/pages/not-found/NotFound";
 import { useProfileData } from "@/services/hooks/useProfileData";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
 import { TrackCard } from "@/components/track";
@@ -13,6 +14,7 @@ export default function PopularTracksPage() {
   const { username } = useParams();
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
+  const [profileLookupStarted, setProfileLookupStarted] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -25,9 +27,20 @@ export default function PopularTracksPage() {
     followers,
     following,
     isOwner,
+    isLoadingProfile,
     handleTabChange,
     handleSave,
   } = useProfileData(username);
+
+  useEffect(() => {
+    setProfileLookupStarted(false);
+  }, [username]);
+
+  useEffect(() => {
+    if (isLoadingProfile) {
+      setProfileLookupStarted(true);
+    }
+  }, [isLoadingProfile]);
 
   useEffect(() => {
     if (!isOwner && !profileData?.id) return;
@@ -47,6 +60,10 @@ export default function PopularTracksPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [isOwner, profileData?.id]);
+
+  if (!isOwner && profileLookupStarted && !isLoadingProfile && !profileData) {
+    return <NotFound />;
+  }
 
   if (!currentUser) return null;
 
