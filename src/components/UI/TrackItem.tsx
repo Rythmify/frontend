@@ -107,6 +107,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
 
   const isThisTrackPlaying = currentTrack?.id === id && isPlaying;
   const downloaded = isDownloaded(id);
+  const canRemoveDownload = downloaded && !!user?.isPro;
 
   const handleRepost = async () => {
     if (!!user && user.username === finalArtistSlug) {
@@ -339,10 +340,10 @@ const TrackItem: React.FC<TrackItemProps> = ({
                 >
                   <i
                     className={`fa-solid ${
-                      downloaded ? "fa-check" : "fa-download"
-                    } text-xs w-4 ${downloaded ? "text-[#1D9E75]" : ""}`}
+                      canRemoveDownload ? "fa-check" : "fa-download"
+                    } text-xs w-4 ${canRemoveDownload ? "text-[#1D9E75]" : ""}`}
                   />
-                  {downloaded ? "Remove Download" : "Download"}
+                  {canRemoveDownload ? "Remove Download" : "Download"}
                 </button>
 
                 <button
