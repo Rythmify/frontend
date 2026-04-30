@@ -86,6 +86,7 @@ export default function DownloadButton({
       <button
         onClick={handleClick}
         title={tooltip}
+        data-test="download-button-icon"
         className={`w-9 h-8 cursor-pointer flex items-center justify-center rounded bg-input-bg hover:bg-border transition-colors ${
           downloaded ? "text-[#1D9E75]" : "text-text-hover"
         } ${!isPro ? "opacity-50" : ""}`}
@@ -106,6 +107,7 @@ export default function DownloadButton({
         onClick={handleClick}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        data-test="download-button-sc"
         style={{
           ...SC_BTN,
           color: downloaded
@@ -125,6 +127,7 @@ export default function DownloadButton({
 
       {hovered && (
         <div
+          data-test="download-button-tooltip"
           style={{
             position: "absolute",
             top: "calc(100% + 6px)",
