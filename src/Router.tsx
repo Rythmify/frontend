@@ -171,6 +171,7 @@ const VinylPage = lazy(() => import("@/pages/creator/artists/vinyl/VinylPage"));
 const CommentsArtistPage = lazy(
   () => import("@/pages/creator/artists/comments/ArtistsCommentsPage"),
 );
+
 const CheckoutPage = lazy(
   () => import("@/pages/creator/checkout/CheckoutPage"),
 );
@@ -477,6 +478,7 @@ export const router = createBrowserRouter([
             path: "artists/comments",
             element: <Lazy component={CommentsArtistPage} />,
           },
+          
         ],
       },
     ],

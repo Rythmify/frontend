@@ -643,7 +643,7 @@ export const useLikesStore = create<LikesStore>()(
       },
     }),
     {
-      name: "rythmify-likes",
+      name: "rythmify-likes", version: 1,
       storage: createJSONStorage(() => createUserScopedStorage("rythmify-likes")),
       partialize: (state) => ({
         likedTracks: state.likedTracks,
