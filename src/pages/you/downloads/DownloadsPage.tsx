@@ -71,7 +71,7 @@ function EmptyNothingDownloaded() {
 
 export default function DownloadsPage() {
   const { user } = useAuthStore();
-  const { downloadedTracks } = useDownloadStore();
+  const { downloadedTracks, toggleDownload } = useDownloadStore();
 
   const isPro = user?.isPro ?? false;
 
@@ -88,12 +88,22 @@ export default function DownloadsPage() {
 
       <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
         {downloadedTracks.map((track) => (
-          <TrackCard
-            key={track.id}
-            track={track}
-            widthClassName={CARD_WIDTH}
-            contextQueue={downloadedTracks}
-          />
+          <div key={track.id} className="relative shrink-0 group">
+            <button
+              type="button"
+              aria-label={`Remove ${track.title} from downloads`}
+              onClick={() => toggleDownload(track, true)}
+              className="absolute right-2 top-2 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/80 text-white opacity-0 shadow-lg transition-all hover:bg-red-500 group-hover:opacity-100"
+              title="Remove from downloads"
+            >
+              <i className="fa-solid fa-trash-can text-[12px]" />
+            </button>
+            <TrackCard
+              track={track}
+              widthClassName={CARD_WIDTH}
+              contextQueue={downloadedTracks}
+            />
+          </div>
         ))}
       </div>
     </div>
