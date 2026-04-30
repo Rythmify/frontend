@@ -366,10 +366,10 @@ export default function SubscriptionsPage() {
   };
 
   return (
-    <div className="bg-[var(--color-bg)]">
-      <div className="container flex w-full gap-16 px-4 py-10 md:px-8 lg:px-20">
+    <div data-test="subscriptions-page" className="bg-[var(--color-bg)]">
+      <div data-test="subscriptions-layout" className="container flex w-full gap-16 px-4 py-10 md:px-8 lg:px-20">
         {/* Main column */}
-        <main className="flex min-w-0 flex-1 flex-col gap-10">
+        <main data-test="subscriptions-main" className="flex min-w-0 flex-1 flex-col gap-10">
           <h1 className="text-[var(--color-text-hover)]">Subscriptions</h1>
           <CurrentPlans
             subscription={subscription}
@@ -380,7 +380,9 @@ export default function SubscriptionsPage() {
         </main>
 
         {/* Sidebar */}
-        <HelpfulLinks />
+        <div data-test="subscriptions-sidebar">
+          <HelpfulLinks />
+        </div>
       </div>
     </div>
   );

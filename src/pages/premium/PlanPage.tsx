@@ -67,22 +67,24 @@ export default function PlanPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white font-sans">
+    <main data-test="premium-plan-page" className="min-h-screen bg-white font-sans">
       <button
         type="button"
         onClick={() => navigate("/subscriptions")}
         aria-label="Exit"
+        data-test="premium-plan-exit"
         className="fixed top-5 right-6 z-50 flex items-center justify-center h-6 w-6 p-5 rounded-full bg-input-bg hover:bg-[#dcdcdc] text-text-upload dark:hover:bg-[#353535] transition-all duration-300 cursor-pointer"
       >
         <i className="fa-solid fa-xmark text-md" />
       </button>
 
       {startError && (
-        <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 flex items-center justify-between rounded-sm bg-[#FB2C36]/10 border border-[#FB2C36]/30 px-4 py-3 shadow-lg min-w-[320px] max-w-[90vw]">
+        <div data-test="premium-plan-error" className="fixed top-4 left-1/2 z-50 -translate-x-1/2 flex items-center justify-between rounded-sm bg-[#FB2C36]/10 border border-[#FB2C36]/30 px-4 py-3 shadow-lg min-w-[320px] max-w-[90vw]">
           <span className="text-sm font-bold text-[#FB2C36]">{startError}</span>
           <button
             type="button"
             onClick={() => setStartError(null)}
+            data-test="premium-plan-error-close"
             className="ml-4 shrink-0 text-[#FB2C36] opacity-60 hover:opacity-100 text-lg leading-none cursor-pointer"
           >
             ×
