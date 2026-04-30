@@ -22,8 +22,12 @@ export default function ArtistsPage() {
   }, []);
 
   async function handleDeleteTrack(id: string) {
-    await deleteTrack(id).catch(() => {});
-    setTracks((prev) => prev.filter((t) => t.id !== id));
+    try {
+      await deleteTrack(id);
+      setTracks((prev) => prev.filter((t) => t.id !== id));
+    } catch {
+      // delete failed — keep track in list
+    }
   }
 
   const filteredTracks = tracks.filter((t) => {
