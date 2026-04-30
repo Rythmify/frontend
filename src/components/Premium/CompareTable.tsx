@@ -110,10 +110,15 @@ interface PlanHeaderRowProps {
   onGetStarted: () => void;
   isStarting: boolean;
   disabled: boolean;
+  monthlyPrice: number | null;
 }
 
-function PlanHeaderRow({ onGetStarted, isStarting, disabled }: PlanHeaderRowProps) {
+function PlanHeaderRow({ onGetStarted, isStarting, disabled, monthlyPrice }: PlanHeaderRowProps) {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isPro = user?.isPro ?? false;
+  const priceDisplay = monthlyPrice !== null ? `EGP ${monthlyPrice.toFixed(2)}` : null;
+  const yearlyDisplay = monthlyPrice !== null ? `EGP ${(monthlyPrice * 12).toFixed(2)}` : null;
 
   return (
     <div className="flex bg-white py-8">
@@ -126,13 +131,23 @@ function PlanHeaderRow({ onGetStarted, isStarting, disabled }: PlanHeaderRowProp
           Free
         </span>
         <span className="text-[15px] font-semibold text-black/60">Basic</span>
-        <button
-          type="button"
-          onClick={() => navigate("/")}
-          className="mt-1 cursor-pointer rounded-full border border-[#e5e7eb] px-5 py-[10px] text-[14px] font-semibold text-black/50 transition-colors hover:border-black/30"
-        >
-          Current plan
-        </button>
+        {isPro ? (
+          <button
+            type="button"
+            onClick={() => navigate("/subscriptions")}
+            className="mt-1 cursor-pointer rounded-full border border-[#e5e7eb] px-5 py-[10px] text-[14px] font-semibold text-black/50 transition-colors hover:border-black/30"
+          >
+            Back to Basic
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="mt-1 rounded-full border border-[#e5e7eb] px-5 py-[10px] text-[14px] font-semibold text-black/50 cursor-default"
+          >
+            Current plan
+          </button>
+        )}
       </div>
 
       <div
@@ -142,23 +157,29 @@ function PlanHeaderRow({ onGetStarted, isStarting, disabled }: PlanHeaderRowProp
           Premium
         </span>
         <p className="m-0 text-center text-[15px] leading-[1.35] text-black/60">
-          <span className="font-bold text-emerald-600">EGP 29.99 </span>
-          <span>/month, billed yearly for EGP 359.88</span>
+          <span className="font-bold text-emerald-600">{priceDisplay ?? "—"} </span>
+          <span>{yearlyDisplay ? `/month, billed yearly for ${yearlyDisplay}` : ""}</span>
         </p>
-        <button
-          type="button"
-          onClick={onGetStarted}
-          disabled={isStarting || disabled}
-          className="mt-2 cursor-pointer rounded-full bg-black px-6 py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
-          {isStarting ? "Loading…" : "Get started"}
-        </button>
+        {isPro ? (
+          <div className="mt-2 rounded-full border-2 border-[#cfb25d] px-6 py-3 text-[15px] font-bold text-[#cfb25d]">
+            Current plan
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onGetStarted}
+            disabled={isStarting || disabled}
+            className="mt-2 cursor-pointer rounded-full bg-black px-6 py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {isStarting ? "Loading…" : "Get started"}
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-export default function CompareTable({ onGetStarted, isStarting, disabled }: PlanHeaderRowProps) {
+export default function CompareTable({ onGetStarted, isStarting, disabled, monthlyPrice }: PlanHeaderRowProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
@@ -175,7 +196,7 @@ export default function CompareTable({ onGetStarted, isStarting, disabled }: Pla
 
       <div className="mx-auto w-fit max-w-full bg-white">
         <div className="sticky top-0 z-20 bg-white">
-          <PlanHeaderRow onGetStarted={onGetStarted} isStarting={isStarting} disabled={disabled} />
+          <PlanHeaderRow onGetStarted={onGetStarted} isStarting={isStarting} disabled={disabled} monthlyPrice={monthlyPrice} />
         </div>
 
         {sections.map((section) => (
