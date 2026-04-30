@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useNavigate, useParams } from "react-router-dom";
@@ -10,6 +10,7 @@ import AlbumCard from "@/components/playlist/PlaylistCard";
 import {
   getMyLikedTracks,
   getUserByUsername,
+  getUserLikedTracks,
   type TrackSummary,
 } from "@/services/user.service";
 import type { Track } from "@/types/track";
@@ -49,10 +50,12 @@ export default function LikesPage() {
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [profileAvatar, setProfileAvatar] = useState("");
   const [profileUsername, setProfileUsername] = useState("");
+  const [profileId, setProfileId] = useState("");
+  const [publicLikedTracks, setPublicLikedTracks] = useState<Track[]>([]);
 
   const isOwner = !username || username === currentUser?.username;
 
-  // Resolve non-owner profile info
+  // Resolve profile info
   useEffect(() => {
     if (isOwner) {
       setProfileDisplayName(
@@ -60,43 +63,68 @@ export default function LikesPage() {
       );
       setProfileAvatar(currentUser?.avatar ?? "");
       setProfileUsername(currentUser?.username ?? "");
-    } else if (username) {
-      getUserByUsername(username)
-        .then((profile) => {
-          setProfileDisplayName(profile.display_name);
-          setProfileAvatar(profile.profile_picture ?? "");
-          setProfileUsername(profile.username ?? username);
-        })
-        .catch(console.error);
-    }
-  }, [username, isOwner, currentUser]);
-
-  // Fetch liked tracks (owner only — public liked tracks not in API spec)
-  useEffect(() => {
-    if (!isOwner) {
-      setLoading(false);
+      setProfileId(currentUser?.id ?? "");
       return;
     }
 
-    setLoading(true);
-    getMyLikedTracks({ limit: 100 })
-      .then((res) => {
-        const fetchedTracks = res.items.map(mapToTrack);
-        useLikesStore.setState((state) => {
-          const merged = new Map(
-            [...fetchedTracks, ...state.likedTracks].map((track) => [
-              track.id,
-              track,
-            ]),
-          );
-          return { likedTracks: Array.from(merged.values()) };
-        });
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [isOwner]);
+    if (!username) return;
 
-  const displayedTracks = isOwner ? localLikedTracks : [];
+    getUserByUsername(username)
+      .then((profile) => {
+        setProfileDisplayName(profile.display_name);
+        setProfileAvatar(profile.profile_picture ?? "");
+        setProfileUsername(profile.username ?? username);
+        setProfileId(profile.id);
+      })
+      .catch(console.error);
+  }, [username, isOwner, currentUser]);
+
+  // Fetch liked tracks.
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    const load = async () => {
+      try {
+        if (isOwner) {
+          const res = await getMyLikedTracks({ limit: 100 });
+          if (cancelled) return;
+          const fetchedTracks = res.items.map(mapToTrack);
+          useLikesStore.setState((state) => {
+            const merged = new Map(
+              [...fetchedTracks, ...state.likedTracks].map((track) => [
+                track.id,
+                track,
+              ]),
+            );
+            return { likedTracks: Array.from(merged.values()) };
+          });
+          return;
+        }
+
+        if (!profileId) {
+          if (!cancelled) setPublicLikedTracks([]);
+          return;
+        }
+
+        const res = await getUserLikedTracks(profileId, { limit: 100 });
+        if (cancelled) return;
+        setPublicLikedTracks(res.items.map(mapToTrack));
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setPublicLikedTracks([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner, profileId]);
+
+  const displayedTracks = isOwner ? localLikedTracks : publicLikedTracks;
   const displayedPlaylists = isOwner ? likedPlaylists : [];
   const displayedAlbums = isOwner ? likedAlbums : [];
   const showLoading = loading && displayedTracks.length === 0;
@@ -116,7 +144,6 @@ export default function LikesPage() {
 
   return (
     <div className="py-8 container px-4 md:px-8 lg:px-20">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-3">
         <UserAvatar
           dataTest="likes-user-avatar"
@@ -135,7 +162,6 @@ export default function LikesPage() {
         </h1>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-6 mb-6">
         {tabs.map((tab) => (
           <button
@@ -153,7 +179,6 @@ export default function LikesPage() {
         ))}
       </div>
 
-      {/* Description + Share */}
       <div className="flex items-center justify-between mb-6">
         <p
           data-test="likes-description"
@@ -173,7 +198,6 @@ export default function LikesPage() {
         </button>
       </div>
 
-      {/* Content */}
       {showLoading ? (
         <div className="flex items-center justify-center py-24">
           <p className="text-text-secondary text-sm">Loading...</p>
@@ -228,7 +252,6 @@ export default function LikesPage() {
         </div>
       )}
 
-      {/* Footer */}
       <div className="mt-16 flex flex-col gap-8">
         <div className="flex flex-wrap gap-x-1 text-xs text-text-secondary">
           {[
