@@ -8,7 +8,10 @@ import {
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
 import { getMixTracks } from "@/services/api/discover.service";
-import type { DiscoveryTrack, MixDetailsData } from "@/services/api/discover.service";
+import type {
+  DiscoveryTrack,
+  MixDetailsData,
+} from "@/services/api/discover.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
@@ -59,7 +62,8 @@ function toFeaturedArtist(user: PublicUser, trackCount: number): MockUser {
     id: user.id as unknown as number,
     username: user.username ?? user.display_name,
     displayName: user.display_name,
-    avatarUrl: user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
+    avatarUrl:
+      user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
     followerCount: user.followers_count ?? 0,
     trackCount,
     isFollowing: false,
@@ -108,9 +112,7 @@ function MixForYouSlugPage() {
         );
 
         const fetchedUsers = await Promise.all(
-          uniqueArtistIds.map((id) =>
-            getUserById(id).catch(() => null),
-          ),
+          uniqueArtistIds.map((id) => getUserById(id).catch(() => null)),
         );
 
         if (cancelled) return;
@@ -222,14 +224,20 @@ function MixForYouSlugPage() {
 
   if (loading)
     return (
-      <div data-test="mix-for-you-slug-loading" className="animate-pulse p-20 text-center text-white">
+      <div
+        data-test="mix-for-you-slug-loading"
+        className="animate-pulse p-20 text-center text-white"
+      >
         Loading mix...
       </div>
     );
 
   if (error || !playlist)
     return (
-      <div data-test="mix-for-you-slug-error" className="p-20 text-center text-red-500">
+      <div
+        data-test="mix-for-you-slug-error"
+        className="p-20 text-center text-red-500"
+      >
         {error || "Mix not found."}
       </div>
     );
@@ -251,10 +259,7 @@ function MixForYouSlugPage() {
       <div className="mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
           <div data-test="mix-for-you-slug-main" className="flex-1 min-w-0">
-            <PlaylistActions
-              playlist={playlist}
-              engagementKind="mix"
-            />
+            <PlaylistActions playlist={playlist} engagementKind="mix" />
             <div data-test="mix-for-you-slug-tracklist" className="mt-8">
               <TrackList
                 tracks={playlist.tracks}
@@ -265,8 +270,14 @@ function MixForYouSlugPage() {
             </div>
           </div>
 
-          <div data-test="mix-for-you-slug-sidebar" className="w-full lg:w-[280px] shrink-0">
+          <div
+            data-test="mix-for-you-slug-sidebar"
+            className="w-full lg:w-[280px] shrink-0"
+          >
             <PlaylistSidebar
+              showLikes={false}
+              showReposts={false}
+              showSocialProof={false}
               playlist={playlist}
               featuredArtists={featuredArtists}
             />
