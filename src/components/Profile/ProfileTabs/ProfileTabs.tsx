@@ -47,11 +47,14 @@ const tabs = [
 interface ProfileTabsProps {
   isOwner?: boolean;
   isFollowing?: boolean;
+  isBlocked?: boolean;
+  followBlocked?: boolean;
   onTabChange?: (tab: string) => void;
   selectedTab?: string;
   onShare?: () => void;
   onEdit?: () => void;
   onBlock?: () => void;
+  onUnblock?: () => void;
   blockDisabled?: boolean;
   username?: string;
   displayName?: string;
@@ -64,11 +67,14 @@ interface ProfileTabsProps {
 const ProfileTabs: React.FC<ProfileTabsProps> = ({
   isOwner = false,
   isFollowing,
+  isBlocked = false,
+  followBlocked = false,
   onTabChange,
   selectedTab = "All",
   onShare,
   onEdit,
   onBlock,
+  onUnblock,
   blockDisabled = false,
   username = "",
   displayName = "",
@@ -149,6 +155,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             username={username}
             userId={userId}
             initialIsFollowing={isFollowing}
+            blocked={followBlocked}
           />
 
           <button
@@ -192,12 +199,14 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
                 ) : (
                   <button
                     data-test="block-button"
-                    onClick={onBlock}
-                    disabled={blockDisabled}
+                    onClick={isBlocked ? onUnblock : onBlock}
+                    disabled={blockDisabled || (isBlocked ? !onUnblock : !onBlock)}
                     className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
                   >
                     <i className="fa-solid fa-ban text-xs w-4" />
-                    Block {displayName || username}
+                    {isBlocked
+                      ? `Unblock ${displayName || username}`
+                      : `Block ${displayName || username}`}
                   </button>
                 )}
                 <button

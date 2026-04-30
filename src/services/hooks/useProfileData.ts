@@ -8,6 +8,7 @@ import {
   getFollowers,
   getFollowing,
   getFollowStatus,
+  getBlockedUsers,
   updateMyProfile,
   type OwnUser,
   type PublicUser,
@@ -39,9 +40,11 @@ export interface ProfileDataResult {
   // ── Social state (non-owner only) ────────────────────────
   isFollowing: boolean;
   isBlocked: boolean;
+  isBlockedBy: boolean;
   // ── Loading ──────────────────────────────────────────────
   isLoadingProfile: boolean;
   // ── Actions ──────────────────────────────────────────────
+  refreshProfileData: () => void;
   handleTabChange: (tab: string, navigate: (path: string) => void) => void;
   handleSave: (
     data: {
@@ -79,6 +82,8 @@ export function useProfileData(
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isBlockedBy, setIsBlockedBy] = useState(false);
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const initiallyFollowing = useRef<boolean | null>(null);
 
   // ── Helper: fetch following list and enrich each entry with follower count ──
@@ -107,6 +112,10 @@ export function useProfileData(
     return { items: enriched, total: res.meta.total };
   };
 
+  const refreshProfileData = () => {
+    setRefreshVersion((version) => version + 1);
+  };
+
   // ── Owner load ────────────────────────────────────────────
   useEffect(() => {
     if (!isOwner || !currentUser) return;
@@ -115,24 +124,36 @@ export function useProfileData(
     const load = async () => {
       try {
         // Fire everything in parallel — profile, tracks, followers, following+counts
-        const [profile, ownedTracks, followersRes, followingResult] =
+        const [profile, ownedTracks, followersRes, followingResult, blockedRes] =
           await Promise.all([
             getMyProfile(),
             getMyTracks(1, 100),
             getFollowers(currentUser.id, { limit: 100 }),
             loadFollowingWithCounts(currentUser.id),
+            getBlockedUsers({ limit: 100 }),
           ]);
 
         if (cancelled) return;
 
         setProfileData(profile);
-        setFollowers(followersRes.items);
-        setFollowing(followingResult.items);
+        const blockedIds = new Set(blockedRes.items.map((u) => u.id));
+        const filteredFollowers = followersRes.items.filter(
+          (u) => !blockedIds.has(u.id),
+        );
+        const filteredFollowing = followingResult.items.filter(
+          (u) => !blockedIds.has(u.id),
+        );
+        const hiddenFollowersCount =
+          followersRes.items.length - filteredFollowers.length;
+        const hiddenFollowingCount =
+          followingResult.items.length - filteredFollowing.length;
+        setFollowers(filteredFollowers);
+        setFollowing(filteredFollowing);
 
         // Set stats once from a single source of truth — no second setState race
         setStats({
-          followers: followersRes.meta.total,
-          following: followingResult.total,
+          followers: Math.max(0, followersRes.meta.total - hiddenFollowersCount),
+          following: Math.max(0, followingResult.total - hiddenFollowingCount),
           tracks: ownedTracks.total,
         });
 
@@ -162,11 +183,21 @@ export function useProfileData(
           const existingIds = new Set(storeState.user.following_ids);
           const newIds = followingResult.items
             .map((u) => u.id)
-            .filter((id) => !existingIds.has(id));
-          if (newIds.length > 0) {
+            .filter((id) => !existingIds.has(id) && !blockedIds.has(id));
+          const nextFollowingIds = Array.from(
+            new Set(
+              [
+                ...storeState.user.following_ids.filter(
+                  (id) => !blockedIds.has(id),
+                ),
+                ...newIds,
+              ],
+            ),
+          );
+          if (nextFollowingIds.length !== storeState.user.following_ids.length) {
             storeState.setUser({
               ...storeState.user,
-              following_ids: [...storeState.user.following_ids, ...newIds],
+              following_ids: nextFollowingIds,
             });
           }
         }
@@ -179,7 +210,7 @@ export function useProfileData(
     return () => {
       cancelled = true;
     };
-  }, [isOwner, currentUser?.id, currentUser?.username]);
+  }, [isOwner, currentUser?.id, currentUser?.username, refreshVersion]);
 
   // ── Non-owner load ────────────────────────────────────────
   useEffect(() => {
@@ -229,6 +260,7 @@ export function useProfileData(
         if (followStatus.status === "fulfilled") {
           setIsFollowing(followStatus.value.is_following);
           setIsBlocked(followStatus.value.is_blocking ?? false);
+          setIsBlockedBy(followStatus.value.is_blocked_by ?? false);
           initiallyFollowing.current = followStatus.value.is_following;
         }
 
@@ -360,7 +392,9 @@ export function useProfileData(
     activeUser,
     isFollowing,
     isBlocked,
+    isBlockedBy,
     isLoadingProfile,
+    refreshProfileData,
     handleTabChange,
     handleSave,
   };

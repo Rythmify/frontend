@@ -11,7 +11,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
 import type { Track } from "../../types/track";
-import { getMyLikedTracks, getUserLikedTracks } from "@/services/user.service";
+import {
+  getMyLikedTracks,
+  getUserLikedTracks,
+  unblockUser,
+} from "@/services/user.service";
 import { useProfileData } from "@/services/hooks/useProfileData";
 import type { TrackSummary } from "@/services/user.service";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
@@ -31,6 +35,7 @@ export default function UsernamePage() {
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showBlock, setShowBlock] = useState(false);
+  const [blockedState, setBlockedState] = useState(false);
 
   const {
     user,
@@ -40,11 +45,18 @@ export default function UsernamePage() {
     following,
     isOwner,
     isFollowing,
+    isBlocked,
+    isBlockedBy,
     activeUser,
     isLoadingProfile,
+    refreshProfileData,
     handleTabChange,
     handleSave,
   } = useProfileData(username);
+
+  useEffect(() => {
+    setBlockedState(isBlocked);
+  }, [isBlocked]);
 
   const likedTracksStoreCount = useLikesStore((s) => s.likedTracks.length);
 
@@ -265,7 +277,22 @@ export default function UsernamePage() {
         username={user.username}
         displayName={user.displayName}
         tracks={stats.tracks ?? 0}
+        isBlocked={blockedState}
+        followBlocked={blockedState || isBlockedBy}
         onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
+        onUnblock={
+          !isOwner && profileData
+            ? async () => {
+              try {
+                await unblockUser(profileData.id);
+                refreshProfileData();
+                setBlockedState(false);
+              } catch (error) {
+                console.error(error);
+              }
+            }
+            : undefined
+        }
         blockDisabled={!profileData}
         userId={isOwner ? activeUser?.id : (profileData?.id ?? "")}
         profilePicture={
@@ -411,7 +438,11 @@ export default function UsernamePage() {
             }
             userId={profileData.id}
             onClose={() => setShowBlock(false)}
-            onBlocked={() => setShowBlock(false)}
+            onBlocked={() => {
+              setShowBlock(false);
+              setBlockedState(true);
+              refreshProfileData();
+            }}
           />
         </Modal>
       )}
