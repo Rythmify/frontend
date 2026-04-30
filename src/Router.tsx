@@ -101,6 +101,9 @@ const PopularTracksPage = lazy(
 const TrackSlugPage = lazy(
   () => import("@/pages/[username]/[trackSlug]/TrackSlugPage"),
 );
+const TrackEngagementPage = lazy(
+  () => import("@/pages/[username]/[trackSlug]/TrackEngagementPage"),
+);
 
 // Social
 const NotificationsPage = lazy(
@@ -306,6 +309,8 @@ export const router = createBrowserRouter([
             element: <Lazy component={PopularTracksPage} />,
           },
           { path: ":trackId", element: <Lazy component={TrackSlugPage} /> },
+          { path: ":trackId/likes", element: <Lazy component={TrackEngagementPage} /> },
+          { path: ":trackId/reposts", element: <Lazy component={TrackEngagementPage} /> },
           {
             path: "sets/:playlistSlug",
             element: <Lazy component={PlaylistSlugPage} />,
