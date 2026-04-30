@@ -1,7 +1,12 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { Track } from "@/types/track";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/auth.store";
+import {
+  createUserScopedStorage,
+  setUserScopedStorageOverride,
+} from "@/stores/userScopedStorage";
 
 interface DownloadStore {
   downloadedTracks: Track[];
@@ -9,10 +14,14 @@ interface DownloadStore {
   toggleDownload: (track: Track, isPro: boolean) => void;
 }
 
+const createEmptyDownloadState = (): Pick<DownloadStore, "downloadedTracks"> => ({
+  downloadedTracks: [],
+});
+
 export const useDownloadStore = create<DownloadStore>()(
   persist(
     (set, get) => ({
-      downloadedTracks: [],
+      ...createEmptyDownloadState(),
 
       isDownloaded: (id: string) =>
         get().downloadedTracks.some((t) => t.id === id),
@@ -44,7 +53,29 @@ export const useDownloadStore = create<DownloadStore>()(
     }),
     {
       name: "downloaded-tracks",
+      storage: createJSONStorage(() => createUserScopedStorage("rythmify-downloads")),
       partialize: (s) => ({ downloadedTracks: s.downloadedTracks }),
     },
   ),
 );
+
+let downloadAuthSyncInitialized = false;
+
+function initDownloadAuthSync() {
+  if (downloadAuthSyncInitialized) return;
+  downloadAuthSyncInitialized = true;
+
+  useAuthStore.subscribe((state, prev) => {
+    const nextScope = state.user?.id || state.user?.username || "guest";
+    const prevScope = prev.user?.id || prev.user?.username || "guest";
+
+    if (nextScope === prevScope) return;
+
+    setUserScopedStorageOverride(`transient:${nextScope}`);
+    useDownloadStore.setState(createEmptyDownloadState());
+    setUserScopedStorageOverride(nextScope);
+    void useDownloadStore.persist.rehydrate();
+  });
+}
+
+initDownloadAuthSync();
