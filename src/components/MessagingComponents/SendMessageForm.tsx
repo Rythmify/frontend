@@ -213,7 +213,15 @@ export default function SendMessageForm({
       </div>
 
       {/* ── Composer ── */}
-      <div className="shrink-0 flex flex-col gap-2 px-3 pb-3 pt-2 bg-bg border-t border-white/10">
+      <div className="shrink-0 flex flex-col gap-2 px-3 pb-3 pt-2 bg-bg border-t border-white/10"
+      onKeyDown={(e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }}
+      >
+
         <label className="text-sm font-bold text-white">
           Write your message and add tracks or playlists{' '}
           <span className="text-red-500">*</span>
