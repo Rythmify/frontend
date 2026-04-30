@@ -174,13 +174,13 @@ export default function FollowingPage() {
           name={profileDisplayName || profileUsername}
           alt={profileDisplayName || profileUsername}
           wrapperClassName="h-24 w-24 cursor-pointer flex-shrink-0 overflow-hidden rounded-full"
-          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
+          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
           onClick={() => navigate(profilePath)}
         />
         <div>
           <h1
             data-test="following-page-title"
-            className="cursor-pointer text-2xl font-bold text-white"
+            className="cursor-pointer text-2xl font-bold text-bg-inverted"
             onClick={() => navigate(profilePath)}
           >
             {profileDisplayName} is following
@@ -212,7 +212,7 @@ export default function FollowingPage() {
       {/* Empty state — only after load completes */}
       {loaded && following.length === 0 && (
         <div className="flex items-center justify-center py-24">
-          <p className="text-lg font-bold text-white">
+          <p className="text-lg font-bold text-bg-inverted">
             {isOwner
               ? "You're not following anyone yet."
               : `${profileDisplayName} isn't following anyone.`}
@@ -234,12 +234,12 @@ export default function FollowingPage() {
                 name={u.displayName || u.username}
                 alt={u.displayName || u.username}
                 wrapperClassName="aspect-square w-full cursor-pointer overflow-hidden rounded-full"
-                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
+                  initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
                 onClick={() => navigate(u.profilePath)}
               />
 
               <span
-                className="w-full cursor-pointer truncate px-1 text-center text-sm font-bold text-white"
+                className="w-full cursor-pointer truncate px-1 text-center text-sm font-bold text-bg-inverted"
                 onClick={() => navigate(u.profilePath)}
               >
                 {u.displayName || u.username}

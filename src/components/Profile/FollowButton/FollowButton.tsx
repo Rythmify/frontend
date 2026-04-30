@@ -78,7 +78,7 @@ export default function FollowButton({
       }}
       disabled={isLoading}
       className={`cursor-pointer px-4 py-1.5 text-xs font-bold rounded hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed ${
-        isFollowing ? "bg-input-bg text-bg-inverted" : "bg-white text-black"
+        isFollowing ? "bg-input-bg text-bg-inverted" : "bg-bg text-bg-inverted"
       } ${className ?? ""}`}
     >
       {isFollowing ? "Following" : "Follow"}
