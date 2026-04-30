@@ -26,6 +26,9 @@ interface EditProfileModalProps {
   }) => void | Promise<void>;
 }
 
+const formControlClass =
+  "w-full h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white";
+
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
   user,
   onClose,
@@ -256,7 +259,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         setErrors(rest);
                       }
                     }}
-                    className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
+                    className={formControlClass}
                   />
                   {errors.firstName && (
                     <span className="text-red-500 text-xs">
@@ -278,7 +281,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         setErrors(rest);
                       }
                     }}
-                    className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
+                    className={formControlClass}
                   />
                   {errors.lastName && (
                     <span className="text-red-500 text-xs">
@@ -301,7 +304,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         setErrors(rest);
                       }
                     }}
-                    className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
+                    className={formControlClass}
                   />
                   {errors.city && (
                     <span className="text-red-500 text-xs">
@@ -323,7 +326,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         setErrors(rest);
                       }
                     }}
-                    className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white"
+                    className={formControlClass}
                   />
                   {errors.country && (
                     <span className="text-red-500 text-xs">
