@@ -136,6 +136,18 @@ describe("ProfileSideBar", () => {
     expect(screen.getByTestId("upgrade-pro-button")).toBeInTheDocument();
   });
 
+  it("hides ON TOUR section for premium owners", () => {
+    render(
+      <ProfileSideBar
+        {...defaultProps}
+        isOwner={true}
+        user={{ ...mockUser, isPro: true }}
+      />,
+    );
+    expect(screen.queryByText("ON TOUR")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("upgrade-pro-button")).not.toBeInTheDocument();
+  });
+
   it("hides ON TOUR section for non-owner", () => {
     render(<ProfileSideBar {...defaultProps} isOwner={false} />);
     expect(screen.queryByText("ON TOUR")).not.toBeInTheDocument();

@@ -179,7 +179,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       </div>
 
       {/* ON TOUR */}
-      {isOwner && (
+      {isOwner && !user.isPro && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <i className="fa-solid fa-ticket text-text-secondary" />
@@ -187,7 +187,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
           </div>
           <p className="text-xs text-left text-white border-t pt-4 border-white w-[320px]">
-            With an Artist Pro account, you can create ticketed live events on
+            With a Premium account, you can create ticketed live events on
             Rythmify, and list existing events.
           </p>
           <button
@@ -195,7 +195,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             onClick={() => navigate("/premium")}
             className="w-[320px] py-3 bg-white text-black font-semibold text-sm rounded-full hover:bg-gray-200 transition-colors"
           >
-            Upgrade to Artist Pro
+            Upgrade to Premium
           </button>
         </div>
       )}
