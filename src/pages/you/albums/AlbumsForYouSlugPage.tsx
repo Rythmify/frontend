@@ -9,7 +9,6 @@ import type {
 } from "@/services/api/playlist/playlist.service";
 import {
   getAlbumsForYou,
-  getAlbumPreviewTrackId,
   type DiscoveryAlbum,
 } from "@/services/api/discover.service";
 import { usePlayerStore } from "../../../stores/player.store";
@@ -17,7 +16,7 @@ import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { getUserById, type PublicUser } from "@/services/user.service";
-import { getRelatedTracks } from "@/services/track.service";
+import { getPlaylist } from "@/services/api/playlist/playlist.service";
 import type { Track } from "@/types/track";
 import OwnerInfo from "@/components/playlist/OwnerInfo";
 import { playlistExists } from "@/services/api/playlist/playlist.service";
@@ -132,13 +131,8 @@ function AlbumsForYouSlugPage() {
           throw new Error("Album not found.");
         }
 
-        const previewTrackId = getAlbumPreviewTrackId(album);
-        if (!previewTrackId) {
-          throw new Error("Album preview track not found.");
-        }
-
-        const { referenceTrack, tracks } =
-          await getRelatedTracks(previewTrackId);
+        const playlistRes = await getPlaylist(album.id, { include_tracks: true });
+        const tracks = playlistRes.data.tracks;
 
         if (!tracks.length) {
           throw new Error("Album not found.");
@@ -146,13 +140,34 @@ function AlbumsForYouSlugPage() {
 
         if (cancelled) return;
 
-        setPlaylist(albumToPlaylistDetails(album, referenceTrack, tracks));
+        const seedTrack = tracks[0] as unknown as Track;
+        setPlaylist(albumToPlaylistDetails(album, seedTrack, tracks));
         const existing = await playlistExists(album.id);
         if (!cancelled) {
           setBackendPlaylistExists(existing);
         }
 
-        const artistIds = getTopArtistTrackCounts(tracks);
+        const artistIds = getTopArtistTrackCounts(
+          tracks.map((track) => ({
+            id: track.track_id,
+            title: track.title ?? "",
+            artistName: track.artist_name ?? "",
+            artistUsername: track.artist_id ?? "",
+            coverUrl: track.cover_image ?? "",
+            genre: "",
+            likeCount: 0,
+            repostCount: 0,
+            playCount: track.play_count ?? 0,
+            commentCount: 0,
+            duration:
+              typeof track.duration === "number"
+                ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}`
+                : "0:00",
+            postedAt: track.added_at ?? "",
+            waveformData: [],
+            audioUrl: track.audio_url ?? "",
+          })),
+        );
         const artists = await Promise.all(
           artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
             const user = await getUserById(artistId).catch(() => null);
