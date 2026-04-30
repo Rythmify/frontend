@@ -21,6 +21,12 @@ export interface OwnUser {
   following_count: number;
   created_at: string;
   updated_at: string | null;
+  links?: Array<{
+    id: string;
+    url: string;
+    title: string;
+    isSupport?: boolean;
+  }>;
 }
 
 export interface PublicUser {
@@ -38,6 +44,12 @@ export interface PublicUser {
   followers_count: number;
   following_count: number;
   created_at: string;
+  links?: Array<{
+    id: string;
+    url: string;
+    title: string;
+    isSupport?: boolean;
+  }>;
 }
 
 export interface UserSummary {

@@ -44,6 +44,7 @@ const AuthMainLayout = () => {
             [p.city ?? currentUser?.city, p.country ?? currentUser?.country]
               .filter(Boolean)
               .join(", ") || currentUser?.location,
+          links: currentUser?.links ?? [],
           following_ids: p.following_ids ?? currentUser?.following_ids ?? [],
           followers_ids: p.followers_ids ?? currentUser?.followers_ids ?? [],
           date_of_birth:

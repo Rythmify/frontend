@@ -281,6 +281,109 @@ describe("EditProfileModal", () => {
     );
     expect(screen.getByTestId("add-link-button")).toBeInTheDocument();
     expect(screen.getByTestId("add-support-link-button")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Your links"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("loads saved links into the modal", () => {
+    render(
+      <EditProfileModal
+        user={{
+          ...defaultUser,
+          links: [
+            { id: "link-1", url: "https://example.com", title: "Example" },
+          ],
+        }}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+
+    expect(screen.getByText("Your links")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("https://example.com")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Example")).toBeInTheDocument();
+  });
+
+  it("adds a new link row when Add link is clicked", () => {
+    render(
+      <EditProfileModal
+        user={defaultUser}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+
+    expect(
+      screen.queryByPlaceholderText("Web or email address"),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("add-link-button"));
+    expect(screen.getAllByPlaceholderText("Web or email address")).toHaveLength(1);
+  });
+
+  it("adds a support link row when Add support link is clicked", () => {
+    render(
+      <EditProfileModal
+        user={defaultUser}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+
+    expect(screen.queryByPlaceholderText("Support link")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("add-support-link-button"));
+    expect(screen.getAllByPlaceholderText("Support link")).toHaveLength(1);
+  });
+
+  it("includes links in the save payload", () => {
+    render(
+      <EditProfileModal
+        user={defaultUser}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("add-link-button"));
+    fireEvent.change(screen.getByPlaceholderText("Web or email address"), {
+      target: { value: "https://example.com" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Short title"), {
+      target: { value: "Example" },
+    });
+    fireEvent.click(screen.getByTestId("edit-save-button"));
+
+    expect(mockOnSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        links: [
+          {
+            id: expect.any(String),
+            url: "https://example.com",
+            title: "Example",
+            isSupport: false,
+          },
+        ],
+      }),
+    );
+  });
+
+  it("removes a link row when the delete button is clicked", () => {
+    render(
+      <EditProfileModal
+        user={defaultUser}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("add-link-button"));
+    expect(screen.getAllByPlaceholderText("Web or email address")).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove link" }));
+    expect(
+      screen.queryByPlaceholderText("Web or email address"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Your links")).not.toBeInTheDocument();
   });
 
   it("renders avatar file input", () => {

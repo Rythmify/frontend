@@ -2,6 +2,13 @@ import type { GenderType } from "@/services/auth.service";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export interface ProfileLink {
+  id: string;
+  url: string;
+  title: string;
+  isSupport?: boolean;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -21,6 +28,7 @@ export interface User {
   followers_ids?: string[];
   date_of_birth?: string | null;
   gender?: GenderType | null;
+  links?: ProfileLink[];
 }
 
 interface AuthStore {

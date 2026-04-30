@@ -66,6 +66,7 @@ function mapProfileToStoreUser(
     followers_ids: profile.followers_ids ?? currentUser?.followers_ids,
     date_of_birth: dateOfBirth,
     gender: profile.gender ?? currentUser?.gender ?? null,
+    links: currentUser?.links ?? [],
   };
 }
 

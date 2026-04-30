@@ -82,6 +82,27 @@ describe("ProfileSideBar", () => {
     expect(screen.getByText("This is a test bio")).toBeInTheDocument();
   });
 
+  it("renders profile links under the stats", () => {
+    render(
+      <ProfileSideBar
+        {...defaultProps}
+        isOwner={false}
+        user={{
+          ...mockUser,
+          links: [
+            { id: "link-1", url: "https://example.com", title: "Swagg" },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Swagg")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /swagg/i })).toHaveAttribute(
+      "href",
+      "https://example.com/",
+    );
+  });
+
   it("does not render bio section when bio is empty", () => {
     render(
       <ProfileSideBar {...defaultProps} user={{ ...mockUser, bio: "" }} />,

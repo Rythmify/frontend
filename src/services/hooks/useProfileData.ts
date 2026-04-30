@@ -15,6 +15,7 @@ import {
   type UserSummary,
 } from "@/services/user.service";
 import type { User } from "@/stores/auth.store";
+import type { ProfileLink } from "@/stores/auth.store";
 
 export interface ProfileStats {
   followers: number;
@@ -324,6 +325,7 @@ export function useProfileData(
       country: string;
       location: string;
       avatarFile?: File | null;
+      links?: ProfileLink[];
     },
     onDone: () => void,
   ) => {
@@ -354,6 +356,7 @@ export function useProfileData(
       city: updatedProfile.city ?? data.city ?? latestUser.city,
       country: updatedProfile.country ?? data.country ?? latestUser.country,
       location: data.location,
+      links: data.links ?? latestUser.links ?? [],
       avatar: data.avatarFile
         ? URL.createObjectURL(data.avatarFile)
         : latestUser.avatar,
@@ -378,6 +381,8 @@ export function useProfileData(
         location: (profileData as PublicUser | null)?.location ?? "",
         role: profileData?.role ?? "listener",
         isPro: false,
+        links: (profileData as PublicUser & { links?: ProfileLink[] } | null)
+          ?.links ?? [],
         following_ids: currentUser?.following_ids ?? [],
         followers_ids: [],
       };

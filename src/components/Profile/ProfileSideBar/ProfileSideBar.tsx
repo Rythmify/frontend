@@ -75,11 +75,24 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   const [bioExpanded, setBioExpanded] = useState(false);
   const displayedLikedTracksCount =
     likedTracksCount > 0 ? likedTracksCount : likedTracks.length;
+  const profileLinks = (user.links ?? []).filter(
+    (link) => link.url.trim() || link.title.trim(),
+  );
 
   const bio = user.bio ?? "";
   const isBioLong = bio.length > BIO_CHAR_LIMIT;
   const displayedBio =
     isBioLong && !bioExpanded ? bio.slice(0, BIO_CHAR_LIMIT) + "…" : bio;
+
+  const normalizeLinkHref = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return "";
+    try {
+      return new URL(trimmed).toString();
+    } catch {
+      return `https://${trimmed.replace(/^\/+/, "")}`;
+    }
+  };
 
   return (
     <div className="  flex-shrink-0 flex flex-col gap-9 pt-1 overflow-hidden min-w-0">
@@ -124,6 +137,40 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           </span>
         </button>
       </div>
+
+      {profileLinks.length > 0 && (
+        <div className="flex flex-col gap-2 w-[320px]">
+          {profileLinks.map((link) => {
+            const label = link.title.trim() || link.url.trim();
+            const href = normalizeLinkHref(link.url);
+            const content = (
+              <>
+                <i className="fa-solid fa-globe text-text-secondary text-xs" />
+                <span className="truncate text-text-secondary">{label}</span>
+              </>
+            );
+
+            return href ? (
+              <a
+                key={link.id}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 text-sm font-bold text-white hover:opacity-70 transition-opacity"
+              >
+                {content}
+              </a>
+            ) : (
+              <div
+                key={link.id}
+                className="flex items-center gap-2 text-sm font-bold text-white"
+              >
+                {content}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Bio */}
       {bio.length > 0 && (
