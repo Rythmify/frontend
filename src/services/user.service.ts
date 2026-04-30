@@ -1,5 +1,20 @@
 import axiosInstance from "./api/axiosInstance";
 
+export type WebProfilePlatform =
+  | "instagram"
+  | "twitter"
+  | "youtube"
+  | "tiktok"
+  | "soundcloud"
+  | "website"
+  | "other";
+
+export interface WebProfile {
+  id: string;
+  platform: WebProfilePlatform;
+  url: string;
+}
+
 export interface OwnUser {
   id: string;
   email: string;
@@ -21,6 +36,12 @@ export interface OwnUser {
   following_count: number;
   created_at: string;
   updated_at: string | null;
+  links?: Array<{
+    id: string;
+    url: string;
+    title: string;
+    isSupport?: boolean;
+  }>;
 }
 
 export interface PublicUser {
@@ -38,6 +59,18 @@ export interface PublicUser {
   followers_count: number;
   following_count: number;
   created_at: string;
+  is_user_premium?: boolean;
+  links?: Array<{
+    id: string;
+    url: string;
+    title: string;
+    isSupport?: boolean;
+  }>;
+}
+
+export interface WebProfileListResponse {
+  data: WebProfile[];
+  pagination: ListMeta;
 }
 
 export interface UserSummary {
@@ -109,6 +142,32 @@ export async function getUsernameFromId(userId: string): Promise<string> {
   return user.username ?? userId;
 }
 
+export async function getMyWebProfiles(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<WebProfile[]> {
+  const res = await axiosInstance.get<WebProfileListResponse>(
+    "/users/me/web-profiles",
+    { params },
+  );
+  return res.data.data;
+}
+
+export async function addWebProfile(payload: {
+  platform: WebProfilePlatform;
+  url: string;
+}): Promise<WebProfile> {
+  const res = await axiosInstance.post<{ data: WebProfile }>(
+    "/users/me/web-profiles",
+    payload,
+  );
+  return res.data.data;
+}
+
+export async function deleteWebProfile(profileId: string): Promise<void> {
+  await axiosInstance.delete(`/users/me/web-profiles/${profileId}`);
+}
+
 /**
  * Resolves a username to a full PublicUser profile without using /resolve.
  * Uses GET /search?type=users to find an exact username match, then fetches
@@ -130,19 +189,15 @@ export async function getUserByUsername(username: string): Promise<PublicUser> {
 
   const users = res.data.data.users ?? [];
 
-  // Prefer an exact username match; fall back to the first result as a
-  // best-effort when the search engine returns close-but-not-exact results.
   const exactMatch = users.find(
     (u) => u.username?.toLowerCase() === username.toLowerCase(),
   );
-  const candidate = exactMatch ?? users[0];
-
-  if (!candidate) {
+  if (!exactMatch) {
     throw new Error(`User not found: ${username}`);
   }
 
   // Fetch the full PublicUser profile (search only returns a slim summary).
-  return getUserById(candidate.id);
+  return getUserById(exactMatch.id);
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import ShareLayout from "../../[username]/shareLayout";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "@/components/Profile/EditProfileModal/EditProfileModal";
+import NotFound from "@/pages/not-found/NotFound";
 import { useProfileData } from "@/services/hooks/useProfileData";
 import PlaylistCard, {
   type PlaylistCardData,
@@ -17,6 +18,7 @@ export default function AlbumsPage() {
   const { username } = useParams();
   const { user: currentUser } = useAuthStore();
   const navigate = useNavigate();
+  const [profileLookupStarted, setProfileLookupStarted] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [albums, setAlbums] = useState<PlaylistCardData[]>([]);
@@ -29,10 +31,21 @@ export default function AlbumsPage() {
     followers,
     following,
     isOwner,
+    isLoadingProfile,
     activeUser,
     handleTabChange,
     handleSave,
   } = useProfileData(username);
+
+  useEffect(() => {
+    setProfileLookupStarted(false);
+  }, [username]);
+
+  useEffect(() => {
+    if (isLoadingProfile) {
+      setProfileLookupStarted(true);
+    }
+  }, [isLoadingProfile]);
 
   const fetchAlbums = useCallback(() => {
     const ownerId = isOwner ? activeUser?.id : profileData?.id;
@@ -83,6 +96,10 @@ export default function AlbumsPage() {
       window.removeEventListener("playlist-updated", handlePlaylistUpdated);
     };
   }, [fetchAlbums]);
+
+  if (!isOwner && profileLookupStarted && !isLoadingProfile && !profileData) {
+    return <NotFound />;
+  }
 
   if (!currentUser) return null;
 

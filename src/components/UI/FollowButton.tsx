@@ -8,6 +8,7 @@ interface FollowButtonProps {
   className?: string;
   initialIsFollowing?: boolean;
   onFollowChange?: (isFollowing: boolean) => void;
+  blocked?: boolean;
   children?: React.ReactNode;
 }
 
@@ -17,6 +18,7 @@ export default function FollowButton({
   className,
   initialIsFollowing,
   onFollowChange,
+  blocked = false,
   children,
 }: FollowButtonProps) {
   const { user, toggleFollow } = useAuthStore();
@@ -65,6 +67,18 @@ export default function FollowButton({
   };
 
   if (isSelf) return null;
+
+  if (blocked) {
+    return (
+      <button
+        data-test={`follow-button-${username}`}
+        disabled
+        className={`cursor-not-allowed rounded px-4 py-1.5 text-xs font-bold opacity-50 ${className ?? ""}`}
+      >
+        {children ? children : "Blocked"}
+      </button>
+    );
+  }
 
   return (
     <button

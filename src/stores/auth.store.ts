@@ -2,6 +2,13 @@ import type { GenderType } from "@/services/auth.service";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export interface ProfileLink {
+  id: string;
+  url: string;
+  title: string;
+  isSupport?: boolean;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -21,6 +28,7 @@ export interface User {
   followers_ids?: string[];
   date_of_birth?: string | null;
   gender?: GenderType | null;
+  links?: ProfileLink[];
 }
 
 interface AuthStore {
@@ -38,6 +46,7 @@ interface AuthStore {
  
    */
   toggleFollow: (username: string, extraIds?: string[]) => void;
+  clearFollowing: (ids: string[]) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -88,9 +97,26 @@ export const useAuthStore = create<AuthStore>()(
 
           return { user: { ...state.user, following_ids } };
         }),
+
+      clearFollowing: (ids) =>
+        set((state) => {
+          if (!state.user || ids.length === 0) return state;
+
+          const blockedIds = new Set(ids.filter(Boolean));
+          const following_ids = state.user.following_ids.filter(
+            (id) => !blockedIds.has(id),
+          );
+
+          if (following_ids.length === state.user.following_ids.length) {
+            return state;
+          }
+
+          return { user: { ...state.user, following_ids } };
+        }),
     }),
     {
       name: "auth-storage",
+      version: 1,
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

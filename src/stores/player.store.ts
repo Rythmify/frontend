@@ -42,10 +42,11 @@ interface PlayerState {
   repeatMode: "none" | "one" | "all";
   isLiked: boolean;
   isAutoplay: boolean;
+  activeSourceId: string | null;
 
   // Actions
-  setTrack: (track: Track, queue?: Track[], startTime?: number) => void;
-  playContext: (sourceType: string, sourceId: string | null, fallbackTrack: Track, startTime?: number) => Promise<void>;
+  setTrack: (track: Track, queue?: Track[], startTime?: number, activeSourceId?: string | null) => void;
+  playContext: (sourceType: string, sourceId: string | null, fallbackTrack: Track, startTime?: number, activeSourceId?: string | null) => Promise<void>;
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
@@ -87,8 +88,9 @@ export const usePlayerStore = create<PlayerState>()(
       repeatMode: "none",
       isLiked: false,
       isAutoplay: true,
+      activeSourceId: null,
 
-      setTrack: (track, queue, startTime) => {
+      setTrack: (track, queue, startTime, activeSourceId) => {
         const newQueue = queue ?? get().queue;
         const index = newQueue.findIndex((t) => t.id === track.id);
         const isSameTrack = get().currentTrack?.id === track.id;
@@ -103,6 +105,7 @@ export const usePlayerStore = create<PlayerState>()(
             queueIndex: index >= 0 ? index : get().queueIndex,
             isPlaying: true,
             currentTime: startTime ?? get().currentTime,
+            activeSourceId: activeSourceId ?? get().activeSourceId,
           });
           return;
         }
@@ -117,17 +120,19 @@ export const usePlayerStore = create<PlayerState>()(
           isPlaying: true,
           currentTime: nextTime,
           isLiked: false,
+          activeSourceId: activeSourceId ?? null,
         });
       },
 
-      playContext: async (sourceType, sourceId, fallbackTrack, startTime) => {
+      playContext: async (sourceType, sourceId, fallbackTrack, startTime, activeSourceId) => {
         // Optimistically play the track immediately
         set({
           currentTrack: fallbackTrack,
           queue: [fallbackTrack],
           queueIndex: 0,
           isPlaying: true,
-          currentTime: startTime || 0
+          currentTime: startTime || 0,
+          activeSourceId: activeSourceId ?? null,
         });
         
         try {
@@ -363,6 +368,7 @@ export const usePlayerStore = create<PlayerState>()(
     }),
     {
       name: "rythmify-player-storage",
+      version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         currentTrack: state.currentTrack,
