@@ -572,6 +572,7 @@ function EmbedTab({
         </div>
         <div className="relative group">
           <textarea
+            data-test="embed-code-textarea"
             readOnly
             value={embedCode}
             className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[11px] text-gray-400 font-mono resize-none h-10 outline-none focus:border-gray-500"

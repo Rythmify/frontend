@@ -4,8 +4,8 @@ import TrackList from "../../pages/[username]/[trackSlug]/components/TrackList";
 import type { Track } from "../../types/track";
 
 vi.mock("react-router-dom", () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-    <a href={to}>{children}</a>
+  Link: ({ children, to, ...props }: any) => (
+    <a href={to} {...props}>{children}</a>
   ),
   useNavigate: () => vi.fn(),
 }));
@@ -74,11 +74,11 @@ describe("TrackList", () => {
     render(
       <TrackList
         tracks={tracks}
-        currentTrackId={"550e8400-e29b-41d4-a716-446655440000"}
+        currentTrackId={"550e8400-e29b-41d4-a716-442655440001"}
         isPlaying={true}
         onTrackPlay={onTrackPlay}
       />,
     );
-    expect(screen.getByTestId("button-play-track-2")).toBeInTheDocument();
+    expect(screen.getByTestId("button-play-track-550e8400-e29b-41d4-a716-442655440001")).toBeInTheDocument();
   });
 });

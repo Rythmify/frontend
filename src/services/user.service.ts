@@ -139,6 +139,11 @@ export async function getUserById(userId: string): Promise<PublicUser> {
   return res.data.data;
 }
 
+export async function getUsernameFromId(userId: string): Promise<string> {
+  const user = await getUserById(userId);
+  return user.username ?? userId;
+}
+
 export async function getMyWebProfiles(params?: {
   limit?: number;
   offset?: number;

@@ -59,11 +59,12 @@ function mixToPlaylistDetails(
 
 function toFeaturedArtist(user: PublicUser, trackCount: number): MockUser {
   return {
-    id: user.id as unknown as number,
+    id: user.id,
     username: user.username ?? user.display_name,
     displayName: user.display_name,
     avatarUrl:
-      user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
+      user.profile_picture ??
+      `https://picsum.photos/seed/${encodeURIComponent(user.id)}/100/100`,
     followerCount: user.followers_count ?? 0,
     trackCount,
     isFollowing: false,
@@ -74,10 +75,11 @@ function toFeaturedArtist(user: PublicUser, trackCount: number): MockUser {
 
 function MixForYouSlugPage() {
   const { mixSlug } = useParams<{ mixSlug: string }>();
-  const user = useAuthStore((state) => state.user);
+  const currentUser = useAuthStore((state) => state.user);
   const mixId = mixSlug;
 
-  const currentUserId = user?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890";
+  const currentUserId =
+    currentUser?.id ?? "a1b2c3d4-e5f6-4790-8bcd-ef1234567890";
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
@@ -90,6 +92,19 @@ function MixForYouSlugPage() {
     isPlaying,
     currentTrack,
   } = usePlayerStore();
+
+  const isArtistFollowed = (profile: PublicUser): boolean => {
+    if (!currentUser) return false;
+
+    const candidates = [profile.id, profile.username]
+      .filter(Boolean)
+      .map(String);
+    const followingIds = currentUser.following_ids ?? [];
+
+    return candidates.some((candidate) =>
+      followingIds.includes(candidate),
+    );
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -109,7 +124,7 @@ function MixForYouSlugPage() {
 
         const uniqueArtistIds = Array.from(
           new Set(mix.tracks.map((track) => track.user_id).filter(Boolean)),
-        );
+        ) as string[];
 
         const fetchedUsers = await Promise.all(
           uniqueArtistIds.map((id) => getUserById(id).catch(() => null)),
@@ -123,7 +138,10 @@ function MixForYouSlugPage() {
             const trackCount = mix.tracks.filter(
               (track) => track.user_id === user.id,
             ).length;
-            return toFeaturedArtist(user, trackCount);
+            return {
+              ...toFeaturedArtist(user, trackCount),
+              isFollowing: isArtistFollowed(user),
+            };
           });
 
         setFeaturedArtists(artists);
@@ -139,7 +157,7 @@ function MixForYouSlugPage() {
     return () => {
       cancelled = true;
     };
-  }, [mixId, currentUserId]);
+  }, [mixId, currentUserId, currentUser?.following_ids?.join("|") ?? ""]);
 
   // Convert playlist tracks to Player format
   const toPlayerTrack = (
@@ -245,7 +263,7 @@ function MixForYouSlugPage() {
   return (
     <div
       data-test="playlist-slug-page"
-      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen"
+      className="container px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen overflow-x-hidden"
     >
       <PlaylistHero
         playlist={playlist}
@@ -256,9 +274,9 @@ function MixForYouSlugPage() {
         isMix={true}
       />
 
-      <div className="mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div data-test="mix-for-you-slug-main" className="flex-1 min-w-0">
+      <div className="mx-auto w-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 w-full">
+          <div data-test="mix-for-you-slug-main" className="flex-1 min-w-0 w-full">
             <PlaylistActions playlist={playlist} engagementKind="mix" />
             <div data-test="mix-for-you-slug-tracklist" className="mt-8">
               <TrackList

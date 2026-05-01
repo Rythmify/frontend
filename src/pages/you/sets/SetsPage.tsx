@@ -254,7 +254,7 @@ export default function SetsPage() {
     genreItems.length > 0;
 
   return (
-    <div className="container min-h-screen flex flex-col">
+    <div className="container min-h-screen flex flex-col overflow-x-hidden">
       {/* Header Section */}
       <SetsHeader
         title="Hear your own playlists and the playlists you've liked:"
@@ -268,7 +268,7 @@ export default function SetsPage() {
       />
 
       {/* Main Content Carousel */}
-      <div data-test="sets-page-content" className="px-4 pt-2 pb-10">
+      <div data-test="sets-page-content" className="px-4 sm:px-6 pt-2 pb-10">
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         {loading ? (

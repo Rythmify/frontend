@@ -1,5 +1,5 @@
 export interface MockUser {
-  id: number;
+  id: string | number;
   username: string;
   displayName: string;
   avatarUrl: string;
