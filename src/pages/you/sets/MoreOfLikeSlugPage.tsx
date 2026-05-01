@@ -9,6 +9,7 @@ import {
   getRadioTracks,
 } from "@/services/api/playlist/playlist.service";
 import { getRelatedTracks, getTrackById } from "@/services/track.service";
+import { getFeaturedArtists } from "@/services/featuredArtists.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
@@ -54,18 +55,6 @@ function toPlaylistTrackItem(
   };
 }
 
-function getTopArtistTrackCounts(tracks: Track[]): [string, number][] {
-  const counts = new Map<string, number>();
-
-  for (const track of tracks) {
-    const artistId = track.artistId?.trim();
-    if (!artistId) continue;
-    counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
-  }
-
-  return Array.from(counts.entries());
-}
-
 function getTopArtistTrackCountsFromRadioTracks(
   tracks: Awaited<ReturnType<typeof getRadioTracks>>["tracks"],
 ): [string, number][] {
@@ -78,35 +67,6 @@ function getTopArtistTrackCountsFromRadioTracks(
   }
 
   return Array.from(counts.entries());
-}
-
-function isArtistFollowed(
-  currentUser: { following_ids: string[] } | null,
-  profile: PublicUser,
-): boolean {
-  if (!currentUser) return false;
-
-  const followingIds = currentUser.following_ids ?? [];
-  const candidates = [profile.id, profile.username].filter(Boolean) as string[];
-  return candidates.some((candidate) => followingIds.includes(candidate));
-}
-
-function toFeaturedArtist(
-  user: PublicUser,
-  trackCount: number,
-  currentUser: { following_ids: string[] } | null,
-): MockUser {
-  return {
-    id: user.id,
-    username: user.username ?? user.display_name,
-    displayName: user.display_name,
-    avatarUrl:
-      user.profile_picture ??
-      `https://picsum.photos/seed/${encodeURIComponent(user.id)}/100/100`,
-    followerCount: user.followers_count ?? 0,
-    trackCount,
-    isFollowing: isArtistFollowed(currentUser, user),
-  };
 }
 
 function buildPlaylist(
@@ -261,20 +221,10 @@ function MoreOfLikeSlugPage() {
           );
           setRelatedTracks(payload.tracks.map(mapRadioTrackToPlayerTrack));
           setRelatedPlaylistTracks(playlistData.tracks);
-          const artistIds = getTopArtistTrackCountsFromRadioTracks(payload.tracks);
-          const artists = await Promise.all(
-            artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-              const profile = await getUserById(artistId).catch(() => null);
-              return profile
-                ? toFeaturedArtist(profile, trackCount, currentUser)
-                : null;
-            }),
-          );
+          const artists = await getFeaturedArtists(payload.tracks, currentUser);
 
           if (!cancelled) {
-            setFeaturedArtists(
-              artists.filter((artist): artist is MockUser => !!artist),
-            );
+            setFeaturedArtists(artists);
           }
           setAlbumOwner(null);
         } else {
@@ -293,20 +243,10 @@ function MoreOfLikeSlugPage() {
           );
           setPlaylist(buildPlaylist(hydratedReferenceTrack, tracks));
 
-          const artistIds = getTopArtistTrackCounts(tracks);
-          const artists = await Promise.all(
-            artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-              const profile = await getUserById(artistId).catch(() => null);
-              return profile
-                ? toFeaturedArtist(profile, trackCount, currentUser)
-                : null;
-            }),
-          );
+          const artists = await getFeaturedArtists(tracks, currentUser);
 
           if (!cancelled) {
-            setFeaturedArtists(
-              artists.filter((artist): artist is MockUser => !!artist),
-            );
+            setFeaturedArtists(artists);
           }
 
           try {

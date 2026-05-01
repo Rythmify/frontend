@@ -12,11 +12,11 @@ import {
   type DiscoveryAlbum,
 } from "@/services/api/discover.service";
 import { usePlayerStore } from "../../../stores/player.store";
-import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { getUserById, type PublicUser } from "@/services/user.service";
 import { getTrackById } from "@/services/track.service";
+import { getFeaturedArtists } from "@/services/featuredArtists.service";
 import { getPlaylist } from "@/services/api/playlist/playlist.service";
 import type { Track } from "@/types/track";
 import OwnerInfo from "@/components/playlist/OwnerInfo";
@@ -65,20 +65,6 @@ function albumToPlaylistDetails(
   };
 }
 
-function getTopArtistTrackCounts(
-  tracks: PlaylistTrackItem[],
-): [string, number][] {
-  const counts = new Map<string, number>();
-
-  for (const track of tracks) {
-    const artistId = track.artist_id?.trim();
-    if (!artistId) continue;
-    counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
-  }
-
-  return Array.from(counts.entries());
-}
-
 function parseDurationToSeconds(duration?: string): number | null {
   if (!duration) return null;
   const parts = duration.split(":").map((part) => Number(part));
@@ -104,37 +90,6 @@ async function hydrateAlbumTracks(
   );
 }
 
-function isArtistFollowed(
-  currentUser: { following_ids: string[] } | null,
-  profile: PublicUser,
-): boolean {
-  if (!currentUser) return false;
-
-  const candidates = [profile.id, profile.username].filter(Boolean) as string[];
-  const followingIds = currentUser.following_ids ?? [];
-  return candidates.some((candidate) =>
-    followingIds.includes(candidate),
-  );
-}
-
-function toFeaturedArtist(
-  user: PublicUser,
-  trackCount: number,
-  currentUser: { following_ids: string[] } | null,
-): MockUser {
-  return {
-    id: user.id,
-    username: user.username ?? user.display_name,
-    displayName: user.display_name,
-    avatarUrl:
-      user.profile_picture ??
-      `https://picsum.photos/seed/${encodeURIComponent(user.id)}/100/100`,
-    followerCount: user.followers_count ?? 0,
-    trackCount,
-    isFollowing: isArtistFollowed(currentUser, user),
-  };
-}
-
 function AlbumsForYouSlugPage() {
   const { username, albumSlug } = useParams<{
     username: string;
@@ -142,7 +97,9 @@ function AlbumsForYouSlugPage() {
   }>();
 
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
-  const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
+  const [featuredArtists, setFeaturedArtists] = useState<
+    import("@/services/mocks/users").MockUser[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [albumOwner, setAlbumOwner] = useState<PublicUser | null>(null);
@@ -195,19 +152,11 @@ function AlbumsForYouSlugPage() {
           setBackendPlaylistExists(existing);
         }
 
-        const artistIds = getTopArtistTrackCounts(tracks);
-        const artists = await Promise.all(
-          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-            const user = await getUserById(artistId).catch(() => null);
-            return user ? toFeaturedArtist(user, trackCount, currentUser) : null;
-          }),
-        );
+        const artists = await getFeaturedArtists(tracks, currentUser);
 
         if (cancelled) return;
 
-        setFeaturedArtists(
-          artists.filter((artist): artist is MockUser => !!artist),
-        );
+        setFeaturedArtists(artists);
 
         const owner = await getUserById(album.owner_id).catch(() => null);
         if (cancelled) return;

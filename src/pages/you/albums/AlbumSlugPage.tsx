@@ -12,6 +12,7 @@ import {
 } from "@/services/api/playlist/playlist.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
 import { getTrackById } from "@/services/track.service";
+import { getFeaturedArtists } from "@/services/featuredArtists.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../services/mocks/users";
@@ -22,20 +23,6 @@ import { playlistExists } from "@/services/api/playlist/playlist.service";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function getTopArtistTrackCounts(
-  tracks: PlaylistTrackItem[],
-): [string, number][] {
-  const counts = new Map<string, number>();
-
-  for (const track of tracks) {
-    const artistId = track.artist_id?.trim();
-    if (!artistId) continue;
-    counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
-  }
-
-  return Array.from(counts.entries());
-}
 
 function parseDurationToSeconds(duration?: string): number | null {
   if (!duration) return null;
@@ -60,37 +47,6 @@ async function hydrateAlbumTracks(
       };
     }),
   );
-}
-
-function isArtistFollowed(
-  currentUser: { following_ids: string[] } | null,
-  profile: PublicUser,
-): boolean {
-  if (!currentUser) return false;
-
-  const candidates = [profile.id, profile.username].filter(Boolean) as string[];
-  const followingIds = currentUser.following_ids ?? [];
-  return candidates.some((candidate) =>
-    followingIds.includes(candidate),
-  );
-}
-
-function toFeaturedArtist(
-  profile: PublicUser,
-  trackCount: number,
-  currentUser: { following_ids: string[] } | null,
-): MockUser {
-  return {
-    id: profile.id,
-    username: profile.username ?? profile.display_name,
-    displayName: profile.display_name,
-    avatarUrl:
-      profile.profile_picture ??
-      `https://picsum.photos/seed/${encodeURIComponent(profile.id)}/100/100`,
-    followerCount: profile.followers_count ?? 0,
-    trackCount,
-    isFollowing: isArtistFollowed(currentUser, profile),
-  };
 }
 
 function AlbumSlugPage() {
@@ -157,18 +113,10 @@ function AlbumSlugPage() {
           if (!cancelled) setAlbumOwner(null);
         }
 
-        const artistIds = getTopArtistTrackCounts(hydratedTracks);
-        const artists = await Promise.all(
-          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-            const profile = await getUserById(artistId).catch(() => null);
-            return profile ? toFeaturedArtist(profile, trackCount, currentUser) : null;
-          }),
-        );
+        const artists = await getFeaturedArtists(hydratedTracks, currentUser);
 
         if (!cancelled) {
-          setFeaturedArtists(
-            artists.filter((artist): artist is MockUser => !!artist),
-          );
+          setFeaturedArtists(artists);
         }
       } catch (err) {
         console.error(err);
