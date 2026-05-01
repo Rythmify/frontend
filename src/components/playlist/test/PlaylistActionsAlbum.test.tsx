@@ -94,14 +94,14 @@ describe("PlaylistActionsAlbum", () => {
 
   it("likes the album and queues tracks for next up", async () => {
     const addToQueue = vi.fn();
-    const toggleAlbum = vi.fn();
+    const togglePlaylist = vi.fn();
     vi.mocked(usePlayerStore).mockReturnValue({ addToQueue } as any);
     vi.mocked(useLikesStore).mockReturnValue({
       isAlbumLiked: vi.fn(() => false),
       isPlaylistLiked: vi.fn(() => false),
       isGenreLiked: vi.fn(() => false),
-      toggleAlbum,
-      togglePlaylist: vi.fn(),
+      toggleAlbum: vi.fn(),
+      togglePlaylist,
       toggleGenre: vi.fn(),
     } as any);
     vi.mocked(convertPlaylist).mockResolvedValue({ data: playlist } as any);
@@ -121,7 +121,19 @@ describe("PlaylistActionsAlbum", () => {
         expect.objectContaining({ name: "Album Playlist", is_public: false }),
       ),
     );
-    expect(toggleAlbum).toHaveBeenCalledWith(playlist);
+    expect(togglePlaylist).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: playlist.playlist_id,
+        title: playlist.name,
+        owner: playlist.owner_user_id,
+        ownerUsername: playlist.owner_user_id,
+        slug: null,
+        coverUrl: playlist.cover_image,
+        isPrivate: true,
+        isLiked: true,
+        isAlbumView: true,
+      }),
+    );
 
     fireEvent.click(screen.getByTestId("album-action-add-to-next-up"));
     expect(addToQueue).toHaveBeenCalledTimes(2);
@@ -195,13 +207,13 @@ describe("PlaylistActionsAlbum", () => {
 
   it("warns and skips conversion for non-UUID playlist ids", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const toggleAlbum = vi.fn();
+    const togglePlaylist = vi.fn();
     vi.mocked(useLikesStore).mockReturnValue({
       isAlbumLiked: vi.fn(() => false),
       isPlaylistLiked: vi.fn(() => false),
       isGenreLiked: vi.fn(() => false),
-      toggleAlbum,
-      togglePlaylist: vi.fn(),
+      toggleAlbum: vi.fn(),
+      togglePlaylist,
       toggleGenre: vi.fn(),
     } as any);
 
@@ -219,7 +231,7 @@ describe("PlaylistActionsAlbum", () => {
       "not-a-uuid",
     );
     expect(convertPlaylist).not.toHaveBeenCalled();
-    expect(toggleAlbum).not.toHaveBeenCalled();
+    expect(togglePlaylist).not.toHaveBeenCalled();
     warnSpy.mockRestore();
   });
 
@@ -296,6 +308,7 @@ describe("PlaylistActionsAlbum", () => {
       expect.objectContaining({
         id: playlist.playlist_id,
         title: playlist.name,
+        owner: playlist.owner_user_id,
       }),
     );
 
