@@ -29,7 +29,7 @@ interface EditProfileModalProps {
 }
 
 const formControlClass =
-  "w-full h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white";
+  "w-full h-10 box-border bg-input-bg rounded px-3 text-sm text-bg-inverted outline-none border border-border focus:border-text-hover";
 
 const createLink = (isSupport = false): ProfileLink => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -143,12 +143,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       newErrors.lastName = "Last name cannot be numbers only.";
     }
 
-    if (city.trim() && isNumericOnly(city)) {
-      newErrors.city = "City cannot be numbers only.";
+    if (city.trim() && /\d/.test(city)) {
+      newErrors.city = "City cannot contain numbers.";
     }
 
-    if (country.trim() && isNumericOnly(country)) {
-      newErrors.country = "Country cannot be numbers only.";
+    if (country.trim() && /\d/.test(country)) {
+      newErrors.country = "Country cannot contain numbers.";
+    } else if (country.trim() && country.trim().length > 2) {
+      newErrors.country = "Country must be 2 letters.";
     }
 
     setErrors(newErrors);
@@ -206,27 +208,27 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       <button
         data-test="edit-modal-close-button"
         onClick={onClose}
-        className="fixed top-14 right-4 sm:top-16 sm:right-6 cursor-pointer text-white text-lg hover:opacity-70 z-60 bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center"
+        className="fixed top-14 right-4 sm:top-16 sm:right-6 cursor-pointer text-bg text-lg hover:opacity-70 z-60 bg-bg-inverted rounded-full w-8 h-8 flex items-center justify-center"
       >
         <i className="fa-solid fa-xmark" />
       </button>
 
       <div
-        className="fixed inset-0 bg-white/50 flex items-start justify-center z-50 pt-16 sm:pt-20 px-4 overflow-y-auto"
+        className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 pt-16 sm:pt-20 px-4 overflow-y-auto"
         onClick={onClose}
       >
         <div
-          className="bg-black rounded-sm p-5 sm:p-7 lg:p-8 w-full max-w-[720px] my-6"
+          className="bg-bg rounded-sm p-5 sm:p-7 lg:p-8 w-full max-w-[720px] my-6 text-bg-inverted"
           onClick={(e) => e.stopPropagation()}
         >
-          <h2 className="text-white text-left font-bold text-xl mb-6">
+          <h2 className="text-bg-inverted text-left font-bold text-xl mb-6">
             Edit your Profile
           </h2>
 
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
             {/* Avatar */}
             <div className="flex-shrink-0 self-center lg:self-start">
-              <div className="w-36 h-36 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full overflow-hidden bg-gray-600 relative cursor-pointer">
+              <div className="w-36 h-36 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full overflow-hidden bg-input-bg relative cursor-pointer">
                 {currentAvatar ? (
                   <img
                     data-test="edit-avatar-preview"
@@ -235,7 +237,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-600" />
+                  <div className="w-full h-full bg-input-bg" />
                 )}
                 <label className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 cursor-pointer">
                   <input
@@ -245,7 +247,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     className="hidden"
                     onChange={handleAvatarChange}
                   />
-                  <span className="bg-black text-white text-xs font-bold px-3 py-1.5 rounded whitespace-nowrap">
+                  <span className="bg-bg-inverted text-bg text-xs font-bold px-3 py-1.5 rounded whitespace-nowrap">
                     Upload image
                   </span>
                 </label>
@@ -255,7 +257,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             {/* Fields */}
             <div className="flex-1 flex flex-col gap-4 min-w-0">
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-left text-white">
+                <label className="text-sm text-left text-bg-inverted">
                   Display name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -268,28 +270,28 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       setErrors(rest);
                     }
                   }}
-                  className={`bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border focus:border-white ${errors.displayName ? "border-red-500" : "border-transparent"}`}
+                  className={`bg-input-bg rounded px-3 py-2 text-sm text-bg-inverted outline-none border focus:border-text-hover ${errors.displayName ? "border-red-500" : "border-border"}`}
                 />
                 {errors.displayName && (
-                  <span className="text-red-500 text-xs">
+                  <span className="text-error text-xs">
                     {errors.displayName}
                   </span>
                 )}
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-left text-white">
+                <label className="text-sm text-left text-bg-inverted">
                   Profile URL <span className="text-red-500">*</span>
                 </label>
-                <div className="bg-[#333] rounded px-3 py-2 text-sm flex items-center gap-1">
+                <div className="bg-input-bg rounded px-3 py-2 text-sm flex items-center gap-1">
                   <span className="text-text-secondary">Rythmify.com/</span>
-                  <span className="text-white">{user.username}</span>
+                  <span className="text-bg-inverted">{user.username}</span>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-sm text-left text-white">
+                  <label className="text-sm text-left text-bg-inverted">
                     First name
                   </label>
                   <input
@@ -311,7 +313,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   )}
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-sm text-left text-white">
+                  <label className="text-sm text-left text-bg-inverted">
                     Last name
                   </label>
                   <input
@@ -336,7 +338,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-sm text-left text-white">City</label>
+                  <label className="text-sm text-left text-bg-inverted">City</label>
                   <input
                     data-test="edit-city-input"
                     value={city}
@@ -356,7 +358,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   )}
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-sm text-left text-white">
+                  <label className="text-sm text-left text-bg-inverted">
                     Country
                   </label>
                   <input
@@ -380,13 +382,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-left text-white">Bio</label>
+                <label className="text-sm text-left text-bg-inverted">Bio</label>
                 <textarea
                   data-test="edit-bio-input"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Tell the world a little bit about yourself. The shorter the better."
-                  className="bg-[#333] rounded px-3 py-2 text-sm text-white outline-none border border-transparent focus:border-white h-24 resize-none placeholder:text-text-secondary"
+                  className="bg-input-bg rounded px-3 py-2 text-sm text-bg-inverted outline-none border border-border focus:border-text-hover h-24 resize-none placeholder:text-text-secondary"
                 />
               </div>
             </div>
@@ -397,7 +399,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             {links.length > 0 && (
               <>
                 <div className="flex items-center gap-2">
-                  <span className="text-white text-sm font-bold">
+                  <span className="text-bg-inverted text-sm font-bold">
                     Your links
                   </span>
                   <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
@@ -416,7 +418,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                               updateLink(link.id, "url", e.target.value)
                             }
                             placeholder="e.g. https://paypal.me/username"
-                            className="flex-1 min-w-0 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
+                            className="flex-1 min-w-0 h-10 box-border bg-input-bg rounded px-3 text-sm text-bg-inverted outline-none border border-border focus:border-text-hover"
                           />
                           <span className="text-text-secondary text-sm shrink-0">
                             <i className="fa-solid fa-circle-info" />
@@ -425,7 +427,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                             type="button"
                             aria-label="Remove link"
                             onClick={() => removeLinkRow(link.id)}
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#333] text-white transition-opacity hover:opacity-70"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-input-bg text-bg-inverted transition-opacity hover:opacity-70"
                           >
                             <i className="fa-solid fa-trash" />
                           </button>
@@ -445,28 +447,28 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         <span className="text-text-secondary text-lg shrink-0">
                           <i className="fa-solid fa-link" />
                         </span>
-                        <input
-                          value={link.url}
-                          onChange={(e) =>
-                            updateLink(link.id, "url", e.target.value)
-                          }
-                          placeholder="Web or email address"
-                          className="flex-1 min-w-0 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
-                        />
-                        <input
-                          value={link.title}
-                          onChange={(e) =>
-                            updateLink(link.id, "title", e.target.value)
-                          }
-                          placeholder="Short title"
-                          className="w-full sm:w-64 h-10 box-border bg-[#333] rounded px-3 text-sm text-white outline-none border border-transparent focus:border-white"
-                        />
-                        <button
-                          type="button"
-                          aria-label="Remove link"
-                          onClick={() => removeLinkRow(link.id)}
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#333] text-white transition-opacity hover:opacity-70"
-                        >
+                          <input
+                            value={link.url}
+                            onChange={(e) =>
+                              updateLink(link.id, "url", e.target.value)
+                            }
+                            placeholder="Web or email address"
+                            className="flex-1 min-w-0 h-10 box-border bg-input-bg rounded px-3 text-sm text-bg-inverted outline-none border border-border focus:border-text-hover"
+                          />
+                          <input
+                            value={link.title}
+                            onChange={(e) =>
+                              updateLink(link.id, "title", e.target.value)
+                            }
+                            placeholder="Short title"
+                            className="w-full sm:w-64 h-10 box-border bg-input-bg rounded px-3 text-sm text-bg-inverted outline-none border border-border focus:border-text-hover"
+                          />
+                          <button
+                            type="button"
+                            aria-label="Remove link"
+                            onClick={() => removeLinkRow(link.id)}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-input-bg text-bg-inverted transition-opacity hover:opacity-70"
+                          >
                           <i className="fa-solid fa-trash" />
                         </button>
                       </div>
@@ -480,7 +482,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 type="button"
                 data-test="add-link-button"
                 onClick={() => addLinkRow(false)}
-                className="px-4 py-2 bg-[#333] text-white text-sm font-bold rounded hover:opacity-70"
+                className="px-4 py-2 bg-bg-actionbutton text-bg-inverted text-sm font-bold rounded hover:opacity-70"
               >
                 Add link
               </button>
@@ -491,8 +493,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 disabled={hasSupportLink}
                 className={`px-4 py-2 text-sm font-bold rounded transition-opacity ${
                   hasSupportLink
-                    ? "bg-[#666] text-[#bbb] cursor-not-allowed"
-                    : "bg-white text-[#333] hover:opacity-70"
+                    ? "bg-border text-text-secondary cursor-not-allowed"
+                    : "bg-bg text-bg-inverted hover:opacity-70"
                 }`}
               >
                 Add support link
@@ -505,14 +507,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             <button
               data-test="edit-cancel-button"
               onClick={onClose}
-              className="px-6 py-2 bg-[#333] text-white text-sm font-bold rounded hover:opacity-70"
+              className="px-6 py-2 bg-bg-actionbutton text-bg-inverted text-sm font-bold rounded hover:opacity-70"
             >
               Cancel
             </button>
             <button
               data-test="edit-save-button"
               onClick={handleSubmit}
-              className="px-6 py-2 bg-white text-black text-sm font-bold rounded hover:bg-gray-200"
+              className="px-6 py-2 bg-bg-inverted text-bg text-sm font-bold rounded hover:opacity-80"
             >
               Save changes
             </button>

@@ -3,6 +3,8 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
+import { useAuthStore } from "@/stores/auth.store";
+import { useDownloadStore } from "@/stores/useDownload";
 import { getRelatedTracks } from "@/services/track.service";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import CardOverlay, {
@@ -115,6 +117,8 @@ const TrackCard = ({
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
+  const { user } = useAuthStore();
+  const { isDownloaded, toggleDownload } = useDownloadStore();
   const {
     isTrackLiked,
     isRadioTrackLiked,
@@ -125,6 +129,8 @@ const TrackCard = ({
 
   const savedRadioPlaylistId = radioPlaylistId ?? getRadioPlaylistId(track.id);
   const liked = radioLikeMode ? isRadioTrackLiked(track.id) : isTrackLiked(track.id);
+  const downloaded = isDownloaded(track.id);
+  const isPro = user?.isPro ?? false;
   
   const fetchTracksForModal = useCallback(async () => {
     if (addToPlaylistTracks?.length) {
@@ -197,6 +203,19 @@ const TrackCard = ({
             } else {
               void toggleTrack(track);
             }
+          }}
+          downloadMenuItem={{
+            label: downloaded ? "Remove Download" : "Download",
+            iconNode: (
+              <i
+                className={`fa-solid ${
+                  downloaded ? "fa-check text-[#1D9E75]" : "fa-download"
+                } text-xs w-4`}
+              />
+            ),
+            onClick: () => {
+              toggleDownload(track, isPro);
+            },
           }}
           moreMenuItems={[
             {

@@ -85,7 +85,7 @@ function CurrentPlans({
               <h4 className="text-[var(--color-text-hover)] font-bold">
                 Premium
               </h4>
-              <p className="text-sm text-white mt-1">
+              <p className="mt-1 text-sm text-[var(--color-text)]">
                 {subscription.autoRenew
                   ? `Renews on ${subscription.renewsOn}`
                   : `Active until ${subscription.renewsOn} · auto-renew off`}{" "}
@@ -131,7 +131,7 @@ function CurrentPlans({
           )}
 
           <div className="border-t border-[var(--color-border)] mt-4 pt-3 flex flex-col gap-1">
-            <p className="text-xs text-white">
+            <p className="text-xs text-[var(--color-text)]">
               Payment method · {subscription.paymentMethod}
             </p>
           </div>
@@ -149,7 +149,7 @@ function CurrentPlans({
       <div className="rounded-[var(--radius-md)] bg-[var(--color-input-bg)] p-5 mb-3">
         <h4 className="text-[var(--color-text-hover)] font-bold mb-4">Basic</h4>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-white">
+          <p className="text-sm text-[var(--color-text)]">
             Premium plans include unlimited upload space and advanced features.
           </p>
           <Link
@@ -199,10 +199,10 @@ function PurchaseHistory({ transactions }: { transactions: Transaction[] }) {
               key={txn.id}
               className="grid grid-cols-[minmax(0,1fr)_96px_120px_92px] gap-x-6 px-3 py-3 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-input-bg)] transition-colors rounded-[var(--radius-sm)]"
             >
-              <span className="justify-self-start text-sm text-white">
+              <span className="justify-self-start text-sm text-[var(--color-text)]">
                 {txn.description}
               </span>
-              <span className="justify-self-end text-sm text-white text-right whitespace-nowrap">
+              <span className="justify-self-end whitespace-nowrap text-right text-sm text-[var(--color-text)]">
                 {txn.date}
               </span>
               <span className="justify-self-end text-sm font-semibold text-[var(--color-text-hover)] text-right">
@@ -289,7 +289,7 @@ function HelpfulLinks() {
         ))}
       </div>
 
-      <p className="text-xs text-white">
+      <p className="text-xs text-[var(--color-text)]">
         Language:{" "}
         <a className="cursor-pointer text-[var(--color-text-link)] hover:text-[var(--color-text-link-hover)] transition-colors">
           English (US)
@@ -366,10 +366,10 @@ export default function SubscriptionsPage() {
   };
 
   return (
-    <div className="bg-[var(--color-bg)]">
-      <div className="container flex w-full gap-16 px-4 py-10 md:px-8 lg:px-20">
+    <div data-test="subscriptions-page" className="bg-[var(--color-bg)]">
+      <div data-test="subscriptions-layout" className="container flex w-full gap-16 px-4 py-10 md:px-8 lg:px-20">
         {/* Main column */}
-        <main className="flex min-w-0 flex-1 flex-col gap-10">
+        <main data-test="subscriptions-main" className="flex min-w-0 flex-1 flex-col gap-10">
           <h1 className="text-[var(--color-text-hover)]">Subscriptions</h1>
           <CurrentPlans
             subscription={subscription}
@@ -380,7 +380,9 @@ export default function SubscriptionsPage() {
         </main>
 
         {/* Sidebar */}
-        <HelpfulLinks />
+        <div data-test="subscriptions-sidebar">
+          <HelpfulLinks />
+        </div>
       </div>
     </div>
   );
