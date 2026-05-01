@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Chats } from "@/components/MessagingComponents/Chats";
 import MessagingHeader from "@/components/MessagingComponents/MessagingHeader";
@@ -18,8 +18,10 @@ import {
   emitMessageRead,
 } from "@/services/api/messaging/socketService";
 import { useMessagingStore } from "@/stores/messaging.store";
+import { useEffect } from "react";
 
-const MSG_LIMIT = 50;
+const MSG_LIMIT  = 50;
+const CONV_LIMIT = 20;
 
 export default function MessageIdPage() {
   const navigate = useNavigate();
@@ -36,6 +38,17 @@ export default function MessageIdPage() {
   const [isTyping, setIsTyping]             = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
 
+  // ─── Conversation-list pagination ─────────────────────────────────────────
+  const [convPage, setConvPage]                 = useState(1);
+  const [loadingMoreConvs, setLoadingMoreConvs] = useState(false);
+
+  // Refs so the IntersectionObserver callback never captures stale state
+  const hasMoreConvsRef  = useRef(false);
+  const loadingMoreRef   = useRef(false);
+  const convPageRef      = useRef(1);
+  const sentinelRef          = useRef<HTMLDivElement>(null);
+  const scrollContainerRef   = useRef<HTMLDivElement>(null);
+
   const { refreshUnreadCount } = useMessagingStore();
 
   const activeConv = conversations.find((c) => c.id === activeConvId) ?? null;
@@ -46,7 +59,7 @@ export default function MessageIdPage() {
         .at(-1) ?? null)
     : null;
 
-  // ─── Load a conversation: fetch page 1 to get total_pages, then jump to last ──
+  // ─── Load a conversation ──────────────────────────────────────────────────
   const loadConversation = useCallback(
     async (conv: Conversation) => {
       setActiveConvId(conv.id);
@@ -57,14 +70,12 @@ export default function MessageIdPage() {
       setLoadingMsgs(true);
 
       try {
-        // First call: discover total_pages
         const firstRes = await fetchConversation(conv.id, MSG_LIMIT, 1);
         const { total_pages } = firstRes.data.pagination;
 
         let messages   = firstRes.data.messages;
         let landedPage = 1;
 
-        // If there are multiple pages, jump straight to the last one (newest messages)
         if (total_pages > 1) {
           const lastRes = await fetchConversation(conv.id, MSG_LIMIT, total_pages);
           messages   = lastRes.data.messages;
@@ -75,33 +86,25 @@ export default function MessageIdPage() {
         setCurrentPage(landedPage);
         setHasPrevPage(landedPage > 1);
 
-        // Mark unread messages as read
         const unread = messages.filter(
           (msg) => msg.sender_id === conv.participant.id && !msg.is_read,
         );
 
-        if (unread.length > 0) {
-          setConversations((prev) =>
-            prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
-          );
-          refreshUnreadCount();
+        setConversations((prev) =>
+          prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
+        );
+        refreshUnreadCount();
 
-          for (const msg of unread) {
-            markMessageReadState(conv.id, msg.id, true)
-              .then((res) => {
-                const updatedUnreadCount: number =
-                  (res as any)?.data?.conversation_unread_count ?? 0;
-                emitMessageRead(conv.id, msg.id, true, updatedUnreadCount);
-              })
-              .catch(() => {
-                emitMessageRead(conv.id, msg.id, true, 0);
-              });
-          }
-        } else {
-          setConversations((prev) =>
-            prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
-          );
-          refreshUnreadCount();
+        for (const msg of unread) {
+          markMessageReadState(conv.id, msg.id, true)
+            .then((res) => {
+              const updatedUnreadCount: number =
+                (res as any)?.data?.conversation_unread_count ?? 0;
+              emitMessageRead(conv.id, msg.id, true, updatedUnreadCount);
+            })
+            .catch(() => {
+              emitMessageRead(conv.id, msg.id, true, 0);
+            });
         }
       } catch {
         setError("Could not load messages.");
@@ -112,7 +115,7 @@ export default function MessageIdPage() {
     [refreshUnreadCount],
   );
 
-  // ─── Load previous page (older messages) — prepend on scroll to top ───────
+  // ─── Load older messages ──────────────────────────────────────────────────
   const loadMoreMessages = useCallback(() => {
     if (!activeConvId || loadingMsgs || !hasPrevPage) return;
     setLoadingMsgs(true);
@@ -130,13 +133,67 @@ export default function MessageIdPage() {
       .finally(() => setLoadingMsgs(false));
   }, [activeConvId, loadingMsgs, hasPrevPage, currentPage]);
 
+  // ─── Fetch a page of conversations and append ─────────────────────────────
+  const fetchConvPage = useCallback((page: number) => {
+    if (loadingMoreRef.current || !hasMoreConvsRef.current) return;
+
+    loadingMoreRef.current = true;
+    setLoadingMoreConvs(true);
+
+    fetchConversations(page, CONV_LIMIT)
+      .then((res) => {
+        const { items, pagination } = res.data;
+        setConversations((prev) => {
+          const next = [...prev, ...items];
+          // FIX: sync ref synchronously inside the updater so the
+          // IntersectionObserver always sees the correct value on its
+          // next intersection event — no async useEffect lag.
+          hasMoreConvsRef.current = next.length < pagination.total_items;
+          return next;
+        });
+        convPageRef.current = page;
+        setConvPage(page);
+      })
+      .catch(() => setError("Could not load more conversations."))
+      .finally(() => {
+        loadingMoreRef.current = false;
+        setLoadingMoreConvs(false);
+      });
+  }, []);
+
+  // ─── IntersectionObserver ─────────────────────────────────────────────────
+  useEffect(() => {
+    const sentinel        = sentinelRef.current;
+    const scrollContainer = scrollContainerRef.current;
+    if (!sentinel || !scrollContainer) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && hasMoreConvsRef.current && !loadingMoreRef.current) {
+          fetchConvPage(convPageRef.current + 1);
+        }
+      },
+      { root: scrollContainer, rootMargin: "100px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [fetchConvPage]);
+
   // ─── 1. Initial fetch ─────────────────────────────────────────────────────
   useEffect(() => {
     setLoadingConvs(true);
-    fetchConversations()
+    fetchConversations(1, CONV_LIMIT)
       .then((res) => {
-        const items = res.data.items;
+        const { items, pagination } = res.data;
         setConversations(items);
+        // FIX: sync ref synchronously here too, before any observer
+        // callback can fire and find it still false.
+        hasMoreConvsRef.current = items.length < pagination.total_items;
+        convPageRef.current = 1;
+        setConvPage(1);
+
         if (items.length === 0) return;
 
         const target = messageId
@@ -153,9 +210,7 @@ export default function MessageIdPage() {
   useEffect(() => {
     if (!activeConvId) return;
     joinConversation(activeConvId);
-    return () => {
-      leaveConversation(activeConvId);
-    };
+    return () => { leaveConversation(activeConvId); };
   }, [activeConvId]);
 
   // ─── 3. Socket event listeners ────────────────────────────────────────────
@@ -224,32 +279,30 @@ export default function MessageIdPage() {
       );
     };
 
-    const onTyping = ({ conversationId }: { conversationId: string }) => {
+    const onTyping     = ({ conversationId }: { conversationId: string }) => {
       if (conversationId === activeConvId) setIsTyping(true);
     };
-
     const onStopTyping = ({ conversationId }: { conversationId: string }) => {
       if (conversationId === activeConvId) setIsTyping(false);
     };
-
     const onConnect = () => {
       if (activeConvId) joinConversation(activeConvId);
     };
 
-    socket.on("connect", onConnect);
-    socket.on("message:received", onReceived);
-    socket.on("message:removed", onRemoved);
+    socket.on("connect",              onConnect);
+    socket.on("message:received",     onReceived);
+    socket.on("message:removed",      onRemoved);
     socket.on("message:read_updated", onReadUpdated);
-    socket.on("message:typing", onTyping);
-    socket.on("message:stop_typing", onStopTyping);
+    socket.on("message:typing",       onTyping);
+    socket.on("message:stop_typing",  onStopTyping);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("message:received", onReceived);
-      socket.off("message:removed", onRemoved);
+      socket.off("connect",              onConnect);
+      socket.off("message:received",     onReceived);
+      socket.off("message:removed",      onRemoved);
       socket.off("message:read_updated", onReadUpdated);
-      socket.off("message:typing", onTyping);
-      socket.off("message:stop_typing", onStopTyping);
+      socket.off("message:typing",       onTyping);
+      socket.off("message:stop_typing",  onStopTyping);
     };
   }, [activeConvId]);
 
@@ -300,46 +353,45 @@ export default function MessageIdPage() {
   };
 
   // ─── New conversation created from modal ──────────────────────────────────
-const handleConversationCreated = useCallback(
-  (conversation: Conversation, sentMessage: Message | null) => {
-    if (!conversation) return
+  const handleConversationCreated = useCallback(
+    (conversation: Conversation, sentMessage: Message | null) => {
+      if (!conversation) return;
 
-    setConversations((prev) => {
-      const exists = prev.find((c) => c.id === conversation.id)
+      setConversations((prev) => {
+        const exists = prev.find((c) => c.id === conversation.id);
 
-      const updatedConv: Conversation = {
-        ...(exists ?? conversation),
-        // Manually set last_message from the actual sent message
-        last_message: sentMessage
-          ? {
-              id:         sentMessage.id,
-              body:       sentMessage.body ?? null,
-              embed_type: sentMessage.embed_type ?? null,
-              embed_id:   sentMessage.embed_id ?? null,
-              sender_id:  sentMessage.sender_id,
-              is_read:    sentMessage.is_read,
-              created_at: sentMessage.created_at,
-            }
-          : (exists?.last_message ?? conversation.last_message),
-        updated_at: sentMessage?.created_at ?? conversation.updated_at,
-        unread_count: exists?.unread_count ?? 0,
+        const updatedConv: Conversation = {
+          ...(exists ?? conversation),
+          last_message: sentMessage
+            ? {
+                id:              sentMessage.id,
+                conversation_id: sentMessage.conversation_id,
+                body:            sentMessage.body ?? null,
+                embed_type:      sentMessage.embed_type ?? null,
+                embed_id:        sentMessage.embed_id ?? null,
+                sender_id:       sentMessage.sender_id,
+                is_read:         sentMessage.is_read,
+                created_at:      sentMessage.created_at,
+              }
+            : (exists?.last_message ?? conversation.last_message),
+          updated_at:   sentMessage?.created_at ?? conversation.updated_at,
+          unread_count: exists?.unread_count ?? 0,
+        };
+
+        const without = prev.filter((c) => c.id !== conversation.id);
+        return [updatedConv, ...without];
+      });
+
+      if (conversation.id === activeConvId && sentMessage) {
+        setActiveMessages((prev) => [...prev, sentMessage]);
+      } else {
+        loadConversation(conversation);
       }
 
-      // Remove from current position and prepend → moves to top
-      const without = prev.filter((c) => c.id !== conversation.id)
-      return [updatedConv, ...without]
-    })
-
-    if (conversation.id === activeConvId && sentMessage) {
-      setActiveMessages((prev) => [...prev, sentMessage])
-    } else {
-      loadConversation(conversation)
-    }
-
-    setShowMobileChat(true)
-  },
-  [loadConversation, activeConvId],
-)
+      setShowMobileChat(true);
+    },
+    [loadConversation, activeConvId],
+  );
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -352,15 +404,17 @@ const handleConversationCreated = useCallback(
           showMobileChat ? "hidden md:flex" : "flex"
         } flex-col w-full md:w-85 shrink-0 sticky top-0 h-[calc(100vh-64px)]`}
       >
-        <MessagingHeader onConversationCreated={handleConversationCreated}/>
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <MessagingHeader onConversationCreated={handleConversationCreated} />
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
           <Chats
             conversations={conversations}
             loading={loadingConvs}
+            loadingMore={loadingMoreConvs}
             error={error}
             activeConversationId={activeConvId}
             onSelect={handleSelectConversation}
           />
+          <div ref={sentinelRef} className="h-1" />
         </div>
       </div>
 
@@ -393,7 +447,7 @@ const handleConversationCreated = useCallback(
                 onMessageSent={handleMessageSent}
                 isTyping={isTyping}
                 ParticipantInfo={{
-                  display_name: activeConv.participant.display_name,
+                  display_name:    activeConv.participant.display_name,
                   profile_picture: activeConv.participant.avatar,
                 }}
               />
