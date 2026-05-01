@@ -165,8 +165,9 @@ const mockSeedTrack = {
   ...mockRelatedTracks[0],
   title: "Seed Track",
   id: "seed-track",
-  artistUsername: "11111111-1111-1111-1111-111111111111",
-  artistId: "artist-a",
+  artistUsername: "seed-artist",
+  artistId: "seed-artist",
+  artistName: "Seed Artist",
 };
 
 const mockRadioPayload = {
@@ -269,11 +270,12 @@ describe("MoreOfLikeSlugPage", () => {
           followers_count: 9,
         } as any;
       }
-      if (id === "11111111-1111-1111-1111-111111111111") {
+      if (id === "seed-artist") {
         return {
-          id: id,
-          username: "album-owner",
-          display_name: "Album Owner",
+          id,
+          username: "seed-artist",
+          display_name: "Seed Artist",
+          followers_count: 50,
         } as any;
       }
       return null as any;
@@ -288,7 +290,7 @@ describe("MoreOfLikeSlugPage", () => {
     expect(screen.getByTestId("hero-name")).toHaveTextContent(
       "Related tracks: Hydrated Seed Track",
     );
-    expect(screen.getByTestId("hero-owner")).toHaveTextContent("album-owner");
+    expect(screen.getByTestId("hero-owner")).toHaveTextContent("Seed Artist");
     expect(screen.getByTestId("hero-title")).toHaveTextContent("Seed Track");
     expect(screen.getByTestId("hero-track-count")).toHaveTextContent("3");
     expect(getTrackById).toHaveBeenCalledWith("seed-track-1");
@@ -299,9 +301,9 @@ describe("MoreOfLikeSlugPage", () => {
     );
     expect(screen.getByTestId("playlist-sidebar")).toHaveAttribute(
       "data-featured-count",
-      "2",
+      "3",
     );
-    expect(screen.getByText("artist-a")).toBeInTheDocument();
+    expect(screen.getByText("seed-artist")).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("hero-play"));
 

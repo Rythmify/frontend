@@ -48,6 +48,13 @@ function trackCountWithSeed(
   return uniqueTrackIds.size;
 }
 
+function buildFeaturedArtistSources(
+  seedTrack: Track | null,
+  tracks: Track[],
+) {
+  return seedTrack ? [seedTrack, ...tracks] : tracks;
+}
+
 function toPlaylistTrackItem(
   track: Track,
   position: number,
@@ -226,13 +233,18 @@ function MoreOfLikeSlugPage() {
           if (cancelled) return;
 
           const playlistData = radioTracksToPlaylistDetails(payload);
-          setPlaylist(playlistData);
-          setSeedTrack(
-            mapRadioTrackToPlayerTrack(payload.reference_track),
+          const seedTrackForFeatures = mapRadioTrackToPlayerTrack(
+            payload.reference_track,
           );
-          setRelatedTracks(payload.tracks.map(mapRadioTrackToPlayerTrack));
+          setPlaylist(playlistData);
+          setSeedTrack(seedTrackForFeatures);
+          const radioTracks = payload.tracks.map(mapRadioTrackToPlayerTrack);
+          setRelatedTracks(radioTracks);
           setRelatedPlaylistTracks(playlistData.tracks);
-          const artists = await getFeaturedArtists(payload.tracks, currentUser);
+          const artists = await getFeaturedArtists(
+            buildFeaturedArtistSources(seedTrackForFeatures, radioTracks),
+            currentUser,
+          );
 
           if (!cancelled) {
             setFeaturedArtists(artists);
@@ -254,7 +266,10 @@ function MoreOfLikeSlugPage() {
           );
           setPlaylist(buildPlaylist(hydratedReferenceTrack, tracks));
 
-          const artists = await getFeaturedArtists(tracks, currentUser);
+          const artists = await getFeaturedArtists(
+            buildFeaturedArtistSources(hydratedReferenceTrack, tracks),
+            currentUser,
+          );
 
           if (!cancelled) {
             setFeaturedArtists(artists);
