@@ -51,53 +51,52 @@ const ModalNewMessageBody = ({
     setIsSending(true)
 
     try {
-  let conversation: Conversation | null = null
-  let firstMessage: Message | null = null
+      let conversation: Conversation | null = null
+      let firstMessage: Message | null = null
 
-  if (embeds.length === 0) {
-    const res = await startConversation({
-      recipient_id: selected!.id,
-      body: message.trim(),
-    })
-    const typed = res as { data?: { conversation?: Conversation; message?: Message } }
-    conversation = typed.data?.conversation ?? null
-    firstMessage = typed.data?.message ?? null
-  } else {
-    const firstRes = await startConversation({
-      recipient_id: selected!.id,
-      ...(message.trim() ? { body: message.trim() } : {}),
-      resource: { type: embeds[0].type, id: embeds[0].id },
-    })
-    const typed = firstRes as { data?: { conversation?: Conversation; message?: Message } }
-    conversation = typed.data?.conversation ?? null
-    firstMessage = typed.data?.message ?? null
-
-    const conversationId = conversation?.id
-    if (conversationId && embeds.length > 1) {
-      for (let i = 1; i < embeds.length; i++) {
-        await sendMessage(conversationId, {
-          resource: { type: embeds[i].type, id: embeds[i].id },
+      if (embeds.length === 0) {
+        const res = await startConversation({
+          recipient_id: selected!.id,
+          body: message.trim(),
         })
+        const typed = res as { data?: { conversation?: Conversation; message?: Message } }
+        conversation = typed.data?.conversation ?? null
+        firstMessage = typed.data?.message ?? null
+      } else {
+        const firstRes = await startConversation({
+          recipient_id: selected!.id,
+          ...(message.trim() ? { body: message.trim() } : {}),
+          resource: { type: embeds[0].type, id: embeds[0].id },
+        })
+        const typed = firstRes as { data?: { conversation?: Conversation; message?: Message } }
+        conversation = typed.data?.conversation ?? null
+        firstMessage = typed.data?.message ?? null
+
+        const conversationId = conversation?.id
+        if (conversationId && embeds.length > 1) {
+          for (let i = 1; i < embeds.length; i++) {
+            await sendMessage(conversationId, {
+              resource: { type: embeds[i].type, id: embeds[i].id },
+            })
+          }
+        }
       }
-    }
-  }
 
-  setMessage('')
-  setEmbeds([])
-  setBoxKey((k) => k + 1)
+      setMessage('')
+      setEmbeds([])
+      setBoxKey((k) => k + 1)
 
-  // Guard: only call back if we have a valid conversation
-  if (conversation && firstMessage) {
-    onConversationCreated?.(conversation, firstMessage)
-  } else if (conversation) {
-    // Message shape missing — still navigate but without optimistic append
-    onConversationCreated?.(conversation, null as unknown as Message)
-  }
+      // If the API didn't return a conversation ID, close the modal and stay put
+      if (!conversation?.id) {
+        onClose()
+        return
+      }
 
-  onClose()
+      // We have a valid conversation — notify parent and navigate
+      onConversationCreated?.(conversation, firstMessage as Message)
+      onClose()
+      navigate(`/messages/${conversation.id}`)
 
-  const targetId = conversation?.id ?? selected!.id
-  navigate(`/messages/${targetId}`)
     } catch (err: unknown) {
       const axiosError = err as { response?: { status: number } }
       if (axiosError.response?.status === 403) {
