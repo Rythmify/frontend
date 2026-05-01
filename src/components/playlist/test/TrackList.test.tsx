@@ -85,13 +85,12 @@ describe("TrackList", () => {
   });
 
   it("highlights the currently playing track", () => {
-    const { container } = render(
+    const { getByTestId } = render(
       <MemoryRouter>
         <TrackList tracks={mockTracks} currentTrackId="t1" />
       </MemoryRouter>,
     );
-    const activeRow = container.querySelector(".bg-\\[\\#303030\\]");
-    expect(activeRow).toBeInTheDocument();
+    expect(getByTestId("track-Item-t1")).toHaveClass("bg-bg");
   });
 
   it("renders play counts formatted", () => {
