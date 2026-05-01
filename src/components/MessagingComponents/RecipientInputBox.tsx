@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { searchFollowing, globalSearch } from '@/services/api/messaging/conversationApi'
+import { globalSearch } from '@/services/api/messaging/conversationApi'
+import { getSuggestions } from '@/services/api/messaging/conversationApi'
 import UserAvatar from '@/components/UI/UserAvatar'
 
 export interface RecipientResult {
@@ -7,69 +8,6 @@ export interface RecipientResult {
   username: string
   display_name: string
   profile_picture: string | null
-}
-
-export function useRecipientSearch(query: string) {
-  const [results, setResults]           = useState<RecipientResult[]>([])
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [notFound, setNotFound]         = useState(false)
-  const debounceRef                     = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    const q = query.trim()
-
-    if (!q) {
-      setResults([])
-      setShowDropdown(false)
-      setNotFound(false)
-      return
-    }
-
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const [followingRes, globalRes] = await Promise.all([
-          searchFollowing(q, 10, 0),
-          globalSearch(q, { type: 'users', limit: 10 }),
-        ])
-
-        const followingItems: RecipientResult[] = followingRes.data.items.map(u => ({
-          id: u.id,
-          username: u.username,
-          display_name: u.display_name,
-          profile_picture: u.profile_picture,
-        }))
-
-        const globalItems: RecipientResult[] = globalRes.data.users.map(u => ({
-          id: u.id,
-          username: u.username,
-          display_name: u.display_name,
-          profile_picture: u.profile_picture,
-        }))
-
-        const followingIds = new Set(followingItems.map(u => u.id))
-        const merged = [
-          ...followingItems,
-          ...globalItems.filter(u => !followingIds.has(u.id)),
-        ]
-
-        setResults(merged)
-        setShowDropdown(merged.length > 0)
-        setNotFound(merged.length === 0)
-      } catch {
-        setResults([])
-        setShowDropdown(false)
-        setNotFound(true)
-      }
-    }, 400)
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [query])
-
-  return { results, showDropdown, notFound, setShowDropdown }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -80,27 +18,114 @@ interface RecipientInputBoxProps {
   error?: string | null
 }
 
-export function RecipientInputBox({ onSelect, onClear, error }: RecipientInputBoxProps) {
-  const [query, setQuery] = useState('')
-  const inputRef          = useRef<HTMLInputElement>(null)
+export function RecipientInputBox({ onSelect, onClear, error: externalError }: RecipientInputBoxProps) {
+  const [query, setQuery]             = useState('')
+  const [suggestions, setSuggestions] = useState<RecipientResult[]>([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  // Tracks whether a user was explicitly selected (click or auto-validate)
+  // so we suppress the validation error while a selection is active
+  const [isSelected, setIsSelected]   = useState(false)
 
-  const { results, showDropdown, notFound, setShowDropdown } = useRecipientSearch(query)
+  const inputRef         = useRef<HTMLInputElement>(null)
+  const suggestAbortRef  = useRef<AbortController | null>(null)
+  const validateAbortRef = useRef<AbortController | null>(null)
+  const debounceRef      = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const q = query.trim()
+
+    if (!q) {
+      setSuggestions([])
+      setShowDropdown(false)
+      setValidationError(null)
+      suggestAbortRef.current?.abort()
+      validateAbortRef.current?.abort()
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      return
+    }
+
+    // Don't re-search if a user is already selected and query hasn't changed
+    if (isSelected) return
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    debounceRef.current = setTimeout(async () => {
+      // ── 1. Suggestions (followed users) ──────────────────────────────────
+      suggestAbortRef.current?.abort()
+      const suggestController = new AbortController()
+      suggestAbortRef.current = suggestController
+
+      getSuggestions(q, suggestController.signal)
+        .then(({ users }) => {
+          const mapped: RecipientResult[] = (users ?? []).map((u) => ({
+            id:              u.id,
+            username:        u.username,
+            display_name:    u.display_name,
+            profile_picture: u.profile_picture,
+          }))
+          setSuggestions(mapped)
+          setShowDropdown(mapped.length > 0)
+        })
+        .catch(() => {})
+
+      // ── 2. Validation via search (must return exactly 1 user) ─────────────
+      validateAbortRef.current?.abort()
+      const validateController = new AbortController()
+      validateAbortRef.current = validateController
+
+      try {
+        const res = await globalSearch(q, { type: 'users', limit: 10 })
+        const users = res.data?.users ?? []
+
+        if (users.length === 1) {
+          const found: RecipientResult = {
+            id:              users[0].id,
+            username:        users[0].username,
+            display_name:    users[0].display_name,
+            profile_picture: users[0].profile_picture,
+          }
+          setValidationError(null)
+          setIsSelected(true)
+          setShowDropdown(false)
+          onSelect(found)
+        } else {
+          setValidationError('SoundCloud user not found.')
+          onClear()
+        }
+      } catch {
+        setValidationError('SoundCloud user not found.')
+        onClear()
+      }
+    }, 400)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [query, isSelected])
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleSelect = (user: RecipientResult) => {
+    // Set query to display name FIRST, then mark selected
+    // This prevents the query change from triggering a new search
+    setIsSelected(true)
     setQuery(user.display_name)
     setShowDropdown(false)
+    setValidationError(null)
     onSelect(user)
     inputRef.current?.blur()
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsSelected(false)   // user is typing again — clear selection
     setQuery(e.target.value)
+    setValidationError(null)
     onClear()
   }
 
-  const borderClass = error || (notFound && query.trim())
-    ? 'border-red-500'
-    : 'border-[#3a3a3a] focus:border-white'
+  const displayError = externalError ?? (query.trim() && !isSelected ? validationError : null)
+  const borderClass = displayError ? 'border-red-500' : 'border-[#3a3a3a] focus:border-white'
 
   return (
     <div data-test="recipient-input-box" className="relative">
@@ -110,20 +135,18 @@ export function RecipientInputBox({ onSelect, onClear, error }: RecipientInputBo
         autoFocus
         value={query}
         onChange={handleChange}
-        onFocus={() => { if (results.length > 0) setShowDropdown(true) }}
+        onFocus={() => { if (suggestions.length > 0 && !isSelected) setShowDropdown(true) }}
+        placeholder="Search for a user..."
         className={`w-full bg-[#2a2a2a] border rounded px-3 py-2 text-white caret-[#ff5500] focus:outline-none transition-colors duration-150 ${borderClass}`}
       />
 
-      {notFound && query.trim() && (
-        <p className="mt-1 text-sm text-red-500">SoundCloud user not found.</p>
-      )}
-      {error && !notFound && (
-        <p className="mt-1 text-sm text-red-500">{error}</p>
-      )}
-
-      {showDropdown && (
-        <div data-test="recipient-dropdown" className="absolute z-10 w-full mt-1 bg-[#1a1a1a] border border-[#3a3a3a] rounded shadow-lg max-h-52 overflow-y-auto">
-          {results.map((user) => (
+      {/* Dropdown — absolutely positioned directly under input, above everything else */}
+      {showDropdown && suggestions.length > 0 && (
+        <div
+          data-test="recipient-dropdown"
+          className="absolute left-0 right-0 top-full z-50 mt-1 bg-[#1a1a1a] border border-[#3a3a3a] rounded shadow-lg max-h-52 overflow-y-auto"
+        >
+          {suggestions.map((user) => (
             <button
               data-test={`recipient-dropdown-item-${user.id}`}
               key={user.id}
@@ -144,6 +167,11 @@ export function RecipientInputBox({ onSelect, onClear, error }: RecipientInputBo
             </button>
           ))}
         </div>
+      )}
+
+      {/* Error — rendered below dropdown so dropdown always covers it */}
+      {displayError && (
+        <p className="mt-1 text-sm text-red-500">{displayError}</p>
       )}
     </div>
   )

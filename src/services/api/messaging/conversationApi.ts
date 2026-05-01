@@ -618,3 +618,25 @@ export const fetchFollowStatus = async (userId: string): Promise<FollowStatusRes
   );
   return response.data;
 };
+
+export interface SuggestionUser {
+  id: string;
+  display_name: string;
+  username: string;
+  profile_picture: string | null;
+  is_following: boolean;
+}
+export interface SuggestionsResponse {
+  users: SuggestionUser[];
+  suggestions: string[];
+}
+export async function getSuggestions(
+  q: string,
+  signal?: AbortSignal,
+): Promise<SuggestionsResponse> {
+  const { data } = await axiosInstance.get<{ data: SuggestionsResponse }>(
+    '/suggestions',
+    { params: { q }, signal },
+  );
+  return data.data;
+}
