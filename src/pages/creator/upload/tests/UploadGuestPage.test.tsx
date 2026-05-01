@@ -81,9 +81,9 @@ describe("UploadGuestPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/signin");
   });
 
-  it("navigates to /artist-pro when learn more about pro plans is clicked", async () => {
+  it("navigates to /premium when learn more about pro plans is clicked", async () => {
     renderGuest();
     await userEvent.click(screen.getByText(/learn more about pro plans/i));
-    expect(mockNavigate).toHaveBeenCalledWith("/artist-pro");
+    expect(mockNavigate).toHaveBeenCalledWith("/premium");
   });
 });

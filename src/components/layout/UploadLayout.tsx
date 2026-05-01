@@ -1,6 +1,5 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Modal } from "@/components/UI/Modal";
 import QuitUploadModal from "@/components/Upload/QuitUploadModal";
 
 const UploadLayout = () => {
