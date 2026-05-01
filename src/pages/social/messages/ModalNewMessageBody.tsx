@@ -82,15 +82,13 @@ const ModalNewMessageBody = ({
         }
       }
 
+      if (!conversation?.id) {
+        return
+      }
+
       setMessage('')
       setEmbeds([])
       setBoxKey((k) => k + 1)
-
-      // If the API didn't return a conversation ID, close the modal and stay put
-      if (!conversation?.id) {
-        onClose()
-        return
-      }
 
       // We have a valid conversation — notify parent and navigate
       onConversationCreated?.(conversation, firstMessage as Message)
@@ -145,6 +143,7 @@ const ModalNewMessageBody = ({
         onValueChange={(val) => { setMessage(val); if (val.trim()) setMessageError(null) }}
         onIsEmptyChange={(empty) => { if (empty) setMessageError(null) }}
         onEmbedsResolved={setEmbeds}
+        onSubmit={handleSend}
         hasError={!!messageError}
       />
 

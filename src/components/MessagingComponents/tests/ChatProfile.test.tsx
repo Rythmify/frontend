@@ -53,7 +53,7 @@ describe("ChatProfile", () => {
     const conv = createConversation();
 
     render(<ChatProfile conversation={conv} />);
-    expect(screen.getByText("John Doe")).toBeInTheDocument();
+    expect(screen.getByTestId("chat-profile-name")).toHaveTextContent("John Doe");
   });
 
   it("renders message preview (text)", () => {

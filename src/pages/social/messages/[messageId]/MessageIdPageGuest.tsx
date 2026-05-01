@@ -1,7 +1,5 @@
-import React from 'react'
+import SigninPage from "@/pages/signin/SigninPage"
 
 export default function MessageIdPageGuest() {
-  return (
-    <div>MessageIdPageGuest</div>
-  )
+  return <SigninPage />
 }

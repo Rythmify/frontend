@@ -7,7 +7,7 @@ import type { Conversation } from "@/services/api/messaging/conversationApi";
 vi.mock("@/components/MessagingComponents/ChatProfile", () => ({
   ChatProfile: ({ conversation, onClick }: any) => (
     <div
-      data-testid={`chat-${conversation.id}`}
+      data-test={`chat-${conversation.id}`}
       onClick={onClick}
     >
       {conversation.participant.display_name}
@@ -16,7 +16,7 @@ vi.mock("@/components/MessagingComponents/ChatProfile", () => ({
 }));
 
 vi.mock("@/components/UI/Spinner", () => ({
-  default: () => <div data-testid="spinner">Loading...</div>,
+  default: () => <div data-test="spinner">Loading...</div>,
 }));
 
 const createConversation = (id: string): Conversation =>
