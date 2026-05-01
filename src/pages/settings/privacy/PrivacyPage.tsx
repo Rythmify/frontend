@@ -92,7 +92,8 @@ function BlockedUserRow({
       if (!stillBlocked) {
         onUnblock(userId);
       }
-    } catch {
+    } catch (err) {
+      console.error("Failed to fetch privacy settings:", err);
     } finally {
       setLoading(false);
     }
@@ -169,7 +170,9 @@ export default function PrivacyPage() {
           setSettings(data);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("Failed to fetch privacy settings:", err);
+      });
     getBlockedUsers()
       .then((res) => {
         setBlockedUsers(
@@ -179,7 +182,9 @@ export default function PrivacyPage() {
           })),
         );
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("Failed to fetch blocked users:", err);
+      });
   }, []);
 
   const toggle = useCallback(
