@@ -177,6 +177,8 @@ export interface Playlist {
   repost_count: number;            
   created_at: string;
   updated_at: string;            
+  tracks?: any[];
+  preview_tracks?: any[];
 }
 
 export interface PlaylistResponse {

@@ -2,12 +2,39 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import TrackActions from "../../pages/[username]/[trackSlug]/components/TrackActions";
 import type { Track } from "../../types/track";
+import { MemoryRouter } from "react-router-dom";
 
-vi.mock("../../services/mocks/Track.service", () => ({
+vi.mock("../../../../services/engagement.service", () => ({
   likeTrack: vi.fn().mockResolvedValue({ liked: true, likeCount: 101 }),
   unlikeTrack: vi.fn().mockResolvedValue({ liked: false, likeCount: 99 }),
   repostTrack: vi.fn().mockResolvedValue({ reposted: true, repostCount: 11 }),
+}));
+
+vi.mock("../../../../services/track.service", () => ({
   postComment: vi.fn().mockResolvedValue({}),
+}));
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useParams: () => ({ username: "test-artist" }),
+  };
+});
+
+vi.mock("../../../../stores/auth.store", () => ({
+  useAuthStore: vi.fn(() => ({ user: { id: "user-123", username: "me" } })),
+}));
+
+vi.mock("../../../../stores/likes.store", () => ({
+  useLikesStore: vi.fn(() => ({
+    isTrackLiked: vi.fn().mockReturnValue(false),
+    isTrackReposted: vi.fn().mockReturnValue(false),
+    getItemStats: vi.fn().mockReturnValue({ likeCount: 100, repostCount: 10, playCount: 5000 }),
+    toggleTrack: vi.fn().mockResolvedValue(undefined),
+    toggleRepost: vi.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 const baseTrack: Track = {
@@ -39,23 +66,39 @@ describe("TrackActions", () => {
   });
 
   it("renders the action bar", () => {
-    render(<TrackActions track={baseTrack} onAddToNextUp={onAddToNextUp} onComment={onComment} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={baseTrack} onAddToNextUp={onAddToNextUp} onComment={onComment} />
+      </MemoryRouter>
+    );
     expect(screen.getByTestId("track-action-bar")).toBeInTheDocument();
   });
 
   it("renders like and repost stat counts", () => {
-    render(<TrackActions track={baseTrack} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={baseTrack} />
+      </MemoryRouter>
+    );
     expect(screen.getByTestId("stat-like-count")).toHaveTextContent("100");
     expect(screen.getByTestId("stat-repost-count")).toBeInTheDocument();
   });
 
   it("formats large like counts as K", () => {
-    render(<TrackActions track={{ ...baseTrack, likeCount: 14000 }} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={{ ...baseTrack, likeCount: 14000 }} />
+      </MemoryRouter>
+    );
     expect(screen.getByTestId("stat-like-count")).toHaveTextContent("14K");
   });
 
   it("clicking Like calls likeTrack and updates count", async () => {
-    render(<TrackActions track={baseTrack} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={baseTrack} />
+      </MemoryRouter>
+    );
     fireEvent.click(screen.getByTestId("button-like"));
     await waitFor(() => {
       expect(screen.getByTestId("stat-like-count")).toHaveTextContent("101");
@@ -63,14 +106,22 @@ describe("TrackActions", () => {
   });
 
   it("clicking More toggles the dropdown", () => {
-    render(<TrackActions track={baseTrack} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={baseTrack} />
+      </MemoryRouter>
+    );
     expect(screen.queryByTestId("dropdown-more")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("button-more"));
     expect(screen.getByTestId("dropdown-more")).toBeInTheDocument();
   });
 
   it("clicking outside More closes the dropdown", () => {
-    render(<TrackActions track={baseTrack} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={baseTrack} />
+      </MemoryRouter>
+    );
     fireEvent.click(screen.getByTestId("button-more"));
     expect(screen.getByTestId("dropdown-more")).toBeInTheDocument();
     fireEvent.mouseDown(document.body);
@@ -78,25 +129,41 @@ describe("TrackActions", () => {
   });
 
   it("shows 'Make public' in dropdown only when track is private", () => {
-    render(<TrackActions track={{ ...baseTrack, isPrivate: true }} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={{ ...baseTrack, isPrivate: true }} />
+      </MemoryRouter>
+    );
     fireEvent.click(screen.getByTestId("button-more"));
     expect(screen.getByTestId("dropdown-item-make-public")).toBeInTheDocument();
   });
 
   it("hides 'Make public' when track is public", () => {
-    render(<TrackActions track={baseTrack} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={baseTrack} />
+      </MemoryRouter>
+    );
     fireEvent.click(screen.getByTestId("button-more"));
     expect(screen.queryByTestId("dropdown-item-make-public")).not.toBeInTheDocument();
   });
 
   it("clicking Share opens SharePopup", () => {
-    render(<TrackActions track={baseTrack} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={baseTrack} />
+      </MemoryRouter>
+    );
     fireEvent.click(screen.getByTestId("button-share"));
     expect(screen.getByTestId("share-popup-overlay")).toBeInTheDocument();
   });
 
   it("calls onAddToNextUp when Add to Next Up is clicked", () => {
-    render(<TrackActions track={baseTrack} onAddToNextUp={onAddToNextUp} />);
+    render(
+      <MemoryRouter>
+        <TrackActions track={baseTrack} onAddToNextUp={onAddToNextUp} />
+      </MemoryRouter>
+    );
     fireEvent.click(screen.getByTestId("button-add-next-up"));
     expect(onAddToNextUp).toHaveBeenCalledOnce();
   });

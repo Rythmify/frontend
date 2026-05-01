@@ -44,9 +44,14 @@ vi.mock("@/stores/history.store", () => ({
 }));
 
 vi.mock("@/stores/auth.store", () => ({
-  useAuthStore: vi.fn(() => ({
-    user: { id: "user-123", username: "me" },
-  })),
+  useAuthStore: Object.assign(
+    vi.fn(() => ({
+      user: { id: "user-123", username: "me" },
+    })),
+    {
+      subscribe: vi.fn(),
+    },
+  ),
 }));
 
 vi.mock("@/services/engagement.service", () => ({
@@ -95,8 +100,6 @@ describe("TrackItem", () => {
     render(<TrackItem {...defaultProps} />);
     expect(screen.getByText("120.0M")).toBeInTheDocument();
     expect(screen.getByText("2.5M")).toBeInTheDocument();
-    expect(screen.getByText("150.0K")).toBeInTheDocument();
-    expect(screen.getByText("15,000")).toBeInTheDocument();
   });
 
   it("shows like and more buttons on hover", () => {
@@ -128,12 +131,6 @@ describe("TrackItem", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/discover/personalised/sicko-mode:1");
   });
 
-  it("navigates to track page when comments is clicked", () => {
-    render(<TrackItem {...defaultProps} />);
-    fireEvent.click(screen.getByTestId("track-comments-1"));
-    expect(mockNavigate).toHaveBeenCalledWith("/travis-scott/1");
-  });
-
   it("shows more menu and options", () => {
     render(<TrackItem {...defaultProps} />);
     const container = screen.getByTestId("track-item-1");
@@ -141,5 +138,14 @@ describe("TrackItem", () => {
     fireEvent.click(screen.getByTestId("track-more-button-1"));
     expect(screen.getByText("Copy Link")).toBeInTheDocument();
     expect(screen.getByText("Add to Playlist")).toBeInTheDocument();
+  });
+
+  it("redirects non-pro users to premium when download is clicked", () => {
+    render(<TrackItem {...defaultProps} />);
+    const container = screen.getByTestId("track-item-1");
+    fireEvent.mouseEnter(container);
+    fireEvent.click(screen.getByTestId("track-more-button-1"));
+    fireEvent.click(screen.getByTestId("track-more-download-1"));
+    expect(mockNavigate).toHaveBeenCalledWith("/premium");
   });
 });

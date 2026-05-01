@@ -160,13 +160,13 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   setShowCoverMenu((prev) => !prev);
                 }
               }}
-              className="cursor-pointer px-3 py-1.5 bg-black text-white text-sm font-bold rounded hover:text-[#aaaaaa] transition-colors"
+              className="cursor-pointer px-3 py-1.5 bg-bg-actionbutton text-bg-inverted text-sm font-bold rounded hover:opacity-80 transition-colors"
             >
               {localCover ? "Update image" : "Upload header image"}
             </button>
 
             {showCoverMenu && (
-              <div className="absolute top-full right-0 mt-1 bg-black shadow-lg z-50 rounded">
+              <div className="absolute top-full right-0 mt-1 bg-bg-actionbutton shadow-lg z-50 rounded">
                 <button
                   data-test="cover-replace-button"
                   type="button"
@@ -174,7 +174,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                     coverInputRef.current?.click();
                     setShowCoverMenu(false);
                   }}
-                  className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded"
+                  className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-bg-inverted hover:opacity-80 rounded"
                 >
                   Replace image
                 </button>
@@ -184,17 +184,17 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   onClick={async () => {
                     setLocalCover(undefined);
                     setUser({ ...user, coverUrl: undefined });
-                    setShowCoverMenu(false);
-                    try {
-                      // DELETE /users/me/cover
-                      await deleteCover();
-                    } catch {
+                      setShowCoverMenu(false);
+                      try {
+                        // DELETE /users/me/cover
+                        await deleteCover();
+                      } catch {
                       // Revert on failure
                       setLocalCover(coverUrl);
                       setUser({ ...user, coverUrl });
-                    }
-                  }}
-                  className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded"
+                      }
+                    }}
+                  className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-bg-inverted hover:opacity-80 rounded"
                 >
                   Delete image
                 </button>
@@ -207,7 +207,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           <div className="relative flex-shrink-0">
             <div
               data-testid="avatar-container"
-              className="w-[120px] h-[120px] sm:w-[200px] sm:h-[200px] rounded-full overflow-hidden flex items-center justify-center bg-[#68A039] cursor-pointer shadow-xl border-4 border-black/10"
+              className="w-[120px] h-[120px] sm:w-[200px] sm:h-[200px] rounded-full overflow-hidden flex items-center justify-center bg-[#68A039] cursor-pointer shadow-xl border-4 border-[#68A039]"
               onMouseEnter={() => setHoveringAvatar(true)}
               onMouseLeave={() => {
                 if (!showImageMenu) setHoveringAvatar(false);
@@ -229,11 +229,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               )}
 
               {isOwner && hoveringAvatar && (
-                <div className="absolute inset-0 bg-black/50 flex items-end justify-center pb-4 sm:pb-8 rounded-full">
+                <div className="absolute inset-0 bg-bg/50 flex items-end justify-center pb-4 sm:pb-8 rounded-full">
                   <div className="relative">
                     <button
                       data-test="avatar-update-button"
-                      className={`cursor-pointer bg-black rounded text-[10px] sm:text-sm hover:text-[#737272] font-semibold px-2 py-1 sm:px-4 sm:py-1.5 ${showImageMenu ? "text-accent" : "text-white"}`}
+                      className={`cursor-pointer bg-bg-actionbutton rounded text-[10px] sm:text-sm hover:opacity-80 font-semibold px-2 py-1 sm:px-4 sm:py-1.5 ${showImageMenu ? "text-accent" : "text-bg-inverted"}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowImageMenu((prev) => !prev);
@@ -244,7 +244,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
                     {showImageMenu && (
                       <div
-                        className="absolute top-full left-0 bg-black shadow-lg z-50 rounded"
+                        className="absolute top-full left-0 bg-bg-actionbutton shadow-lg z-50 rounded"
                         onMouseEnter={() => setHoveringAvatar(true)}
                         onMouseLeave={() => {
                           setShowImageMenu(false);
@@ -254,14 +254,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                         <button
                           data-test="avatar-replace-button"
                           onClick={handleReplaceClick}
-                          className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded"
+                          className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-bg-inverted hover:opacity-80 rounded"
                         >
                           Replace image
                         </button>
                         <button
                           data-test="avatar-delete-button"
                           onClick={handleDeleteImage}
-                          className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-white hover:text-[#737272] rounded"
+                          className="cursor-pointer block w-full whitespace-nowrap text-left px-4 py-3 text-sm font-bold text-bg-inverted hover:opacity-80 rounded"
                         >
                           Delete image
                         </button>
@@ -278,11 +278,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               {displayName}
             </h1>
             <div className="flex flex-col gap-1">
-              <p className="text-gray-400 font-bold text-xs sm:text-sm px-2 py-1 bg-black self-center sm:self-start">
+              <p className="text-white font-bold text-xs sm:text-sm px-2 py-1 bg-black self-center sm:self-start">
                 {username}
               </p>
               {location && (
-                <p className="text-gray-400 font-bold text-xs sm:text-sm px-2 py-1 bg-black self-center sm:self-start">
+                <p className="text-white font-bold text-xs sm:text-sm px-2 py-1 bg-black self-center sm:self-start">
                   {location}
                 </p>
               )}

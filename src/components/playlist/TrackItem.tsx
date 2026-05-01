@@ -16,6 +16,7 @@ import { FaRegCopy } from "react-icons/fa";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import { repostTrack } from "@/services/mocks/Track.service";
+import { getUsernameFromId } from "@/services/user.service";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import type { Track } from "@/types/track";
@@ -46,12 +47,12 @@ function TrackItem({
   const [addedToQueue, setAddedToQueue] = useState(false);
   const [reposted, setReposted] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [artistName, setArtistName] = useState(
+    (track.artist_username ?? "unknown").trim() || "unknown",
+  );
   const repostTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const artistName = track.artist_name ?? track.artist_name ?? "Unknown Artist";
-  const artistSlug =
-    track.artist_username ?? track.artist_username ?? "unknown";
   const artistStationId = track.artist_id ?? track.artist_username ?? "";
   const stationSlug = artistName
     .toLowerCase()
@@ -63,13 +64,43 @@ function TrackItem({
   const playCount = track.play_count ?? 0;
   const liked = isTrackLiked(track.track_id);
 
+  useEffect(() => {
+    let cancelled = false;
+    const fallbackUsername = (track.artist_username ?? "unknown").trim() || "unknown";
+
+    setArtistName(fallbackUsername);
+
+    if (!track.artist_id?.trim()) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    (async () => {
+      try {
+        const username = await getUsernameFromId(track.artist_id?.trim() ?? "1");
+        if (!cancelled) {
+          setArtistName(username || fallbackUsername);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtistName(fallbackUsername);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [track.artist_id, track.artist_username]);
+
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleTrack({
       id: track.track_id,
       title: track.title ?? "Untitled track",
       artistName,
-      artistUsername: artistSlug,
+      artistUsername: artistName,
       coverUrl: coverImage,
       genre: "",
       likeCount: 0,
@@ -103,7 +134,7 @@ function TrackItem({
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(
-        `${window.location.origin}/${artistSlug}/${track.track_id}`,
+        `${window.location.origin}/${artistName}/${track.track_id}`,
       );
       setCopySuccess(true);
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
@@ -142,7 +173,7 @@ function TrackItem({
       id: track.track_id,
       title: track.title ?? "Untitled track",
       artistName,
-      artistUsername: artistSlug,
+      artistUsername: artistName,
       coverUrl: coverImage,
       genre: "",
       likeCount: 0,
@@ -226,17 +257,17 @@ function TrackItem({
             ·
           </span>
           <Link
-            to={`/${artistSlug}`}
+            to={`/${artistName}`}
             onClick={(e) => e.stopPropagation()}
             className={`text-sm shrink-0 max-w-[30%] truncate font-bold transition-colors ${playbackTextClass} hover:text-text-muted/60`}
           >
-            {artistName}
+            {track.artist_name}
           </Link>
           <span className="text-[var(--color-text-muted)] text-sm shrink-0">
             ·
           </span>
           <Link
-            to={`/${artistSlug}/${track.trackSlug ?? track.track_id}`}
+            to={`/${artistName}/${track.trackSlug ?? track.track_id}`}
             onClick={(e) => e.stopPropagation()}
             className={`text-sm font-bold truncate transition-colors ${playbackTitleClass} hover:text-text-muted/60`}
             data-test={`link-track-title-${track.track_id}`}
@@ -313,7 +344,7 @@ function TrackItem({
                         id: track.track_id,
                         title: track.title ?? "Untitled track",
                         artistName,
-                        artistUsername: artistSlug,
+                        artistUsername: artistName,
                         coverUrl: coverImage,
                         genre: "",
                         likeCount: 0,
