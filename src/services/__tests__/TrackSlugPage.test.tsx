@@ -69,11 +69,27 @@ vi.mock("../../stores/player.store", () => ({
   ),
 }));
 
-vi.mock("../../stores/auth.store", () => ({
-  useAuthStore: vi.fn(() => ({
-    user: { id: "user-123", username: "me", following_ids: [] },
-  })),
+const { authStoreMock } = vi.hoisted(() => ({
+  authStoreMock: () => {
+    const store = Object.assign(
+      vi.fn(() => ({
+        user: { id: "user-123", username: "me", following_ids: [] },
+        isAuthenticated: true,
+      })),
+      {
+        getState: vi.fn(() => ({
+          user: { id: "user-123", username: "me", following_ids: [] },
+          isAuthenticated: true,
+        })),
+        subscribe: vi.fn(() => vi.fn()),
+      }
+    );
+    return { useAuthStore: store };
+  },
 }));
+
+vi.mock("@/stores/auth.store", authStoreMock);
+vi.mock("../../stores/auth.store", authStoreMock);
 
 // Mock children
 vi.mock("../../pages/[username]/[trackSlug]/components/TrackHero", () => ({
