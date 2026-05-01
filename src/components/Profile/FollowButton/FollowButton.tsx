@@ -6,6 +6,7 @@ interface FollowButtonProps {
   username: string;
   userId?: string;
   isFollowingOverride?: boolean;
+  blocked?: boolean;
   className?: string;
 }
 
@@ -13,6 +14,7 @@ export default function FollowButton({
   username,
   userId,
   isFollowingOverride,
+  blocked = false,
   className,
 }: FollowButtonProps) {
   const { user, setUser, toggleFollow } = useAuthStore();
@@ -55,6 +57,10 @@ export default function FollowButton({
       data-test={`follow-button-${username}`}
       onClick={async (e) => {
         e.stopPropagation();
+        if (blocked && !isFollowing) {
+          window.alert("You are not able to follow this user.");
+          return;
+        }
         if (!userId) {
           toggleFollow(username);
           return;
@@ -71,6 +77,17 @@ export default function FollowButton({
             syncFollowingIds(true);
           }
         } catch (error) {
+          const message =
+            (error as any)?.response?.data?.error?.message ??
+            (error as any)?.response?.data?.message ??
+            "";
+          if (
+            (error as any)?.response?.status === 403 ||
+            /blocked/i.test(message)
+          ) {
+            window.alert("You are not able to follow this user.");
+            return;
+          }
           console.error("Failed to update follow status:", error);
         } finally {
           setIsLoading(false);
@@ -78,7 +95,7 @@ export default function FollowButton({
       }}
       disabled={isLoading}
       className={`cursor-pointer px-4 py-1.5 text-xs font-bold rounded hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed ${
-        isFollowing ? "bg-input-bg text-bg-inverted" : "bg-white text-black"
+        isFollowing ? "bg-input-bg text-bg-inverted" : "bg-bg text-bg-inverted"
       } ${className ?? ""}`}
     >
       {isFollowing ? "Following" : "Follow"}

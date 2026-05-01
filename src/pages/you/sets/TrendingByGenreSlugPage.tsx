@@ -297,7 +297,7 @@ function TrendingByGenreSlugPage() {
   return (
     <div
       data-test="trending-by-genre-slug-page"
-      className="flex-1 bg-bg min-h-screen px-4 md:px-8 lg:px-12 xl:px-20 mx-auto w-full"
+      className="flex-1 bg-bg min-h-screen px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 mx-auto w-full overflow-x-hidden"
     >
       <PlaylistHero
         key={playlist.playlist_id}
@@ -310,9 +310,9 @@ function TrendingByGenreSlugPage() {
         genreLabel={genreName}
       />
 
-      <div className="container mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div data-test="trending-by-genre-slug-main" className="flex-1 min-w-0">
+      <div className="container mx-auto w-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 w-full">
+          <div data-test="trending-by-genre-slug-main" className="flex-1 min-w-0 w-full">
             {isAuthenticated ? (
               <PlaylistActionsAlbum
                 playlist={playlist}
@@ -325,7 +325,7 @@ function TrendingByGenreSlugPage() {
               <PlaylistActionsGuest playlist={playlist} />
             )}
 
-            <div className="flex flex-1 gap-6 mt-8">
+            <div className="flex flex-col gap-6 mt-6 lg:mt-8">
               <TrackList
                 tracks={playlist.tracks}
                 currentTrackId={currentTrack?.id}

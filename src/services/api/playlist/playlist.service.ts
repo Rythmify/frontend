@@ -61,6 +61,25 @@ export interface PlaylistDetails extends Playlist {
   tracks: PlaylistTrackItem[];
 }
 
+export interface PlaylistEngagementUser {
+  user_id: string;
+  email: string;
+  display_name: string;
+  gender: "male" | "female" | null;
+  role: "artist" | "listener" | "admin";
+  is_verified: boolean;
+  profile_picture: string | null;
+}
+
+export interface PlaylistEngagementUsersResponse {
+  data: PlaylistEngagementUser[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+  };
+}
+
 export interface CreatePlaylistPayload {
   name: string;
   description?: string;
@@ -526,6 +545,51 @@ export async function getPlaylistEmbed(
 }
 
 /** GET /playlists?mine=true&filter=liked — get playlists the user has liked */
+async function getPlaylistEngagementUsers(
+  path: string,
+  params?: { limit?: number; offset?: number },
+) {
+  const res = await axiosInstance.get<PlaylistEngagementUsersResponse>(path, {
+    params,
+  });
+  return res.data;
+}
+
+/** GET /playlists/:id/likers */
+export async function getPlaylistLikers(
+  playlistId: string,
+  params?: { limit?: number; offset?: number },
+) {
+  return getPlaylistEngagementUsers(`/playlists/${playlistId}/likers`, params);
+}
+
+/** GET /playlists/:id/reposters */
+export async function getPlaylistReposters(
+  playlistId: string,
+  params?: { limit?: number; offset?: number },
+) {
+  return getPlaylistEngagementUsers(
+    `/playlists/${playlistId}/reposters`,
+    params,
+  );
+}
+
+/** GET /albums/:id/likers */
+export async function getAlbumLikers(
+  albumId: string,
+  params?: { limit?: number; offset?: number },
+) {
+  return getPlaylistEngagementUsers(`/albums/${albumId}/likers`, params);
+}
+
+/** GET /albums/:id/reposters */
+export async function getAlbumReposters(
+  albumId: string,
+  params?: { limit?: number; offset?: number },
+) {
+  return getPlaylistEngagementUsers(`/albums/${albumId}/reposters`, params);
+}
+
 export async function getLikedPlaylists(params?: {
   limit?: number;
   offset?: number;

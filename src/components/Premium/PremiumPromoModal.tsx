@@ -23,6 +23,7 @@ export default function PremiumPromoModal({ onClose }: PremiumPromoModalProps) {
 
   return createPortal(
     <div
+      data-test="premium-promo-modal-overlay"
       style={{
         position: "fixed",
         inset: 0,
@@ -35,6 +36,7 @@ export default function PremiumPromoModal({ onClose }: PremiumPromoModalProps) {
       onClick={onClose}
     >
       <div
+        data-test="premium-promo-modal"
         style={{
           position: "relative",
           width: 420,
@@ -82,6 +84,7 @@ export default function PremiumPromoModal({ onClose }: PremiumPromoModalProps) {
           {/* Close */}
           <button
             onClick={onClose}
+            data-test="premium-promo-modal-close"
             style={{
               position: "absolute",
               top: 12,
@@ -157,6 +160,7 @@ export default function PremiumPromoModal({ onClose }: PremiumPromoModalProps) {
               onClose();
               navigate("/premium");
             }}
+            data-test="premium-promo-modal-get-premium"
             style={{
               width: "100%",
               padding: "12px 0",
@@ -174,6 +178,7 @@ export default function PremiumPromoModal({ onClose }: PremiumPromoModalProps) {
           </button>
           <button
             onClick={onClose}
+            data-test="premium-promo-modal-maybe-later"
             style={{
               width: "100%",
               padding: "8px 0",

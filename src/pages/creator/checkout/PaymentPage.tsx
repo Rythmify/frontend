@@ -637,7 +637,7 @@ export default function PaymentPage() {
 
   if (user?.isPro) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <div data-test="premium-payment-pro-state" className="min-h-screen bg-white flex flex-col items-center justify-center gap-4 px-6 text-center">
         <div className="text-4xl">★</div>
         <h1 className="text-[26px] font-black text-black">
           You're already on Premium
@@ -648,6 +648,7 @@ export default function PaymentPage() {
         <button
           type="button"
           onClick={() => navigate("/upload")}
+          data-test="premium-payment-go-upload"
           className="mt-2 rounded-full bg-black px-8 py-3 text-[14px] font-bold text-white hover:opacity-80 transition-opacity"
         >
           Go to Upload
@@ -657,8 +658,8 @@ export default function PaymentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[1000px] px-6 pb-20 pt-12 md:px-10">
+    <div data-test="premium-payment-page" className="min-h-screen bg-white">
+      <div data-test="premium-payment-content" className="mx-auto max-w-[1000px] px-6 pb-20 pt-12 md:px-10">
         {/* Page title */}
         <h1 className="mb-4 text-[28px] font-black tracking-[-0.03em] text-black">
           Get Premium
@@ -666,7 +667,7 @@ export default function PaymentPage() {
 
         {/* Pending checkout notice */}
         {isPendingCheckout && (
-          <div className="mb-8 flex items-start gap-3 rounded-sm border border-[#f50]/30 bg-[#fff8f5] px-4 py-3">
+          <div data-test="premium-payment-pending" className="mb-8 flex items-start gap-3 rounded-sm border border-[#f50]/30 bg-[#fff8f5] px-4 py-3">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="mt-0.5 flex-shrink-0 text-[#f50]">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
               <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -918,6 +919,7 @@ export default function PaymentPage() {
               type="button"
               onClick={handleSubmit}
               disabled={!payment || isSubmitting}
+              data-test="premium-payment-submit"
               className={ctaClassName}
             >
               {isSubmitting ? (

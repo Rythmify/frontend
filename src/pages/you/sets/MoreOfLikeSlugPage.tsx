@@ -15,6 +15,8 @@ import type { Track } from "../../../types/track";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+import { useMemo } from "react";
+import { useAuthStore } from "@/stores/auth.store";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -72,6 +74,35 @@ function getTopArtistTrackCountsFromRadioTracks(
   }
 
   return Array.from(counts.entries());
+}
+
+function isArtistFollowed(
+  currentUser: { following_ids: string[] } | null,
+  profile: PublicUser,
+): boolean {
+  if (!currentUser) return false;
+
+  const followingIds = currentUser.following_ids ?? [];
+  const candidates = [profile.id, profile.username].filter(Boolean) as string[];
+  return candidates.some((candidate) => followingIds.includes(candidate));
+}
+
+function toFeaturedArtist(
+  user: PublicUser,
+  trackCount: number,
+  currentUser: { following_ids: string[] } | null,
+): MockUser {
+  return {
+    id: user.id,
+    username: user.username ?? user.display_name,
+    displayName: user.display_name,
+    avatarUrl:
+      user.profile_picture ??
+      `https://picsum.photos/seed/${encodeURIComponent(user.id)}/100/100`,
+    followerCount: user.followers_count ?? 0,
+    trackCount,
+    isFollowing: isArtistFollowed(currentUser, user),
+  };
 }
 
 function buildPlaylist(
@@ -161,6 +192,7 @@ function MoreOfLikeSlugPage() {
     username: string;
     playlistSlug: string;
   }>();
+  const { user: currentUser } = useAuthStore();
   const isRadioPlaylistRoute =
     !!playlistSlug && !playlistSlug.includes(":") && UUID_RE.test(playlistSlug);
 
@@ -181,6 +213,21 @@ function MoreOfLikeSlugPage() {
     isPlaying,
     currentTrack,
   } = usePlayerStore();
+
+  const tracksForDisplay = useMemo(() => {
+    if (!seedTrack) return relatedPlaylistTracks;
+
+    const seedPlaylistTrack = toPlaylistTrackItem(seedTrack, 1);
+    const hasSeed = relatedPlaylistTracks.some(
+      (track) => track.track_id === seedPlaylistTrack.track_id,
+    );
+
+    return hasSeed
+      ? relatedPlaylistTracks
+      : [seedPlaylistTrack, ...relatedPlaylistTracks];
+  }, [seedTrack, relatedPlaylistTracks]);
+
+  const tracksForAddToPlaylist = tracksForDisplay;
 
   useEffect(() => {
     let cancelled = false;
@@ -213,19 +260,9 @@ function MoreOfLikeSlugPage() {
           const artistIds = getTopArtistTrackCountsFromRadioTracks(payload.tracks);
           const artists = await Promise.all(
             artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-              const user = await getUserById(artistId).catch(() => null);
-              return user
-                ? {
-                    id: user.id as unknown as number,
-                    username: user.username ?? user.display_name,
-                    displayName: user.display_name,
-                    avatarUrl:
-                      user.profile_picture ??
-                      "https://picsum.photos/seed/default/100/100",
-                    followerCount: user.followers_count ?? 0,
-                    trackCount,
-                    isFollowing: false,
-                  }
+              const profile = await getUserById(artistId).catch(() => null);
+              return profile
+                ? toFeaturedArtist(profile, trackCount, currentUser)
                 : null;
             }),
           );
@@ -253,19 +290,9 @@ function MoreOfLikeSlugPage() {
           const artistIds = getTopArtistTrackCounts(tracks);
           const artists = await Promise.all(
             artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-              const user = await getUserById(artistId).catch(() => null);
-              return user
-                ? {
-                    id: user.id as unknown as number,
-                    username: user.username ?? user.display_name,
-                    displayName: user.display_name,
-                    avatarUrl:
-                      user.profile_picture ??
-                      "https://picsum.photos/seed/default/100/100",
-                    followerCount: user.followers_count ?? 0,
-                    trackCount,
-                    isFollowing: false,
-                  }
+              const profile = await getUserById(artistId).catch(() => null);
+              return profile
+                ? toFeaturedArtist(profile, trackCount, currentUser)
                 : null;
             }),
           );
@@ -306,7 +333,7 @@ function MoreOfLikeSlugPage() {
     return () => {
       cancelled = true;
     };
-  }, [playlistSlug, isRadioPlaylistRoute]);
+  }, [playlistSlug, isRadioPlaylistRoute, currentUser?.id, currentUser?.following_ids?.join("|") ?? ""]);
 
   const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
     id: track.track_id,
@@ -330,10 +357,10 @@ function MoreOfLikeSlugPage() {
   });
 
   const handleHeroPlayPause = () => {
-    if (!playlist || !relatedTracks.length) return;
+    if (!playlist || !tracksForDisplay.length) return;
 
-    const playerTrack = toPlayerTrack(relatedPlaylistTracks[0]);
-    const queue = relatedPlaylistTracks.map(toPlayerTrack);
+    const playerTrack = toPlayerTrack(tracksForDisplay[0]);
+    const queue = tracksForDisplay.map(toPlayerTrack);
     const isThisPlaylistPlaying =
       (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
 
@@ -341,26 +368,26 @@ function MoreOfLikeSlugPage() {
       togglePlay();
     } else {
       setPlayerTrack(
-        {
-          ...playerTrack,
-          context: {
-            type: "playlist",
-            playlist_id: playlist.playlist_id,
-            queue: relatedPlaylistTracks.map((t) => t.track_id),
-          },
-        } as any,
-        queue,
+          {
+            ...playerTrack,
+            context: {
+              type: "playlist",
+              playlist_id: playlist.playlist_id,
+              queue: tracksForDisplay.map((t) => t.track_id),
+            },
+          } as any,
+          queue,
       );
     }
   };
 
   const handleTrackPlay = (track: PlaylistTrackItem) => {
     const playerTrack = toPlayerTrack(track);
-    const queue = relatedPlaylistTracks.map(toPlayerTrack);
+    const queue = tracksForDisplay.map(toPlayerTrack);
     const playlistContext = {
       type: "playlist",
       playlist_id: playlist?.playlist_id,
-      queue: relatedPlaylistTracks.map((t) => t.track_id),
+      queue: tracksForDisplay.map((t) => t.track_id),
     };
 
     if (currentTrack?.id === playerTrack.id) {
@@ -380,7 +407,7 @@ function MoreOfLikeSlugPage() {
   const isAlbumActive =
     isPlaying &&
     !!playlist &&
-    relatedPlaylistTracks.some((track) => track.track_id === currentTrack?.id);
+    tracksForDisplay.some((track) => track.track_id === currentTrack?.id);
 
   if (loading)
     return (
@@ -404,7 +431,7 @@ function MoreOfLikeSlugPage() {
   return (
     <div
       data-test="more-of-like-slug-page"
-      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1  bg-bg min-h-screen"
+      className="container px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 flex-1 bg-bg min-h-screen overflow-x-hidden"
     >
       <PlaylistHero
         key={playlist.playlist_id}
@@ -423,14 +450,14 @@ function MoreOfLikeSlugPage() {
         moreOfLikeTitle={seedTrack?.title}
       />
 
-      <div className="container mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
-          <div data-test="more-of-like-slug-main" className="flex-1 min-w-0">
+      <div className="container mx-auto w-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 w-full">
+          <div data-test="more-of-like-slug-main" className="flex-1 min-w-0 w-full">
             <PlaylistActions
               playlist={playlist}
-              initialTracks={relatedPlaylistTracks}
+              initialTracks={tracksForAddToPlaylist}
               isGeneratedPlaylist
-              engagementKind={isRadioPlaylistRoute ? "radioTracks" : "playlist"}
+              engagementKind={"radioTracks" }
               radioSeedTrack={seedTrack ?? undefined}
               onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                 setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
@@ -439,10 +466,10 @@ function MoreOfLikeSlugPage() {
 
             <div
               data-test="more-of-like-slug-tracklist"
-              className="flex flex-col lg:flex-row gap-6 mt-8"
+              className="flex flex-col gap-6 mt-6 lg:mt-8"
             >
               <TrackList
-                tracks={relatedPlaylistTracks}
+                tracks={tracksForDisplay}
                 currentTrackId={currentTrack?.id}
                 isPlaying={isPlaying}
                 onTrackPlay={handleTrackPlay}

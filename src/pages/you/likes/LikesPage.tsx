@@ -173,12 +173,12 @@ export default function LikesPage() {
           name={profileDisplayName || profileUsername}
           alt={profileDisplayName || profileUsername}
           wrapperClassName="w-24 h-24 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
-          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
+          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
           onClick={() => navigate(`/${profileUsername}`)}
         />
         <h1
           data-test="likes-page-title"
-          className="text-white text-2xl font-bold"
+          className="text-bg-inverted text-2xl font-bold"
         >
           Likes by {profileDisplayName || profileUsername}
         </h1>
@@ -213,7 +213,7 @@ export default function LikesPage() {
         <button
           data-test="likes-share-button"
           onClick={() => setShowShare(true)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-input-bg text-white text-sm font-bold rounded hover:opacity-70"
+          className="flex items-center gap-2 px-3 py-1.5 bg-input-bg text-bg-inverted text-sm font-bold rounded hover:opacity-70"
         >
           <i className="fa-solid fa-arrow-up-from-bracket text-xs" />
           Share
@@ -232,7 +232,7 @@ export default function LikesPage() {
 
           {displayedPlaylists.length > 0 && (
             <section className="flex flex-col gap-4">
-              <h2 className="text-white text-lg font-semibold">
+              <h2 className="text-bg-inverted text-lg font-semibold">
                 Liked playlists
               </h2>
               <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1 scrollbar-hide">
@@ -249,7 +249,7 @@ export default function LikesPage() {
 
           {displayedAlbums.length > 0 && (
             <section className="flex flex-col gap-4">
-              <h2 className="text-white text-lg font-semibold">
+              <h2 className="text-bg-inverted text-lg font-semibold">
                 Liked albums
               </h2>
               <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1 scrollbar-hide">
@@ -266,7 +266,7 @@ export default function LikesPage() {
         </div>
       ) : (
         <div className="flex items-center justify-center py-24">
-          <p className="text-white font-bold text-lg sm:text-2xl">
+          <p className="text-bg-inverted font-bold text-lg sm:text-2xl">
             {isOwner
               ? "You have no likes yet."
               : `${profileDisplayName || profileUsername} hasn't liked anything yet.`}

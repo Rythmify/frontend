@@ -243,7 +243,7 @@ function CardWaveform({
         ws.on("interaction", (newTime: number) => {
           seekAudio(newTime);
           const dur = audio.duration || durationFallback;
-          onWaveformClick(dur > 0 ? newTime / dur : 0);
+          onWaveformClick?.(dur > 0 ? newTime / dur : 0);
         });
 
         ws.on("decode", (dur) => {
@@ -267,7 +267,7 @@ function CardWaveform({
 
         ws.on("interaction", (newTime: number) => {
           const dur = durationFallback;
-          onWaveformClick(dur > 0 ? newTime / dur : 0);
+          onWaveformClick?.(dur > 0 ? newTime / dur : 0);
         });
 
         ws.on("decode", (dur) => {

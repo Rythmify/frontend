@@ -67,7 +67,7 @@ interface HeroSectionProps {
 
 export default function HeroSection({ onGetStarted, isStarting, disabled }: HeroSectionProps) {
   return (
-    <section className="w-full bg-[#111111]">
+    <section data-test="premium-hero-section" className="w-full bg-[#111111]">
       <div className="relative flex min-h-[760px] flex-col overflow-hidden px-6 md:px-10 lg:px-16 pt-18 pb-14">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.08),transparent_34%),linear-gradient(90deg,rgba(0,0,0,0.22),transparent_55%)]" />
 
@@ -90,12 +90,14 @@ export default function HeroSection({ onGetStarted, isStarting, disabled }: Hero
               type="button"
               onClick={onGetStarted}
               disabled={isStarting || disabled}
+              data-test="premium-hero-get-premium"
               className="bg-white text-black font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:opacity-85 transition-opacity cursor-pointer disabled:opacity-50"
             >
               {isStarting ? "Loading…" : "Get Premium"}
             </button>
             <a
               href="#pricing-cards"
+              data-test="premium-hero-see-plan"
               className="bg-transparent text-white border border-white/50 font-semibold text-sm md:text-base px-4.5 py-2.5 rounded-full hover:border-white transition-colors cursor-pointer"
             >
               See plan
@@ -103,7 +105,7 @@ export default function HeroSection({ onGetStarted, isStarting, disabled }: Hero
           </div>
         </div>
 
-        <div className="relative z-10 mt-auto pt-16 lg:ml-24 xl:ml-36 lg:mr-24 xl:mr-36 pb-6">
+        <div data-test="premium-hero-feature-grid" className="relative z-10 mt-auto pt-16 lg:ml-24 xl:ml-36 lg:mr-24 xl:mr-36 pb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8">
             {features.map((f) => (
               <div key={f.title} className="text-white">
