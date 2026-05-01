@@ -51,7 +51,7 @@ function albumToPlaylistDetails(
           position: index + 1,
           added_at: track.added_at,
           title: track.title,
-          duration: null,
+          duration: track.duration ?? null,
           cover_image: track.cover_image || null,
           artist_name: track.artist_name,
           artist_id: track.artist_id,
@@ -117,6 +117,24 @@ function isArtistFollowed(
   );
 }
 
+function toFeaturedArtist(
+  user: PublicUser,
+  trackCount: number,
+  currentUser: { following_ids: string[] } | null,
+): MockUser {
+  return {
+    id: user.id,
+    username: user.username ?? user.display_name,
+    displayName: user.display_name,
+    avatarUrl:
+      user.profile_picture ??
+      `https://picsum.photos/seed/${encodeURIComponent(user.id)}/100/100`,
+    followerCount: user.followers_count ?? 0,
+    trackCount,
+    isFollowing: isArtistFollowed(currentUser, user),
+  };
+}
+
 function AlbumsForYouSlugPage() {
   const { username, albumSlug } = useParams<{
     username: string;
@@ -137,21 +155,6 @@ function AlbumsForYouSlugPage() {
     isPlaying,
     currentTrack,
   } = usePlayerStore();
-
-  const toFeaturedArtist = (
-    user: PublicUser,
-    trackCount: number,
-  ): MockUser => ({
-    id: user.id,
-    username: user.username ?? user.display_name,
-    displayName: user.display_name,
-    avatarUrl:
-      user.profile_picture ??
-      `https://picsum.photos/seed/${encodeURIComponent(user.id)}/100/100`,
-    followerCount: user.followers_count ?? 0,
-    trackCount,
-    isFollowing: isArtistFollowed(currentUser, user),
-  });
 
   useEffect(() => {
     let cancelled = false;
@@ -196,7 +199,7 @@ function AlbumsForYouSlugPage() {
         const artists = await Promise.all(
           artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
             const user = await getUserById(artistId).catch(() => null);
-            return user ? toFeaturedArtist(user, trackCount) : null;
+            return user ? toFeaturedArtist(user, trackCount, currentUser) : null;
           }),
         );
 

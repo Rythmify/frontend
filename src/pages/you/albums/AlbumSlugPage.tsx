@@ -75,6 +75,24 @@ function isArtistFollowed(
   );
 }
 
+function toFeaturedArtist(
+  profile: PublicUser,
+  trackCount: number,
+  currentUser: { following_ids: string[] } | null,
+): MockUser {
+  return {
+    id: profile.id,
+    username: profile.username ?? profile.display_name,
+    displayName: profile.display_name,
+    avatarUrl:
+      profile.profile_picture ??
+      `https://picsum.photos/seed/${encodeURIComponent(profile.id)}/100/100`,
+    followerCount: profile.followers_count ?? 0,
+    trackCount,
+    isFollowing: isArtistFollowed(currentUser, profile),
+  };
+}
+
 function AlbumSlugPage() {
   const { username, albumSlug } = useParams<{
     username: string;
@@ -143,19 +161,7 @@ function AlbumSlugPage() {
         const artists = await Promise.all(
           artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
             const profile = await getUserById(artistId).catch(() => null);
-            return profile
-              ? ({
-                  id: profile.id,
-                  username: profile.username ?? profile.display_name,
-                  displayName: profile.display_name,
-                  avatarUrl:
-                    profile.profile_picture ??
-                    `https://picsum.photos/seed/${encodeURIComponent(profile.id)}/100/100`,
-                  followerCount: profile.followers_count ?? 0,
-                  trackCount,
-                  isFollowing: isArtistFollowed(currentUser, profile),
-                } as MockUser)
-              : null;
+            return profile ? toFeaturedArtist(profile, trackCount, currentUser) : null;
           }),
         );
 

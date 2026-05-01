@@ -86,13 +86,22 @@ vi.mock("@/components/playlist/OwnerInfo", () => ({
 
 vi.mock("../../../components/playlist/Made for you/PlaylistSidebarForYou", () => ({
   default: ({ featuredArtists }: any) => (
-    <div data-test="playlist-sidebar" data-featured-count={String(featuredArtists?.length ?? 0)} />
+    <div
+      data-test="playlist-sidebar"
+      data-featured-count={String(featuredArtists?.length ?? 0)}
+      data-featured-avatar={featuredArtists?.[0]?.avatarUrl ?? ""}
+      data-featured-followers={String(featuredArtists?.[0]?.followerCount ?? 0)}
+    />
   ),
 }));
 
 vi.mock("../../../components/playlist/TrackList", () => ({
   default: ({ tracks, onTrackPlay }: any) => (
-    <div data-test="track-list" data-count={String(tracks?.length ?? 0)}>
+    <div
+      data-test="track-list"
+      data-count={String(tracks?.length ?? 0)}
+      data-first-duration={String(tracks?.[0]?.duration ?? "")}
+    >
       {tracks?.map((track: any) => (
         <button
           key={track.track_id}
@@ -201,6 +210,18 @@ describe("AlbumSlugPage", () => {
     expect(screen.getByTestId("playlist-actions-owner")).toBeInTheDocument();
     expect(screen.queryByTestId("playlist-actions-album")).not.toBeInTheDocument();
     expect(screen.getByTestId("owner-info")).toHaveAttribute("data-tracks", "100");
+    expect(screen.getByTestId("track-list")).toHaveAttribute(
+      "data-first-duration",
+      "210",
+    );
+    expect(screen.getByTestId("playlist-sidebar")).toHaveAttribute(
+      "data-featured-avatar",
+      "https://picsum.photos/seed/artist-1/100/100",
+    );
+    expect(screen.getByTestId("playlist-sidebar")).toHaveAttribute(
+      "data-featured-followers",
+      "31",
+    );
 
     fireEvent.click(screen.getByTestId("hero-play"));
 
