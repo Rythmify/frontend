@@ -37,6 +37,7 @@ const makeAppeal = (overrides: Partial<ReportAppeal> = {}): ReportAppeal => ({
   user_id: "user-1",
   appeal_reason: "I did not violate any rules",
   status: "pending",
+  created_at: "2024-01-10T00:00:00Z",
   original_report: {
     id: "report-1",
     resource_type: "track",
