@@ -51,6 +51,8 @@ function normalizeTrack(raw: any): Track {
       raw.user?.username ||
       raw.artist_username ||
       raw.artistUsername ||
+      raw.username ||
+      raw.owner_username ||
       "",
     // FIX: map slug field from API, fallback to id to ensure valid navigation URL
     trackSlug: raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
