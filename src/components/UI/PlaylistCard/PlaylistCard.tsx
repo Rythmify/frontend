@@ -38,7 +38,7 @@ export default function PlaylistCard({
   widthClassName = "w-[200px]",
 }: PlaylistCardProps) {
   const navigate = useNavigate();
-  const { isPlaylistLiked, togglePlaylist, isAlbumLiked, toggleAlbum } = useLikesStore();
+  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const { currentTrack, isPlaying, togglePlay, setTrack } = usePlayerStore();
   const { user } = useAuthStore();
   const { addPlaylist } = useHistoryStore();
@@ -50,8 +50,6 @@ export default function PlaylistCard({
   const liked =
     item.isLikedOverride !== undefined
       ? item.isLikedOverride
-      : item.isAlbumView
-        ? isAlbumLiked(item.id)
         : isPlaylistLiked(item.id);
   const isThisPlaylistPlaying =
     isPlaying &&
@@ -123,8 +121,6 @@ export default function PlaylistCard({
             e.stopPropagation();
             if (item.onLike) {
               item.onLike(e);
-            } else if (item.isAlbumView) {
-              toggleAlbum({ playlist_id: item.id, name: item.title, cover_image: item.coverUrl } as any);
             } else {
               togglePlaylist(item);
             }

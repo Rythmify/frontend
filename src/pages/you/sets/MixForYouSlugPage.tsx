@@ -12,12 +12,12 @@ import type {
   DiscoveryTrack,
   MixDetailsData,
 } from "@/services/api/discover.service";
+import { getFeaturedArtists } from "@/services/featuredArtists.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { useAuthStore } from "@/stores/auth.store";
-import { getUserById, type PublicUser } from "@/services/user.service";
 
 // ─── Mapper ──────────────────
 function mixToPlaylistDetails(
@@ -57,20 +57,6 @@ function mixToPlaylistDetails(
   };
 }
 
-function toFeaturedArtist(user: PublicUser, trackCount: number): MockUser {
-  return {
-    id: user.id,
-    username: user.username ?? user.display_name,
-    displayName: user.display_name,
-    avatarUrl:
-      user.profile_picture ??
-      `https://picsum.photos/seed/${encodeURIComponent(user.id)}/100/100`,
-    followerCount: user.followers_count ?? 0,
-    trackCount,
-    isFollowing: false,
-  };
-}
-
 // ─── Page ─────────────────────────────────────────────────
 
 function MixForYouSlugPage() {
@@ -93,19 +79,6 @@ function MixForYouSlugPage() {
     currentTrack,
   } = usePlayerStore();
 
-  const isArtistFollowed = (profile: PublicUser): boolean => {
-    if (!currentUser) return false;
-
-    const candidates = [profile.id, profile.username]
-      .filter(Boolean)
-      .map(String);
-    const followingIds = currentUser.following_ids ?? [];
-
-    return candidates.some((candidate) =>
-      followingIds.includes(candidate),
-    );
-  };
-
   useEffect(() => {
     let cancelled = false;
 
@@ -122,27 +95,9 @@ function MixForYouSlugPage() {
 
         setPlaylist(mixToPlaylistDetails(mix, currentUserId));
 
-        const uniqueArtistIds = Array.from(
-          new Set(mix.tracks.map((track) => track.user_id).filter(Boolean)),
-        ) as string[];
-
-        const fetchedUsers = await Promise.all(
-          uniqueArtistIds.map((id) => getUserById(id).catch(() => null)),
-        );
+        const artists = await getFeaturedArtists(mix.tracks, currentUser);
 
         if (cancelled) return;
-
-        const artists = fetchedUsers
-          .filter((user): user is PublicUser => Boolean(user))
-          .map((user) => {
-            const trackCount = mix.tracks.filter(
-              (track) => track.user_id === user.id,
-            ).length;
-            return {
-              ...toFeaturedArtist(user, trackCount),
-              isFollowing: isArtistFollowed(user),
-            };
-          });
 
         setFeaturedArtists(artists);
       } catch (err) {
