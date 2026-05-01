@@ -15,6 +15,8 @@ interface TrackCardProps {
   widthClassName?: string;
   addToPlaylistTracks?: Track[];
   contextQueue?: Track[];
+  radioLikeMode?: boolean;
+  radioPlaylistId?: string;
 }
 
 // ─── Styles ───────────────────────────────────────────────
@@ -107,11 +109,13 @@ const TrackCard = ({
   widthClassName,
   addToPlaylistTracks,
   contextQueue,
+  radioLikeMode,
+  radioPlaylistId: _radioPlaylistId,
 }: TrackCardProps) => {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { isTrackLiked, toggleTrack } = useLikesStore();
+  const { isTrackLiked, toggleTrack, isRadioTrackLiked, toggleRadioTrack } = useLikesStore();
 
   const fetchTracksForModal = useCallback(async () => {
     const previewTrack = {
@@ -135,7 +139,7 @@ const TrackCard = ({
     return [previewTrack];
   }, [track.id, track.title, track.artistName, track.coverUrl, addToPlaylistTracks]);
 
-  const liked = isTrackLiked(track.id);
+  const liked = radioLikeMode ? isRadioTrackLiked(track.id) : isTrackLiked(track.id);
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
@@ -180,7 +184,8 @@ const TrackCard = ({
           isLiked={liked}
           onLike={(e) => {
             e.stopPropagation();
-            toggleTrack(track);
+            if (radioLikeMode) toggleRadioTrack(track);
+            else toggleTrack(track);
           }}
           moreMenuItems={[
             {
