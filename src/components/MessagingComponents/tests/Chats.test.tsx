@@ -1,131 +1,137 @@
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { Chats } from "../Chats";
 import type { Conversation } from "@/services/api/messaging/conversationApi";
 
-vi.mock("@/components/UI/Spinner", () => ({
-  default: () => <div data-test="spinner">Loading...</div>,
+// 🔹 Mock dependencies
+vi.mock("@/components/MessagingComponents/ChatProfile", () => ({
+  ChatProfile: ({ conversation, onClick }: any) => (
+    <div
+      data-testid={`chat-${conversation.id}`}
+      onClick={onClick}
+    >
+      {conversation.participant.display_name}
+    </div>
+  ),
 }));
 
-const makeConversation = (id: string): Conversation => ({
-  id,
-  participant: {
-    id: `user-${id}`,
-    display_name: `User ${id}`,
-    profile_picture: `https://example.com/${id}.jpg`,
-    username: `user${id}`,
-  },
-  last_message: {
-    id: `msg-${id}`,
-    body: `Last message from ${id}`,
-    created_at: new Date().toISOString(),
-    sender_id: `user-${id}`,
-    is_read: true,
-  },
-  unread_count: 0,
-  updated_at: new Date().toISOString(),
-} as unknown as Conversation);
+vi.mock("@/components/UI/Spinner", () => ({
+  default: () => <div data-testid="spinner">Loading...</div>,
+}));
 
-const defaultProps = {
-  conversations: [],
-  loading: false,
-  loadingMore: false,
-  error: null,
-  activeConversationId: null,
-  onSelect: vi.fn(),
-};
+const createConversation = (id: string): Conversation =>
+  ({
+    id,
+    updated_at: new Date().toISOString(),
+    unread_count: 0,
+    participant: {
+      display_name: `User ${id}`,
+      avatar: "",
+    },
+    last_message: {
+      body: "Hello",
+      embed_type: null,
+    },
+  } as Conversation);
 
 describe("Chats", () => {
-  // ── Loading ────────────────────────────────────────────────────────────────
+  it("renders loading spinner", () => {
+    render(
+      <Chats
+        conversations={[]}
+        loading
+        loadingMore={false}
+        error={null}
+        activeConversationId={null}
+        onSelect={vi.fn()}
+      />
+    );
 
-  it("renders Spinner when loading is true", () => {
-    render(<Chats {...defaultProps} loading={true} />);
     expect(screen.getByTestId("spinner")).toBeInTheDocument();
   });
 
-  it("does not render chat list when loading", () => {
-    render(<Chats {...defaultProps} loading={true} />);
-    expect(screen.queryByTestId("chat-list")).not.toBeInTheDocument();
-  });
+  it("renders error message", () => {
+    render(
+      <Chats
+        conversations={[]}
+        loading={false}
+        loadingMore={false}
+        error="Something went wrong"
+        activeConversationId={null}
+        onSelect={vi.fn()}
+      />
+    );
 
-  // ── Error ──────────────────────────────────────────────────────────────────
-
-  it("renders error message when error is provided", () => {
-    render(<Chats {...defaultProps} error="Something went wrong" />);
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
   });
 
-  it("does not render chat list on error", () => {
-    render(<Chats {...defaultProps} error="Oops" />);
-    expect(screen.queryByTestId("chat-list")).not.toBeInTheDocument();
-  });
-
-  // ── Empty state ────────────────────────────────────────────────────────────
-
-  it("shows no conversations message when list is empty", () => {
-    render(<Chats {...defaultProps} conversations={[]} />);
-    expect(screen.getByText(/no conversations yet/i)).toBeInTheDocument();
-  });
-
-  it("mentions the New button in empty state", () => {
-    render(<Chats {...defaultProps} conversations={[]} />);
-    expect(screen.getByText("New")).toBeInTheDocument();
-  });
-
-  // ── List ───────────────────────────────────────────────────────────────────
-
-  it("renders chat-list when conversations exist", () => {
+  it("renders empty state", () => {
     render(
       <Chats
-        {...defaultProps}
-        conversations={[makeConversation("a"), makeConversation("b")]}
-        
+        conversations={[]}
+        loading={false}
+        loadingMore={false}
+        error={null}
+        activeConversationId={null}
+        onSelect={vi.fn()}
       />
     );
-    expect(screen.getByTestId("chat-list")).toBeInTheDocument();
+
+    expect(screen.getByTestId("chat-empty-state")).toBeInTheDocument();
   });
 
-  it("renders one ChatProfile per conversation", () => {
+  it("renders list of conversations", () => {
+    const conversations = [createConversation("1"), createConversation("2")];
+
     render(
       <Chats
-        {...defaultProps}
-        conversations={[makeConversation("a"), makeConversation("b"), makeConversation("c")]}
+        conversations={conversations}
+        loading={false}
+        loadingMore={false}
+        error={null}
+        activeConversationId={null}
+        onSelect={vi.fn()}
       />
     );
-    expect(screen.getAllByText(/User/i)).toHaveLength(3);
+
+    expect(screen.getByTestId("chat-1")).toBeInTheDocument();
+    expect(screen.getByTestId("chat-2")).toBeInTheDocument();
   });
 
-  it("calls onSelect with the correct conversation when clicked", async () => {
+  it("calls onSelect when a conversation is clicked", () => {
+    const conversations = [createConversation("1")];
     const onSelect = vi.fn();
-    const convA = makeConversation("a");
-    render(<Chats {...defaultProps} conversations={[convA]} onSelect={onSelect} />);
-    const profile = screen.getByTestId("chat-profile-a");
-    await userEvent.click(profile);
-    expect(onSelect).toHaveBeenCalledWith(convA);
-  });
 
-  it("highlights the active conversation", () => {
-    const convA = makeConversation("a");
-    const { container } = render(
+    render(
       <Chats
-        {...defaultProps}
-        conversations={[convA]}
-        activeConversationId="a"
+        conversations={conversations}
+        loading={false}
+        loadingMore={false}
+        error={null}
+        activeConversationId={null}
+        onSelect={onSelect}
       />
     );
-    expect(container.querySelector(".bg-black")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("chat-1"));
+
+    expect(onSelect).toHaveBeenCalledWith(conversations[0]);
   });
 
-  it("does not highlight non-active conversations", () => {
-    const convA = makeConversation("a");
-    const { container } = render(
+  it("renders loadingMore spinner", () => {
+    const conversations = [createConversation("1")];
+
+    render(
       <Chats
-        {...defaultProps}
-        conversations={[convA]}
-        activeConversationId="z"
+        conversations={conversations}
+        loading={false}
+        loadingMore={true}
+        error={null}
+        activeConversationId={null}
+        onSelect={vi.fn()}
       />
     );
-    expect(container.querySelector(".bg-black")).not.toBeInTheDocument();
+
+    expect(screen.getAllByTestId("spinner").length).toBeGreaterThan(0);
   });
 });

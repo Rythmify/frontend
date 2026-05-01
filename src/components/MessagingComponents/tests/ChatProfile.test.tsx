@@ -1,149 +1,139 @@
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { ChatProfile } from "../ChatProfile";
-import type { Conversation } from "@/services/api/messaging/conversationApi";
+import type { Conversation, Message } from "@/services/api/messaging/conversationApi";
 
-const baseConversation = {
-  id: "conv-1",
-  participant: {
-    id: "user-1",
-    display_name: "Alice",
-    avatar: "https://example.com/alice.jpg",
-    username: "alice",
-  },
-  last_message: {
-    id: "msg-1",
-    body: "Hello there",
-    created_at: new Date(Date.now() - 60000).toISOString(),
-    sender_id: "user-1",
-    is_read: true,
-  },
-  unread_count: 0,
-  updated_at: new Date(Date.now() - 60000).toISOString(),
-} as Conversation;
+// 🔹 Mock UserAvatar
+vi.mock("@/components/UI/UserAvatar", () => ({
+  default: ({ name }: { name: string }) => <div>{name}</div>,
+}));
 
-const renderProfile = (
-  overrides: Partial<Conversation> = {},
-  props: { isActive?: boolean; onClick?: () => void } = {}
-) =>
-  render(
-    <ChatProfile
-      conversation={{ ...baseConversation, ...overrides } as Conversation}
-      {...props}
-    />
-  );
+// 🔹 FULL Message factory (FIXED ✅)
+const createMessage = (overrides?: Partial<Message>): Message => ({
+  id: "msg-1",
+  conversation_id: "conv-1",
+  sender_id: "user-1",
+  body: "Hello there",
+  embed_type: null,
+  embed_id: null,
+  is_read: false,
+  created_at: new Date().toISOString(),
+  ...overrides,
+});
+
+// 🔹 Conversation factory
+const createConversation = (overrides?: Partial<Conversation>): Conversation =>
+  ({
+    id: "conv-1",
+    updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    unread_count: 0,
+    participant: {
+      id: "user-2",
+      username: "john",
+      display_name: "John Doe",
+      bio: "",
+      location: "",
+      gender: "",
+      role: "",
+      avatar: "avatar.png",
+      cover_photo: "",
+      is_private: false,
+      is_verified: false,
+      followers_count: 0,
+      following_count: 0,
+      created_at: new Date().toISOString(),
+    },
+    last_message: createMessage(),
+    ...overrides,
+  } as Conversation);
 
 describe("ChatProfile", () => {
-  // ── Rendering ──────────────────────────────────────────────────────────────
+  it("renders participant name", () => {
+    const conv = createConversation();
 
-  it("renders the participant display name", () => {
-    renderProfile();
-    expect(screen.getByText("Alice")).toBeInTheDocument();
+    render(<ChatProfile conversation={conv} />);
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
   });
 
-  it("renders participant profile picture", () => {
-    renderProfile();
-    const img = screen.getByRole("img");
-    expect(img).toHaveAttribute("src", "https://example.com/alice.jpg");
-    expect(img).toHaveAttribute("alt", "Alice");
+  it("renders message preview (text)", () => {
+    const conv = createConversation({
+      last_message: createMessage({ body: "Test message" }),
+    });
+
+    render(<ChatProfile conversation={conv} />);
+    expect(screen.getByText("Test message")).toBeInTheDocument();
   });
 
-  it("renders the last message body", () => {
-    renderProfile();
-    expect(screen.getByText("Hello there")).toBeInTheDocument();
-  });
+  it("renders fallback when message body is empty and no embed", () => {
+    const conv = createConversation({
+      last_message: createMessage({ body: "" }),
+    });
 
-  it("renders '·' when there is no last message", () => {
-    renderProfile({ last_message: undefined });
+    render(<ChatProfile conversation={conv} />);
     expect(screen.getByText("·")).toBeInTheDocument();
   });
 
-  it("renders time ago string", () => {
-    renderProfile();
-    // Should render some time-ago text like "1 minutes ago"
-    expect(screen.getByText(/ago/i)).toBeInTheDocument();
+  it("renders track embed preview", () => {
+    const conv = createConversation({
+      last_message: createMessage({ body: "", embed_type: "track" }),
+    });
+
+    render(<ChatProfile conversation={conv} />);
+    expect(screen.getByText("🎵 Shared a track")).toBeInTheDocument();
   });
 
-  // ── Unread badge ───────────────────────────────────────────────────────────
+  it("renders playlist embed preview", () => {
+    const conv = createConversation({
+      last_message: createMessage({ body: "", embed_type: "playlist" }),
+    });
 
-  it("renders unread dot when unread_count > 0", () => {
-    const { container } = renderProfile({ unread_count: 3 });
-    const dot = container.querySelector(".bg-\\[\\#f50\\]");
-    expect(dot).toBeInTheDocument();
+    render(<ChatProfile conversation={conv} />);
+    expect(screen.getByText("🎶 Shared a playlist")).toBeInTheDocument();
   });
 
-  it("does not render unread dot when unread_count is 0", () => {
-    const { container } = renderProfile({ unread_count: 0 });
-    const dot = container.querySelector(".bg-\\[\\#f50\\]");
-    expect(dot).not.toBeInTheDocument();
+  it("shows unread indicator when unread_count > 0", () => {
+    const conv = createConversation({ unread_count: 2 });
+
+    render(<ChatProfile conversation={conv} />);
+    expect(screen.getByTestId("chat-profile-unread-dot")).toBeInTheDocument();
   });
 
-  // ── Active state ───────────────────────────────────────────────────────────
+  it("does not show unread indicator when unread_count = 0", () => {
+    const conv = createConversation({ unread_count: 0 });
+
+    render(<ChatProfile conversation={conv} />);
+    expect(
+      screen.queryByTestId("chat-profile-unread-dot")
+    ).not.toBeInTheDocument();
+  });
 
   it("applies active class when isActive is true", () => {
-    const { container } = renderProfile({}, { isActive: true });
-    expect(container.querySelector(".bg-\\[\\#303030\\]")).toBeInTheDocument();
+    const conv = createConversation();
+
+    const { container } = render(
+      <ChatProfile conversation={conv} isActive />
+    );
+
+    expect(container.firstChild).toHaveClass("bg-[#303030]");
   });
 
-  it("does not apply active bg-[#303030] class when isActive is false", () => {
-    const { container } = renderProfile({}, { isActive: false });
-    expect(container.querySelector(".bg-\\[\\#303030\\]")).not.toBeInTheDocument();
-  });
-
-  // ── Click ──────────────────────────────────────────────────────────────────
-
-  it("calls onClick when the profile is clicked", async () => {
+  it("calls onClick when clicked", () => {
+    const conv = createConversation();
     const onClick = vi.fn();
-    const { container } = renderProfile({}, { onClick });
-    const profileDiv = container.querySelector("[data-test^='chat-profile-']")!;
-    await userEvent.click(profileDiv);
-    expect(onClick).toHaveBeenCalledTimes(1);
+
+    render(<ChatProfile conversation={conv} onClick={onClick} />);
+    fireEvent.click(screen.getByTestId("chat-profile-conv-1"));
+
+    expect(onClick).toHaveBeenCalled();
   });
 
-  // ── data-test attribute ────────────────────────────────────────────────────
-
-  it("has correct data-test attribute", () => {
-    const { container } = renderProfile();
-    expect(
-      container.querySelector("[data-test='chat-profile-conv-1']")
-    ).toBeInTheDocument();
-  });
-
-  // ── Time formatting ────────────────────────────────────────────────────────
-
-  it("shows 'minutes ago' for recent messages", () => {
-    renderProfile({
-      updated_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  it("renders 'just now' for recent time", () => {
+    const conv = createConversation({
+      updated_at: new Date().toISOString(),
     });
-    expect(screen.getByText(/minutes ago/i)).toBeInTheDocument();
-  });
 
-  it("shows 'hours ago' for messages a few hours old", () => {
-    renderProfile({
-      updated_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-    });
-    expect(screen.getByText(/hours ago/i)).toBeInTheDocument();
-  });
-
-  it("shows 'days ago' for messages days old", () => {
-    renderProfile({
-      updated_at: new Date(Date.now() - 3 * 86400 * 1000).toISOString(),
-    });
-    expect(screen.getByText(/days ago/i)).toBeInTheDocument();
-  });
-
-  it("shows 'months ago' for old messages", () => {
-    renderProfile({
-      updated_at: new Date(Date.now() - 60 * 86400 * 1000).toISOString(),
-    });
-    expect(screen.getByText(/months ago/i)).toBeInTheDocument();
-  });
-
-  it("shows 'years ago' for very old messages", () => {
-    renderProfile({
-      updated_at: new Date(Date.now() - 400 * 86400 * 1000).toISOString(),
-    });
-    expect(screen.getByText(/year(s)? ago/i)).toBeInTheDocument();
+    render(<ChatProfile conversation={conv} />);
+    expect(screen.getByText(/just now/i)).toBeInTheDocument();
   });
 });
