@@ -57,6 +57,8 @@ const RecentlyPlayed = () => {
     return cardIdx === undefined || cardIdx > i;
   });
 
+  if (!recentEntries.length) return null;
+
   return (
     <div data-test="section-recently-played">
       <HorizontalCarousel

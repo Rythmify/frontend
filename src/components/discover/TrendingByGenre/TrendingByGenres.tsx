@@ -20,6 +20,8 @@ interface Props {
 }
 
 const TrendingByGenres = ({ genres }: Props) => {
+  if (!genres.length) return null;
+
   const items: BuzzingPlaylist[] = genres.map((g) => ({
     id: g.genre_id,
     genre: g.genre_name,
