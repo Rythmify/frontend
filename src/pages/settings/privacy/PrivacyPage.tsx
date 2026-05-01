@@ -25,8 +25,8 @@ function Toggle({
   return (
     <div
       onClick={onChange}
-      className={`relative h-6 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${
-        checked ? "bg-[var(--color-accent)]" : "bg-[var(--color-input-bg)]"
+      className={`relative h-6 w-12 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${
+        checked ? "bg-accent" : "bg-(--color-input-bg)"
       }`}
     >
       <span
@@ -52,11 +52,9 @@ function SettingRow({
   return (
     <div className="flex items-start justify-between gap-8">
       <div className="flex flex-col gap-1">
-        <span className="text-sm font-semibold text-[var(--color-text-hover)]">
-          {label}
-        </span>
+        <span className="text-sm font-semibold text-text-hover">{label}</span>
         {description && (
-          <p className="max-w-2xl text-xs leading-relaxed text-[var(--color-text)]">
+          <p className="max-w-2xl text-xs leading-relaxed text-text">
             {description}
           </p>
         )}
@@ -67,11 +65,7 @@ function SettingRow({
 }
 
 function SectionTitle({ children }: { children: ReactNode }) {
-  return (
-    <h5 className="mb-4 font-semibold text-[var(--color-text-hover)]">
-      {children}
-    </h5>
-  );
+  return <h5 className="mb-4 font-semibold text-text-hover">{children}</h5>;
 }
 
 function BlockedUserRow({
@@ -91,24 +85,24 @@ function BlockedUserRow({
     try {
       await unblockUser(userId);
       const refreshed = await getBlockedUsers();
-      const stillBlocked = refreshed.items.some((blockedUser) =>
-        getBlockedUserId(blockedUser as BlockedUser) === userId,
+      const stillBlocked = refreshed.items.some(
+        (blockedUser) =>
+          getBlockedUserId(blockedUser as BlockedUser) === userId,
       );
       if (!stillBlocked) {
         onUnblock(userId);
       }
     } catch {
-      // Keep the row visible if the API call fails.
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3 last:border-0">
+    <div className="flex items-center justify-between border-b border-border py-3 last:border-0">
       {profilePath ? (
         <Link to={profilePath} className="flex items-center gap-3 group">
-          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-[var(--color-input-bg)]">
+          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-(--color-input-bg)">
             {user.profile_picture ? (
               <img
                 src={user.profile_picture}
@@ -116,18 +110,18 @@ function BlockedUserRow({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[var(--color-text)]">
+              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-text">
                 {user.display_name?.[0]?.toUpperCase() ?? "?"}
               </div>
             )}
           </div>
-          <span className="text-sm font-semibold text-[var(--color-text-hover)] transition-colors group-hover:text-white">
+          <span className="text-sm font-semibold text-text-hover transition-colors group-hover:text-white">
             {user.display_name}
           </span>
         </Link>
       ) : (
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-[var(--color-input-bg)]">
+          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-(--color-input-bg)">
             {user.profile_picture ? (
               <img
                 src={user.profile_picture}
@@ -135,12 +129,12 @@ function BlockedUserRow({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[var(--color-text)]">
+              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-text">
                 {user.display_name?.[0]?.toUpperCase() ?? "?"}
               </div>
             )}
           </div>
-          <span className="text-sm font-semibold text-[var(--color-text-hover)]">
+          <span className="text-sm font-semibold text-text-hover">
             {user.display_name}
           </span>
         </div>
@@ -149,7 +143,7 @@ function BlockedUserRow({
       <button
         onClick={handleUnblock}
         disabled={loading}
-        className="flex items-center gap-3 rounded-[var(--radius-sm)] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+        className="flex items-center gap-3 rounded-sm px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-50"
       >
         <i className="fa-solid fa-ban text-xs w-4" />
         {loading ? "Unblocking..." : "Unblock"}
@@ -220,12 +214,6 @@ export default function PrivacyPage() {
           onChange={() => toggle("receive_messages_from_anyone")}
         />
         <SettingRow
-          label="Show my activities in social discovery playlists and modules"
-          description="Your Likes, Reactions and other engagement may be shown to other users in discovery features such as 'Liked By' playlists or update feeds. Turning this off won't hide your Likes on your profile or tracks."
-          checked={settings.show_activities_in_discovery}
-          onChange={() => toggle("show_activities_in_discovery")}
-        />
-        <SettingRow
           label="Show when I'm a First or Top Fan"
           description="Appear in public Top Fans and First Fans lists"
           checked={settings.show_as_top_fan}
@@ -242,7 +230,7 @@ export default function PrivacyPage() {
       <div>
         <SectionTitle>Blocked users</SectionTitle>
         {blockedUsers.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-hover)]">
+          <p className="text-sm text-text-hover">
             You have not blocked any users.
           </p>
         ) : (
@@ -261,12 +249,12 @@ export default function PrivacyPage() {
       <div>
         <SectionTitle>Cookies</SectionTitle>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-[var(--color-text-hover)]">
+          <span className="text-sm text-text-hover">
             Manage your cookie preferences
           </span>
           <button
             data-testid="settings-privacy-cookie-manager-button"
-            className="rounded-[var(--radius-sm)] bg-[var(--color-input-bg)] px-4 py-2 text-sm text-[var(--color-text-hover)] transition-all duration-150 hover:brightness-110"
+            className="rounded-sm bg-(--color-input-bg) px-4 py-2 text-sm text-text-hover transition-all duration-150 hover:brightness-110"
           >
             Open Cookie Manager
           </button>
