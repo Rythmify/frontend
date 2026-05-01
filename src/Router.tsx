@@ -113,6 +113,9 @@ const MessagesPage = lazy(() => import("@/pages/social/messages/MessagesPage"));
 const MessageIdPage = lazy(
   () => import("@/pages/social/messages/[messageId]/MessageIdPage"),
 );
+const MessageIdPageGuest = lazy(
+  () => import("@/pages/social/messages/[messageId]/MessageIdPageGuest"),
+);
 
 // You
 const LibraryLayout = lazy(() => import("@/pages/you/library/LibraryLayout"));
@@ -203,6 +206,13 @@ const YouRedirect = () => {
 const UploadRouter = () => {
   const { isAuthenticated } = useAuthStore();
   return isAuthenticated ? <UploadLayout /> : <GuestNavbarLayout />;
+};
+
+const MessageIdPageRouter = () => {
+  const { isAuthenticated } = useAuthStore();
+  return (
+    <Lazy component={isAuthenticated ? MessageIdPage : MessageIdPageGuest} />
+  );
 };
 
 const LogoutPage = () => {
@@ -329,6 +339,10 @@ export const router = createBrowserRouter([
     element: <AuthMainLayout />,
     children: [
       {
+        path: "messages/:messageId",
+        element: <MessageIdPageRouter />,
+      },
+      {
         element: <PrivateRoute />,
         children: [
           // Feed
@@ -341,10 +355,6 @@ export const router = createBrowserRouter([
             element: <Lazy component={NotificationsPage} />,
           },
           { path: "messages", element: <Lazy component={MessagesPage} /> },
-          {
-            path: "messages/:messageId",
-            element: <Lazy component={MessageIdPage} />,
-          },
 
           // You
           {
