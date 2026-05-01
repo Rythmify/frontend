@@ -193,15 +193,17 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             </button>
 
             {showMore && (
-              <div className="absolute right-0 top-11 z-50 bg-bg-inverted border border-border rounded shadow-lg w-52 py-1">
+              <div className="absolute right-0 top-11 z-50 bg-bg border border-border rounded shadow-lg w-52 py-1">
                 {extraActions ? (
                   <div className="px-2 py-1">{extraActions}</div>
                 ) : (
                   <button
                     data-test="block-button"
                     onClick={isBlocked ? onUnblock : onBlock}
-                    disabled={blockDisabled || (isBlocked ? !onUnblock : !onBlock)}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-bg hover:bg-bg-actionbutton transition-colors"
+                    disabled={
+                      blockDisabled || (isBlocked ? !onUnblock : !onBlock)
+                    }
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-bg-inverted hover:bg-bg-actionbutton transition-colors"
                   >
                     <i className="fa-solid fa-ban text-xs w-4" />
                     {isBlocked
@@ -215,7 +217,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
                     setShowMore(false);
                     setIsReportOpen(true);
                   }}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-bg hover:bg-bg-actionbutton transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-bg-inverted hover:bg-bg-actionbutton transition-colors"
                 >
                   <i className="fa-solid fa-circle-exclamation text-xs w-4" />
                   Report {displayName || username}

@@ -26,7 +26,8 @@ interface EnrichedUser {
 }
 
 async function enrich(u: UserSummary): Promise<EnrichedUser> {
-  const resolvedId = u.id || (u as UserSummary & { user_id?: string }).user_id || "";
+  const resolvedId =
+    u.id || (u as UserSummary & { user_id?: string }).user_id || "";
 
   if (!resolvedId) {
     console.warn("enrich: received item with no id", u);
@@ -53,8 +54,6 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
       followers: profile.followers_count ?? 0,
-      // Keep verification tied to the relationship list item itself.
-      // The profile fetch is only used for richer display data.
       isVerified: u.is_verified,
       isFollowing: followStatus.is_following,
       profilePath: `/${uname}`,
@@ -82,16 +81,36 @@ export default function FollowerPage() {
   const profileUsername = isOwner
     ? (currentUser?.username ?? "")
     : (username ?? "");
-  const profileDisplayName = isOwner
-    ? (currentUser?.displayName ?? profileUsername) || "Profile"
-    : profileUsername || "Profile";
   const profilePath = profileUsername ? `/${profileUsername}` : "/you";
-  const profileAvatar = isOwner ? (currentUser?.avatar ?? "") : "";
+
+  const [profileDisplayName, setProfileDisplayName] = useState(
+    isOwner ? (currentUser?.displayName ?? currentUser?.username ?? "") : "",
+  );
+  const [profileAvatar, setProfileAvatar] = useState(
+    isOwner ? (currentUser?.avatar ?? "") : "",
+  );
   const [profileNotFound, setProfileNotFound] = useState(false);
 
   const [rawFollowers, setRawFollowers] = useState<UserSummary[] | null>(null);
   const [enriched, setEnriched] = useState<EnrichedUser[]>([]);
   const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (isOwner) {
+      setProfileDisplayName(
+        currentUser?.displayName ?? currentUser?.username ?? "",
+      );
+      setProfileAvatar(currentUser?.avatar ?? "");
+      return;
+    }
+    if (!username) return;
+    getUserByUsername(username)
+      .then((profile) => {
+        setProfileDisplayName(profile.display_name);
+        setProfileAvatar(profile.profile_picture ?? "");
+      })
+      .catch(() => setProfileNotFound(true));
+  }, [username, isOwner, currentUser]);
 
   useEffect(() => {
     let cancelled = false;
@@ -166,7 +185,7 @@ export default function FollowerPage() {
   return (
     <div className="py-8 container px-4 md:px-8 lg:px-20">
       <div className="flex items-center gap-4 mb-3">
-          <UserAvatar
+        <UserAvatar
           dataTest="follower-page-avatar"
           src={profileAvatar}
           name={profileDisplayName || profileUsername}
@@ -181,7 +200,7 @@ export default function FollowerPage() {
             className="text-bg-inverted cursor-pointer text-2xl font-bold"
             onClick={() => navigate(profilePath)}
           >
-            Followers of {profileDisplayName}
+            Followers of {profileDisplayName || profileUsername}
           </h1>
           {profileUsername && (
             <p className="text-sm text-text-secondary">@{profileUsername}</p>
@@ -211,7 +230,7 @@ export default function FollowerPage() {
           <p className="text-bg-inverted text-lg font-bold">
             {isOwner
               ? "You don't have any followers yet."
-              : `${profileDisplayName} doesn't have any followers yet.`}
+              : `${profileDisplayName || profileUsername} doesn't have any followers yet.`}
           </p>
         </div>
       )}
