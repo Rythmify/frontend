@@ -6,6 +6,7 @@ import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import {
   type PlaylistDetails,
   type PlaylistTrackItem,
+  formatDuration,
   getRadioTracks,
 } from "@/services/api/playlist/playlist.service";
 import { getRelatedTracks, getTrackById } from "@/services/track.service";
@@ -33,6 +34,18 @@ function parseDuration(duration?: string): number | null {
 
 function trackDurationSeconds(track: Track | null) {
   return parseDuration(track?.duration) ?? 0;
+}
+
+function trackCountWithSeed(
+  seedTrack: Track | null,
+  relatedTracks: Track[],
+) {
+  if (!seedTrack) return relatedTracks.length;
+
+  const uniqueTrackIds = new Set<string>(relatedTracks.map((track) => track.id));
+  uniqueTrackIds.add(seedTrack.id);
+
+  return uniqueTrackIds.size;
 }
 
 function toPlaylistTrackItem(
@@ -85,7 +98,7 @@ function buildPlaylist(
     cover_image: seedTrack.coverUrl || null,
     created_at: seedTrack.postedAt || new Date().toISOString(),
     updated_at: null,
-    track_count: relatedTracks.length,
+    track_count: trackCountWithSeed(seedTrack, relatedTracks),
     like_count: 0,
     repost_count: 0,
     tracks: relatedTracks.map((track, index) =>
@@ -107,9 +120,7 @@ function mapRadioTrackToPlayerTrack(track: Awaited<ReturnType<typeof getRadioTra
     playCount: track.play_count,
     commentCount: 0,
     duration:
-      typeof track.duration === "number"
-        ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}`
-        : "0:00",
+      typeof track.duration === "number" ? formatDuration(track.duration) : "0:00",
     postedAt: track.created_at,
     waveformData: [],
     audioUrl: track.stream_url ?? "",
@@ -293,9 +304,7 @@ function MoreOfLikeSlugPage() {
     playCount: track.play_count ?? 0,
     commentCount: 0,
     duration:
-      typeof track.duration === "number"
-        ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}`
-        : "0:00",
+      typeof track.duration === "number" ? formatDuration(track.duration) : "0:00",
     postedAt: track.added_at ?? "",
     waveformData: [],
     audioUrl: track.audio_url ?? "",

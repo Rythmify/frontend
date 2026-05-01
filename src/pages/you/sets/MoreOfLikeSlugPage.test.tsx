@@ -27,6 +27,20 @@ vi.mock("@/services/track.service", () => ({
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
   getRadioTracks: vi.fn(),
+  formatDuration: (seconds: number) => {
+    const safeSeconds = Math.max(0, Math.floor(seconds));
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const remainingSeconds = safeSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, "0")}:${String(
+        remainingSeconds,
+      ).padStart(2, "0")}`;
+    }
+
+    return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+  },
 }));
 
 vi.mock("@/services/user.service", () => ({
@@ -47,6 +61,7 @@ vi.mock("@/components/playlist/PlaylistHero", () => ({
       <span data-test="hero-name">{playlist?.name}</span>
       <span data-test="hero-owner">{ownerUsername ?? ""}</span>
       <span data-test="hero-title">{moreOfLikeTitle ?? ""}</span>
+      <span data-test="hero-track-count">{playlist?.track_count ?? ""}</span>
       <button data-test="hero-play" onClick={onPlayPause}>
         play
       </button>
@@ -275,6 +290,7 @@ describe("MoreOfLikeSlugPage", () => {
     );
     expect(screen.getByTestId("hero-owner")).toHaveTextContent("album-owner");
     expect(screen.getByTestId("hero-title")).toHaveTextContent("Seed Track");
+    expect(screen.getByTestId("hero-track-count")).toHaveTextContent("3");
     expect(getTrackById).toHaveBeenCalledWith("seed-track-1");
     expect(screen.getByTestId("track-list")).toHaveAttribute("data-count", "3");
     expect(screen.getByTestId("playlist-actions")).toHaveAttribute(
