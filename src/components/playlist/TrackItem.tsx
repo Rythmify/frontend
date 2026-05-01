@@ -21,6 +21,9 @@ import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import type { Track } from "@/types/track";
 import type { PlaylistTrackItem } from "@/services/api/playlist/playlist.service";
+
+const FALLBACK_COVER_URL =
+  "https://cdn.prod.website-files.com/62a0a0168756b795debc65bc/65df5bfb519e57f33c35d493_419679-1x1_SoundCloudLogo_cloudmark-f5912b-large-1645807040%20(2).jpg";
 function TrackItem({
   track,
   index,
@@ -60,7 +63,7 @@ function TrackItem({
     .trim()
     .replace(/\s+/g, "-");
   const coverImage =
-    track.cover_image ?? track.cover_image ?? "https://via.placeholder.com/150";
+    track.cover_image ?? FALLBACK_COVER_URL;
   const playCount = track.play_count ?? 0;
   const liked = isTrackLiked(track.track_id);
 
@@ -225,6 +228,9 @@ function TrackItem({
             src={coverImage}
             alt={track.title ?? "Track"}
             className="w-10 h-10 object-cover rounded"
+            onError={(event) => {
+              event.currentTarget.src = FALLBACK_COVER_URL;
+            }}
           />
           {(hovered || isCurrent) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded">

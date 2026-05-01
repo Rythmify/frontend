@@ -123,6 +123,29 @@ describe("Playlist TrackItem", () => {
     expect(screen.getByText("2.5K")).toBeInTheDocument();
   });
 
+  it("falls back to the SoundCloud home URL when the cover image fails", () => {
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.error(screen.getByAltText("Alpha"));
+
+    expect(screen.getByAltText("Alpha")).toHaveAttribute(
+      "src",
+      "https://cdn.prod.website-files.com/62a0a0168756b795debc65bc/65df5bfb519e57f33c35d493_419679-1x1_SoundCloudLogo_cloudmark-f5912b-large-1645807040%20(2).jpg",
+    );
+  });
+
   it("calls onPlay when the play button is clicked", () => {
     const onPlay = vi.fn();
 
