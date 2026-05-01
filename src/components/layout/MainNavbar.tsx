@@ -510,37 +510,15 @@ const MainNavbar = () => {
                   />
                   <div className="border-t border-border my-1" />
                 </div>
-                <DropdownLink
-                  label="About us"
-                  to="/pages/contact"
-                  onClick={closeAll}
-                />
-                <DropdownLink
-                  label="Legal"
-                  to="/terms-of-use"
-                  onClick={closeAll}
-                />
-                <DropdownLink
-                  label="Copyright"
-                  to="/pages/copyright"
-                  onClick={closeAll}
-                />
-                <DropdownLink
-                  label="Mobile apps"
-                  to="/download"
-                  onClick={closeAll}
-                />
+                
+                
                 <DropdownLink
                   label="Artist Membership"
                   to="/premium"
                   onClick={closeAll}
                 />
                 <div className="border-t border-border my-1" />
-                <DropdownLink
-                  label="Keyboard shortcuts"
-                  to="#"
-                  onClick={closeAll}
-                />
+               
                 <DropdownLink
                   label="Subscriptions"
                   to="/subscriptions"
@@ -597,7 +575,8 @@ const MainNavbar = () => {
 
       {/* Mobile menu drawer */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-bg border-t border-border">
+        <div className="md:hidden bg-bg border-t border-border overflow-y-auto max-h-[calc(100vh-50px)]">
+          {/* Nav links */}
           <NavLink
             to="/discover"
             className={mobileNavLinkClass}
@@ -619,32 +598,148 @@ const MainNavbar = () => {
           >
             Library
           </NavLink>
+
           <div className="border-t border-border my-1" />
+
+          {/* Notifications & Messages */}
+          <Link
+            to="/notifications"
+            className="flex items-center gap-3 px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Bell size={18} />
+            <span>Notifications</span>
+            {unreadCount > 0 && (
+              <span className="ml-auto w-5 h-5 bg-red-500 rounded-full text-[10px] font-semibold flex items-center justify-center text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Link>
+          <Link
+            to="/messages"
+            className="flex items-center gap-3 px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Mail size={18} />
+            <span>Messages</span>
+            {unreadMessages > 0 && (
+              <span className="ml-auto w-5 h-5 bg-red-500 rounded-full text-[10px] font-semibold flex items-center justify-center text-white">
+                {unreadMessages > 99 ? "99+" : unreadMessages}
+              </span>
+            )}
+          </Link>
+
+          <div className="border-t border-border my-1" />
+
+          {/* Profile & account links */}
+          <Link
+            to={`/${user?.username}`}
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Profile
+          </Link>
+          <Link
+            to="/you/likes"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Likes
+          </Link>
+          <Link
+            to="/you/sets"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Playlists
+          </Link>
+          <Link
+            to="/you/stations"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Stations
+          </Link>
+          <Link
+            to="/you/following"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Following
+          </Link>
+          <Link
+            to="/people"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Who to follow
+          </Link>
+          <Link
+            to={`/${user?.username}/tracks`}
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Tracks
+          </Link>
+          <Link
+            to="/you/insights"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Insights
+          </Link>
+          <Link
+            to="/artists/distribution"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Distribute
+          </Link>
+
+          <div className="border-t border-border my-1" />
+
+          {/* Misc links */}
           <Link
             to={user?.isPro ? "/subscriptions" : "/premium"}
-            className="block px-4 py-3 text-md font-medium text-accent hover:text-accent-hover transition-colors"
+            className="block px-4 py-3 text-md font-semibold text-accent hover:text-text-hover transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {user?.isPro ? "Manage Premium" : "Try Artist Pro"}
           </Link>
           <Link
             to="/artists"
-            className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             For Artists
           </Link>
           <Link
             to="/upload"
-            className="block px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Upload
           </Link>
+          <Link
+            to="/subscriptions"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Subscriptions
+          </Link>
+          <Link
+            to="/settings"
+            className="block px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Settings
+          </Link>
+
           <div className="border-t border-border my-1" />
+
           <button
             onClick={handleSignOut}
-            className="w-full text-left px-4 py-3 text-md font-medium text-text-secondary hover:text-white transition-colors"
+            className="w-full text-left px-4 py-3 text-md font-semibold text-text-secondary hover:text-white transition-colors"
           >
             Sign out
           </button>
