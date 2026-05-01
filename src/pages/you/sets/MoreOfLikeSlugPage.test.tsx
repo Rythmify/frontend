@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useParams } from "react-router-dom";
 
 import MoreOfLikeSlugPage from "./MoreOfLikeSlugPage";
-import { getRelatedTracks } from "@/services/track.service";
+import { getRelatedTracks, getTrackById } from "@/services/track.service";
 import { getRadioTracks } from "@/services/api/playlist/playlist.service";
 import { getUserById } from "@/services/user.service";
 import { usePlayerStore } from "@/stores/player.store";
@@ -22,6 +22,7 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@/services/track.service", () => ({
   getRelatedTracks: vi.fn(),
+  getTrackById: vi.fn(),
 }));
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
@@ -230,6 +231,12 @@ describe("MoreOfLikeSlugPage", () => {
       referenceTrack: mockSeedTrack as any,
       tracks: mockRelatedTracks as any,
     } as any);
+    vi.mocked(getTrackById).mockResolvedValue({
+      ...mockSeedTrack,
+      title: "Hydrated Seed Track",
+      trackSlug: "hydrated-seed-track",
+      playCount: 777,
+    } as any);
     vi.mocked(getUserById).mockImplementation(async (id: string) => {
       if (id === "artist-a") {
         return {
@@ -264,10 +271,11 @@ describe("MoreOfLikeSlugPage", () => {
     );
 
     expect(screen.getByTestId("hero-name")).toHaveTextContent(
-      "Related tracks: Seed Track",
+      "Related tracks: Hydrated Seed Track",
     );
     expect(screen.getByTestId("hero-owner")).toHaveTextContent("album-owner");
     expect(screen.getByTestId("hero-title")).toHaveTextContent("Seed Track");
+    expect(getTrackById).toHaveBeenCalledWith("seed-track-1");
     expect(screen.getByTestId("track-list")).toHaveAttribute("data-count", "3");
     expect(screen.getByTestId("playlist-actions")).toHaveAttribute(
       "data-kind",

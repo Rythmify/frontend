@@ -8,7 +8,7 @@ import {
   type PlaylistTrackItem,
   getRadioTracks,
 } from "@/services/api/playlist/playlist.service";
-import { getRelatedTracks } from "@/services/track.service";
+import { getRelatedTracks, getTrackById } from "@/services/track.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { Track } from "../../../types/track";
@@ -275,17 +275,19 @@ function MoreOfLikeSlugPage() {
           setAlbumOwner(null);
         } else {
           const { referenceTrack, tracks } = await getRelatedTracks(trackId);
+          const fullReferenceTrack = await getTrackById(trackId).catch(() => null);
+          const hydratedReferenceTrack = fullReferenceTrack ?? referenceTrack;
 
           if (cancelled) return;
 
-          setSeedTrack(referenceTrack);
+          setSeedTrack(hydratedReferenceTrack);
           setRelatedTracks(tracks);
           setRelatedPlaylistTracks(
             tracks.map((track: Track, index: number) =>
               toPlaylistTrackItem(track, index + 1),
             ),
           );
-          setPlaylist(buildPlaylist(referenceTrack, tracks));
+          setPlaylist(buildPlaylist(hydratedReferenceTrack, tracks));
 
           const artistIds = getTopArtistTrackCounts(tracks);
           const artists = await Promise.all(
@@ -304,8 +306,8 @@ function MoreOfLikeSlugPage() {
           }
 
           try {
-            if (UUID_RE.test(referenceTrack.artistUsername)) {
-              const owner = await getUserById(referenceTrack.artistUsername);
+            if (UUID_RE.test(hydratedReferenceTrack.artistUsername)) {
+              const owner = await getUserById(hydratedReferenceTrack.artistUsername);
               if (!cancelled) setAlbumOwner(owner);
             } else {
               if (!cancelled) setAlbumOwner(null);
@@ -473,6 +475,7 @@ function MoreOfLikeSlugPage() {
                 currentTrackId={currentTrack?.id}
                 isPlaying={isPlaying}
                 onTrackPlay={handleTrackPlay}
+                moreOfLikeSeedTrack={seedTrack}
               />
             </div>
           </div>
