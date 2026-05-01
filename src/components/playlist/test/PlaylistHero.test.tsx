@@ -5,6 +5,8 @@ import { MemoryRouter } from "react-router-dom";
 import PlaylistHero from "../PlaylistHero";
 import { getGenres } from "@/services/api/upload/track.service";
 
+const mockPlaylistCover = vi.fn();
+
 vi.mock("@/services/api/upload/track.service", () => ({
   getGenres: vi.fn(),
 }));
@@ -14,9 +16,10 @@ vi.mock("@/stores/auth.store", () => ({
 }));
 
 vi.mock("../PlaylistCover", () => ({
-  default: ({ playlistName }: any) => (
-    <div data-test="mock-playlist-cover">{playlistName}</div>
-  ),
+  default: (props: any) => {
+    mockPlaylistCover(props);
+    return <div data-test="mock-playlist-cover">{props.playlistName}</div>;
+  },
 }));
 
 vi.mock("../PlaylistStatsWaveform", () => ({
@@ -97,6 +100,65 @@ describe("PlaylistHero", () => {
     );
     expect(screen.getByText("artist-x's Station")).toBeInTheDocument();
     expect(screen.getByText("Artist Station")).toBeInTheDocument();
+  });
+
+  it("uses the explicit genre label and hides the upload button prop", async () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={{ ...playlist, is_public: true, genre_id: null } as any}
+          genreLabel="House"
+          showUploadButton={false}
+          ownerUsername="artist-x"
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText("# House")).toBeInTheDocument());
+    expect(mockPlaylistCover).toHaveBeenCalledWith(
+      expect.objectContaining({ showUploadButton: false, playlistId: "pl-1" }),
+    );
+  });
+
+  it("falls back to Album when an album has no genre id", async () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={{ ...playlist, genre_id: null, subtype: "album" } as any}
+        />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText("# Album")).toBeInTheDocument());
+  });
+
+  it('formats very recent dates as "Just now"', () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={{
+            ...playlist,
+            created_at: new Date().toISOString(),
+            release_date: null,
+          } as any}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Just now")).toBeInTheDocument();
+  });
+
+  it("uses the related tracks fallback title when no more-of-like title is given", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={{ ...playlist, tracks: [] } as any}
+          moreOfLike
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Related Tracks: Related Tracks")).toBeInTheDocument();
   });
 
   it("renders the play/pause button and forwards clicks", () => {
