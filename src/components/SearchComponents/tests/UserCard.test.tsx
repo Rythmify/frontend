@@ -17,7 +17,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
 
 vi.mock("@/components/UI/FollowButton", () => ({
   default: ({ username, userId }: { username: string; userId: string }) => (
-    <button data-testid="follow-button" data-username={username} data-userid={userId}>
+    <button data-test="follow-button" data-username={username} data-userid={userId}>
       Follow
     </button>
   ),
@@ -33,7 +33,7 @@ vi.mock("@/components/UI/UserAvatar", () => ({
     initialsClassName,
   }: any) => (
     <div
-      data-testid="user-avatar"
+      data-test="user-avatar"
       data-src={src ?? "null"}
       data-name={name}
       data-alt={alt}

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes, Outlet } from "react-router-dom";
+import { MemoryRouter, Route, Routes, Outlet, useNavigate } from "react-router-dom";
 import React from "react";
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -17,31 +17,31 @@ vi.mock("@/services/api/search/searchMappers", () => ({
 
 vi.mock("@/components/SearchComponents/Searchsidebar", () => ({
   default: ({ query, filters }: any) => (
-    <div data-testid="search-sidebar" data-query={query} data-filters={filters ? "yes" : "no"} />
+    <div data-test="search-sidebar" data-query={query} data-filters={filters ? "yes" : "no"} />
   ),
 }));
 
 vi.mock("@/components/track/TrackCard", () => ({
   default: ({ track }: any) => (
-    <div data-testid={`track-card-${track.id}`}>{track.title}</div>
+    <div data-test={`track-card-${track.id}`}>{track.title}</div>
   ),
 }));
 
 vi.mock("@/components/playlist/PlaylistComponent", () => ({
   default: ({ playlist }: any) => (
-    <div data-testid={`playlist-card-${playlist.id}`}>{playlist.title}</div>
+    <div data-test={`playlist-card-${playlist.id}`}>{playlist.title}</div>
   ),
 }));
 
 vi.mock("@/components/SearchComponents/UserCard", () => ({
   default: ({ id, displayName }: any) => (
-    <div data-testid={`user-card-${id}`}>{displayName}</div>
+    <div data-test={`user-card-${id}`}>{displayName}</div>
   ),
 }));
 
 vi.mock("lucide-react", () => ({
-  Menu: () => <svg data-testid="menu-icon" />,
-  X: () => <svg data-testid="x-icon" />,
+  Menu: () => <svg data-test="menu-icon" />,
+  X: () => <svg data-test="x-icon" />,
 }));
 
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
@@ -91,19 +91,19 @@ function renderSearchPage(
         <Route path="/search" element={<SearchPage />}>
           <Route
             path="sounds"
-            element={childElement ?? <div data-testid="outlet-sounds" />}
+            element={childElement ?? <div data-test="outlet-sounds" />}
           />
           <Route
             path="people"
-            element={childElement ?? <div data-testid="outlet-people" />}
+            element={childElement ?? <div data-test="outlet-people" />}
           />
           <Route
             path="albums"
-            element={childElement ?? <div data-testid="outlet-albums" />}
+            element={childElement ?? <div data-test="outlet-albums" />}
           />
           <Route
             path="sets"
-            element={childElement ?? <div data-testid="outlet-sets" />}
+            element={childElement ?? <div data-test="outlet-sets" />}
           />
         </Route>
       </Routes>
@@ -115,15 +115,17 @@ function renderSearchPage(
 function mockIntersectionObserver(intersecting = false) {
   const observers: { cb: IntersectionObserverCallback; el: Element }[] = [];
 
-  const MockIO = vi.fn().mockImplementation((cb: IntersectionObserverCallback) => ({
-    observe: (el: Element) => {
+  const MockIO = vi.fn(function (this: IntersectionObserver, cb: IntersectionObserverCallback) {
+    return {
+      observe: (el: Element) => {
       observers.push({ cb, el });
       if (intersecting) {
         cb([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
       }
     },
     disconnect: vi.fn(),
-  }));
+    };
+  });
 
   Object.defineProperty(window, "IntersectionObserver", {
     writable: true,
@@ -246,7 +248,7 @@ describe("SearchPage", () => {
       const Consumer = () => {
         const { setFilters } = useSearchFilters();
         return (
-          <button onClick={() => setFilters(null as any)} data-testid="ctx-btn">
+          <button onClick={() => setFilters(null as any)} data-test="ctx-btn">
             click
           </button>
         );
@@ -266,7 +268,7 @@ describe("SearchPage", () => {
         const { setFilters } = useSearchFilters();
         // Should not throw
         setFilters(null as any);
-        return <div data-testid="ok" />;
+        return <div data-test="ok" />;
       };
       render(<Consumer />);
       expect(screen.getByTestId("ok")).toBeInTheDocument();
@@ -469,18 +471,22 @@ describe("EverythingResults", () => {
     const observers: { cb: IntersectionObserverCallback }[] = [];
     Object.defineProperty(window, "IntersectionObserver", {
       writable: true,
-      value: vi.fn().mockImplementation((cb: IntersectionObserverCallback) => ({
+      value: vi.fn(function (this: IntersectionObserver, cb: IntersectionObserverCallback) {
+        return {
         observe: (el: Element) => {
           observers.push({ cb });
         },
         disconnect: vi.fn(),
-      })),
+        };
+      }),
     });
 
     renderSearchPage("/search", "q=pages");
 
     // Wait for first page
     await waitFor(() => expect(mockSearchEverything).toHaveBeenCalledTimes(1));
+    await screen.findByTestId("track-card-t1");
+    await waitFor(() => expect(observers.length).toBeGreaterThan(0));
 
     // Simulate sentinel becoming visible
     act(() => {
@@ -504,10 +510,12 @@ describe("EverythingResults", () => {
     const observers: { cb: IntersectionObserverCallback }[] = [];
     Object.defineProperty(window, "IntersectionObserver", {
       writable: true,
-      value: vi.fn().mockImplementation((cb: IntersectionObserverCallback) => ({
-        observe: () => observers.push({ cb }),
-        disconnect: vi.fn(),
-      })),
+      value: vi.fn(function (this: IntersectionObserver, cb: IntersectionObserverCallback) {
+        return {
+          observe: () => observers.push({ cb }),
+          disconnect: vi.fn(),
+        };
+      }),
     });
 
     renderSearchPage("/search", "q=nointersect");
@@ -525,10 +533,21 @@ describe("EverythingResults", () => {
 
   it("resets results when query changes", async () => {
     mockSearchEverything.mockResolvedValue(buildResponse({ total: 0 }));
-    const { rerender } = render(
+    const user = userEvent.setup();
+    const Harness = () => {
+      const navigate = useNavigate();
+      return (
+        <>
+          <button data-test="go-second" onClick={() => navigate("/search?q=second")} />
+          <SearchPage />
+        </>
+      );
+    };
+
+    render(
       <MemoryRouter initialEntries={["/search?q=first"]}>
         <Routes>
-          <Route path="/search" element={<SearchPage />} />
+          <Route path="/search" element={<Harness />} />
         </Routes>
       </MemoryRouter>,
     );
@@ -538,13 +557,7 @@ describe("EverythingResults", () => {
       expect.any(AbortSignal),
     ));
 
-    rerender(
-      <MemoryRouter initialEntries={["/search?q=second"]}>
-        <Routes>
-          <Route path="/search" element={<SearchPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
+    await user.click(screen.getByTestId("go-second"));
 
     await waitFor(() => expect(mockSearchEverything).toHaveBeenCalledWith(
       expect.objectContaining({ q: "second" }),
@@ -601,23 +614,28 @@ describe("EverythingResults", () => {
         buildResponse({ tracks: [{ id: "new", score: 1 }], total: 1 }),
       );
 
-    const { rerender } = render(
+    const user = userEvent.setup();
+    const Harness = () => {
+      const navigate = useNavigate();
+      return (
+        <>
+          <button data-test="go-second" onClick={() => navigate("/search?q=second")} />
+          <SearchPage />
+        </>
+      );
+    };
+
+    render(
       <MemoryRouter initialEntries={["/search?q=first"]}>
         <Routes>
-          <Route path="/search" element={<SearchPage />} />
+          <Route path="/search" element={<Harness />} />
         </Routes>
       </MemoryRouter>,
     );
 
     await waitFor(() => screen.getByTestId("track-card-old"));
 
-    rerender(
-      <MemoryRouter initialEntries={["/search?q=second"]}>
-        <Routes>
-          <Route path="/search" element={<SearchPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
+    await user.click(screen.getByTestId("go-second"));
 
     await waitFor(() => {
       expect(screen.getByTestId("track-card-new")).toBeInTheDocument();

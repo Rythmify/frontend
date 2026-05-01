@@ -1,6 +1,6 @@
 // CheckBox.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import CheckBox from '../CheckBox'
 
