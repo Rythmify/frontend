@@ -457,7 +457,7 @@ function MoreOfLikeSlugPage() {
               playlist={playlist}
               initialTracks={tracksForAddToPlaylist}
               isGeneratedPlaylist
-              engagementKind={isRadioPlaylistRoute ? "radioTracks" : "playlist"}
+              engagementKind={"radioTracks" }
               radioSeedTrack={seedTrack ?? undefined}
               onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
                 setPlaylist((prev) => (prev ? { ...prev, ...updated } : prev))
