@@ -30,6 +30,10 @@ function parseDuration(duration?: string): number | null {
   return null;
 }
 
+function trackDurationSeconds(track: Track | null) {
+  return parseDuration(track?.duration) ?? 0;
+}
+
 function toPlaylistTrackItem(
   track: Track,
   position: number,
@@ -450,6 +454,7 @@ function MoreOfLikeSlugPage() {
         }
         moreOfLike={true}
         moreOfLikeTitle={seedTrack?.title}
+        extraDurationSeconds={trackDurationSeconds(seedTrack)}
       />
 
       <div className="container mx-auto w-full">

@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getPlaylistTotalDuration,
-  type PlaylistDetails,
-} from "@/services/api/playlist/playlist.service";
+import { type PlaylistDetails } from "@/services/api/playlist/playlist.service";
 import { getTrackComments } from "@/services/mocks/Track.service";
 import TrackWaveform from "@/pages/[username]/[trackSlug]/components/TrackWaveform";
 import type { Track } from "@/types/track";
@@ -18,6 +15,7 @@ interface PlaylistStatsCommentsProps {
   isPlaying?: boolean;
   activeTrackId?: string;
   comments?: Comment[];
+  extraDurationSeconds?: number;
 }
 
 export default function PlaylistStatsWaveform({
@@ -25,6 +23,7 @@ export default function PlaylistStatsWaveform({
   isPlaying = false,
   activeTrackId,
   comments: commentsProp,
+  extraDurationSeconds = 0,
 }: PlaylistStatsCommentsProps) {
   const [comments, setComments] = useState<Comment[]>(commentsProp ?? []);
 
@@ -38,6 +37,10 @@ export default function PlaylistStatsWaveform({
     const secs = Math.max(0, Math.floor(seconds % 60));
     return `${minutes}:${String(secs).padStart(2, "0")}`;
   };
+
+  const totalDurationSeconds =
+    playlist.tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0) +
+    Math.max(0, Math.floor(extraDurationSeconds));
 
   const waveformTrack: Track | null = activePlaylistTrack
     ? {
@@ -128,7 +131,7 @@ export default function PlaylistStatsWaveform({
             Tracks
           </span>
           <span className="text-[14px] text-text-secondary mt-1">
-            {getPlaylistTotalDuration(playlist.tracks)}
+            {formatDuration(totalDurationSeconds)}
           </span>
         </div>
       )}
