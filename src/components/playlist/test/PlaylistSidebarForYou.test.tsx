@@ -26,6 +26,10 @@ vi.mock("@/components/UI/GoMobile", () => ({
   default: () => <div data-test="go-mobile-section" />,
 }));
 
+vi.mock("@/components/playlist/EngagementPlaylistSidebar", () => ({
+  default: () => <div data-test="mock-engagement-sidebar" />,
+}));
+
 vi.mock("@/services/user.service", () => ({
   getUserById: vi.fn(),
 }));
@@ -61,6 +65,32 @@ const featuredArtists = [
     isFollowing: true,
   },
 ] as any;
+
+const trackPlaylist = {
+  playlist_id: "pl-track",
+  tracks: [
+    {
+      artist_id: "artist-1",
+      artist_username: "",
+      artist_name: "Artist One",
+    },
+    {
+      artist_id: "artist-1",
+      artist_username: "",
+      artist_name: "Artist One",
+    },
+    {
+      artist_id: "artist-2",
+      artist_username: "artist-two",
+      artist_name: "Artist Two",
+    },
+    {
+      artist_id: "artist-3",
+      artist_username: "",
+      artist_name: "",
+    },
+  ],
+} as any;
 
 describe("PlaylistSidebarForYou", () => {
   beforeEach(() => {
@@ -107,11 +137,61 @@ describe("PlaylistSidebarForYou", () => {
     expect(screen.getByTestId("sidebar-artists-featured")).toBeInTheDocument();
     expect(screen.getByTestId("follow-button-artist-one")).toBeInTheDocument();
     expect(screen.getByTestId("follow-button-artist-two")).toBeInTheDocument();
-    expect(screen.getByTestId("sidebar-liked-by")).toHaveTextContent(
-      "24 Likes",
+    expect(
+      screen.getByTestId("playlist-sidebarforyou-social-proof"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("mock-engagement-sidebar")).toBeInTheDocument();
+  });
+
+  it("caps featured artists at three items", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistSidebarForYou
+          playlist={mockPlaylist}
+          featuredArtists={[...featuredArtists, featuredArtists[0]] as any}
+          showLikes
+          showReposts
+        />
+      </MemoryRouter>,
     );
-    expect(screen.getByTestId("sidebar-reposted-by")).toHaveTextContent(
-      "3 Reposts",
+
+    expect(screen.getAllByTestId(/follow-button-/)).toHaveLength(3);
+  });
+
+  it("builds artist cards from tracks and resolves missing usernames", async () => {
+    vi.mocked(getUserById).mockResolvedValueOnce({
+      id: "artist-1",
+      username: "artist-one",
+      display_name: "Artist One",
+      profile_picture: "https://example.com/artist-one.jpg",
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <PlaylistSidebarForYou playlist={trackPlaylist} />
+      </MemoryRouter>,
     );
+
+    expect(await screen.findByText("Artist One")).toBeInTheDocument();
+    expect(screen.getByTestId("follow-button-artist-one")).toBeInTheDocument();
+    expect(screen.getByTestId("follow-button-artist-two")).toBeInTheDocument();
+    expect(screen.getByTestId("follow-button-artist-3")).toBeInTheDocument();
+    expect(getUserById).toHaveBeenCalledWith("artist-1");
+  });
+
+  it("hides social proof when the feature flags are disabled", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistSidebarForYou
+          playlist={mockPlaylist}
+          featuredArtists={featuredArtists}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.queryByTestId("playlist-sidebarforyou-social-proof"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("go-mobile-section-playlist-mix")).toBeInTheDocument();
   });
 });
