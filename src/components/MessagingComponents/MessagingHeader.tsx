@@ -11,11 +11,12 @@ function MessagingHeader({ onConversationCreated }: MessagingHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div className="container sticky">
+    <div data-test="messaging-header" className="container sticky">
       <div className="flex items-center justify-between pt-5 mb-3">
         <h1 className="text-2xl font-bold text-white weight-500">Messages</h1>
 
         <button
+          data-test="new-message-button"
           className="p-2 text-sm font-bold text-black border bg-text-hover rounded-[5px] w-14 hover:text-text-secondary transition-colors cursor-pointer"
           onClick={() => setIsOpen(true)}
         >

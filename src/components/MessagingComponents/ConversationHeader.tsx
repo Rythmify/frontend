@@ -123,6 +123,7 @@ const ConversationHeader = ({
         <div className="hidden md:flex gap-2 items-center">
           <Tooltip text="Mark as read/unread">
             <button
+              data-test="conversation-toggle-read-button"
               onClick={handleToggleRead}
               disabled={loadingRead || !lastMessageId}
               className="px-2 py-1.5 text-sm font-bold text-white bg-input-bg rounded-sm border border-border hover:bg-input-bg disabled:opacity-50 hover:text-text-secondary"
@@ -168,6 +169,7 @@ const ConversationHeader = ({
                 Report {recipientName}
               </button>
               <button
+                data-test="conversation-toggle-read-button-mobile"
                 disabled={loadingRead || !lastMessageId}
                 className="w-full text-left px-4 py-3 text-sm font-bold text-white hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
                 onClick={() => { handleToggleRead(); setMobileMenuOpen(false) }}

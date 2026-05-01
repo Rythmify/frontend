@@ -400,6 +400,7 @@ export default function MessageIdPage() {
       className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overflow-hidden"
     >
       <div
+        data-test="messages-conversation-list"
         className={`${
           showMobileChat ? "hidden md:flex" : "flex"
         } flex-col w-full md:w-85 shrink-0 sticky top-0 h-[calc(100vh-64px)]`}
@@ -419,6 +420,7 @@ export default function MessageIdPage() {
       </div>
 
       <div
+        data-test="messages-thread-panel"
         className={`${
           showMobileChat ? "flex" : "hidden md:flex"
         } flex-col flex-1 md:ml-6 min-w-0 min-h-0`}

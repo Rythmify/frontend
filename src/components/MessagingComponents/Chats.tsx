@@ -28,16 +28,16 @@ export function Chats({
   // ── Error ────────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="px-4 py-8 text-sm text-center text-[#666] width-full">
+      <div data-test="chat-error" className="px-4 py-8 text-sm text-center text-[#666] width-full">
         {error}
       </div>
     );
   }
 
-  // ── Empty ────────────────────────────────────────────────────────────────
+  // ── Empty ─────────────────────────────────────────────────────────────────
   if (conversations.length === 0) {
     return (
-      <div className="px-4 py-10 text-sm text-center text-[#666] leading-relaxed width-full">
+      <div data-test="chat-empty-state" className="px-4 py-10 text-sm text-center text-[#666] leading-relaxed width-full">
         No conversations yet.
         <br />
         Start one with the{" "}
@@ -59,7 +59,7 @@ export function Chats({
       ))}
 
       {loadingMore && (
-        <div className="flex justify-center py-3">
+        <div data-test="chat-loading-more" className="flex justify-center py-3">
           <Spinner />
         </div>
       )}

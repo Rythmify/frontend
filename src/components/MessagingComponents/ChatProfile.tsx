@@ -59,7 +59,7 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
       <div className="relative shrink-0">
         <div className="flex w-3 shrink-0">
           {unread_count > 0 && (
-            <span className="w-2.5 h-2.5 rounded-full bg-[#f50] block" />
+            <span data-test="chat-profile-unread-dot" className="w-2.5 h-2.5 rounded-full bg-[#f50] block" />
           )}
         </div>
         <UserAvatar
@@ -74,15 +74,17 @@ export function ChatProfile({ conversation, isActive = false, onClick }: ChatPro
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-0.5">
           <span
+            data-test="chat-profile-name"
             className={`text-xs truncate ${
               unread_count > 0 ? 'font-bold text-white' : 'font-semibold text-white'
             }`}
           >
             {participant.display_name}
           </span>
-          <span className="text-[#999] text-xs shrink-0">{timeAgo(updated_at)}</span>
+          <span data-test="chat-profile-time" className="text-[#999] text-xs shrink-0">{timeAgo(updated_at)}</span>
         </div>
         <p
+          data-test="chat-profile-preview"
           className={`text-xs truncate ${
             unread_count > 0 ? 'text-[#ccc] font-medium' : 'text-[#999]'
           }`}
