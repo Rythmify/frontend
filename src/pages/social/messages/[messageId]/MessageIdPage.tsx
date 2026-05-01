@@ -299,6 +299,48 @@ export default function MessageIdPage() {
     );
   };
 
+  // ─── New conversation created from modal ──────────────────────────────────
+const handleConversationCreated = useCallback(
+  (conversation: Conversation, sentMessage: Message | null) => {
+    if (!conversation) return
+
+    setConversations((prev) => {
+      const exists = prev.find((c) => c.id === conversation.id)
+
+      const updatedConv: Conversation = {
+        ...(exists ?? conversation),
+        // Manually set last_message from the actual sent message
+        last_message: sentMessage
+          ? {
+              id:         sentMessage.id,
+              body:       sentMessage.body ?? null,
+              embed_type: sentMessage.embed_type ?? null,
+              embed_id:   sentMessage.embed_id ?? null,
+              sender_id:  sentMessage.sender_id,
+              is_read:    sentMessage.is_read,
+              created_at: sentMessage.created_at,
+            }
+          : (exists?.last_message ?? conversation.last_message),
+        updated_at: sentMessage?.created_at ?? conversation.updated_at,
+        unread_count: exists?.unread_count ?? 0,
+      }
+
+      // Remove from current position and prepend → moves to top
+      const without = prev.filter((c) => c.id !== conversation.id)
+      return [updatedConv, ...without]
+    })
+
+    if (conversation.id === activeConvId && sentMessage) {
+      setActiveMessages((prev) => [...prev, sentMessage])
+    } else {
+      loadConversation(conversation)
+    }
+
+    setShowMobileChat(true)
+  },
+  [loadConversation, activeConvId],
+)
+
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div
@@ -310,7 +352,7 @@ export default function MessageIdPage() {
           showMobileChat ? "hidden md:flex" : "flex"
         } flex-col w-full md:w-85 shrink-0 sticky top-0 h-[calc(100vh-64px)]`}
       >
-        <MessagingHeader />
+        <MessagingHeader onConversationCreated={handleConversationCreated}/>
         <div className="flex-1 min-h-0 overflow-y-auto">
           <Chats
             conversations={conversations}
