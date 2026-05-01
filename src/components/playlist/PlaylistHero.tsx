@@ -23,6 +23,7 @@ interface PlaylistHeroProps {
   isMix?: boolean;
   moreOfLikeTitle?: string;
   genreLabel?: string | null;
+  extraDurationSeconds?: number;
 }
 
 export default function PlaylistHero({
@@ -42,6 +43,7 @@ export default function PlaylistHero({
   isMix = false,
   moreOfLikeTitle,
   genreLabel,
+  extraDurationSeconds = 0,
 }: PlaylistHeroProps) {
   const { user } = useAuthStore();
   const [resolvedGenre, setResolvedGenre] = useState<string | null>(
@@ -184,12 +186,13 @@ export default function PlaylistHero({
 
         {/* Bottom Section: Circular Stats Badge + Comments */}
         <div className="flex items-end w-full">
-          <PlaylistStatsWaveform
-            playlist={playlist}
-            isPlaying={isPlaying}
-            activeTrackId={activeTrackId}
-          />
-        </div>
+        <PlaylistStatsWaveform
+          playlist={playlist}
+          isPlaying={isPlaying}
+          activeTrackId={activeTrackId}
+          extraDurationSeconds={extraDurationSeconds}
+        />
+      </div>
       </div>
 
       {/* Right Side: Metadata and Cover */}

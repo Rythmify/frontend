@@ -32,10 +32,8 @@ export default function PlaylistActionsAlbum({
 }: PlaylistActionsProps) {
   const {
     isPlaylistLiked,
-    isAlbumLiked,
     isGenreLiked,
     togglePlaylist,
-    toggleAlbum,
     toggleGenre,
   } = useLikesStore();
   const { addToQueue } = usePlayerStore();
@@ -44,9 +42,8 @@ export default function PlaylistActionsAlbum({
   const liked =
     engagementKind === "genre"
       ? isGenreLiked(playlist.playlist_id)
-      : engagementKind === "playlist"
-        ? isPlaylistLiked(playlist.playlist_id)
-        : isAlbumLiked(playlist.playlist_id);
+      : isPlaylistLiked(playlist.playlist_id)
+        
   const isOwner = user?.id === playlist.owner_user_id;
 
   const [reposted, setReposted] = useState(false);
@@ -63,6 +60,18 @@ export default function PlaylistActionsAlbum({
     const seconds = Math.floor(duration % 60);
     return `${minutes}:${String(seconds).padStart(2, "0")}`;
   };
+
+  const buildPlaylistLikePayload = () => ({
+    id: playlist.playlist_id,
+    title: playlist.name,
+    owner: playlist.owner_user_id,
+    ownerUsername: playlist.owner_user_id,
+    slug: playlist.slug ?? null,
+    coverUrl: playlist.cover_image ?? null,
+    isPrivate: !playlist.is_public,
+    isLiked: true,
+    isAlbumView: engagementKind === "album",
+  });
 
   const toPlayerTrack = (track: PlaylistTrackItem): Track => ({
     id: track.track_id,
@@ -148,8 +157,12 @@ export default function PlaylistActionsAlbum({
           id: playlist.playlist_id,
           title: playlist.name,
           owner: playlist.owner_user_id,
+          ownerUsername: playlist.owner_user_id,
+          slug: playlist.slug ?? null,
           coverUrl: playlist.cover_image || null,
           isPrivate: !playlist.is_public,
+          isLiked: true,
+          isAlbumView: false,
         });
         return;
       }
@@ -166,7 +179,7 @@ export default function PlaylistActionsAlbum({
         });
       }
 
-      await toggleAlbum(playlist);
+      await togglePlaylist(buildPlaylistLikePayload());
     } catch (err) {
       console.error("Failed to toggle playlist like:", err);
     }

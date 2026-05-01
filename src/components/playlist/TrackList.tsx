@@ -2,6 +2,36 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import TrackItem from "./TrackItem";
 import type { PlaylistTrackItem } from "@/services/api/playlist/playlist.service";
 import { mockPlaylistTracks } from "@/services/mocks/handlers/playlistHandlers";
+import type { Track } from "@/types/track";
+
+function parseDuration(duration?: string): number | null {
+  if (!duration) return null;
+
+  const parts = duration.split(":").map((part) => Number(part));
+  if (parts.some((part) => Number.isNaN(part))) return null;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return null;
+}
+
+function mapTrackToPlaylistItem(track: Track, position: number): PlaylistTrackItem {
+  return {
+    track_id: track.id,
+    trackSlug: track.trackSlug,
+    position,
+    added_at: track.postedAt || new Date().toISOString(),
+    title: track.title,
+    duration: parseDuration(track.duration),
+    cover_image: track.coverUrl || null,
+    is_public: !track.isPrivate,
+    deleted_at: null,
+    artist_name: track.artistName || null,
+    artist_id: track.artistId,
+    artist_username: track.artistUsername || null,
+    play_count: track.playCount ?? 0,
+    audio_url: track.audioUrl || null,
+  };
+}
 
 interface TrackListProps {
   tracks: PlaylistTrackItem[];
@@ -10,6 +40,7 @@ interface TrackListProps {
   onTrackPlay?: (track: PlaylistTrackItem) => void;
   onTrackLike?: (track: PlaylistTrackItem) => void;
   showMockTracks?: boolean;
+  moreOfLikeSeedTrack?: Track | null;
 }
 
 export default function TrackList({
@@ -19,6 +50,7 @@ export default function TrackList({
   onTrackPlay,
   onTrackLike,
   showMockTracks = false,
+  moreOfLikeSeedTrack = null,
 }: TrackListProps) {
   const safeTracks = Array.isArray(tracks) ? tracks : [];
   const visibleTracks =
@@ -27,12 +59,16 @@ export default function TrackList({
       : showMockTracks
         ? mockPlaylistTracks
         : [];
+  const renderedTracks =
+    moreOfLikeSeedTrack && visibleTracks.length > 0
+      ? [mapTrackToPlaylistItem(moreOfLikeSeedTrack, visibleTracks[0].position), ...visibleTracks.slice(1)]
+      : visibleTracks;
 
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>
       <div className="flex flex-col w-full min-w-0 overflow-visible pb-10">
         <div data-test="track-list">
-          {visibleTracks.map((track, index) => (
+          {renderedTracks.map((track, index) => (
             <TrackItem
               key={track.track_id}
               track={track}

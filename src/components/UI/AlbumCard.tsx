@@ -8,7 +8,6 @@ import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/Card
 import CoverImage from "@/components/UI/CoverImage";
 import { getPlaylist } from "@/services/api/playlist/playlist.service";
 import type { Track } from "@/types/track";
-import type { Playlist } from "@/services/api/playlist/playlist.service";
 
 export interface AlbumCardItem {
   id: string;
@@ -35,7 +34,7 @@ export default function AlbumCard({
   widthClassName = "w-[200px]",
 }: AlbumCardProps) {
   const navigate = useNavigate();
-  const { isAlbumLiked, toggleAlbum } = useLikesStore();
+  const { isPlaylistLiked, togglePlaylist } = useLikesStore();
   const { currentTrack, isPlaying, togglePlay, setTrack } = usePlayerStore();
   const { addAlbum } = useHistoryStore();
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
@@ -53,24 +52,23 @@ export default function AlbumCard({
     [item.id],
   );
 
-  const liked = isAlbumLiked(item.id);
+  const liked = isPlaylistLiked(item.id);
   const previewTrackId = item.previewTrack?.id ?? item.previewTrackId ?? null;
   const isThisPlaying =
     isPlaying && !!previewTrackId && currentTrack?.id === previewTrackId;
 
   const albumPath = `/discover/albums/:${item.slug ?? item.id}`;
 
-  const buildPayload = (): Playlist => ({
-    playlist_id: item.id,
-    owner_user_id: item.ownerId,
-    name: item.title,
-    description: null,
-    is_public: true,
-    cover_image: item.coverUrl,
-    subtype: "album",
-    track_count: item.trackCount,
-    like_count: item.likeCount,
-    created_at: item.createdAt ?? new Date().toISOString(),
+  const buildPayload = () => ({
+    id: item.id,
+    title: item.title,
+    owner: item.owner,
+    ownerDisplayName: item.owner,
+    ownerUsername: item.ownerUsername ?? undefined,
+    slug: item.slug ?? null,
+    coverUrl: item.coverUrl,
+    isAlbumView: true,
+    isLiked: true,
   });
 
   const handlePlayClick = (e: React.MouseEvent) => {
@@ -86,7 +84,7 @@ export default function AlbumCard({
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleAlbum(buildPayload());
+    togglePlaylist(buildPayload());
   };
 
   return (

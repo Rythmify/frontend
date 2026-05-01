@@ -99,4 +99,23 @@ describe("PlaylistStatsWaveform", () => {
     expect(screen.getAllByAltText("commenter")).toHaveLength(1);
     expect(mockGetTrackComments).not.toHaveBeenCalled();
   });
+
+  it("formats durations over an hour as h:mm:ss", () => {
+    render(
+      <PlaylistStatsWaveform
+        playlist={{
+          ...playlist,
+          track_count: 3,
+          tracks: [
+            { ...playlist.tracks[0], duration: 3600 },
+            { ...playlist.tracks[1], duration: 300 },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("playlist-stats-badge")).toHaveTextContent(
+      "1:05:00",
+    );
+  });
 });
