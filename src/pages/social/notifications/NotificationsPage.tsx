@@ -1,5 +1,4 @@
-// NotificationsPage.tsx
-import { useState, useEffect, useCallback,useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { fetchNotifications, type Notification, type NotificationType } from '@/services/api/notifications/notificationsAPI'
 import { fetchMyFollowing } from '@/services/api/notifications/notificationsAPI'
 import ArtistListSection, { type Artist } from '@/components/UI/ArtistListSection'
@@ -8,8 +7,10 @@ import Spinner from '@/components/UI/Spinner'
 import GoMobileSection from '@/components/UI/GoMobile'
 import NotificationCard from '@/components/notificationsComponents/notificationCard'
 import { useNotificationStore } from '@/stores/notification.store'
-
+import { getSocket } from '@/services/api/messaging/socketService'
 type Status = 'loading' | 'success' | 'empty' | 'error'
+
+const PAGE_SIZE = 20
 
 const NotificationsPage = () => {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -19,9 +20,10 @@ const NotificationsPage = () => {
   const [page, setPage]                   = useState(1)
   const [hasNext, setHasNext]             = useState(false)
   const [loadingMore, setLoadingMore]     = useState(false)
-  const { fetchUnreadCount, unreadCount } = useNotificationStore()
+
+  const { fetchUnreadCount, refreshUnreadCount } = useNotificationStore()
   const sentinelRef = useRef<HTMLDivElement>(null)
- const PAGE_SIZE = 20
+
   const loadNotifications = useCallback(async (type: FilterType) => {
     setStatus('loading')
     setPage(1)
@@ -38,28 +40,28 @@ const NotificationsPage = () => {
   }, [])
 
   const loadMore = useCallback(async () => {
-  if (loadingMore || !hasNext) return
-  setLoadingMore(true)
-  try {
-    const nextPage = page + 1
-    const typeParam = selectedType === 'all' ? undefined : selectedType as NotificationType
-    const res = await fetchNotifications(nextPage, PAGE_SIZE, typeParam)
-    const { items, pagination } = res.data
-    setNotifications(prev => [...prev, ...items])
-    setHasNext(pagination.has_next)
-    setPage(nextPage)
-  } catch {
-    // silently fail
-  } finally {
-    setLoadingMore(false)
-  }
-}, [loadingMore, hasNext, page, selectedType])
+    if (loadingMore || !hasNext) return
+    setLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const typeParam = selectedType === 'all' ? undefined : selectedType as NotificationType
+      const res = await fetchNotifications(nextPage, PAGE_SIZE, typeParam)
+      const { items, pagination } = res.data
+      setNotifications(prev => [...prev, ...items])
+      setHasNext(pagination.has_next)
+      setPage(nextPage)
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasNext, page, selectedType])
 
-    const handleMarkRead = (id: string) => {
+  const handleMarkRead = (id: string) => {
     setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, is_read: true } : n)
     )
-    fetchUnreadCount()  // keep the badge in sync
+    fetchUnreadCount()
   }
 
   const loadRecentFollowers = useCallback(async () => {
@@ -75,7 +77,7 @@ const NotificationsPage = () => {
         }))
       )
     } catch {
-      // silently fail — sidebar is non-critical
+      // silently fail
     }
   }, [])
 
@@ -84,16 +86,45 @@ const NotificationsPage = () => {
     setSelectedType(type)
   }
 
+  // ── Load notifications when filter changes ───────────────────────────────
   useEffect(() => {
     loadNotifications(selectedType)
   }, [selectedType, loadNotifications])
 
+  // ── Initial sidebar + badge fetch + socket listener ──────────────────────
+  //
+  // The socket listener reloads page 1 whenever a new notification arrives
+  // while the user is on this page, so the new item appears at the top
+  // immediately without a manual refresh. It also refreshes the badge count.
+  //
+  // We intentionally omit loadNotifications and selectedType from the dep
+  // array here — we only want to register/unregister the listener once on
+  // mount. The ref trick below lets the handler always see the latest values.
+  const selectedTypeRef = useRef(selectedType)
+  useEffect(() => { selectedTypeRef.current = selectedType }, [selectedType])
+
+  const loadNotificationsRef = useRef(loadNotifications)
+  useEffect(() => { loadNotificationsRef.current = loadNotifications }, [loadNotifications])
+
   useEffect(() => {
     loadRecentFollowers()
     fetchUnreadCount()
-  }, [loadRecentFollowers, fetchUnreadCount])
 
-    useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+
+    const onNew = () => {
+      // Reload page 1 with whatever filter is currently active
+      loadNotificationsRef.current(selectedTypeRef.current)
+      refreshUnreadCount()
+    }
+
+    socket.on('notification:created', onNew)
+    return () => { socket.off('notification:created', onNew) }
+  }, [loadRecentFollowers, fetchUnreadCount, refreshUnreadCount])
+
+  // ── Infinite scroll sentinel ─────────────────────────────────────────────
+  useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
     const observer = new IntersectionObserver(
@@ -118,23 +149,28 @@ const NotificationsPage = () => {
 
           {status === 'loading' && <Spinner data-test="notifications-loading" />}
 
-  {status === 'success' && (
+          {status === 'success' && (
             <div data-test="notifications-list" className="flex flex-col gap-2">
               {notifications.map(n => (
-                <NotificationCard key={n.id} notification={n} showActions={true} onMarkRead={handleMarkRead} data-test={`notification-card-${n.id}`} />
+                <NotificationCard
+                  key={n.id}
+                  notification={n}
+                  showActions={true}
+                  onMarkRead={handleMarkRead}
+                  data-test={`notification-card-${n.id}`}
+                />
               ))}
             </div>
           )}
 
-{/* sentinel: observed by IntersectionObserver to trigger loadMore */}
-<div ref={sentinelRef} className="h-4" />
-{loadingMore && <Spinner />}
+          <div ref={sentinelRef} className="h-4" />
+          {loadingMore && <Spinner />}
 
-{status === 'empty' && <p data-test="notifications-empty">You don't have any notifications</p>}
-{status === 'error'  && <p data-test="notifications-error">Something went wrong.</p>}
+          {status === 'empty' && <p data-test="notifications-empty">You don't have any notifications</p>}
+          {status === 'error'  && <p data-test="notifications-error">Something went wrong.</p>}
         </div>
 
-        {/* Sidebar — hidden on mobile, visible on lg+ */}
+        {/* Sidebar */}
         <div className="hidden lg:flex flex-col gap-6 flex-2 ps-2 pt-8">
           <ArtistListSection
             title="RECENT FOLLOWERS"

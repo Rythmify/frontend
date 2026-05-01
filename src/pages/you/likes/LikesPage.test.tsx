@@ -138,10 +138,12 @@ vi.mock("@/services/user.service", () => ({
     pagination: { limit: 100, offset: 0, total: 1 },
   }),
   getUserByUsername: vi.fn().mockResolvedValue({
+    id: "travis-scott-id",
     display_name: "Travis Scott",
     profile_picture: null,
     username: "travis-scott",
   }),
+  getUserWebProfiles: vi.fn().mockResolvedValue([]),
   getUserLikedTracks: vi.fn().mockResolvedValue({
     items: [
       {
@@ -301,7 +303,7 @@ describe("LikesPage", () => {
     render(<LikesPage />);
 
     await waitFor(() => {
-      expect(getUserLikedTracks).toHaveBeenCalledWith("travis-scott", {
+      expect(getUserLikedTracks).toHaveBeenCalledWith("travis-scott-id", {
         limit: 100,
       });
     });
@@ -314,11 +316,11 @@ describe("LikesPage", () => {
 
     expect(screen.getByTestId("likes-content")).toHaveTextContent("Track One");
     expect(screen.getByText("Liked playlists")).toBeInTheDocument();
-    expect(screen.getByTestId("liked-playlist-card")).toHaveTextContent(
+    expect(screen.getAllByTestId("liked-playlist-card")[0]).toHaveTextContent(
       "Liked Playlist",
     );
     expect(screen.getByText("Liked albums")).toBeInTheDocument();
-    expect(screen.getByTestId("liked-album-card")).toHaveTextContent(
+    expect(screen.getAllByTestId("liked-playlist-card")[1]).toHaveTextContent(
       "Liked Album",
     );
   });

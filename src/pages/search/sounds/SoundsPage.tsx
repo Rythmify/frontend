@@ -134,27 +134,28 @@ export default function SoundsPage() {
 
       {/* Result count */}
       {!loading && total > 0 && (
-        <p className="text-sm text-text-muted mb-4">
+        <p className="text-xs sm:text-sm text-text-muted mb-3 sm:mb-4 px-2 sm:px-0">
           Found {total >= 500 ? "500+" : total} tracks
         </p>
       )}
 
       {/* Track list */}
-      <div className="flex flex-col">
+      <div className="flex flex-col -mx-2 sm:mx-0">
         {tracks.map((track) => (
-          <TrackCard
-            key={track.id}
-            track={track}
-            contextQueue={tracks}
-          />
+          <div key={track.id} className="px-2 sm:px-0">
+            <TrackCard
+              track={track}
+              contextQueue={tracks}
+            />
+          </div>
         ))}
       </div>
 
       {/* Empty state */}
       {!loading && tracks.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 gap-2">
-          <p className="text-text font-semibold">No tracks found</p>
-          <p className="text-text-muted text-sm">
+        <div className="flex flex-col items-center justify-center py-12 sm:py-20 gap-2 px-4">
+          <p className="text-text font-semibold text-sm sm:text-base">No tracks found</p>
+          <p className="text-text-muted text-xs sm:text-sm text-center max-w-xs">
             Try a different search term
             {tag ? ", remove the tag filter" : ""}
             {time_range ? ", remove the time range filter" : ""}

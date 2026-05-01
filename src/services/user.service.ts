@@ -50,6 +50,8 @@ export interface PublicUser {
   display_name: string;
   bio: string | null;
   location: string | null;
+  city?: string | null;
+  country?: string | null;
   gender: "male" | "female" | null;
   role: "artist" | "listener" | "admin";
   profile_picture: string | null;
@@ -137,12 +139,31 @@ export async function getUserById(userId: string): Promise<PublicUser> {
   return res.data.data;
 }
 
+export async function getUsernameFromId(userId: string): Promise<string> {
+  const user = await getUserById(userId);
+  return user.username ?? userId;
+}
+
 export async function getMyWebProfiles(params?: {
   limit?: number;
   offset?: number;
 }): Promise<WebProfile[]> {
   const res = await axiosInstance.get<WebProfileListResponse>(
     "/users/me/web-profiles",
+    { params },
+  );
+  return res.data.data;
+}
+
+export async function getUserWebProfiles(
+  userId: string,
+  params?: {
+    limit?: number;
+    offset?: number;
+  },
+): Promise<WebProfile[]> {
+  const res = await axiosInstance.get<WebProfileListResponse>(
+    `/users/${userId}/web-profiles`,
     { params },
   );
   return res.data.data;

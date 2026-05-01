@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
-import TrackCard from "./Card";
+import TrackCard from "@/components/UI/card/Card";
 import type { Track } from "@/types/track";
 
 // ─── Mocks ────────────────────────────────────────────────
@@ -64,11 +64,14 @@ vi.mock("@/components/UI/CardOverlay/CardOverlay", () => ({
   AddToPlaylistIcon: () => <div />,
 }));
 
+vi.mock("@/services/track.service", () => ({
+  getRelatedTracks: vi.fn().mockResolvedValue({ tracks: [] }),
+}));
+
 vi.mock("@/components/playlist/AddToPlaylistModal", () => ({
-  default: ({ initialTracks, trackTitle, onClose }: any) => (
+  default: ({ trackTitle, onClose }: any) => (
     <div data-test="add-to-playlist-modal">
       <span>{trackTitle}</span>
-      <span>{initialTracks?.length} tracks</span>
       <button onClick={onClose}>Close</button>
     </div>
   ),
@@ -154,7 +157,6 @@ describe("TrackCard", () => {
   it("toggles radio likes when radioLikeMode is enabled", () => {
     render(<TrackCard track={mockTrack} radioLikeMode />);
     fireEvent.click(screen.getByTestId("button-like"));
-
     expect(mockLikesStore.toggleRadioTrack).toHaveBeenCalledWith(mockTrack);
   });
 

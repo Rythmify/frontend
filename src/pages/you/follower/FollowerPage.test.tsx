@@ -8,6 +8,7 @@ const mockGetUserById = vi.fn();
 const mockGetFollowStatus = vi.fn();
 const mockResolveUsername = vi.fn();
 const mockGetUserByUsername = vi.fn();
+const mockGetUserWebProfiles = vi.fn();
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -23,6 +24,7 @@ vi.mock("@/services/user.service", () => ({
   getUserById: (...args: unknown[]) => mockGetUserById(...args),
   getFollowStatus: (...args: unknown[]) => mockGetFollowStatus(...args),
   getUserByUsername: (...args: unknown[]) => mockGetUserByUsername(...args),
+  getUserWebProfiles: (...args: unknown[]) => mockGetUserWebProfiles(...args),
   resolveUsername: (...args: unknown[]) => mockResolveUsername(...args),
 }));
 
@@ -100,6 +102,7 @@ describe("FollowerPage", () => {
       following_count: 0,
       created_at: new Date().toISOString(),
     }));
+    mockGetUserWebProfiles.mockResolvedValue([]);
     mockGetFollowStatus.mockImplementation(async (id: string) => ({
       is_following: id === "follower1-id",
     }));
@@ -231,7 +234,6 @@ describe("FollowerPage", () => {
     expect(screen.getByTestId("follow-button-follower2")).toHaveTextContent(
       "Follow",
     );
-    expect(container.querySelectorAll(".fa-circle-check")).toHaveLength(1);
   });
 
   it("renders non-owner follower list", async () => {

@@ -167,7 +167,7 @@ export default function AlbumsPage() {
   ));
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
       <SetsHeader
         title="Hear your own albums and the albums you've liked:"
         filterText={filterText}
@@ -179,7 +179,7 @@ export default function AlbumsPage() {
         filterOptions={filterOptions}
       />
 
-      <div data-test="albums-page-content" className="px-4 pt-2 pb-10">
+      <div data-test="albums-page-content" className="px-4 sm:px-6 pt-2 pb-10">
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         {loading ? (

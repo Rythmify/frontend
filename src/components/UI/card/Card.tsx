@@ -109,43 +109,37 @@ const TrackCard = ({
   widthClassName,
   addToPlaylistTracks,
   contextQueue,
-  radioLikeMode = false,
-  radioPlaylistId,
+  radioLikeMode,
+  radioPlaylistId: _radioPlaylistId,
 }: TrackCardProps) => {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const {
-    isTrackLiked,
-    isRadioTrackLiked,
-    getRadioPlaylistId,
-    toggleTrack,
-    toggleRadioTrack,
-  } = useLikesStore();
+  const { isTrackLiked, toggleTrack, isRadioTrackLiked, toggleRadioTrack } = useLikesStore();
 
-  const savedRadioPlaylistId = radioPlaylistId ?? getRadioPlaylistId(track.id);
-  const liked = radioLikeMode ? isRadioTrackLiked(track.id) : isTrackLiked(track.id);
-  
   const fetchTracksForModal = useCallback(async () => {
+    const previewTrack = {
+      id: String(track.id),
+      title: track.title,
+      artistName: track.artistName ?? "",
+      coverUrl: track.coverUrl ?? undefined,
+    };
+
     if (addToPlaylistTracks?.length) {
       const { tracks } = await getRelatedTracks(String(track.id));
-      return tracks.map((t) => ({
+      const related = tracks.map((t) => ({
         id: String(t.id),
         title: t.title,
         artistName: t.artistName ?? "",
         coverUrl: t.coverUrl ?? undefined,
       }));
+      return [previewTrack, ...related];
     }
-    return [
-      {
-        id: String(track.id),
-        title: track.title,
-        artistName: track.artistName,
-        coverUrl: track.coverUrl ?? undefined,
-      },
-    ];
+
+    return [previewTrack];
   }, [track.id, track.title, track.artistName, track.coverUrl, addToPlaylistTracks]);
 
+  const liked = radioLikeMode ? isRadioTrackLiked(track.id) : isTrackLiked(track.id);
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
@@ -155,9 +149,7 @@ const TrackCard = ({
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
-  const playlistPath = savedRadioPlaylistId
-    ? `/discover/personalised/${savedRadioPlaylistId}`
-    : `/discover/personalised/${playlistSlug}:${track.id}`;
+  const playlistPath = `/discover/personalised/${playlistSlug}:${track.id}`;
   // Handler for play button click (play/pause toggle)
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -192,11 +184,8 @@ const TrackCard = ({
           isLiked={liked}
           onLike={(e) => {
             e.stopPropagation();
-            if (radioLikeMode) {
-              void toggleRadioTrack(track);
-            } else {
-              void toggleTrack(track);
-            }
+            if (radioLikeMode) toggleRadioTrack(track);
+            else toggleTrack(track);
           }}
           moreMenuItems={[
             {
