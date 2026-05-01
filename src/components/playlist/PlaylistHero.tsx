@@ -131,7 +131,7 @@ export default function PlaylistHero({
 
   const ownerProfileHref =  moreOfLike
   ? `/${user?.username}`
-    : ownerUsername
+    : `/${ownerUsername}`
       
 
   return (
