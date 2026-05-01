@@ -162,7 +162,7 @@ export default function MessageCell({ message, displayName, profilePicture }: Me
   const hasEmbed = !!message.embed_type && !!message.embed_id;
 
   return (
-    <div className="flex items-start gap-3 py-3">
+    <div data-test={`message-cell-${message.id}`} className="flex items-start gap-3 py-3">
       <UserAvatar
         src={profilePicture}
         name={displayName}
@@ -173,20 +173,22 @@ export default function MessageCell({ message, displayName, profilePicture }: Me
 
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-sm font-semibold text-white">{displayName}</span>
-          <span className="flex-shrink-0 text-xs text-gray-500">{timeAgo(message.created_at)}</span>
+          <span data-test="message-cell-sender" className="text-sm font-semibold text-white">{displayName}</span>
+          <span data-test="message-cell-time" className="flex-shrink-0 text-xs text-gray-500">{timeAgo(message.created_at)}</span>
         </div>
 
         {message.body && (
-          <p className="text-sm text-gray-400 mt-0.5 break-words">{message.body}</p>
+          <p data-test="message-cell-body" className="text-sm text-gray-400 mt-0.5 break-words">{message.body}</p>
         )}
 
         {hasEmbed && (
-          <EmbedCard
-            embedType={message.embed_type!}
-            embedId={message.embed_id!}
-            preloaded={message._embedResource}
-          />
+          <div data-test="message-cell-embed">
+            <EmbedCard
+              embedType={message.embed_type!}
+              embedId={message.embed_id!}
+              preloaded={message._embedResource}
+            />
+          </div>
         )}
       </div>
     </div>

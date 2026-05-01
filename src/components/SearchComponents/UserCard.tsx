@@ -22,11 +22,12 @@ const UserCard = ({
   const navigate = useNavigate()
 
   return (
-    <div className="flex items-center justify-between gap-3 sm:gap-6 py-3 sm:py-5">
+    <div data-test={`user-card-${id}`} className="flex items-center justify-between gap-3 sm:gap-6 py-3 sm:py-5">
 
       {/* Left: avatar + info */}
       <div className="flex items-center gap-3 sm:gap-5 min-w-0">
         <div
+          data-test="user-card-avatar"
           className="w-16 h-16 sm:w-24 sm:h-24 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
           onClick={() => navigate(`/${username}`)}
         >
@@ -42,6 +43,7 @@ const UserCard = ({
 
         <div className="flex flex-col gap-0.5 sm:gap-1 min-w-0">
           <span
+            data-test="user-card-name"
             className="text-white text-sm sm:text-base font-bold truncate cursor-pointer hover:text-text-secondary transition-colors"
             onClick={() => navigate(`/${username}`)}
           >
@@ -54,6 +56,7 @@ const UserCard = ({
 
           {followersCount !== undefined && (
             <div
+              data-test="user-card-followers"
               className="flex items-center gap-1.5 text-text-secondary text-xs sm:text-sm cursor-pointer hover:text-white transition-colors group w-fit"
               onClick={() => navigate(`/${username}/follower`)}
             >

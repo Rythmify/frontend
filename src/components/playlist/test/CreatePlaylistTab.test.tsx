@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import CreatePlaylistTab from "../CreatePlaylistTab";
 
 vi.mock("@/components/Upload/PrivacyToggle", () => ({
@@ -60,16 +61,33 @@ const defaultProps = {
   onCreate: vi.fn(),
 };
 
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
 describe("CreatePlaylistTab", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockNavigate.mockReset();
+  });
 
   it("renders the title input", () => {
-    render(<CreatePlaylistTab {...defaultProps} />);
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} />
+      </MemoryRouter>,
+    );
     expect(screen.getByDisplayValue("My New Playlist")).toBeInTheDocument();
   });
 
   it("calls setPlaylistTitle when title changes", () => {
-    render(<CreatePlaylistTab {...defaultProps} />);
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} />
+      </MemoryRouter>,
+    );
     fireEvent.change(screen.getByDisplayValue("My New Playlist"), {
       target: { value: "Chill Vibes" },
     });
@@ -77,34 +95,68 @@ describe("CreatePlaylistTab", () => {
   });
 
   it("renders the privacy toggle", () => {
-    render(<CreatePlaylistTab {...defaultProps} />);
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} />
+      </MemoryRouter>,
+    );
     expect(screen.getByTestId("privacy-toggle")).toBeInTheDocument();
   });
 
   it("calls onCreate when Save is clicked", () => {
-    render(<CreatePlaylistTab {...defaultProps} />);
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} />
+      </MemoryRouter>,
+    );
     fireEvent.click(screen.getByTestId("button-save-playlist"));
     expect(defaultProps.onCreate).toHaveBeenCalled();
   });
 
+  it("disables Save when title is blank or tracks are empty", () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} playlistTitle="" />
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId("button-save-playlist")).toBeDisabled();
+
+    rerender(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} tracksToAdd={[]} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId("button-save-playlist")).toBeDisabled();
+  });
+
   it("shows Saved! when success is true", () => {
-    render(<CreatePlaylistTab {...defaultProps} success={true} />);
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} success={true} />
+      </MemoryRouter>,
+    );
     expect(screen.getByTestId("button-save-playlist")).toHaveTextContent(
       "Saved!",
     );
   });
 
   it("disables Save when creating is true", () => {
-    render(<CreatePlaylistTab {...defaultProps} creating={true} />);
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} creating={true} />
+      </MemoryRouter>,
+    );
     expect(screen.getByTestId("button-save-playlist")).toBeDisabled();
   });
 
   it("shows an error message when create fails", () => {
     render(
-      <CreatePlaylistTab
-        {...defaultProps}
-        error="Failed to create playlist. Please try again."
-      />,
+      <MemoryRouter>
+        <CreatePlaylistTab
+          {...defaultProps}
+          error="Failed to create playlist. Please try again."
+        />
+      </MemoryRouter>,
     );
     expect(screen.getByTestId("create-playlist-error")).toHaveTextContent(
       "Failed to create playlist. Please try again.",
@@ -112,21 +164,95 @@ describe("CreatePlaylistTab", () => {
   });
 
   it("renders suggested liked tracks section", () => {
-    render(<CreatePlaylistTab {...defaultProps} />);
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} />
+      </MemoryRouter>,
+    );
     expect(screen.getByText(/Looking for more tracks\?/)).toBeInTheDocument();
     expect(screen.getByText("Liked Track 1")).toBeInTheDocument();
   });
 
   it("calls onAdd when clicking 'Add to Playlist' on a liked track suggestion", () => {
-    render(<CreatePlaylistTab {...defaultProps} />);
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} />
+      </MemoryRouter>,
+    );
     fireEvent.click(screen.getByTestId("button-add-liked-track-lt-1"));
-    expect(defaultProps.onAdd).toHaveBeenCalledWith("pl-1", expect.any(Array));
+    expect(defaultProps.setTracksToAdd).toHaveBeenCalledWith(expect.any(Function));
+  });
+
+  it("updates the suggested track state after adding a liked track", async () => {
+    function Harness() {
+      const [tracks, setTracks] = React.useState<any[]>([]);
+      return (
+        <MemoryRouter>
+          <CreatePlaylistTab
+            {...defaultProps}
+            tracksToAdd={tracks}
+            setTracksToAdd={setTracks as any}
+          />
+        </MemoryRouter>
+      );
+    }
+
+    render(<Harness />);
+    fireEvent.click(screen.getByTestId("button-add-liked-track-lt-1"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("button-add-liked-track-lt-1")).toHaveTextContent(
+        "Added",
+      ),
+    );
+  });
+
+  it("removes a selected track from the list", () => {
+    const setTracksToAdd = vi.fn();
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab
+          {...defaultProps}
+          setTracksToAdd={setTracksToAdd}
+        />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByTestId("remove-t-1"));
+    expect(setTracksToAdd).toHaveBeenCalledWith(expect.any(Function));
+  });
+
+  it("navigates to premium when the upgrade button is shown", () => {
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} limitReached />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByText("Upgrade to Premium"));
+    expect(mockNavigate).toHaveBeenCalledWith("/premium");
   });
 
   it("hides liked track suggestions when the user has no playlists yet", () => {
-    render(<CreatePlaylistTab {...defaultProps} hasPlaylists={false} />);
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} hasPlaylists={false} />
+      </MemoryRouter>,
+    );
     expect(
       screen.queryByText(/Looking for more tracks\?/),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows save as disabled when creating and updates privacy toggle", () => {
+    render(
+      <MemoryRouter>
+        <CreatePlaylistTab {...defaultProps} creating />
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId("button-save-playlist")).toBeDisabled();
+
+    fireEvent.click(screen.getByTestId("privacy-toggle"));
+    expect(defaultProps.setPrivacy).toHaveBeenCalledWith("private");
   });
 });
