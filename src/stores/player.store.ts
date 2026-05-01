@@ -179,8 +179,9 @@ export const usePlayerStore = create<PlayerState>()(
 
       next: () => {
         const { queue, queueIndex, isShuffle, isAutoplay, currentTrack } = get();
+        if (!queue.length) return;
         
-        if (queueIndex >= queue.length - 1 && isAutoplay && currentTrack) {
+        if (queue.length === 1 && queueIndex >= queue.length - 1 && isAutoplay && currentTrack) {
           import("../services/track.service").then(async (m) => {
             try {
               const { tracks } = await m.getRelatedTracks(String(currentTrack.id));
@@ -206,16 +207,10 @@ export const usePlayerStore = create<PlayerState>()(
           return;
         }
 
-        if (!queue.length) return;
         let nextIndex: number;
         if (isShuffle) {
           nextIndex = Math.floor(Math.random() * queue.length);
         } else {
-          // If we are at the end and repeat is none, just stop
-          if (queueIndex >= queue.length - 1 && get().repeatMode === "none") {
-            set({ isPlaying: false, currentTime: 0 });
-            return;
-          }
           nextIndex = (queueIndex + 1) % queue.length;
         }
         set({
@@ -257,12 +252,12 @@ export const usePlayerStore = create<PlayerState>()(
 
       setCurrentTime: (time) => set({ currentTime: time }),
       setDuration: (duration) => set({ duration }),
-      setVolume: (volume) => set({ volume }),
+      setVolume: (volume) => set({ volume, isMuted: volume === 0 }),
       toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
       toggleShuffle: () => set((s) => ({ isShuffle: !s.isShuffle })),
       toggleRepeat: () =>
         set((s) => {
-          const modes: ("none" | "one" | "all")[] = ["none", "one", "all"];
+          const modes: ("none" | "all" | "one")[] = ["none", "all", "one"];
           const current = modes.indexOf(s.repeatMode);
           return { repeatMode: modes[(current + 1) % modes.length] };
         }),

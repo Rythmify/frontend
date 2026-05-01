@@ -15,17 +15,20 @@ vi.mock("@/services/api/messaging/conversationApi", () => ({
 vi.mock("@/services/api/messaging/socketService", () => ({
   joinConversation: vi.fn(),
   leaveConversation: vi.fn(),
+  emitMessageRead: vi.fn(),
   getSocket: vi.fn(() => ({
     on: vi.fn(),
     off: vi.fn(),
   })),
 }));
 
-vi.mock("@/stores/messaging.store", () => ({
-  useMessagingStore: vi.fn(() => ({
+vi.mock("@/stores/messaging.store", () => {
+  const useMessagingStoreMock = vi.fn(() => ({
     refreshUnreadCount: vi.fn(),
-  })),
-}));
+  }));
+  (useMessagingStoreMock as any).setState = vi.fn();
+  return { useMessagingStore: useMessagingStoreMock };
+});
 
 const { mockNavigate } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
@@ -173,6 +176,12 @@ describe("MessageIdPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (markMessageReadState as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { 
+        messages: [],
+        pagination: { total_items: 0 }
+      },
+    });
   });
 
   // ── Loading / initial render ───────────────────────────────────────────────
@@ -213,7 +222,10 @@ describe("MessageIdPage", () => {
       data: { items: [conv1] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [] },
+      data: { 
+        messages: [],
+        pagination: { total_items: 0 }
+      },
     });
 
     renderPage();
@@ -224,17 +236,16 @@ describe("MessageIdPage", () => {
   });
 
   it("navigates to participant URL when user selects a conversation", async () => {
-    // FIX: The component calls navigate() only inside handleSelectConversation
-    // (triggered by user click), NOT during the initial auto-open which goes
-    // through loadConversation() directly. The previous test waited for a
-    // navigate call that the component never makes on initial load.
     const conv1 = makeConv("1", "p1");
     const conv2 = makeConv("2", "p2");
     (fetchConversations as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: { items: [conv1, conv2] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [] },
+      data: { 
+        messages: [],
+        pagination: { total_items: 0 }
+      },
     });
 
     renderPage();
@@ -242,7 +253,7 @@ describe("MessageIdPage", () => {
     await userEvent.click(screen.getByTestId("conv-2"));
 
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/messages/p2")
+      expect(mockNavigate).toHaveBeenCalledWith("/messages/2")
     );
   });
 
@@ -253,7 +264,10 @@ describe("MessageIdPage", () => {
       data: { items: [conv1] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [unreadMsg] },
+      data: { 
+        messages: [unreadMsg],
+        pagination: { total_items: 1 }
+      },
     });
 
     renderPage();
@@ -269,7 +283,10 @@ describe("MessageIdPage", () => {
       data: { items: [conv1] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [readMsg] },
+      data: { 
+        messages: [readMsg],
+        pagination: { total_items: 1 }
+      },
     });
 
     renderPage();
@@ -286,7 +303,10 @@ describe("MessageIdPage", () => {
       data: { items: [conv1, conv2] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [] },
+      data: { 
+        messages: [],
+        pagination: { total_items: 0 }
+      },
     });
 
     renderPage();
@@ -294,7 +314,7 @@ describe("MessageIdPage", () => {
     await userEvent.click(screen.getByTestId("conv-2"));
 
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/messages/p2")
+      expect(mockNavigate).toHaveBeenCalledWith("/messages/2")
     );
     expect(screen.getByText("User 2")).toBeInTheDocument();
   });
@@ -307,7 +327,10 @@ describe("MessageIdPage", () => {
       data: { items: [conv1] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [] },
+      data: { 
+        messages: [],
+        pagination: { total_items: 0 }
+      },
     });
 
     renderPage();
@@ -322,7 +345,10 @@ describe("MessageIdPage", () => {
       data: { items: [conv1] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [] },
+      data: { 
+        messages: [],
+        pagination: { total_items: 0 }
+      },
     });
 
     renderPage();
@@ -339,7 +365,10 @@ describe("MessageIdPage", () => {
       data: { items: [conv1, conv2] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [] },
+      data: { 
+        messages: [],
+        pagination: { total_items: 0 }
+      },
     });
 
     renderPage();
@@ -347,7 +376,7 @@ describe("MessageIdPage", () => {
     await userEvent.click(screen.getByTestId("delete-conv"));
 
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/messages/p2")
+      expect(mockNavigate).toHaveBeenCalledWith("/messages/2")
     );
   });
 
@@ -357,7 +386,10 @@ describe("MessageIdPage", () => {
       data: { items: [conv1] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [] },
+      data: { 
+        messages: [],
+        pagination: { total_items: 0 }
+      },
     });
 
     renderPage();
@@ -377,7 +409,10 @@ describe("MessageIdPage", () => {
       data: { items: [conv1] },
     });
     (fetchConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { messages: [] },
+      data: { 
+        messages: [],
+        pagination: { total_items: 0 }
+      },
     });
 
     renderPage();

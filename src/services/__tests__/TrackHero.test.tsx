@@ -40,8 +40,8 @@ vi.mock("../../pages/[username]/[trackSlug]/components/TrackWaveform", () => ({
 }));
 
 vi.mock("react-router-dom", () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-    <a href={to}>{children}</a>
+  Link: ({ children, to, ...props }: any) => (
+    <a href={to} {...props}>{children}</a>
   ),
 }));
 

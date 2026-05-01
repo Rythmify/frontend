@@ -153,6 +153,7 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
           barWidth: 2,
           barGap: 0.5,
           barRadius: 2,
+          height: 80,
           backend: "MediaElement",
           media: audio,
           peaks: hasPeaks ? [peaks] : undefined,
@@ -174,6 +175,9 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
           if (durRef.current) durRef.current.textContent = fmt(dur);
         });
       } else {
+        // FIX 1: always set height (was missing in inactive branch)
+        // FIX 2: always provide url so WaveSurfer has an audio source to decode
+        //        peaks alone give shape but no duration/interaction without a url
         ws = WaveSurfer.create({
           container: containerRef.current!,
           waveColor: g,
@@ -181,10 +185,11 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
           barWidth: 2,
           barGap: 0.5,
           barRadius: 2,
+          height: 80,           // ← FIX 1: was missing, caused 0px render
           interact: false,
           peaks: hasPeaks ? [peaks] : undefined,
           duration: parsedDur > 0 ? parsedDur : undefined,
-          url: !hasPeaks ? track.audioUrl : undefined,
+          url: track.audioUrl,  // ← FIX 2: was `!hasPeaks ? track.audioUrl : undefined`
         });
 
         ws.on("decode", (dur: number) => {
@@ -208,7 +213,9 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
   return (
     <div data-test="playlist-component-waveform" style={{ position: "relative", width: "100%" }}>
       <div style={{ position: "relative", cursor: isActive ? "pointer" : "default" }}>
-        <div ref={containerRef} style={{ transform: "scaleY(-1)" }} />
+        {/* FIX 3: explicit height on the DOM node — WaveSurfer needs the container
+            to already have dimensions before it mounts, otherwise it collapses to 0px */}
+        <div ref={containerRef} style={{ transform: "scaleY(-1)", height: 80 }} />
         <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.08)", pointerEvents: "none", opacity: 0.5, borderRadius: 2 }} />
         <div ref={timeRef} style={{ position: "absolute", left: 0, top: "55%", transform: "translateY(-50%)", fontSize: 11, background: "rgba(0,0,0,0.75)", color: "#fff", padding: "2px", zIndex: 10 }}>0:00</div>
         <div ref={durRef} style={{ position: "absolute", right: 0, top: "55%", transform: "translateY(-50%)", fontSize: 11, background: "rgba(0,0,0,0.75)", color: "#fff", padding: "2px", zIndex: 10 }}>0:00</div>
@@ -372,7 +379,6 @@ export default function PlaylistComponent({
       return;
     }
 
-    // Map minimal playlist data for the store
     const playlistData: PlaylistCardData = {
       id: playlist.id,
       title: playlist.title,
@@ -489,7 +495,7 @@ export default function PlaylistComponent({
       data-test="playlist-component"
       className="flex gap-3 sm:gap-6 py-4 sm:py-5 border-b border-white/5"
     >
-      {/*Cover art with play overlay*/}
+      {/* Cover art with play overlay */}
       <div
         data-test="playlist-component-cover"
         className="relative w-20 h-20 sm:w-[160px] sm:h-[160px] shrink-0 rounded overflow-hidden bg-[#1a1a1a]"
@@ -543,7 +549,7 @@ export default function PlaylistComponent({
       {/* Right column */}
       <div className="flex-1 min-w-0 flex flex-col justify-center sm:justify-start gap-1 sm:gap-1.5">
 
-        {/* Row 1: creator / repostedBy  ·  title  ·  timestamp */}
+        {/* Row 1: creator / repostedBy · title · timestamp */}
         <div className="flex flex-col sm:flex-row items-start justify-between gap-0.5 sm:gap-4">
           <div className="flex-1 min-w-0">
             {/* Creator line */}
@@ -593,7 +599,7 @@ export default function PlaylistComponent({
           </div>
         </div>
 
-        {/* Waveform Area - Hidden on mobile for professional look */}
+        {/* Waveform Area */}
         {waveformTrack && (
           <div className="hidden md:block mt-4">
             <PlaylistWaveform
@@ -603,7 +609,7 @@ export default function PlaylistComponent({
           </div>
         )}
 
-        {/* Track list - Hidden on mobile for professional look */}
+        {/* Track list */}
         {playlist.tracks.length > 0 && (
           <div data-test="playlist-component-track-list" className="hidden md:block mt-4 space-y-1">
             {playlist.tracks.slice(0, 5).map((t, i) => (
