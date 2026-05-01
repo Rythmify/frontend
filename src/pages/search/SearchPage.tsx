@@ -163,7 +163,7 @@ function EverythingResults({ q }: { q: string }) {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [fetchPage]);
+  }, [fetchPage, items.length]);
 
   // Keep hasMoreRef in sync
   useEffect(() => {
