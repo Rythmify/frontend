@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 import TrackItem from "@/components/UI/TrackItem";
 import UserAvatar from "@/components/UI/UserAvatar";
+import GoMobileSection from "@/components/UI/GoMobile";
 
 interface FollowingUser {
   userId?: string;
@@ -396,34 +397,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       )}
 
-      {/* Go Mobile */}
-      <div className="flex flex-col gap-3 w-[320px]">
-        <span className="text-xs font-semibold text-left text-bg-inverted">
-          GO MOBILE
-        </span>
-        <div className="flex gap-3">
-          <button
-            data-test="app-store-button"
-            className="flex items-center gap-2 px-1 py-1 border border-bg-inverted rounded-lg hover:opacity-70"
-          >
-            <i className="fa-brands fa-apple text-bg-inverted text-xl" />
-            <div className="flex flex-col items-start">
-              <span className="text-[8px] text-bg-inverted">Download on the</span>
-              <span className="text-xs font-bold text-bg-inverted">App Store</span>
-            </div>
-          </button>
-          <button
-            data-test="google-play-button"
-            className="flex items-center gap-2 px-1 py-1 border border-bg-inverted rounded-lg hover:opacity-70"
-          >
-            <i className="fa-brands fa-google-play text-bg-inverted text-xl" />
-            <div className="flex flex-col items-start">
-              <span className="text-[8px] text-bg-inverted">GET IT ON</span>
-              <span className="text-xs font-bold text-bg-inverted">Google Play</span>
-            </div>
-          </button>
-        </div>
-      </div>
+      <GoMobileSection showFooter={false} />
 
       {/* Footer */}
       <div className="flex flex-col gap-2 w-[320px]">
