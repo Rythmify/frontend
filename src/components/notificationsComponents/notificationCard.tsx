@@ -8,18 +8,18 @@ import { ReportModal } from '@/components/UI/ReportModal'
 import { SpamModal } from '@/components/UI/SpamModal'
 import UserAvatar from '@/components/UI/UserAvatar'
 import { useAuthStore } from '@/stores/auth.store'
-
+import { useNotificationStore } from '@/stores/notification.store'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatRelativeTime = (dateStr: string): string => {
-  const diff    = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60_000)
-  const hours   = Math.floor(diff / 3_600_000)
-  const days    = Math.floor(diff / 86_400_000)
-
-  if (minutes < 60) return `${minutes} minutes ago`
-  if (hours   < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`
-  return `${days} day${days !== 1 ? 's' : ''} ago`
+ const diff    = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours   = Math.floor(minutes / 60);
+  const days    = Math.floor(hours / 24);
+  if (days > 0)    return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (hours > 0)   return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  return 'just now';
 }
 
 const buildActionText = (n: Notification): string => {
@@ -89,6 +89,7 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
   const [isFollowing, setIsFollowing]     = useState(false)
   const [loadingStatus, setLoadingStatus] = useState(true)
   const { user } = useAuthStore()
+  const { markOneAsRead } = useNotificationStore()
 
   useEffect(() => {
     if (!n.actor?.id) return
@@ -117,7 +118,7 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
   const handleCellClick = async () => {
     if (!n.is_read) {
       try {
-        await markNotificationRead(n.id)
+       await markOneAsRead(n.id) 
         onMarkRead?.(n.id)
       } catch {
         // non-critical — still navigate
@@ -125,9 +126,12 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
     }
     if (n.type === 'follow') {
       navigate(`/${n.actor.username}`)
-    } else {
+    } else if (n.resource_type==="track") {
       navigate(`/${n.resource_type}/${n.resource_id}`)
+    } else if (n.resource_type==="playlist") {
+      navigate(`/${n.actor.username}/sets/${n.resource_id}`)
     }
+   
   }
 
   return (

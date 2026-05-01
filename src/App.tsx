@@ -7,6 +7,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useAuthStore } from "@/stores/auth.store";
 import { performRefresh } from "@/services/api/axiosInstance";
 import { connectSocket, getCurrentToken } from '@/services/api/messaging/socketService';
+import { useNotificationStore } from '@/stores/notification.store';
 import { Toaster } from "sonner";
 
 function getJwtExpiryMs(token: string): number | null {
@@ -36,34 +37,49 @@ function App() {
     return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
   }, []);
 
-  // ── Socket initialization ────────────────────────────────────────────────
-  // Runs once on mount. Handles the page-refresh case where the module state
+  // ── Socket + real-time listeners initialization ──────────────────────────
+  // Runs once on mount. Handles the page-refresh case where module state
   // resets but the user is still authenticated (token persisted in storage).
-  // connectSocket internally checks socket.connected so this is safe to call
-  // even if the socket was already created at login time.
+  // connectSocket checks .connected internally so it's safe to call even if
+  // login already called it. Both notification and messaging stores register
+  // their own socket listeners here so they survive across route changes.
   useEffect(() => {
     const { isAuthenticated } = useAuthStore.getState();
-    const token = (useAuthStore.getState() as { token?: string }).token
-      ?? localStorage.getItem("auth_token");
+    const token =
+      (useAuthStore.getState() as { token?: string }).token ??
+      localStorage.getItem("auth_token");
 
     if (isAuthenticated && token && !getCurrentToken()) {
       connectSocket(token);
     }
 
-    // Also reconnect whenever the user logs in mid-session
+    // Set up real-time badge listeners for notifications after ensuring
+    // the socket exists. The messaging store's setupSocketListeners is still
+    // called from MainNavbar — no change needed there.
+    if (isAuthenticated) {
+      useNotificationStore.getState().setupNotificationListeners();
+    }
+
+    // Re-run whenever the user logs in mid-session (e.g. after logout → login
+    // without a page refresh)
     const unsubscribe = useAuthStore.subscribe((state, prevState) => {
-      if (state.isAuthenticated && !(prevState as typeof state).isAuthenticated) {
-        const freshToken = (state as { token?: string }).token
-          ?? localStorage.getItem("auth_token");
+      const wasAuthenticated = (prevState as typeof state).isAuthenticated;
+
+      if (state.isAuthenticated && !wasAuthenticated) {
+        const freshToken =
+          (state as { token?: string }).token ??
+          localStorage.getItem("auth_token");
         if (freshToken) connectSocket(freshToken);
+        useNotificationStore.getState().setupNotificationListeners();
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Proactively refresh the access token 60 s before it expires so the
-  // session stays alive as long as the browser tab is open.
+  // ── Proactive token refresh ──────────────────────────────────────────────
+  // Refreshes the access token 60s before expiry so the session stays alive
+  // as long as the browser tab is open.
   useEffect(() => {
     let timerId: ReturnType<typeof setTimeout> | null = null;
 
