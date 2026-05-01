@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import CoverImage from "@/components/UI/CoverImage";
 import { Link } from "react-router-dom";
 import WaveSurfer from "wavesurfer.js";
 import { FaPlay, FaPause, FaHeart } from "react-icons/fa";
@@ -665,9 +666,9 @@ export default function TrackCard({
       )}
 
       {/* Cover Art */}
-      <div className="relative w-20 h-20 sm:w-[160px] sm:h-[160px] shrink-0 overflow-hidden rounded bg-black/40">
-        <img
-          src={displayTrack.coverUrl || "https://picsum.photos/seed/rythmify/160/160"}
+      <div className="relative w-20 h-20 sm:w-[160px] sm:h-[160px] shrink-0 overflow-hidden rounded">
+        <CoverImage
+          src={displayTrack.coverUrl}
           alt={displayTrack.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
