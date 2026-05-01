@@ -7,7 +7,7 @@ interface MiniPlayerProps {
 
 const MiniPlayer = ({ coverImage, trackName, artistName, onClose }: MiniPlayerProps) => {
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-bg border-t border-border">
+    <div data-test="mini-player" className="flex items-center justify-between px-4 py-2 bg-bg border-t border-border">
 
       {/* Left: avatar + info */}
       <div className="flex items-center gap-3">
@@ -30,6 +30,7 @@ const MiniPlayer = ({ coverImage, trackName, artistName, onClose }: MiniPlayerPr
 
       {/* Close */}
       <button
+        data-test="mini-player-close"
         onClick={onClose}
         className="text-text-secondary hover:text-white transition-colors text-lg px-2"
       >

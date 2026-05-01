@@ -2,21 +2,32 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MessageBox } from '@/components/MessagingComponents/MessageBox'
 import { RecipientInputBox, type RecipientResult } from '@/components/MessagingComponents/RecipientInputBox'
-import { startConversation, sendMessage } from '@/services/api/messaging/conversationApi'
+import {
+  startConversation,
+  sendMessage,
+  type Conversation,
+  type Message, 
+} from '@/services/api/messaging/conversationApi'
 import type { ResolvedEmbed } from '@/components/MessagingComponents/MessageBox'
 
 interface ModalNewMessageBodyProps {
   onClose: () => void
   prefilledRecipient?: RecipientResult
+  onConversationCreated?: (conversation: Conversation, sentMessage: Message) => void
 }
 
-const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBodyProps) => {
+const ModalNewMessageBody = ({
+  onClose,
+  prefilledRecipient,
+  onConversationCreated,
+}: ModalNewMessageBodyProps) => {
   const navigate = useNavigate()
 
   const [selected, setSelected]             = useState<RecipientResult | null>(prefilledRecipient ?? null)
   const [message, setMessage]               = useState('')
-  const [embeds, setEmbeds]                 = useState<ResolvedEmbed[]>([])   // ← plural
+  const [embeds, setEmbeds]                 = useState<ResolvedEmbed[]>([])
   const [isSending, setIsSending]           = useState(false)
+  const [boxKey, setBoxKey]                 = useState(0)
   const [recipientError, setRecipientError] = useState<string | null>(null)
   const [messageError, setMessageError]     = useState<string | null>(null)
 
@@ -40,26 +51,28 @@ const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBod
     setIsSending(true)
 
     try {
+      let conversation: Conversation | null = null
+      let firstMessage: Message | null = null
+
       if (embeds.length === 0) {
-        // Plain text message — start conversation as before
-        await startConversation({
+        const res = await startConversation({
           recipient_id: selected!.id,
           body: message.trim(),
         })
+        const typed = res as { data?: { conversation?: Conversation; message?: Message } }
+        conversation = typed.data?.conversation ?? null
+        firstMessage = typed.data?.message ?? null
       } else {
-        // First message: text body + first embed (startConversation only accepts one resource)
-        const firstConvo = await startConversation({
+        const firstRes = await startConversation({
           recipient_id: selected!.id,
           ...(message.trim() ? { body: message.trim() } : {}),
           resource: { type: embeds[0].type, id: embeds[0].id },
         })
+        const typed = firstRes as { data?: { conversation?: Conversation; message?: Message } }
+        conversation = typed.data?.conversation ?? null
+        firstMessage = typed.data?.message ?? null
 
-        // Resolve the conversation ID from the response so we can append more messages
-        const convoResponse = firstConvo as { data?: { conversation?: { id?: string }; id?: string } }
-        const conversationId =
-          convoResponse.data?.conversation?.id ?? (convoResponse.data as { id?: string })?.id
-
-        // Additional embeds — each as a separate message in the same conversation
+        const conversationId = conversation?.id
         if (conversationId && embeds.length > 1) {
           for (let i = 1; i < embeds.length; i++) {
             await sendMessage(conversationId, {
@@ -69,10 +82,28 @@ const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBod
         }
       }
 
+      setMessage('')
+      setEmbeds([])
+      setBoxKey((k) => k + 1)
+
+      // If the API didn't return a conversation ID, close the modal and stay put
+      if (!conversation?.id) {
+        onClose()
+        return
+      }
+
+      // We have a valid conversation — notify parent and navigate
+      onConversationCreated?.(conversation, firstMessage as Message)
       onClose()
-      navigate(`/messages/${selected!.id}`)
-    } catch {
-      setMessageError('Failed to send message. Please try again.')
+      navigate(`/messages/${conversation.id}`)
+
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status: number } }
+      if (axiosError.response?.status === 403) {
+        setMessageError('Unable to send message to this user.')
+      } else {
+        setMessageError('Failed to send message. Please try again.')
+      }
     } finally {
       setIsSending(false)
     }
@@ -110,9 +141,10 @@ const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBod
       </label>
 
       <MessageBox
+        key={boxKey}
         onValueChange={(val) => { setMessage(val); if (val.trim()) setMessageError(null) }}
-        onIsEmptyChange={() => {}}
-        onEmbedsResolved={setEmbeds}   // ← plural, matches updated MessageBox prop
+        onIsEmptyChange={(empty) => { if (empty) setMessageError(null) }}
+        onEmbedsResolved={setEmbeds}
         hasError={!!messageError}
       />
 
@@ -126,7 +158,7 @@ const ModalNewMessageBody = ({ onClose, prefilledRecipient }: ModalNewMessageBod
           data-test="send-message-button"
           onClick={handleSend}
           disabled={isSending}
-          className="px-3 py-1 text-sm font-extrabold text-black bg-white rounded disabled:opacity-50"
+          className="px-5 py-2 text-sm font-semibold text-black transition-colors bg-white rounded-lg hover:text-[color:#838383] disabled:opacity-50"
         >
           {isSending ? 'Sending…' : 'Send'}
         </button>

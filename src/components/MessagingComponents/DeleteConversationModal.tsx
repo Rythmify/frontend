@@ -46,6 +46,7 @@ export default function DeleteConversationModal({
 
   return (
     <div
+      data-test="delete-conversation-modal"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/45"
       onClick={handleBackdropClick}
       role="dialog"
@@ -71,11 +72,12 @@ export default function DeleteConversationModal({
         </div>
 
         {error && (
-          <p className="mb-3 text-xs text-red-400">{error}</p>
+          <p data-test="delete-conversation-error" className="mb-3 text-xs text-red-400">{error}</p>
         )}
 
         <div className="flex justify-end gap-2">
           <button
+            data-test="delete-conversation-cancel"
             onClick={onClose}
             disabled={isDeleting}
             className="px-5 py-2 text-sm font-semibold text-gray-400 transition-colors rounded-lg hover:bg-white/10 hover:text-white disabled:opacity-50"
@@ -83,6 +85,7 @@ export default function DeleteConversationModal({
             Cancel
           </button>
           <button
+            data-test="delete-conversation-confirm"
             onClick={handleArchive}
             disabled={isDeleting}
             className="px-5 py-2 text-sm font-semibold text-black transition-colors bg-white rounded-lg hover:bg-gray-100 disabled:opacity-50"
