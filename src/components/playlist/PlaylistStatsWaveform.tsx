@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  getPlaylistTotalDuration,
+  formatDuration,
   type PlaylistDetails,
 } from "@/services/api/playlist/playlist.service";
 import { getTrackComments } from "@/services/mocks/Track.service";
@@ -18,6 +18,7 @@ interface PlaylistStatsCommentsProps {
   isPlaying?: boolean;
   activeTrackId?: string;
   comments?: Comment[];
+  extraDurationSeconds?: number;
 }
 
 export default function PlaylistStatsWaveform({
@@ -25,6 +26,7 @@ export default function PlaylistStatsWaveform({
   isPlaying = false,
   activeTrackId,
   comments: commentsProp,
+  extraDurationSeconds = 0,
 }: PlaylistStatsCommentsProps) {
   const [comments, setComments] = useState<Comment[]>(commentsProp ?? []);
 
@@ -32,12 +34,9 @@ export default function PlaylistStatsWaveform({
     playlist.tracks.find((track) => track.track_id === activeTrackId) ?? null;
   const hasActiveTrackInPlaylist = Boolean(activePlaylistTrack);
 
-  const formatDuration = (seconds?: number | null) => {
-    if (typeof seconds !== "number" || Number.isNaN(seconds)) return "0:00";
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.max(0, Math.floor(seconds % 60));
-    return `${minutes}:${String(secs).padStart(2, "0")}`;
-  };
+  const totalDurationSeconds =
+    playlist.tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0) +
+    Math.max(0, Math.floor(extraDurationSeconds));
 
   const waveformTrack: Track | null = activePlaylistTrack
     ? {
@@ -51,7 +50,7 @@ export default function PlaylistStatsWaveform({
         repostCount: 0,
         playCount: activePlaylistTrack.play_count ?? 0,
         commentCount: 0,
-        duration: formatDuration(activePlaylistTrack.duration),
+        duration: formatDuration(activePlaylistTrack.duration ?? 0),
         postedAt: activePlaylistTrack.added_at ?? "",
         waveformData: [],
         audioUrl: activePlaylistTrack.audio_url ?? "",
@@ -128,7 +127,7 @@ export default function PlaylistStatsWaveform({
             Tracks
           </span>
           <span className="text-[14px] text-text-secondary mt-1">
-            {getPlaylistTotalDuration(playlist.tracks)}
+            {formatDuration(totalDurationSeconds)}
           </span>
         </div>
       )}

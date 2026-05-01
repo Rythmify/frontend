@@ -4,7 +4,7 @@ import PlaylistHero from "../../../components/playlist/PlaylistHero";
 import PlaylistSidebar from "../../../components/playlist/Made for you/PlaylistSidebarForYou";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
-import { getUserById, type PublicUser } from "@/services/user.service";
+import { getFeaturedArtists } from "@/services/featuredArtists.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
 import type { Track } from "@/types/track";
@@ -69,18 +69,6 @@ function toPlayerTrack(track: PlaylistTrackItem, genreName: string): Track {
   };
 }
 
-function aggregateTrackCount(tracks: TrendingByGenreTrack[]) {
-  const counts = new Map<string, number>();
-
-  for (const track of tracks) {
-    const key = track.user_id?.trim();
-    if (!key) continue;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-
-  return Array.from(counts.entries());
-}
-
 function getGenreLikeCount(tracks: TrendingByGenreTrack[]) {
   return tracks.reduce((sum, track) => sum + (track.like_count ?? 0), 0);
 }
@@ -124,20 +112,6 @@ function TrendingByGenreSlugPage() {
     isPlaying,
     currentTrack,
   } = usePlayerStore();
-
-  const toFeaturedArtist = (
-    user: PublicUser,
-    trackCount: number,
-  ): MockUser => ({
-    id: user.id as unknown as number,
-    username: user.username ?? user.display_name,
-    displayName: user.display_name,
-    avatarUrl:
-      user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
-    followerCount: user.followers_count ?? 0,
-    trackCount,
-    isFollowing: false,
-  });
 
   useEffect(() => {
     let cancelled = false;
@@ -188,19 +162,11 @@ function TrendingByGenreSlugPage() {
         setPlaylist(playlistDetails);
         setGenreName(genreData.genre_name);
 
-        const artistIds = aggregateTrackCount(genreData.tracks);
-        const artists = await Promise.all(
-          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-            const user = await getUserById(artistId).catch(() => null);
-            return user ? toFeaturedArtist(user, trackCount) : null;
-          }),
-        );
+        const artists = await getFeaturedArtists(genreData.tracks, null);
 
         if (cancelled) return;
 
-        setFeaturedArtists(
-          artists.filter((artist): artist is MockUser => !!artist),
-        );
+        setFeaturedArtists(artists);
       } catch (err) {
         console.error(err);
 
