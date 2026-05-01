@@ -1,7 +1,12 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PlaylistSidebarForYou from "../Made for you/PlaylistSidebarForYou";
+import {
+  getPlaylistLikers,
+  getPlaylistReposters,
+} from "@/services/api/playlist/playlist.service";
+import { getUserById } from "@/services/user.service";
 
 vi.mock("@/components/UI/FollowButton", () => ({
   default: ({
@@ -19,6 +24,15 @@ vi.mock("@/components/UI/FollowButton", () => ({
 
 vi.mock("@/components/UI/GoMobile", () => ({
   default: () => <div data-test="go-mobile-section" />,
+}));
+
+vi.mock("@/services/user.service", () => ({
+  getUserById: vi.fn(),
+}));
+
+vi.mock("@/services/api/playlist/playlist.service", () => ({
+  getPlaylistLikers: vi.fn(),
+  getPlaylistReposters: vi.fn(),
 }));
 
 const mockPlaylist = {
@@ -49,6 +63,35 @@ const featuredArtists = [
 ] as any;
 
 describe("PlaylistSidebarForYou", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "artist-one",
+      username: "artist-one",
+      display_name: "Artist One",
+    } as any);
+    vi.mocked(getPlaylistLikers).mockResolvedValue({
+      data: [
+        {
+          user_id: "u-1",
+          username: "liker-one",
+          display_name: "Liker One",
+          profile_picture: null,
+        },
+      ],
+    } as any);
+    vi.mocked(getPlaylistReposters).mockResolvedValue({
+      data: [
+        {
+          user_id: "u-2",
+          username: "reposter-one",
+          display_name: "Reposter One",
+          profile_picture: null,
+        },
+      ],
+    } as any);
+  });
+
   it("renders featured artists with the shared follow button", () => {
     render(
       <MemoryRouter>
@@ -64,10 +107,10 @@ describe("PlaylistSidebarForYou", () => {
     expect(screen.getByTestId("sidebar-artists-featured")).toBeInTheDocument();
     expect(screen.getByTestId("follow-button-artist-one")).toBeInTheDocument();
     expect(screen.getByTestId("follow-button-artist-two")).toBeInTheDocument();
-    expect(screen.getByTestId("sidebar-playlist-likes")).toHaveTextContent(
+    expect(screen.getByTestId("sidebar-liked-by")).toHaveTextContent(
       "24 Likes",
     );
-    expect(screen.getByTestId("sidebar-playlist-reposts")).toHaveTextContent(
+    expect(screen.getByTestId("sidebar-reposted-by")).toHaveTextContent(
       "3 Reposts",
     );
   });

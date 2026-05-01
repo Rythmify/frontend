@@ -35,7 +35,6 @@ export default function SendMessageForm({
   isTyping,
   ParticipantInfo,
 }: SendMessageFormProps) {
-  // `value` here is already URL-stripped (MessageBox calls onValueChange with clean text)
   const [value, setValue]         = useState('');
   const [embeds, setEmbeds]       = useState<ResolvedEmbed[]>([]);
   const [error, setError]         = useState<string | null>(null);
@@ -46,9 +45,9 @@ export default function SendMessageForm({
   const sentinelRef         = useRef<HTMLDivElement>(null);
   const prevMsgCountRef     = useRef(0);
   const prevScrollHeightRef = useRef(0);
-  const isLoadingMoreRef    = useRef(false);
+  const isPrependingRef     = useRef(false);
 
-  // ─── Scroll to bottom on initial load & new messages ─────────────────────
+  // ─── Scroll management ────────────────────────────────────────────────────
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -56,20 +55,24 @@ export default function SendMessageForm({
     const prev    = prevMsgCountRef.current;
     const current = existingMessages.length;
 
-    if (isLoadingMoreRef.current) {
+    if (isPrependingRef.current) {
+      // Older messages were prepended — restore the user's scroll position
+      // so the view doesn't jump to the top
       const newScrollHeight = container.scrollHeight;
       container.scrollTop   = newScrollHeight - prevScrollHeightRef.current;
-      isLoadingMoreRef.current = false;
+      isPrependingRef.current = false;
     } else if (prev === 0 && current > 0) {
+      // Initial load — jump to bottom to show newest messages
       container.scrollTop = container.scrollHeight;
     } else if (current > prev) {
+      // New message sent or received — scroll to bottom
       container.scrollTop = container.scrollHeight;
     }
 
     prevMsgCountRef.current = current;
   }, [existingMessages]);
 
-  // ─── IntersectionObserver — load older messages ───────────────────────────
+  // ─── IntersectionObserver — sentinel at TOP, loads older messages ─────────
   const handleIntersect = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (!entries[0].isIntersecting) return;
@@ -77,8 +80,9 @@ export default function SendMessageForm({
 
       const container = scrollContainerRef.current;
       if (container) {
+        // Snapshot current scroll height before prepend so we can restore position
         prevScrollHeightRef.current = container.scrollHeight;
-        isLoadingMoreRef.current    = true;
+        isPrependingRef.current     = true;
       }
       onLoadMore();
     },
@@ -99,7 +103,6 @@ export default function SendMessageForm({
 
   // ─── Send handler ─────────────────────────────────────────────────────────
   const handleSend = async () => {
-    // `value` is already stripped of embed URLs by MessageBox
     const cleanBody = value.trim();
 
     if (cleanBody === '' && embeds.length === 0) {
@@ -116,7 +119,6 @@ export default function SendMessageForm({
         for (let i = 0; i < embeds.length; i++) {
           const embed = embeds[i];
 
-          // Only attach the text body to the first message
           const payload = {
             ...(i === 0 && cleanBody ? { body: cleanBody } : {}),
             resource: { type: embed.type, id: embed.id },
@@ -135,7 +137,6 @@ export default function SendMessageForm({
           sentMessages.push(msg);
         }
       } else {
-        // Plain text — no embed
         const res = await sendMessage(conversationId, { body: cleanBody });
         sentMessages.push({ ...res.data, body: cleanBody });
       }
@@ -182,6 +183,7 @@ export default function SendMessageForm({
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto flex flex-col gap-4 px-3 py-3 min-h-0"
       >
+        {/* Sentinel at TOP — becomes visible when user scrolls up, triggers older page load */}
         <div ref={sentinelRef} className="h-1 w-full shrink-0" />
 
         {loadingMessages && hasMoreMessages && (
@@ -213,15 +215,15 @@ export default function SendMessageForm({
       </div>
 
       {/* ── Composer ── */}
-      <div className="shrink-0 flex flex-col gap-2 px-3 pb-3 pt-2 bg-bg border-t border-white/10"
-      onKeyDown={(e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }}
+      <div
+        className="shrink-0 flex flex-col gap-2 px-3 pb-3 pt-2 bg-bg border-t border-white/10"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+          }
+        }}
       >
-
         <label className="text-sm font-bold text-white">
           Write your message and add tracks or playlists{' '}
           <span className="text-red-500">*</span>

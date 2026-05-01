@@ -1,4 +1,4 @@
-import { Outlet, useSearchParams, useLocation, Link } from "react-router-dom";
+import { Outlet, useSearchParams, useLocation } from "react-router-dom";
 import { useEffect, useState, useRef, useCallback, createContext, useContext } from "react";
 import SearchSidebar from "@/components/SearchComponents/Searchsidebar";
 import TrackCard from "@/components/track/TrackCard";
@@ -9,6 +9,7 @@ import { searchEverything } from "@/services/api/search/Searchapi";
 import type { Track } from "@/types/track";
 import type { Playlist } from "@/types/playlist";
 import type { FiltersData } from "@/components/SearchComponents/Searchfilters";
+import { Menu, X } from "lucide-react";
 
 // ─── Filters context ──────────────────────────────────────────────────────────
 
@@ -46,36 +47,24 @@ function mapUser(u: any): MappedUser {
   };
 }
 
-// ─── Section header ───────────────────────────────────────────────────────────
-
-function SectionHeader({ title, seeAllPath }: { title: string; seeAllPath: string }) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-base font-bold text-text">{title}</h2>
-      <Link
-        to={seeAllPath}
-        className="text-xs text-text-secondary hover:text-text-hover transition-colors"
-      >
-        See all
-      </Link>
-    </div>
-  );
-}
 
 // ─── Everything results ───────────────────────────────────────────────────────
-// Calls /search with no type — returns all resource types with pagination.
-// We load one page at a time and append via infinite scroll.
+// Merges tracks, users, playlists and albums into one flat list sorted by score.
 
 const PAGE_SIZE = 10;
 
+// Tagged union so we know which component to render per item
+type ResultItem =
+  | { type: "track";    score: number; data: Track }
+  | { type: "user";     score: number; data: MappedUser }
+  | { type: "playlist"; score: number; data: Playlist };
+
 function EverythingResults({ q }: { q: string }) {
-  const [tracks, setTracks]       = useState<Track[]>([]);
-  const [users, setUsers]         = useState<MappedUser[]>([]);
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [total, setTotal]         = useState(0);
-  const [offset, setOffset]       = useState(0);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState<string | null>(null);
+  const [items, setItems]     = useState<ResultItem[]>([]);
+  const [total, setTotal]     = useState(0);
+  const [offset, setOffset]   = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
 
   const abortRef    = useRef<AbortController | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -100,17 +89,36 @@ function EverythingResults({ q }: { q: string }) {
           controller.signal,
         );
 
-        // res shape: { tracks, users, playlists, albums, pagination, filters: null }
         const data = res as any;
 
-        const mappedTracks    = (data.tracks    ?? []).map(mapTrack);
-        const mappedUsers     = (data.users     ?? []).map(mapUser);
-        const mappedPlaylists = (data.playlists ?? []).map(mapPlaylist);
+        // Build tagged items preserving the raw score from backend
+        const trackItems: ResultItem[] = (data.tracks ?? []).map((t: any) => ({
+          type:  "track" as const,
+          score: t.score ?? 0,
+          data:  mapTrack(t),
+        }));
 
-        setTracks((prev)    => replace ? mappedTracks    : [...prev, ...mappedTracks]);
-        setUsers((prev)     => replace ? mappedUsers     : [...prev, ...mappedUsers]);
-        setPlaylists((prev) => replace ? mappedPlaylists : [...prev, ...mappedPlaylists]);
+        const userItems: ResultItem[] = (data.users ?? []).map((u: any) => ({
+          type:  "user" as const,
+          score: u.score ?? 0,
+          data:  mapUser(u),
+        }));
 
+        // Merge playlists and albums — both render with PlaylistComponent
+        const playlistItems: ResultItem[] = [
+          ...(data.playlists ?? []),
+          ...(data.albums    ?? []),
+        ].map((pl: any) => ({
+          type:  "playlist" as const,
+          score: pl.score ?? 0,
+          data:  mapPlaylist(pl),
+        }));
+
+        // Merge all and sort by score descending
+        const merged = [...trackItems, ...userItems, ...playlistItems]
+          .sort((a, b) => b.score - a.score);
+
+        setItems((prev) => replace ? merged : [...prev, ...merged]);
         setTotal(data.pagination?.total ?? 0);
         setOffset(pageOffset);
         hasMoreRef.current = pageOffset + PAGE_SIZE < (data.pagination?.total ?? 0);
@@ -127,9 +135,7 @@ function EverythingResults({ q }: { q: string }) {
 
   // Reset on query change
   useEffect(() => {
-    setTracks([]);
-    setUsers([]);
-    setPlaylists([]);
+    setItems([]);
     setTotal(0);
     setOffset(0);
     hasMoreRef.current = false;
@@ -160,10 +166,9 @@ function EverythingResults({ q }: { q: string }) {
   }, [fetchPage]);
 
   // Keep hasMoreRef in sync
-  const totalLoaded = tracks.length + users.length + playlists.length;
   useEffect(() => {
-    hasMoreRef.current = totalLoaded < total;
-  }, [totalLoaded, total]);
+    hasMoreRef.current = items.length < total;
+  }, [items.length, total]);
 
   const seeAllBase = (type: string) =>
     `/search/${type}?q=${encodeURIComponent(q)}`;
@@ -189,9 +194,7 @@ function EverythingResults({ q }: { q: string }) {
     );
   }
 
-  const hasResults = tracks.length > 0 || users.length > 0 || playlists.length > 0;
-
-  if (!loading && !hasResults) {
+  if (!loading && items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-2">
         <p className="text-text font-semibold">No results found</p>
@@ -201,53 +204,53 @@ function EverythingResults({ q }: { q: string }) {
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
+  // All items are pre-sorted by score descending — render each with the
+  // correct component based on its type discriminant.
+
+  const trackQueue = items
+    .filter((i): i is ResultItem & { type: "track" } => i.type === "track")
+    .map((i) => i.data);
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col">
 
-      {/* Tracks */}
-      {tracks.length > 0 && (
-        <section>
-          <SectionHeader title="Tracks" seeAllPath={seeAllBase("sounds")} />
-          <div className="flex flex-col">
-            {tracks.map((track) => (
-              <TrackCard key={track.id} track={track} contextQueue={tracks} />
-            ))}
-          </div>
-        </section>
-      )}
+      {items.map((item, index) => {
+        if (item.type === "track") {
+          return (
+            <TrackCard
+              key={`track-${item.data.id}-${index}`}
+              track={item.data}
+              contextQueue={trackQueue}
+            />
+          );
+        }
 
-      {/* People */}
-      {users.length > 0 && (
-        <section>
-          <SectionHeader title="People" seeAllPath={seeAllBase("people")} />
-          <div className="flex flex-col divide-y divide-white/5">
-            {users.map((user) => (
+        if (item.type === "user") {
+          return (
+            <div key={`user-${item.data.id}-${index}`} className="border-b border-white/5">
               <UserCard
-                key={user.id}
-                id={user.id}
-                username={user.username}
-                displayName={user.displayName}
-                avatarUrl={user.avatarUrl}
-                location={user.location}
-                followersCount={user.followersCount}
+                id={item.data.id}
+                username={item.data.username}
+                displayName={item.data.displayName}
+                avatarUrl={item.data.avatarUrl}
+                location={item.data.location}
+                followersCount={item.data.followersCount}
               />
-            ))}
-          </div>
-        </section>
-      )}
+            </div>
+          );
+        }
 
-      {/* Playlists */}
-      {playlists.length > 0 && (
-        <section>
-          <SectionHeader title="Playlists" seeAllPath={seeAllBase("sets")} />
-          <div className="flex flex-col divide-y divide-white/5">
-            {playlists.map((playlist) => (
-              <PlaylistComponent key={playlist.id} playlist={playlist} />
-            ))}
-          </div>
-        </section>
-      )}
+        if (item.type === "playlist") {
+          return (
+            <PlaylistComponent
+              key={`playlist-${item.data.id}-${index}`}
+              playlist={item.data}
+            />
+          );
+        }
+
+        return null;
+      })}
 
       {/* Spinner */}
       {loading && (
@@ -270,6 +273,7 @@ export default function SearchPage() {
   const q = searchParams.get("q") ?? "";
   const location = useLocation();
   const [filters, setFilters] = useState<FiltersData>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isEverything = location.pathname === "/search";
 
@@ -281,14 +285,39 @@ export default function SearchPage() {
     if (filters !== null) setFilters(null);
   }
 
+  // Close sidebar when navigating on mobile
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname, q]);
+
   return (
     <FiltersContext.Provider value={{ setFilters }}>
-      <div
-        data-test="search-page"
-        className="flex container px-4 md:px-8 lg:px-12 xl:px-20 flex-row gap-8 py-8"
-      >
-        <SearchSidebar query={q} filters={isEverything ? null : filters} />
-        <div className="flex-1 min-w-0">
+      <div data-test="search-page" className="flex flex-col lg:flex-row gap-0 lg:gap-8">
+        {/* Mobile Menu Toggle */}
+        <div className="lg:hidden sticky top-0 z-40 bg-black border-b border-white/5 px-4 py-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-text truncate">
+            {q.trim() ? `Results for "${q}"` : "Search"}
+          </h2>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-1 hover:bg-white/10 rounded transition-colors"
+            aria-label="Toggle menu"
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {/* Sidebar */}
+        <div
+          className={`${
+            sidebarOpen ? "block" : "hidden"
+          } lg:block lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto px-4 py-8 lg:py-8 lg:px-0 w-full lg:w-[220px] lg:shrink-0 bg-black lg:bg-transparent border-b lg:border-b-0 z-30 lg:z-auto`}
+        >
+          <SearchSidebar query={q} filters={isEverything ? null : filters} />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 min-w-0 px-4 py-8 lg:px-0 lg:py-8">
           {isEverything ? <EverythingResults q={q} /> : <Outlet />}
         </div>
       </div>

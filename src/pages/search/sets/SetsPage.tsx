@@ -129,23 +129,25 @@ export default function SetsPage() {
 
       {/* Result count */}
       {!loading && total > 0 && (
-        <p className="text-sm text-text-muted mb-4">
+        <p className="text-xs sm:text-sm text-text-muted mb-3 sm:mb-4 px-2 sm:px-0">
           Found {total >= 500 ? "500+" : total} playlists
         </p>
       )}
 
       {/* Playlist list */}
-      <div className="flex flex-col divide-y divide-white/5">
+      <div className="flex flex-col divide-y divide-white/5 -mx-2 sm:mx-0">
         {playlists.map((playlist) => (
-          <PlaylistComponent key={playlist.id} playlist={playlist} />
+          <div key={playlist.id} className="px-2 sm:px-0">
+            <PlaylistComponent playlist={playlist} />
+          </div>
         ))}
       </div>
 
       {/* Empty state */}
       {!loading && playlists.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 gap-2">
-          <p className="text-text font-semibold">No playlists found</p>
-          <p className="text-text-muted text-sm">
+        <div className="flex flex-col items-center justify-center py-12 sm:py-20 gap-2 px-4">
+          <p className="text-text font-semibold text-sm sm:text-base">No playlists found</p>
+          <p className="text-text-muted text-xs sm:text-sm text-center max-w-xs">
             Try a different search term{tag ? " or remove the tag filter" : ""}.
           </p>
         </div>
