@@ -8,8 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "npm run test:compile && node -r ./scripts/vitest-bootstrap.cjs ./node_modules/vitest/vitest.mjs --config ../vitest.config.mjs --root .vitest-out",
+    "test:run": "npm run test:compile && node -r ./scripts/vitest-bootstrap.cjs ./node_modules/vitest/vitest.mjs run --pool threads --configLoader runner --config ../vitest.config.mjs --root .vitest-out",
+    "test:compile": "tsc -p tsconfig.vitest.json",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
