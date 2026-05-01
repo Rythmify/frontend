@@ -10,7 +10,8 @@ import {
   FaCheck,
 } from "react-icons/fa";
 import type { Track } from "../../../../types/track";
-import type { Playlist } from "@/services/api/playlist/playlist.service";
+import type { Playlist as BackendPlaylist } from "@/services/api/playlist/playlist.service";
+import type { Playlist as FrontendPlaylist } from "@/types/playlist";
 import axiosInstance from "@/services/api/axiosInstance";
 import { 
   searchFollowing, 
@@ -24,7 +25,7 @@ import { FaPlay } from "react-icons/fa";
 
 interface SharePopupProps {
   track?: Track;
-  playlist?: Playlist;
+  playlist?: BackendPlaylist | FrontendPlaylist;
   onClose: () => void;
 }
 
@@ -49,10 +50,12 @@ export default function SharePopup({
         waveformData: track.waveformData,
       }
     : {
-        title: playlist?.name || "Untitled Playlist",
-        subtitle: playlist?.owner_user_id || "Unknown Owner",
-        image: playlist?.cover_image || "https://via.placeholder.com/150",
-        duration: `${playlist?.track_count || 0} tracks`,
+        title: (playlist as FrontendPlaylist)?.title || (playlist as BackendPlaylist)?.name || "Untitled Playlist",
+        subtitle: (playlist as FrontendPlaylist)?.creatorName || (playlist as BackendPlaylist)?.owner_user_id || "Unknown Owner",
+        image: (playlist as FrontendPlaylist)?.coverUrl || (playlist as BackendPlaylist)?.cover_image || "https://via.placeholder.com/150",
+        duration: (playlist as FrontendPlaylist)?.trackCount !== undefined 
+          ? `${(playlist as FrontendPlaylist).trackCount} tracks` 
+          : `${(playlist as BackendPlaylist)?.track_count || 0} tracks`,
         waveformData: undefined,
       };
 
@@ -80,6 +83,34 @@ export default function SharePopup({
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, []);
+
+  const getResourceUrl = () => {
+    const origin = window.location.origin;
+    if (track) {
+      return `${origin}/${track.artistUsername || "artist"}/${track.trackSlug || track.id}`;
+    }
+    if (playlist) {
+      const isBackend = "playlist_id" in playlist;
+      const slug = isBackend 
+        ? (playlist.slug || playlist.playlist_id) 
+        : (playlist.playlistSlug || playlist.id);
+      
+      const username = isBackend 
+        ? ((playlist as any).owner_username || playlist.owner_user_id || "user")
+        : (playlist.creatorUsername || "user");
+      
+      const title = (isBackend ? playlist.name : playlist.title).toLowerCase();
+      const subtype = (isBackend ? playlist.subtype : (playlist as any).subtype);
+
+      if (title.includes("station")) return `${origin}/discover/stations/${slug}`;
+      if (title.includes("mix")) return `${origin}/discover/sets/${slug}`;
+      if (title.includes("personalised") || title.includes("made for you")) return `${origin}/discover/personalised/${slug}`;
+      if (subtype === "album") return `${origin}/${username}/album/${slug}`;
+      
+      return `${origin}/${username}/sets/${slug}`;
+    }
+    return window.location.href;
+  };
 
   return (
     <div
@@ -148,6 +179,7 @@ export default function SharePopup({
                 track={track}
                 playlist={playlist}
                 data={displayData}
+                baseUrl={getResourceUrl()}
               />
             )}
             {activeTab === "embed" && (
@@ -155,6 +187,7 @@ export default function SharePopup({
                 track={track}
                 playlist={playlist}
                 data={displayData}
+                baseUrl={getResourceUrl()}
               />
             )}
             {activeTab === "message" && (
@@ -162,6 +195,7 @@ export default function SharePopup({
                 track={track} 
                 playlist={playlist} 
                 onClose={handleClose}
+                baseUrl={getResourceUrl()}
               />
             )}
           </div>
@@ -176,37 +210,18 @@ function ShareTab({
   track,
   playlist,
   data,
+  baseUrl,
 }: {
   track?: Track;
-  playlist?: Playlist;
+  playlist?: BackendPlaylist | FrontendPlaylist;
   data: any;
+  baseUrl: string;
 }) {
   const [atTimestamp, setAtTimestamp] = useState(false);
   const [shortenLink, setShortenLink] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const getTargetUrl = () => {
-    const origin = window.location.origin;
-    if (track) {
-      // Prioritize trackSlug if available, fallback to id
-      return `${origin}/${track.artistUsername || "artist"}/${track.trackSlug || track.id}`;
-    }
-    if (playlist) {
-      const slug = playlist.slug || playlist.playlist_id;
-      // Use owner_username if available, or a generic 'user' fallback
-      // Note: playlist.owner_user_id is a UUID, so we prefer a username if we can find one in the context
-      const username = (playlist as any).owner_username || playlist.owner_user_id || "user";
-      
-      const name = playlist.name.toLowerCase();
-      if (name.includes("mix")) return `${origin}/discover/sets/${slug}`;
-      if (name.includes("station")) return `${origin}/discover/stations/${slug}`;
-      
-      return `${origin}/${username}/sets/${slug}`;
-    }
-    return window.location.href;
-  };
-
-  const targetUrl = getTargetUrl();
+  const targetUrl = baseUrl;
   const [shareUrl, setShareUrl] = useState(targetUrl);
   const [isShortening, setIsShortening] = useState(false);
 
@@ -353,7 +368,7 @@ function ShareTab({
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="text-[10px] text-[var(--color-text-muted)] whitespace-nowrap">
-                {formatTimeAgo(track?.postedAt || playlist?.created_at)}
+                {formatTimeAgo(track?.postedAt || (playlist as FrontendPlaylist)?.postedAt || (playlist as BackendPlaylist)?.created_at)}
               </span>
               {track?.genre && (
                 <span className="bg-[#333] text-[10px] font-bold px-2 py-0.5 rounded-full text-gray-300">
@@ -479,10 +494,12 @@ function EmbedTab({
   track,
   playlist,
   data,
+  baseUrl,
 }: {
   track?: Track;
-  playlist?: Playlist;
+  playlist?: BackendPlaylist | FrontendPlaylist;
   data: any;
+  baseUrl: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [layout, setLayout] = useState<"full" | "classic" | "mini">("full");
@@ -495,14 +512,7 @@ function EmbedTab({
     showOverlays: true,
   });
 
-  const getTargetUrl = () => {
-    const origin = window.location.origin;
-    if (track) return `${origin}/${track.artistUsername}/${track.trackSlug || track.id}`;
-    if (playlist) return `${origin}/playlist/${playlist.playlist_id}`;
-    return window.location.href;
-  };
-
-  const targetUrl = getTargetUrl();
+  const targetUrl = baseUrl;
   const embedCode = `<iframe width="100%" height="${height}" scrolling="no" frameborder="no" allow="autoplay" src="${window.location.origin}/player/?url=${encodeURIComponent(targetUrl)}&color=${encodeURIComponent(color)}&auto_play=${options.autoplay}&show_comments=${options.showComments}"></iframe>`;
 
   const handleCopy = () => {
@@ -636,11 +646,13 @@ function EmbedTab({
 function MessageTab({ 
   track, 
   playlist, 
-  onClose 
+  onClose,
+  baseUrl,
 }: { 
   track?: Track; 
-  playlist?: Playlist;
+  playlist?: BackendPlaylist | FrontendPlaylist;
   onClose: () => void;
+  baseUrl: string;
 }) {
   const [query, setQuery] = useState("");
   const [recipients, setRecipients] = useState<any[]>([]);
@@ -648,18 +660,17 @@ function MessageTab({
   
   // Multiple resources support
   const initialResource = track 
-    ? { type: 'track', id: track.id, title: track.title, subtitle: track.artistName, image: track.coverUrl, url: `${window.location.origin}/${track.artistUsername}/${track.trackSlug || track.id}` }
+    ? { type: 'track', id: track.id, title: track.title, subtitle: track.artistName, image: track.coverUrl, url: baseUrl }
     : playlist 
-      ? { 
-          type: 'playlist', 
-          id: playlist.playlist_id, 
-          title: playlist.name, 
-          subtitle: playlist.owner_user_id, 
-          image: playlist.cover_image, 
-          url: playlist.name.toLowerCase().includes("mix") ? `${window.location.origin}/discover/sets/${playlist.slug || playlist.playlist_id}` :
-               playlist.name.toLowerCase().includes("station") ? `${window.location.origin}/discover/stations/${playlist.slug || playlist.playlist_id}` :
-               `${window.location.origin}/${playlist.owner_user_id}/sets/${playlist.slug || playlist.playlist_id}`
-        }
+      ? (() => {
+          const isBackend = "playlist_id" in playlist;
+          const id = isBackend ? playlist.playlist_id : playlist.id;
+          const title = isBackend ? playlist.name : playlist.title;
+          const subtitle = isBackend ? playlist.owner_user_id : playlist.creatorName;
+          const image = isBackend ? playlist.cover_image : playlist.coverUrl;
+          
+          return { type: 'playlist', id, title, subtitle, image, url: baseUrl };
+        })()
       : null;
 
   const [sharedResources, setSharedResources] = useState<any[]>(initialResource ? [initialResource] : []);

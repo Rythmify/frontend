@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/stores/auth.store";
+import { getSubscriptionPlans } from "@/services/api/upload/subscription.service";
 
 // ─── Types ────────────────────────────────────────────────
 interface ArtistTool {
@@ -178,8 +180,19 @@ const styles = {
 
 // ─── Component ────────────────────────────────────────────
 const ArtistToolsCard = () => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [monthlyPrice, setMonthlyPrice] = useState<number | null>(null);
   const navigate = useNavigate();
+  const isPro = useAuthStore((s) => s.user?.isPro ?? false);
+
+  useEffect(() => {
+    getSubscriptionPlans()
+      .then((plans) => {
+        const premium = plans.find((p) => p.name === "premium");
+        if (premium) setMonthlyPrice(parseFloat(premium.price));
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className={styles.wrapper} data-test="section-artist-tools">
@@ -200,7 +213,7 @@ const ArtistToolsCard = () => {
             key={tool.id}
             className={styles.toolButton}
             data-test={`button-tool-${tool.label.toLowerCase()}`}
-            onClick={() => navigate("/premium")}
+            onClick={() => navigate("/artists")}
           >
             <svg
               aria-label="Paywalled feature"
@@ -227,7 +240,7 @@ const ArtistToolsCard = () => {
                 {tool.label}
               </span>
               <span className="hidden group-hover:block w-full text-bg font-extrabold text-center">
-                Upgrade
+                {isPro ? "Try" : "Upgrade"}
               </span>
             </div>
           </button>
@@ -243,7 +256,7 @@ const ArtistToolsCard = () => {
                 key={tool.id}
                 className={styles.toolButton}
                 data-test={`button-tool-${tool.label.toLowerCase().replace(" ", "-")}`}
-                onClick={() => navigate("/premium")}
+                onClick={() => navigate("/artists")}
               >
                 <svg
                   aria-label="Paywalled feature"
@@ -275,8 +288,8 @@ const ArtistToolsCard = () => {
                   <span className="group-hover:hidden block w-full text-center">
                     {tool.label}
                   </span>
-                  <span className="hidden group-hover:block w-full text-center">
-                    Upgrade
+                  <span className="hidden group-hover:block w-full text-bg font-extrabold text-center">
+                    {isPro ? "Try" : "Upgrade"}
                   </span>
                 </div>
               </button>
@@ -284,14 +297,21 @@ const ArtistToolsCard = () => {
           </div>
         </>
       )}
-      <button
-        className={styles.ctaButton}
-        data-test="button-artist-tools-cta"
-        onClick={() => navigate("/premium")}
-      >
-        <i className="fa-solid fa-circle-plus text-sm"></i>
-        <span>Unlock Artist tools from EGP 29.99/month.</span>
-      </button>
+      {!isPro && (
+        <button
+          className={styles.ctaButton}
+          data-test="button-artist-tools-cta"
+          onClick={() => navigate("/premium")}
+        >
+          <i className="fa-solid fa-circle-plus text-sm"></i>
+          <span>
+            Unlock Artist tools
+            {monthlyPrice !== null
+              ? ` from EGP ${monthlyPrice.toFixed(2)}/month.`
+              : "."}
+          </span>
+        </button>
+      )}
     </div>
   );
 };

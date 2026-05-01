@@ -60,6 +60,16 @@ const formatCount = (n: number = 0) => {
 
 const BIO_CHAR_LIMIT = 140;
 
+const normalizeLinkHref = (url: string) => {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    return `https://${trimmed.replace(/^\/+/, "")}`;
+  }
+};
+
 const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   user,
   isOwner = false,
@@ -75,14 +85,43 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
   const [bioExpanded, setBioExpanded] = useState(false);
   const displayedLikedTracksCount =
     likedTracksCount > 0 ? likedTracksCount : likedTracks.length;
+  const profileLinks = (user.links ?? []).filter(
+    (link) => link.url.trim() || link.title.trim(),
+  );
+  const supportLink = profileLinks.find((link) => link.isSupport);
+  const regularLinks = profileLinks.filter((link) => !link.isSupport);
 
   const bio = user.bio ?? "";
   const isBioLong = bio.length > BIO_CHAR_LIMIT;
-  const displayedBio =
-    isBioLong && !bioExpanded ? bio.slice(0, BIO_CHAR_LIMIT) + "…" : bio;
+  const displayedBio = isBioLong && !bioExpanded ? `${bio.slice(0, BIO_CHAR_LIMIT)}...` : bio;
 
   return (
-    <div className="  flex-shrink-0 flex flex-col gap-9 pt-1 overflow-hidden min-w-0">
+    <div className="flex-shrink-0 flex flex-col gap-9 pt-1 overflow-hidden min-w-0">
+      {supportLink && (
+        <div className="w-[300px] rounded-[4px] bg-[linear-gradient(135deg,#1b5fbf_0%,#0f3f88_100%)] p-4 text-white shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+          <p className="text-sm font-medium leading-5">
+            Show some love for your favourite artists.
+            <br />
+            Follow this link to their own support page.
+          </p>
+          <button
+            type="button"
+            className="mt-1 text-sm font-bold underline underline-offset-2 hover:opacity-80"
+          >
+            Learn more
+          </button>
+          <a
+            href={normalizeLinkHref(supportLink.url)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 flex h-9 items-center justify-center gap-2 rounded bg-white px-4 text-sm font-bold text-black hover:bg-gray-200 transition-colors"
+          >
+            <i className="fa-solid fa-dollar-sign text-black" />
+            <span>Support {user.displayName}</span>
+          </a>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="flex gap-13">
         <button
@@ -125,6 +164,40 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </button>
       </div>
 
+      {regularLinks.length > 0 && (
+        <div className="flex flex-col gap-2 w-[320px]">
+          {regularLinks.map((link) => {
+            const label = link.title.trim() || link.url.trim();
+            const href = normalizeLinkHref(link.url);
+            const content = (
+              <>
+                <i className="fa-solid fa-globe text-text-secondary text-xs" />
+                <span className="truncate text-text-secondary">{label}</span>
+              </>
+            );
+
+            return href ? (
+              <a
+                key={link.id}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 text-sm font-bold text-white hover:opacity-70 transition-opacity"
+              >
+                {content}
+              </a>
+            ) : (
+              <div
+                key={link.id}
+                className="flex items-center gap-2 text-sm font-bold text-white"
+              >
+                {content}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Bio */}
       {bio.length > 0 && (
         <div className="flex flex-col gap-1 w-[320px]">
@@ -146,7 +219,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         </div>
       )}
 
-      {/* Liked tracks — sourced from the profile being viewed, passed in as props */}
+      {/* Liked tracks */}
       {displayedLikedTracksCount > 0 && (
         <div>
           <div className="flex items-center justify-between w-full hover:opacity-70 transition-opacity">
@@ -180,7 +253,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
       </div>
 
       {/* ON TOUR */}
-      {isOwner && (
+      {isOwner && !user.isPro && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <i className="fa-solid fa-ticket text-text-secondary" />
@@ -188,7 +261,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
           </div>
           <p className="text-xs text-left text-white border-t pt-4 border-white w-[320px]">
-            With an Artist Pro account, you can create ticketed live events on
+            With a Premium account, you can create ticketed live events on
             Rythmify, and list existing events.
           </p>
           <button
@@ -196,7 +269,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             onClick={() => navigate("/premium")}
             className="w-[320px] py-3 bg-white text-black font-semibold text-sm rounded-full hover:bg-gray-200 transition-colors"
           >
-            Upgrade to Artist Pro
+            Upgrade to Premium
           </button>
         </div>
       )}
@@ -286,9 +359,6 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                     >
                       {u.username}
                     </button>
-                    {u.isVerified && (
-                      <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
-                    )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <button

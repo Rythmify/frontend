@@ -99,10 +99,7 @@ export default function YouFollowingPage() {
                 onClick={() => navigate(`/${u.username}`)}
               />
               <span className="text-white cursor-pointer text-sm font-bold text-center truncate w-full px-1">
-                {u.displayName}{" "}
-                {u.isVerified && (
-                  <i className="fa-solid fa-circle-check text-[#2196F3] text-xs" />
-                )}
+                {u.displayName}
               </span>
               <span
                 data-test={`you-following-count-${u.username}`}

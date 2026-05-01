@@ -3,6 +3,7 @@ import ProfileHeader from "../../components/Profile/ProfileHeader/ProfileHeader"
 import ProfileTabs from "../../components/Profile/ProfileTabs/ProfileTabs";
 import ProfileSidebar from "../../components/Profile/ProfileSideBar/ProfileSideBar";
 import { useLikesStore } from "@/stores/likes.store";
+import { useAuthStore } from "@/stores/auth.store";
 import ShareModal from "../../components/Profile/ShareModal/ShareModal";
 import EditProfileModal from "../../components/Profile/EditProfileModal/EditProfileModal";
 import { Modal } from "@/components/UI/Modal";
@@ -10,8 +11,13 @@ import { BlockUserModal } from "@/components/UI/BlockModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { TrackCard } from "../../components/track";
+import NotFound from "@/pages/not-found/NotFound";
 import type { Track } from "../../types/track";
-import { getMyLikedTracks, getUserLikedTracks } from "@/services/user.service";
+import {
+  getMyLikedTracks,
+  getUserLikedTracks,
+  unblockUser,
+} from "@/services/user.service";
 import { useProfileData } from "@/services/hooks/useProfileData";
 import type { TrackSummary } from "@/services/user.service";
 import { getMyTracks, getUserTracks } from "@/services/track.service";
@@ -27,10 +33,13 @@ export default function UsernamePage() {
   const { username } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [profileLookupStarted, setProfileLookupStarted] = useState(false);
 
   const [showShare, setShowShare] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showBlock, setShowBlock] = useState(false);
+  const [blockedState, setBlockedState] = useState(false);
+  const clearFollowing = useAuthStore((state) => state.clearFollowing);
 
   const {
     user,
@@ -40,11 +49,28 @@ export default function UsernamePage() {
     following,
     isOwner,
     isFollowing,
+    isBlocked,
+    isBlockedBy,
     activeUser,
     isLoadingProfile,
+    refreshProfileData,
     handleTabChange,
     handleSave,
   } = useProfileData(username);
+
+  useEffect(() => {
+    setProfileLookupStarted(false);
+  }, [username]);
+
+  useEffect(() => {
+    if (isLoadingProfile) {
+      setProfileLookupStarted(true);
+    }
+  }, [isLoadingProfile]);
+
+  useEffect(() => {
+    setBlockedState(isBlocked);
+  }, [isBlocked]);
 
   const likedTracksStoreCount = useLikesStore((s) => s.likedTracks.length);
 
@@ -115,10 +141,20 @@ export default function UsernamePage() {
       try {
         if (isOwner) {
           const { tracks } = await getMyTracks(1, 100);
-          if (!cancelled) setProfileTracks(tracks);
+          if (!cancelled) {
+            setProfileTracks(tracks.map(t => ({
+              ...t,
+              artistUsername: t.artistUsername || username || ""
+            })));
+          }
         } else if (profileData?.id) {
           const { tracks } = await getUserTracks(profileData.id, 1, 3);
-          if (!cancelled) setProfileTracks(tracks);
+          if (!cancelled) {
+            setProfileTracks(tracks.map(t => ({
+              ...t,
+              artistUsername: t.artistUsername || username || ""
+            })));
+          }
         }
       } catch (error) {
         console.error(error);
@@ -188,6 +224,9 @@ export default function UsernamePage() {
       cancelled = true;
     };
   }, [isOwner, activeUser?.id, profileData?.id]);
+  if (!isOwner && profileLookupStarted && !isLoadingProfile && !profileData) {
+    return <NotFound />;
+  }
 
   // ── Sidebar mappings ──────────────────────────────────────
   const likedTracksMapped = (Array.isArray(likedTracks) ? likedTracks : []).map(
@@ -265,7 +304,23 @@ export default function UsernamePage() {
         username={user.username}
         displayName={user.displayName}
         tracks={stats.tracks ?? 0}
+        isBlocked={blockedState}
+        followBlocked={blockedState || isBlockedBy}
         onBlock={!isOwner && profileData ? () => setShowBlock(true) : undefined}
+        onUnblock={
+          !isOwner && profileData
+            ? async () => {
+              try {
+                await unblockUser(profileData.id);
+                clearFollowing([profileData.id, profileData.username ?? ""]);
+                refreshProfileData();
+                setBlockedState(false);
+              } catch (error) {
+                console.error(error);
+              }
+            }
+            : undefined
+        }
         blockDisabled={!profileData}
         userId={isOwner ? activeUser?.id : (profileData?.id ?? "")}
         profilePicture={
@@ -411,7 +466,12 @@ export default function UsernamePage() {
             }
             userId={profileData.id}
             onClose={() => setShowBlock(false)}
-            onBlocked={() => setShowBlock(false)}
+            onBlocked={() => {
+              setShowBlock(false);
+              setBlockedState(true);
+              clearFollowing([profileData.id, profileData.username ?? ""]);
+              refreshProfileData();
+            }}
           />
         </Modal>
       )}
