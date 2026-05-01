@@ -217,15 +217,15 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
             <div data-test="message-tab-content" className="flex flex-col h-full">
               <div className="flex-1 flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-white">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-bg-inverted">
                     To <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <div className="flex flex-wrap gap-2 p-2 min-h-[40px] bg-[#111] border border-[#333] rounded focus-within:border-gray-500 transition-colors">
+                    <div className="flex flex-wrap gap-2 p-2 min-h-[40px] bg-input-bg border border-border rounded focus-within:border-text-hover transition-colors">
                       {selectedRecipients.map((recipient) => (
                         <span
                           key={recipient.id}
-                          className="flex items-center gap-1 bg-[#333] text-white text-[11px] px-2 py-0.5 rounded-full"
+                          className="flex items-center gap-1 bg-bg-actionbutton text-bg-inverted text-[11px] px-2 py-0.5 rounded-full"
                         >
                           {recipient.display_name || recipient.username}
                           <button
@@ -246,13 +246,13 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={selectedRecipients.length === 0 ? "Search for users" : ""}
-                        className="flex-1 bg-transparent text-white text-xs outline-none min-w-[120px]"
+                        className="flex-1 bg-transparent text-bg-inverted text-xs outline-none min-w-[120px] placeholder:text-text-secondary"
                       />
                     </div>
                     {(isSearchingRecipients || query.trim().length > 0) && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#222] border border-[#333] rounded shadow-xl z-50 max-h-48 overflow-y-auto py-1">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-bg border border-border rounded shadow-xl z-50 max-h-48 overflow-y-auto py-1">
                         {isSearchingRecipients ? (
-                          <div className="px-3 py-4 text-center text-xs text-gray-500">
+                          <div className="px-3 py-4 text-center text-xs text-text-secondary">
                             Searching...
                           </div>
                         ) : recipients.length > 0 ? (
@@ -267,9 +267,9 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                                 setQuery("");
                                 setRecipients([]);
                               }}
-                              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-[#333] transition-colors"
+                              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-input-bg transition-colors"
                             >
-                              <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center">
+                              <div className="w-8 h-8 rounded-full bg-input-bg overflow-hidden flex items-center justify-center">
                                 {recipient.profile_picture ? (
                                   <img
                                     src={recipient.profile_picture}
@@ -277,7 +277,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
-                                  <span className="text-[10px] font-bold text-white">
+                                  <span className="text-[10px] font-bold text-bg-inverted">
                                     {(recipient.display_name || recipient.username || "U")
                                       .slice(0, 2)
                                       .toUpperCase()}
@@ -285,17 +285,17 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                                 )}
                               </div>
                               <div className="text-left">
-                                <p className="text-xs text-white font-bold">
+                                <p className="text-xs text-bg-inverted font-bold">
                                   {recipient.display_name || recipient.username}
                                 </p>
-                                <p className="text-[10px] text-gray-500">
+                                <p className="text-[10px] text-text-secondary">
                                   @{recipient.username}
                                 </p>
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="px-3 py-4 text-center text-xs text-gray-500">
+                          <div className="px-3 py-4 text-center text-xs text-text-secondary">
                             No users found
                           </div>
                         )}
@@ -305,20 +305,20 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-white">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-bg-inverted">
                     Write your message <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     data-test="message-body-input"
                     value={messageBody}
                     onChange={(e) => setMessageBody(e.target.value)}
-                    className="w-full h-32 bg-[#111] border border-[#333] rounded p-3 text-xs text-white resize-none outline-none focus:border-gray-500 transition-colors"
+                    className="w-full h-32 bg-input-bg border border-border rounded p-3 text-xs text-bg-inverted resize-none outline-none focus:border-text-hover transition-colors placeholder:text-text-secondary"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-6 mt-6 border-t border-[#333]">
-                <div className="text-xs text-gray-500">
+              <div className="flex justify-between items-center pt-6 mt-6 border-t border-border">
+                <div className="text-xs text-text-secondary">
                   {selectedRecipients.length === 0
                     ? "Select a recipient to send."
                     : `${selectedRecipients.length} recipient${selectedRecipients.length > 1 ? "s" : ""} selected`}
@@ -327,7 +327,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
                   data-test="message-send-button"
                   onClick={handleSend}
                   disabled={isSending || selectedRecipients.length === 0}
-                  className="px-8 py-2 bg-white text-black hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded transition-colors cursor-pointer"
+                  className="px-8 py-2 bg-bg-actionbutton text-bg-inverted hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded transition-colors cursor-pointer"
                 >
                   {isSending ? "Sending..." : "Send"}
                 </button>
