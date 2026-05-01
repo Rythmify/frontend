@@ -175,7 +175,7 @@ const MainNavbar = () => {
     audio.src = "";
     resetPlayer();
     logout();
-    navigate("/logout");
+    navigate("/discover");
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -301,12 +301,7 @@ const MainNavbar = () => {
                   to="/you/following"
                   onClick={closeAll}
                 />
-                <DropdownLink
-                  icon="fa-solid fa-users"
-                  label="Who to follow"
-                  to="/people"
-                  onClick={closeAll}
-                />
+              
                 <DropdownLink
                   icon="fa-solid fa-circle-plus"
                   label={user?.isPro ? "Manage Premium" : "Try Artist Pro"}
