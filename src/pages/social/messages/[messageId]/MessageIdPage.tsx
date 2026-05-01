@@ -30,8 +30,8 @@ export default function MessageIdPage() {
   const [activeMessages, setActiveMessages] = useState<Message[]>([]);
   const [loadingConvs, setLoadingConvs]     = useState(true);
   const [loadingMsgs, setLoadingMsgs]       = useState(false);
-  const [hasMoreMsgs, setHasMoreMsgs]       = useState(false);
-  const [msgOffset, setMsgOffset]           = useState(0);
+  const [hasPrevPage, setHasPrevPage]       = useState(false);
+  const [currentPage, setCurrentPage]       = useState(1);
   const [error, setError]                   = useState<string | null>(null);
   const [isTyping, setIsTyping]             = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
@@ -46,58 +46,55 @@ export default function MessageIdPage() {
         .at(-1) ?? null)
     : null;
 
-  // ─── Load a conversation from scratch (latest messages first) ───────────
+  // ─── Load a conversation: fetch page 1 to get total_pages, then jump to last ──
   const loadConversation = useCallback(
     async (conv: Conversation) => {
       setActiveConvId(conv.id);
       useMessagingStore.setState({ activeConversationId: conv.id });
       setActiveMessages([]);
-      setMsgOffset(0);
-      setHasMoreMsgs(false);
+      setCurrentPage(1);
+      setHasPrevPage(false);
       setLoadingMsgs(true);
 
       try {
-        // First pass: get total to compute offset for the latest page
-        const totalRes = await fetchConversation(conv.id, 1, 0);
-        const total = totalRes.data.pagination.total_items;
-        const initialOffset = Math.max(0, total - MSG_LIMIT);
+        // First call: discover total_pages
+        const firstRes = await fetchConversation(conv.id, MSG_LIMIT, 1);
+        const { total_pages } = firstRes.data.pagination;
 
-        // Second pass: load the latest messages
-        const res = await fetchConversation(conv.id, MSG_LIMIT, initialOffset);
-        const { messages } = res.data;
+        let messages   = firstRes.data.messages;
+        let landedPage = 1;
+
+        // If there are multiple pages, jump straight to the last one (newest messages)
+        if (total_pages > 1) {
+          const lastRes = await fetchConversation(conv.id, MSG_LIMIT, total_pages);
+          messages   = lastRes.data.messages;
+          landedPage = total_pages;
+        }
 
         setActiveMessages(messages);
-        setMsgOffset(initialOffset);
-        setHasMoreMsgs(initialOffset > 0);
+        setCurrentPage(landedPage);
+        setHasPrevPage(landedPage > 1);
 
-        // Mark unread messages as read and notify the other participant via socket
+        // Mark unread messages as read
         const unread = messages.filter(
           (msg) => msg.sender_id === conv.participant.id && !msg.is_read,
         );
 
         if (unread.length > 0) {
-          // Optimistic: update local unread_count immediately
-          const newConvUnreadCount = 0;
           setConversations((prev) =>
-            prev.map((c) => (c.id === conv.id ? { ...c, unread_count: newConvUnreadCount } : c)),
+            prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
           );
           refreshUnreadCount();
 
-          // Persist read-state for every unread message and emit socket event
-          // so the other participant's UI decrements their badge in real time.
           for (const msg of unread) {
             markMessageReadState(conv.id, msg.id, true)
               .then((res) => {
-                // The API response should include the updated conversation unread count.
-                // Fall back to 0 if the field is missing.
                 const updatedUnreadCount: number =
-                  (res as any)?.data?.conversation_unread_count ?? newConvUnreadCount;
+                  (res as any)?.data?.conversation_unread_count ?? 0;
                 emitMessageRead(conv.id, msg.id, true, updatedUnreadCount);
               })
               .catch(() => {
-                // HTTP failed — still emit with our best-guess count so the
-                // other side's badge doesn't stay stale indefinitely.
-                emitMessageRead(conv.id, msg.id, true, newConvUnreadCount);
+                emitMessageRead(conv.id, msg.id, true, 0);
               });
           }
         } else {
@@ -115,26 +112,25 @@ export default function MessageIdPage() {
     [refreshUnreadCount],
   );
 
-  // ─── Load more (older) messages by prepending ────────────────────────────
+  // ─── Load previous page (older messages) — prepend on scroll to top ───────
   const loadMoreMessages = useCallback(() => {
-    if (!activeConvId || loadingMsgs || !hasMoreMsgs) return;
+    if (!activeConvId || loadingMsgs || !hasPrevPage) return;
     setLoadingMsgs(true);
 
-    const newOffset = Math.max(0, msgOffset - MSG_LIMIT);
-    const loadCount = msgOffset - newOffset;
+    const prevPage = currentPage - 1;
 
-    fetchConversation(activeConvId, loadCount, newOffset)
+    fetchConversation(activeConvId, MSG_LIMIT, prevPage)
       .then((res) => {
         const { messages } = res.data;
         setActiveMessages((prev) => [...messages, ...prev]);
-        setMsgOffset(newOffset);
-        setHasMoreMsgs(newOffset > 0);
+        setCurrentPage(prevPage);
+        setHasPrevPage(prevPage > 1);
       })
       .catch(() => setError("Could not load more messages."))
       .finally(() => setLoadingMsgs(false));
-  }, [activeConvId, loadingMsgs, hasMoreMsgs, msgOffset]);
+  }, [activeConvId, loadingMsgs, hasPrevPage, currentPage]);
 
-  // ─── 1. Initial fetch: all conversations + open from URL or first ────────
+  // ─── 1. Initial fetch ─────────────────────────────────────────────────────
   useEffect(() => {
     setLoadingConvs(true);
     fetchConversations()
@@ -143,7 +139,6 @@ export default function MessageIdPage() {
         setConversations(items);
         if (items.length === 0) return;
 
-        // open conversation matching URL param, fallback to first
         const target = messageId
           ? (items.find((c) => c.id === messageId || c.participant.id === messageId) ?? items[0])
           : items[0];
@@ -154,12 +149,7 @@ export default function MessageIdPage() {
       .finally(() => setLoadingConvs(false));
   }, []);
 
-  // ─── 2. Socket room management ───────────────────────────────────────────
-  //
-  // joinConversation stores the room name in socketService so that
-  // connectSocket's `connect` handler can re-join it automatically after
-  // any reconnect. We still call joinConversation here so it fires on the
-  // initial mount and whenever the active conversation changes.
+  // ─── 2. Socket room management ────────────────────────────────────────────
   useEffect(() => {
     if (!activeConvId) return;
     joinConversation(activeConvId);
@@ -168,12 +158,7 @@ export default function MessageIdPage() {
     };
   }, [activeConvId]);
 
-  // ─── 3. Socket event listeners ───────────────────────────────────────────
-  //
-  // We also listen for the socket `connect` event so that we re-join the
-  // active room if the socket drops and reconnects while the user is on this
-  // page (the room join is already handled by socketService, but we want to
-  // make sure any in-flight state is correct on the React side too).
+  // ─── 3. Socket event listeners ────────────────────────────────────────────
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
@@ -188,7 +173,6 @@ export default function MessageIdPage() {
       if (conversationId === activeConvId) {
         setActiveMessages((prev) => [...prev, message]);
 
-        // Auto-mark incoming messages as read and notify the sender
         markMessageReadState(conversationId, message.id, true)
           .then((res) => {
             const updatedUnreadCount: number = (res as any)?.data?.conversation_unread_count ?? 0;
@@ -205,11 +189,8 @@ export default function MessageIdPage() {
             ? {
                 ...c,
                 last_message: message,
-                // Only increment badge for conversations the user isn't looking at
                 unread_count:
-                  conversationId === activeConvId
-                    ? c.unread_count
-                    : c.unread_count + 1,
+                  conversationId === activeConvId ? c.unread_count : c.unread_count + 1,
                 updated_at: message.created_at,
               }
             : c,
@@ -238,9 +219,7 @@ export default function MessageIdPage() {
     }) => {
       setConversations((prev) =>
         prev.map((c) =>
-          c.id === conversationId
-            ? { ...c, unread_count: conversationUnreadCount }
-            : c,
+          c.id === conversationId ? { ...c, unread_count: conversationUnreadCount } : c,
         ),
       );
     };
@@ -253,12 +232,8 @@ export default function MessageIdPage() {
       if (conversationId === activeConvId) setIsTyping(false);
     };
 
-    // On reconnect, re-join the active room (belt-and-suspenders alongside
-    // the join in socketService's connect handler).
     const onConnect = () => {
-      if (activeConvId) {
-        joinConversation(activeConvId);
-      }
+      if (activeConvId) joinConversation(activeConvId);
     };
 
     socket.on("connect", onConnect);
@@ -278,7 +253,7 @@ export default function MessageIdPage() {
     };
   }, [activeConvId]);
 
-  // ─── 4. Message sent ─────────────────────────────────────────────────────
+  // ─── 4. Message sent ──────────────────────────────────────────────────────
   const handleMessageSent = (msg: Message) => {
     setActiveMessages((prev) => [...prev, msg]);
     setConversations((prev) =>
@@ -308,14 +283,14 @@ export default function MessageIdPage() {
     });
   };
 
-  // ─── 6. Conversation selected from list ───────────────────────────────────
+  // ─── 6. Conversation selected ─────────────────────────────────────────────
   const handleSelectConversation = (conv: Conversation) => {
     navigate(`/messages/${conv.id}`);
     loadConversation(conv);
     setShowMobileChat(true);
   };
 
-  // ─── 7. Read state toggled from ConversationHeader ───────────────────────
+  // ─── 7. Read state toggled ────────────────────────────────────────────────
   const handleReadStateChange = (isUnread: boolean) => {
     setConversations((prev) =>
       prev.map((c) =>
@@ -330,7 +305,6 @@ export default function MessageIdPage() {
       data-test="message-id-page"
       className="container flex px-4 py-6 md:px-8 lg:px-20 h-[calc(100vh-64px)] overflow-hidden"
     >
-      {/* Conversation list sidebar */}
       <div
         className={`${
           showMobileChat ? "hidden md:flex" : "flex"
@@ -348,7 +322,6 @@ export default function MessageIdPage() {
         </div>
       </div>
 
-      {/* Active conversation panel */}
       <div
         className={`${
           showMobileChat ? "flex" : "hidden md:flex"
@@ -368,13 +341,12 @@ export default function MessageIdPage() {
               />
             </div>
 
-            {/* SendMessageForm owns the scroll container */}
             <div className="flex-1 min-h-0">
               <SendMessageForm
                 conversationId={activeConv.id}
                 existingMessages={activeMessages}
                 loadingMessages={loadingMsgs}
-                hasMoreMessages={hasMoreMsgs}
+                hasMoreMessages={hasPrevPage}
                 onLoadMore={loadMoreMessages}
                 onMessageSent={handleMessageSent}
                 isTyping={isTyping}

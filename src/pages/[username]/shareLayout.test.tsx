@@ -28,6 +28,7 @@ vi.mock("@/services/user.service", () => ({
   getUserByUsername: vi.fn().mockResolvedValue({
     id: "profile-1",
   }),
+  getUserWebProfiles: vi.fn().mockResolvedValue([]),
 }));
 
 describe("ShareLayout", () => {

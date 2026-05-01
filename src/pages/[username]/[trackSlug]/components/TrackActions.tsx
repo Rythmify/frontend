@@ -12,6 +12,7 @@ import { AiOutlineRetweet } from "react-icons/ai";
 import { LuListEnd } from "react-icons/lu";
 import SharePopup from "./SharePopup";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import DownloadButton from "@/components/UI/DownloadButton";
 import type { Track } from "../../../../types/track";
 import * as engagementService from "../../../../services/engagement.service";
 import { postComment } from "../../../../services/track.service";
@@ -191,6 +192,8 @@ export default function TrackActions({
               >
                 <FaLink className="text-[14px]" />
               </IconButton>
+
+              <DownloadButton track={track} variant="icon" />
 
               {/* Add to Next up */}
               <IconButton

@@ -1,5 +1,6 @@
 import { useSearchParams, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axiosInstance from "@/services/api/axiosInstance";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,36 @@ const DURATION_LABELS: Record<Duration, string> = {
   long:   "10–30 min",
   extra:  "> 30 min",
 };
+
+// ─── Hook: fetch all platform tags from /tags endpoint ────────────────────────
+// Backend response shape:
+// { data: [{ id, name }, ...], message, pagination }
+// data is the array directly — NOT { data: { tags: [] } }
+
+function usePlatformTags() {
+  const [tags, setTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    axiosInstance
+      .get("/tags", { params: { limit: 100 } })
+      .then(({ data }) => {
+        if (cancelled) return;
+        // data.data is the raw array of { id, name } objects
+        const raw: any[] = Array.isArray(data?.data) ? data.data : [];
+        const normalized = raw.map((t) =>
+          typeof t === "string" ? t : String(t?.name ?? t?.value ?? t?.label ?? "")
+        ).filter(Boolean);
+        setTags(normalized);
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, []);
+
+  return tags;
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -121,7 +152,6 @@ function TagFilter({
   activeTag: string | null;
   onSelect: (tag: string | null) => void;
 }) {
-  // Guard: tags must be a non-empty array
   if (!Array.isArray(tags) || tags.length === 0) return null;
 
   return (
@@ -158,7 +188,6 @@ function LocationFilter({
   activeLocation: string | null;
   onSelect: (location: string | null) => void;
 }) {
-  // Guard: locations must be a non-empty array
   if (!Array.isArray(locations) || locations.length === 0) return null;
 
   return (
@@ -192,9 +221,8 @@ function LocationFilter({
 export default function SearchFilters({ filters }: SearchFiltersProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const platformTags = usePlatformTags();
 
-  // If no filters yet, render nothing — this also covers the brief moment
-  // between tab switch and the new page's first fetch completing.
   if (!filters) return null;
 
   const setParam = (key: string, value: string | null) => {
@@ -210,9 +238,6 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
 
   // ── Tracks ─────────────────────────────────────────────────────────────────
   if (pathname === "/search/sounds") {
-    // Guard: make sure this is actually track filters before reading track-specific fields
-    const available = (filters as any)?.available ?? {};
-    const tags        = Array.isArray(available.tags)        ? available.tags        : [];
     const activeTimeRange = searchParams.get("time_range") as TimeRange | null;
     const activeDuration  = searchParams.get("duration")   as Duration  | null;
     const activeTag       = searchParams.get("tag");
@@ -228,7 +253,11 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
           label="Added any time"
           activeLabel={activeTimeRange ? TIME_RANGE_LABELS[activeTimeRange] : null}
         >
-          <DropdownItem label="Any time" active={!activeTimeRange} onClick={() => setParam("time_range", null)} />
+          <DropdownItem
+            label="Any time"
+            active={!activeTimeRange}
+            onClick={() => setParam("time_range", null)}
+          />
           {(["past_hour", "past_day", "past_week", "past_month", "past_year"] as TimeRange[]).map((tr) => (
             <DropdownItem
               key={tr}
@@ -246,7 +275,11 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
           label="Any length"
           activeLabel={activeDuration ? DURATION_LABELS[activeDuration] : null}
         >
-          <DropdownItem label="Any length" active={!activeDuration} onClick={() => setParam("duration", null)} />
+          <DropdownItem
+            label="Any length"
+            active={!activeDuration}
+            onClick={() => setParam("duration", null)}
+          />
           {(["short", "medium", "long", "extra"] as Duration[]).map((d) => (
             <DropdownItem
               key={d}
@@ -257,31 +290,12 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
           ))}
         </FilterDropdown>
 
-        <div className="border-t border-border/50" />
-
-        {/* To listen to */}
-        <FilterDropdown label="To listen to" activeLabel={null}>
-          {[
-            { label: "To listen to",           value: null },
-            { label: "To modify commercially", value: "to_modify_commercially" },
-            { label: "To use commercially",    value: "to_use_commercially" },
-            { label: "To share",               value: "to_share" },
-          ].map(({ label, value }) => (
-            <DropdownItem
-              key={label}
-              label={label}
-              active={searchParams.get("license") === value}
-              onClick={() => setParam("license", value)}
-            />
-          ))}
-        </FilterDropdown>
-
-        {/* Tags — only shown if backend returns any */}
-        {tags.length > 0 && (
+        {/* Tags from /tags endpoint */}
+        {platformTags.length > 0 && (
           <>
             <div className="border-t border-border/50 mt-1" />
             <TagFilter
-              tags={tags}
+              tags={platformTags}
               activeTag={activeTag}
               onSelect={(tag) => setParam("tag", tag)}
             />
@@ -293,9 +307,12 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
 
   // ── People ─────────────────────────────────────────────────────────────────
   if (pathname === "/search/people") {
-    const locations    = Array.isArray((filters as any)?.available?.locations)
+    const rawLocations = Array.isArray((filters as any)?.available?.locations)
       ? (filters as any).available.locations
       : [];
+    const locations: string[] = rawLocations.map((loc: any) =>
+      typeof loc === "string" ? loc : (loc?.value ?? loc?.label ?? String(loc))
+    );
     const activeLocation = searchParams.get("location");
 
     return (
@@ -309,17 +326,14 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
     );
   }
 
-  // ── Albums + Playlists ─────────────────────────────────────────────────────
+  // ── Albums + Playlists — tags from /tags endpoint ─────────────────────────
   if (pathname === "/search/albums" || pathname === "/search/sets") {
-    const tags      = Array.isArray((filters as any)?.available?.tags)
-      ? (filters as any).available.tags
-      : [];
     const activeTag = searchParams.get("tag");
 
     return (
       <div className="flex flex-col gap-1 border-t border-border pt-4">
         <TagFilter
-          tags={tags}
+          tags={platformTags}
           activeTag={activeTag}
           onSelect={(tag) => setParam("tag", tag)}
         />
