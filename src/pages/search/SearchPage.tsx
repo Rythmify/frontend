@@ -9,6 +9,7 @@ import { searchEverything } from "@/services/api/search/Searchapi";
 import type { Track } from "@/types/track";
 import type { Playlist } from "@/types/playlist";
 import type { FiltersData } from "@/components/SearchComponents/Searchfilters";
+import { Menu, X } from "lucide-react";
 
 // ─── Filters context ──────────────────────────────────────────────────────────
 
@@ -272,6 +273,7 @@ export default function SearchPage() {
   const q = searchParams.get("q") ?? "";
   const location = useLocation();
   const [filters, setFilters] = useState<FiltersData>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isEverything = location.pathname === "/search";
 
@@ -283,14 +285,39 @@ export default function SearchPage() {
     if (filters !== null) setFilters(null);
   }
 
+  // Close sidebar when navigating on mobile
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname, q]);
+
   return (
     <FiltersContext.Provider value={{ setFilters }}>
-      <div
-        data-test="search-page"
-        className="flex container px-4 md:px-8 lg:px-12 xl:px-20 flex-row gap-8 py-8"
-      >
-        <SearchSidebar query={q} filters={isEverything ? null : filters} />
-        <div className="flex-1 min-w-0">
+      <div data-test="search-page" className="flex flex-col lg:flex-row gap-0 lg:gap-8">
+        {/* Mobile Menu Toggle */}
+        <div className="lg:hidden sticky top-0 z-40 bg-black border-b border-white/5 px-4 py-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-text truncate">
+            {q.trim() ? `Results for "${q}"` : "Search"}
+          </h2>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-1 hover:bg-white/10 rounded transition-colors"
+            aria-label="Toggle menu"
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {/* Sidebar */}
+        <div
+          className={`${
+            sidebarOpen ? "block" : "hidden"
+          } lg:block lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto px-4 py-8 lg:py-8 lg:px-0 w-full lg:w-[220px] lg:shrink-0 bg-black lg:bg-transparent border-b lg:border-b-0 z-30 lg:z-auto`}
+        >
+          <SearchSidebar query={q} filters={isEverything ? null : filters} />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 min-w-0 px-4 py-8 lg:px-0 lg:py-8">
           {isEverything ? <EverythingResults q={q} /> : <Outlet />}
         </div>
       </div>
