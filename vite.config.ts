@@ -5,6 +5,7 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  cacheDir: 'C:/vite-cache/rythmify',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
