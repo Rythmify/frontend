@@ -123,15 +123,15 @@ describe("StationSlugPage", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findAllByText("Drake's Station")).toHaveLength(2);
+    expect(await screen.findAllByText("Drake's Station")).toHaveLength(1);
     expect(mockGetStationTracks).toHaveBeenCalledWith("artist-1");
 
     expect(screen.getByTestId("playlist-hero")).toBeInTheDocument();
     expect(
-      screen.getByTestId("playlist-hero-station-rings"),
+      screen.getByTestId("playlist-cover-station-rings"),
     ).toBeInTheDocument();
     expect(screen.getAllByAltText("Based on Drake")).toHaveLength(3);
-    expect(screen.getByTestId("playlist-action-bar")).toBeInTheDocument();
+    expect(screen.getByTestId("station-slug-actions")).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("button-play-pause-hero-playlist"));
 
@@ -162,12 +162,31 @@ describe("StationSlugPage", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findAllByText("Drake's Station")).toHaveLength(2);
+    expect(await screen.findAllByText("Drake's Station")).toHaveLength(1);
     expect(mockGetStationTracks).toHaveBeenNthCalledWith(1, "artist-1");
     expect(mockGetStationTracks).toHaveBeenNthCalledWith(
       2,
       "aaaa1111-2222-4333-8444-555566667777",
     );
+  });
+
+  it("shows the station not found error when both lookups fail", async () => {
+    mockGetStationTracks
+      .mockRejectedValueOnce(new Error("nope"))
+      .mockRejectedValueOnce(new Error("still nope"));
+
+    render(
+      <MemoryRouter initialEntries={["/discover/stations/artist-1:aaaa1111-2222-4333-8444-555566667777"]}>
+        <Routes>
+          <Route
+            path="/discover/stations/:stationSlug"
+            element={<StationSlugPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Station not found.")).toBeInTheDocument();
   });
 });
 
