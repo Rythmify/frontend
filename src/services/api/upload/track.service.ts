@@ -24,7 +24,6 @@ export interface Track {
   stream_url: string | null;
   preview_url: string | null;
   waveform_url: string | null;
-  cover_image: string | null;
   created_at: string;
   updated_at: string | null;
   artists: string | null;

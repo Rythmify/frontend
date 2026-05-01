@@ -174,6 +174,6 @@ export const useHistoryStore = create<HistoryStore>()(
           .entries.filter((e) => e.type === "station")
           .map((e) => (e as { type: "station"; item: Station; playedAt: string }).item),
     }),
-    { name: "rythmify-history", version: 1 },
+    { name: "rythmify-history" },
   ),
 );

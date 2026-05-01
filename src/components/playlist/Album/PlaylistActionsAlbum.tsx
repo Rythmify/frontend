@@ -20,21 +20,20 @@ interface PlaylistActionsProps {
   playlist: Playlist & { tracks?: PlaylistTrackItem[] };
   onAddToNextUp?: () => void;
   onPlaylistUpdated?: (updated: Playlist) => void;
-  engagementKind?: "album" | "genre" | "playlist";
+  engagementKind?: "album" | "genre";
   backendPlaylistExists?: boolean;
 }
 
 export default function PlaylistActionsAlbum({
   playlist,
   onAddToNextUp,
+  onPlaylistUpdated,
   engagementKind = "album",
   backendPlaylistExists = false,
 }: PlaylistActionsProps) {
   const {
-    isPlaylistLiked,
     isAlbumLiked,
     isGenreLiked,
-    togglePlaylist,
     toggleAlbum,
     toggleGenre,
   } = useLikesStore();
@@ -44,9 +43,7 @@ export default function PlaylistActionsAlbum({
   const liked =
     engagementKind === "genre"
       ? isGenreLiked(playlist.playlist_id)
-      : engagementKind === "playlist"
-        ? isPlaylistLiked(playlist.playlist_id)
-        : isAlbumLiked(playlist.playlist_id);
+      : isAlbumLiked(playlist.playlist_id);
   const isOwner = user?.id === playlist.owner_user_id;
 
   const [reposted, setReposted] = useState(false);
@@ -139,17 +136,6 @@ export default function PlaylistActionsAlbum({
           id: playlist.playlist_id,
           genre: playlist.name,
           cover_image: playlist.cover_image ?? null,
-        });
-        return;
-      }
-
-      if (engagementKind === "playlist") {
-        await togglePlaylist({
-          id: playlist.playlist_id,
-          title: playlist.name,
-          owner: playlist.owner_user_id,
-          coverUrl: playlist.cover_image || null,
-          isPrivate: !playlist.is_public,
         });
         return;
       }

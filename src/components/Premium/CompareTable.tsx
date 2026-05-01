@@ -30,7 +30,6 @@ const sections: FeatureSection[] = [
     rows: [
       { name: "Unlimited uploads", free: txt("3 tracks"), artistPro: UNL },
       { name: "Offline listening downloads", free: NA, artistPro: AVL },
-      { name: "Ad-free listening", free: NA, artistPro: AVL },
     ],
   },
 ];

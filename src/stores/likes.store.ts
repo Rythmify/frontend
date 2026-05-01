@@ -1,20 +1,13 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import type { Track } from "@/types/track";
 import type { Station } from "@/types/station";
 import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
 import type { HomeData, DiscoveryAlbum } from "@/services/api/discover.service";
-import { useAuthStore } from "@/stores/auth.store";
-import {
-  createUserScopedStorage,
-  setUserScopedStorageOverride,
-} from "@/stores/userScopedStorage";
 import {
   likeTrack,
   unlikeTrack,
-  likeTrackRadio,
-  unlikeTrackRadio,
   likePlaylist,
   unlikePlaylist,
   likeAlbum,
@@ -47,15 +40,6 @@ export interface LikedGenre {
   cover_image: string | null;
 }
 
-export interface LikedRadioTrack {
-  seedTrackId: string;
-  playlistId: string;
-  title: string;
-  description: string;
-  coverImage: string | null;
-  track: Track;
-}
-
 interface LikesStore {
   likedTracks: Track[];
   likedStations: Station[];
@@ -63,7 +47,6 @@ interface LikesStore {
   likedAlbums: Playlist[];
   likedMixes: LikedMix[];
   likedGenres: LikedGenre[];
-  likedRadioTracks: LikedRadioTrack[];
   repostedTrackIds: string[];
   repostedPlaylistIds: string[];
   itemStats: Record<string, { playCount?: number; likeCount?: number; repostCount?: number; isReposted?: boolean }>;
@@ -79,11 +62,8 @@ interface LikesStore {
   toggleAlbum: (album: Playlist) => Promise<void>;
   toggleMix: (mix: LikedMix) => Promise<void>;
   toggleGenre: (genre: LikedGenre) => Promise<void>;
-  toggleRadioTrack: (track: Track) => Promise<void>;
 
   isTrackLiked: (id: number | string) => boolean;
-  isRadioTrackLiked: (id: number | string) => boolean;
-  getRadioPlaylistId: (id: number | string) => string | undefined;
   isTrackReposted: (id: number | string) => boolean;
   isPlaylistReposted: (id: string) => boolean;
   getItemStats: (id: number | string) => { playCount?: number; likeCount?: number; repostCount?: number; isReposted?: boolean };
@@ -99,26 +79,18 @@ interface LikesStore {
   hydrateFromApi: () => Promise<void>;
 }
 
-const createEmptyLikesState = () => ({
-  likedTracks: [] as Track[],
-  likedStations: [] as Station[],
-  likedPlaylists: [] as PlaylistCardData[],
-  likedAlbums: [] as Playlist[],
-  likedMixes: [] as LikedMix[],
-  likedGenres: [] as LikedGenre[],
-  likedRadioTracks: [] as LikedRadioTrack[],
-  repostedTrackIds: [] as string[],
-  repostedPlaylistIds: [] as string[],
-  itemStats: {} as Record<
-    string,
-    { playCount?: number; likeCount?: number; repostCount?: number; isReposted?: boolean }
-  >,
-});
-
 export const useLikesStore = create<LikesStore>()(
   persist(
     (set, get) => ({
-      ...createEmptyLikesState(),
+      likedTracks: [],
+      likedStations: [],
+      likedPlaylists: [],
+      likedAlbums: [],
+      likedMixes: [],
+      likedGenres: [],
+      repostedTrackIds: [],
+      repostedPlaylistIds: [],
+      itemStats: {},
 
       toggleTrack: (track) => {
         const isLiked = get().likedTracks.some(
@@ -356,71 +328,6 @@ export const useLikesStore = create<LikesStore>()(
         });
       },
 
-      toggleRadioTrack: async (track) => {
-        const seedTrackId = String(track.id);
-        const existing = get().likedRadioTracks.find(
-          (item) => item.seedTrackId === seedTrackId,
-        );
-        const isLiked = !!existing;
-
-        set((s) => ({
-          likedRadioTracks: isLiked
-            ? s.likedRadioTracks.filter((item) => item.seedTrackId !== seedTrackId)
-            : [
-                {
-                  seedTrackId,
-                  playlistId: seedTrackId,
-                  title: `${track.title} Radio`,
-                  description: `Tracks inspired by ${track.title}`,
-                  coverImage: track.coverUrl ?? null,
-                  track,
-                },
-                ...s.likedRadioTracks,
-              ],
-        }));
-
-        try {
-          if (isLiked) {
-            await unlikeTrackRadio(track.id);
-            return;
-          }
-
-          const response = await likeTrackRadio(track.id);
-          const saved = response.data;
-          set((s) => ({
-            likedRadioTracks: s.likedRadioTracks.map((item) =>
-              item.seedTrackId === seedTrackId
-                ? {
-                    ...item,
-                    playlistId: saved.playlist_id,
-                    title: saved.title,
-                    description: saved.description,
-                    coverImage: saved.cover_image ?? item.coverImage,
-                  }
-                : item,
-            ),
-          }));
-        } catch (err) {
-          set((s) => ({
-            likedRadioTracks: isLiked
-              ? [
-                  {
-                    seedTrackId,
-                    playlistId: existing?.playlistId ?? seedTrackId,
-                    title: existing?.title ?? `${track.title} Radio`,
-                    description:
-                      existing?.description ?? `Tracks inspired by ${track.title}`,
-                    coverImage: existing?.coverImage ?? track.coverUrl ?? null,
-                    track: existing?.track ?? track,
-                  },
-                  ...s.likedRadioTracks,
-                ]
-              : s.likedRadioTracks.filter((item) => item.seedTrackId !== seedTrackId),
-          }));
-          throw err;
-        }
-      },
-
       toggleAlbum: (album) => {
         const isLiked = get().likedAlbums.some(
           (a) => a.playlist_id === album.playlist_id,
@@ -450,11 +357,6 @@ export const useLikesStore = create<LikesStore>()(
 
       isTrackLiked: (id) =>
         get().likedTracks.some((t) => String(t.id) === String(id)),
-      isRadioTrackLiked: (id) =>
-        get().likedRadioTracks.some((item) => item.seedTrackId === String(id)),
-      getRadioPlaylistId: (id) =>
-        get().likedRadioTracks.find((item) => item.seedTrackId === String(id))
-          ?.playlistId,
       isTrackReposted: (id) =>
         get().repostedTrackIds.includes(String(id)) || !!get().itemStats[String(id)]?.isReposted,
       isPlaylistReposted: (id) =>
@@ -642,42 +544,6 @@ export const useLikesStore = create<LikesStore>()(
         }
       },
     }),
-    {
-      name: "rythmify-likes", version: 1,
-      storage: createJSONStorage(() => createUserScopedStorage("rythmify-likes")),
-      partialize: (state) => ({
-        likedTracks: state.likedTracks,
-        likedStations: state.likedStations,
-        likedPlaylists: state.likedPlaylists,
-        likedAlbums: state.likedAlbums,
-        likedMixes: state.likedMixes,
-        likedGenres: state.likedGenres,
-        likedRadioTracks: state.likedRadioTracks,
-        repostedTrackIds: state.repostedTrackIds,
-        repostedPlaylistIds: state.repostedPlaylistIds,
-        itemStats: state.itemStats,
-      }),
-    },
+    { name: "rythmify-likes" },
   ),
 );
-
-let likesAuthSyncInitialized = false;
-
-function initLikesAuthSync() {
-  if (likesAuthSyncInitialized) return;
-  likesAuthSyncInitialized = true;
-
-  useAuthStore.subscribe((state, prev) => {
-    const nextScope = state.user?.id || state.user?.username || "guest";
-    const prevScope = prev.user?.id || prev.user?.username || "guest";
-
-    if (nextScope === prevScope) return;
-
-    setUserScopedStorageOverride(`transient:${nextScope}`);
-    useLikesStore.setState(createEmptyLikesState());
-    setUserScopedStorageOverride(nextScope);
-    void useLikesStore.persist.rehydrate();
-  });
-}
-
-initLikesAuthSync();

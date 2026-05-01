@@ -4,7 +4,7 @@ import { searchTracks } from "@/services/api/search/Searchapi";
 import TrackCard from "@/components/track/TrackCard";
 import { mapTrack } from "@/services/api/search/searchMappers";
 import type { Track } from "@/types/track";
-import { useSearchFilters } from "@/pages/search/SearchPage";
+
 const PAGE_SIZE = 10;
 
 export default function SoundsPage() {
@@ -24,7 +24,6 @@ export default function SoundsPage() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const hasMoreRef  = useRef(false);
   const loadingRef  = useRef(false);
-  const { setFilters } = useSearchFilters();
 
   const fetchPage = useCallback(
     async (pageOffset: number, replace: boolean) => {
@@ -49,7 +48,6 @@ export default function SoundsPage() {
         setTracks((prev) => (replace ? mapped : [...prev, ...mapped]));
         setTotal(res.pagination.total);
         setOffset(pageOffset);
-        setFilters(res.filters);
         hasMoreRef.current = pageOffset + PAGE_SIZE < res.pagination.total;
       } catch (err: any) {
         if (err?.name === "CanceledError" || err?.name === "AbortError") return;
@@ -123,10 +121,6 @@ export default function SoundsPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-  return () => setFilters(null);
-}, []);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

@@ -8,7 +8,11 @@ import Spinner from "@/components/UI/Spinner";
 import PremiumPromoModal from "@/components/Premium/PremiumPromoModal";
 import { usePromoModal } from "@/hooks/usePromoModal";
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
+const ArtistStudioLayout = () => (
+  <div className="min-h-screen flex">
+    <aside>
+      {/*Shahd--implement left sidebar here */}
+    </aside>
 
 const TABS = [
   { label: "Rythmify Tracks", to: "/artists", end: true },
@@ -360,10 +364,8 @@ const ArtistStudioLayout = () => {
       <main className="flex-1 pb-14 container px-4 md:px-8 lg:px-12 xl:px-20">
         <Outlet />
       </main>
-
-      <StickyPlayer />
     </div>
-  );
-};
+  </div>
+);
 
 export default ArtistStudioLayout;

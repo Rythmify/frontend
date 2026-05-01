@@ -134,6 +134,9 @@ function CurrentPlans({
             <p className="text-xs text-white">
               Payment method · {subscription.paymentMethod}
             </p>
+            <a className="cursor-pointer text-xs text-[var(--color-text)] hover:text-[var(--color-text-hover)] transition-colors self-start">
+              Change your credit card or payment details
+            </a>
           </div>
         </div>
       </div>
@@ -159,6 +162,16 @@ function CurrentPlans({
             Try Premium
           </Link>
         </div>
+      </div>
+
+      {/* Student banner */}
+      <div className="rounded-[var(--radius-md)] bg-[var(--color-input-bg)] px-5 py-4 flex items-center justify-center gap-2">
+        <p className="text-sm text-white">
+          Are you a student?{" "}
+          <a className="cursor-pointer text-[var(--color-text-link)] hover:text-[var(--color-text-link-hover)] transition-colors font-semibold">
+            Get Premium for 50% off
+          </a>
+        </p>
       </div>
     </div>
   );

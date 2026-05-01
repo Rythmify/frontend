@@ -141,7 +141,6 @@ const defaultLikes = {
   likedStations: [],
   likedPlaylists: [],
   likedAlbums: [],
-  likedRadioTracks: [],
 };
 
 const defaultHistory = { entries: [] };

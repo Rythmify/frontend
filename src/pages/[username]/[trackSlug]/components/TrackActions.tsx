@@ -19,7 +19,6 @@ import { usePlayerStore } from "../../../../stores/player.store";
 import { useAuthStore } from "../../../../stores/auth.store";
 import { useLikesStore } from "../../../../stores/likes.store";
 import { toast } from "sonner";
-import { useNavigate, useParams } from "react-router-dom";
 
 interface TrackActionsProps {
   track: Track;
@@ -35,8 +34,6 @@ export default function TrackActions({
   onAddToNextUp,
   onComment,
 }: TrackActionsProps) {
-  const navigate = useNavigate();
-  const { username } = useParams<{ username: string }>();
   const { user } = useAuthStore();
   const currentUserAvatar = user?.avatar || "https://picsum.photos/seed/rythmify/100/100";
   
@@ -246,21 +243,11 @@ export default function TrackActions({
                 <IoPlaySharp className="text-[14px]" />
                 <span>{formatCount(playCount)}</span>
               </div>
-              <StatWithTooltip 
-                data-test="stat-like-count" 
-                tooltip={`${formatExact(likeCount)} likes`}
-                onClick={() => navigate(`/${username || track.artistUsername}/${track.trackSlug || track.id}/likes`)}
-                clickable
-              >
+              <StatWithTooltip data-test="stat-like-count" tooltip={`${formatExact(likeCount)} likes`}>
                 <FaHeart className="text-[12px]" />
                 <span>{formatCount(likeCount)}</span>
               </StatWithTooltip>
-              <StatWithTooltip 
-                data-test="stat-repost-count" 
-                tooltip={`${formatExact(repostCount)} reposts`}
-                onClick={() => navigate(`/${username || track.artistUsername}/${track.trackSlug || track.id}/reposts`)}
-                clickable
-              >
+              <StatWithTooltip data-test="stat-repost-count" tooltip={`${formatExact(repostCount)} reposts`}>
                 <AiOutlineRetweet className="text-[16px]" />
                 <span>{formatCount(repostCount)}</span>
               </StatWithTooltip>
@@ -290,17 +277,13 @@ export default function TrackActions({
 }
 
 // Stat Tooltip 
-function StatWithTooltip({ children, tooltip, "data-test": dataTest, onClick, clickable }: {
-  children: React.ReactNode; tooltip: string; "data-test"?: string; onClick?: () => void; clickable?: boolean;
+function StatWithTooltip({ children, tooltip, "data-test": dataTest }: {
+  children: React.ReactNode; tooltip: string; "data-test"?: string;
 }) {
   return (
     <Tooltip.Root>
       <Tooltip.Trigger asChild>
-        <span 
-          data-test={dataTest} 
-          onClick={onClick}
-          className={`flex items-center gap-1.5 select-none transition-colors ${clickable ? "cursor-pointer hover:text-white" : "cursor-default"}`}
-        >
+        <span data-test={dataTest} className="flex items-center gap-1.5 cursor-default select-none">
           {children}
         </span>
       </Tooltip.Trigger>

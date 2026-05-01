@@ -14,12 +14,11 @@ const MoreOfWhatYouLike = ({ tracks }: Props) => {
   return (
     <div data-test="section-more-of-what-you-like">
       <HorizontalCarousel title="More of what you like">
-      {items.map((track) => (
+        {items.map((track) => (
           <TrackCard
             key={track.id}
             track={track}
             addToPlaylistTracks={items}
-            radioLikeMode
           />
         ))}
       </HorizontalCarousel>

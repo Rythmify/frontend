@@ -3,6 +3,7 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SetsPage from "@/pages/you/sets/SetsPage";
+import AlbumsPage from "@/pages/you/albums/AlbumsPage";
 import {
   getMyPlaylists,
   getLikedPlaylists,
@@ -128,4 +129,31 @@ describe("SetsPage", () => {
     );
   });
 
+  it("renders 'Albums' via AlbumsPage correctly", async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue(
+      mockRes([{ name: "My Album", playlist_id: "a1", is_album_view: true }]) as any,
+    );
+    vi.mocked(getLikedPlaylists).mockResolvedValue(mockRes([]) as any);
+    render(
+      <MemoryRouter>
+        <AlbumsPage />
+      </MemoryRouter>,
+    );
+    await waitFor(() =>
+      expect(screen.getByText("My Album")).toBeInTheDocument(),
+    );
+  });
+
+  it("shows empty message for albums when none exist", async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue(mockRes([]) as any);
+    vi.mocked(getLikedPlaylists).mockResolvedValue(mockRes([]) as any);
+    render(
+      <MemoryRouter>
+        <AlbumsPage />
+      </MemoryRouter>,
+    );
+    await waitFor(() =>
+      expect(screen.getByText(/haven't liked any albums/)).toBeInTheDocument(),
+    );
+  });
 });

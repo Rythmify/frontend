@@ -56,9 +56,6 @@ function AlbumSlugPage() {
     currentTrack,
   } = usePlayerStore();
   const { user } = useAuthStore();
-  const totalTrackViews =
-    playlist?.tracks.reduce((sum, track) => sum + (track.play_count ?? 0), 0) ??
-    0;
 
   useEffect(() => {
     let cancelled = false;
@@ -267,7 +264,7 @@ function AlbumSlugPage() {
             ) : (
               <PlaylistActionsAlbum
                 playlist={playlist}
-                engagementKind="playlist"
+                engagementKind="album"
                 backendPlaylistExists={backendPlaylistExists}
                 onAddToNextUp={handleAddToNextUp}
                 onPlaylistUpdated={(updated: Partial<PlaylistDetails>) =>
@@ -279,7 +276,7 @@ function AlbumSlugPage() {
             <div data-test="album-slug-content" className="flex flex-1 gap-6 mt-8">
               <OwnerInfo
                 ownerUserId={playlist.owner_user_id}
-                trackNum={totalTrackViews}
+                trackNum={playlist.tracks.length}
                 followers={albumOwner?.followers_count ?? 0}
                 username={
                   albumOwner?.username ?? username ?? playlist.owner_user_id

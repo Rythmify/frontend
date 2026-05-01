@@ -31,10 +31,7 @@ vi.mock("@/stores/player.store", () => ({
 
 const mockLikesStore = {
   isTrackLiked: vi.fn().mockReturnValue(false),
-  isRadioTrackLiked: vi.fn().mockReturnValue(false),
-  getRadioPlaylistId: vi.fn().mockReturnValue(undefined),
   toggleTrack: vi.fn(),
-  toggleRadioTrack: vi.fn(),
 };
 
 vi.mock("@/stores/likes.store", () => ({
@@ -149,13 +146,6 @@ describe("TrackCard", () => {
     fireEvent.click(screen.getByTestId("button-like"));
     
     expect(mockLikesStore.toggleTrack).toHaveBeenCalledWith(mockTrack);
-  });
-
-  it("toggles radio likes when radioLikeMode is enabled", () => {
-    render(<TrackCard track={mockTrack} radioLikeMode />);
-    fireEvent.click(screen.getByTestId("button-like"));
-
-    expect(mockLikesStore.toggleRadioTrack).toHaveBeenCalledWith(mockTrack);
   });
 
   it("opens add-to-playlist modal", async () => {
