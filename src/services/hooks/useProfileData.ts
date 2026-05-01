@@ -6,6 +6,7 @@ import {
   getMyWebProfiles,
   getUserById,
   getUserByUsername,
+  getUserWebProfiles,
   getFollowers,
   getFollowing,
   getFollowStatus,
@@ -93,6 +94,15 @@ const readPublicProfilePremiumFlag = (profile: PublicUser | null): boolean => {
   }
 
   return rawProfile.role === "artist";
+};
+
+const getPublicProfileLocation = (profile: PublicUser | null): string => {
+  if (!profile) return "";
+
+  const explicitLocation = profile.location?.trim();
+  if (explicitLocation) return explicitLocation;
+
+  return [profile.city?.trim(), profile.country?.trim()].filter(Boolean).join(", ");
 };
 
 const mapBackendWebProfilesToLinks = (
@@ -268,25 +278,22 @@ export function useProfileData(
 
     const load = async () => {
       try {
-        // Fire everything in parallel — profile, tracks, followers, following+counts
-        const [profile, ownedTracks, followersRes, followingResult, blockedRes] =
+        // Fire everything in parallel — profile, web links, tracks, followers, following+counts
+        const [profile, webProfilesResult, ownedTracks, followersRes, followingResult, blockedRes] =
           await Promise.all([
             getMyProfile(),
+            getMyWebProfiles({
+              limit: 100,
+              offset: 0,
+            })
+              .then((value) => ({ status: "fulfilled" as const, value }))
+              .catch((reason) => ({ status: "rejected" as const, reason })),
             getMyTracks(1, 100),
             getFollowers(currentUser.id, { limit: 100 }),
             loadFollowingWithCounts(currentUser.id),
             getBlockedUsers({ limit: 100 }),
           ]);
 
-        if (cancelled) return;
-
-        setProfileData(profile);
-        const webProfilesResult = await getMyWebProfiles({
-          limit: 100,
-          offset: 0,
-        })
-          .then((value) => ({ status: "fulfilled" as const, value }))
-          .catch((reason) => ({ status: "rejected" as const, reason }));
         if (cancelled) return;
 
         const blockedIds = new Set(blockedRes.items.map((u) => u.id));
@@ -308,6 +315,7 @@ export function useProfileData(
                 latestUser.links ?? currentUser.links ?? [],
               )
             : latestUser.links ?? currentUser.links ?? [];
+        setProfileData({ ...profile, links: mergedLinks });
         setFollowers(filteredFollowers);
         setFollowing(filteredFollowing);
 
@@ -385,18 +393,24 @@ export function useProfileData(
         const profile = await getUserByUsername(username);
         if (cancelled) return;
 
-        setProfileData(profile);
         const userId = profile.id;
 
-        // 2. Fetch tracks, followers, follow-status in parallel.
+        // 2. Fetch web links, tracks, followers, follow-status in parallel.
         //    followingWithCounts is slow (N+1 calls) so we fire it separately.
-        const [userTracks, followersRes, followStatus] =
+        const [webProfilesResult, userTracks, followersRes, followStatus] =
           await Promise.allSettled([
+            getUserWebProfiles(userId, { limit: 100, offset: 0 }),
             getUserTracks(userId, 1, 100),
             getFollowers(userId, { limit: 100 }),
             getFollowStatus(userId),
           ]);
         if (cancelled) return;
+
+        const links =
+          webProfilesResult.status === "fulfilled"
+            ? mapBackendWebProfilesToLinks(webProfilesResult.value, profile.links ?? [])
+            : profile.links ?? [];
+        setProfileData({ ...profile, links });
 
         // Set stats from the profile object first (always available),
         // then overwrite followers count from the actual list (more accurate).
@@ -546,7 +560,7 @@ export function useProfileData(
         bio: profileData?.bio ?? "",
         avatar: profileData?.profile_picture ?? undefined,
         coverUrl: profileData?.cover_photo ?? undefined,
-        location: (profileData as PublicUser | null)?.location ?? "",
+        location: getPublicProfileLocation(profileData as PublicUser | null),
         role: profileData?.role ?? "listener",
         isPro: readPublicProfilePremiumFlag(profileData as PublicUser | null),
         links: (profileData as PublicUser & { links?: ProfileLink[] } | null)
