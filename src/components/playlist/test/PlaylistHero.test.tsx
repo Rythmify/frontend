@@ -1,164 +1,176 @@
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PlaylistHero from "../PlaylistHero";
+import { getGenres } from "@/services/api/upload/track.service";
 
-vi.mock("@/services/mocks/Track.service", () => ({
-  getTrackComments: vi.fn().mockResolvedValue([
-    { id: 1, avatarUrl: "https://picsum.photos/seed/comment-a/40/40", timestamp: 18 },
-    { id: 2, avatarUrl: "https://picsum.photos/seed/comment-b/40/40", timestamp: 64 },
-  ]),
+const mockPlaylistCover = vi.fn();
+
+vi.mock("@/services/api/upload/track.service", () => ({
+  getGenres: vi.fn(),
 }));
 
 vi.mock("@/stores/auth.store", () => ({
-  useAuthStore: () => ({ user: { displayName: "Mariam", username: "mariam" } }),
+  useAuthStore: () => ({ user: { displayName: "Mariam", username: "mariam", id: "u-1" } }),
 }));
 
-vi.mock(
-  "@/pages/[username]/[trackSlug]/components/TrackWaveform",
-  () => ({
-    default: () => <div data-test="mock-playlist-waveform" />,
-  }),
-);
+vi.mock("../PlaylistCover", () => ({
+  default: (props: any) => {
+    mockPlaylistCover(props);
+    return <div data-test="mock-playlist-cover">{props.playlistName}</div>;
+  },
+}));
 
-const mockPlaylist = {
-  playlist_id: "8d5a8f6c-7b4a-4c7a-9c25-9a9f1e3a12aa",
+vi.mock("../PlaylistStatsWaveform", () => ({
+  default: () => <div data-test="mock-playlist-waveform" />,
+}));
+
+const playlist = {
+  playlist_id: "pl-1",
   name: "Electronic Mix",
-  is_public: true,
+  is_public: false,
   track_count: 12,
-  owner_user_id: "Mariam",
+  owner_user_id: "u-2",
   cover_image: "cover.jpg",
-  tracks: [
-    { track_id: "11111111-1111-1111-1111-111111111111", duration: 225 },
-    { track_id: "22222222-2222-2222-2222-222222222222", duration: 200 },
-    { track_id: "33333333-3333-3333-3333-333333333333", duration: 194 },
-  ],
+  created_at: "2026-01-01T00:00:00Z",
+  release_date: "2026-01-01T00:00:00Z",
+  subtype: "playlist",
+  genre_id: "genre-electronic",
+  tracks: [{ title: "Seed Track" }],
 } as any;
 
 describe("PlaylistHero", () => {
-  it("renders playlist name and track count", () => {
-    render(
-      <MemoryRouter>
-        <PlaylistHero playlist={mockPlaylist} />
-      </MemoryRouter>,
-    );
-    expect(screen.getByText("Electronic Mix")).toBeInTheDocument();
-    expect(screen.getByText("12")).toBeInTheDocument();
-    expect(screen.getByText("10:19")).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("mock-playlist-waveform"),
-    ).not.toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("calls onPlayPause when the hero play button is clicked", () => {
-    const onPlayPause = vi.fn();
+  it("renders the playlist title, owner label, and private badge", async () => {
+    vi.mocked(getGenres).mockResolvedValue([{ id: "genre-electronic", name: "Electronic" }] as any);
+
     render(
       <MemoryRouter>
-        <PlaylistHero playlist={mockPlaylist} onPlayPause={onPlayPause} />
+        <PlaylistHero playlist={playlist} />
       </MemoryRouter>,
     );
-    fireEvent.click(screen.getByTestId("button-play-pause-hero-playlist"));
-    expect(onPlayPause).toHaveBeenCalled();
-  });
 
-  it("shows Private badge only when playlist is not public", () => {
-    const { rerender } = render(
-      <MemoryRouter>
-        <PlaylistHero playlist={{ ...mockPlaylist, is_public: true }} />
-      </MemoryRouter>,
-    );
-    expect(screen.queryByText(/Private/)).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Electronic Mix" })).toBeInTheDocument();
+    expect(screen.getByText("u-2")).toBeInTheDocument();
+    expect(screen.getByTestId("mock-playlist-cover")).toHaveTextContent("Electronic Mix");
 
-    rerender(
-      <MemoryRouter>
-        <PlaylistHero playlist={{ ...mockPlaylist, is_public: false }} />
-      </MemoryRouter>,
-    );
+    await waitFor(() => expect(screen.getByText("# Electronic")).toBeInTheDocument());
     expect(screen.getByText(/Private/)).toBeInTheDocument();
   });
 
-  it("renders the replace image button", () => {
+  it("uses genre fallback when getGenres fails", async () => {
+    vi.mocked(getGenres).mockRejectedValue(new Error("boom"));
+
     render(
       <MemoryRouter>
-        <PlaylistHero playlist={mockPlaylist} />
+        <PlaylistHero playlist={playlist} />
       </MemoryRouter>,
     );
-    expect(
-      screen.getByTestId("button-upload-cover-hero-playlist"),
-    ).toBeInTheDocument();
+
+    await waitFor(() => expect(screen.getByText("# genre-electronic")).toBeInTheDocument());
   });
 
-  it("hides the replace image button when showUploadButton is false", () => {
-    render(
-      <MemoryRouter>
-        <PlaylistHero playlist={mockPlaylist} showUploadButton={false} />
-      </MemoryRouter>,
-    );
-    expect(
-      screen.queryByTestId("button-upload-cover-hero-playlist"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("triggers file upload when replace image is clicked", () => {
-    render(
-      <MemoryRouter>
-        <PlaylistHero playlist={mockPlaylist} />
-      </MemoryRouter>,
-    );
-    const input = document.querySelector(
-      "input[type='file']",
-    ) as HTMLInputElement;
-    const spy = vi.spyOn(input, "click");
-    fireEvent.click(screen.getByTestId("button-upload-cover-hero-playlist"));
-    expect(spy).toHaveBeenCalled();
-  });
-
-  it("calls onImageUpload when a file is chosen", () => {
-    const onUpload = vi.fn();
-    render(
-      <MemoryRouter>
-        <PlaylistHero playlist={mockPlaylist} onImageUpload={onUpload} />
-      </MemoryRouter>,
-    );
-    const input = document.querySelector(
-      "input[type='file']",
-    ) as HTMLInputElement;
-    const file = new File(["foo"], "photo.png", { type: "image/png" });
-    fireEvent.change(input, { target: { files: [file] } });
-    expect(onUpload).toHaveBeenCalledWith(file);
-  });
-
-  it("shows comment avatars when the playlist is playing an active track", async () => {
+  it("renders the more-of-like and station title variants", () => {
     render(
       <MemoryRouter>
         <PlaylistHero
-          playlist={mockPlaylist}
-          isPlaying
-          activeTrackId="11111111-1111-1111-1111-111111111111"
+          playlist={playlist}
+          moreOfLike
+          moreOfLikeTitle="Seed Title"
+          ownerUsername="artist-x"
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("Related Tracks: Seed Title")).toBeInTheDocument();
+    expect(screen.getByText("Made for Mariam")).toBeInTheDocument();
+
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={playlist}
+          isStation
+          ownerUsername="artist-x"
+          showUploadButton={false}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("artist-x's Station")).toBeInTheDocument();
+    expect(screen.getByText("Artist Station")).toBeInTheDocument();
+  });
+
+  it("uses the explicit genre label and hides the upload button prop", async () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={{ ...playlist, is_public: true, genre_id: null } as any}
+          genreLabel="House"
+          showUploadButton={false}
+          ownerUsername="artist-x"
         />
       </MemoryRouter>,
     );
 
-    await waitFor(() =>
-      expect(screen.getByTestId("playlist-comment-avatars")).toBeInTheDocument(),
+    await waitFor(() => expect(screen.getByText("# House")).toBeInTheDocument());
+    expect(mockPlaylistCover).toHaveBeenCalledWith(
+      expect.objectContaining({ showUploadButton: false, playlistId: "pl-1" }),
     );
-    expect(screen.getAllByAltText("commenter")).toHaveLength(2);
   });
 
-  it("shows the waveform and hides the circular stats when playing", () => {
+  it("falls back to Album when an album has no genre id", async () => {
     render(
       <MemoryRouter>
         <PlaylistHero
-          playlist={mockPlaylist}
-          isPlaying
-          activeTrackId="11111111-1111-1111-1111-111111111111"
+          playlist={{ ...playlist, genre_id: null, subtype: "album" } as any}
         />
       </MemoryRouter>,
     );
 
+    await waitFor(() => expect(screen.getByText("# Album")).toBeInTheDocument());
+  });
+
+  it('formats very recent dates as "Just now"', () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={{
+            ...playlist,
+            created_at: new Date().toISOString(),
+            release_date: null,
+          } as any}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Just now")).toBeInTheDocument();
+  });
+
+  it("uses the related tracks fallback title when no more-of-like title is given", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistHero
+          playlist={{ ...playlist, tracks: [] } as any}
+          moreOfLike
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Related Tracks: Related Tracks")).toBeInTheDocument();
+  });
+
+  it("renders the play/pause button and forwards clicks", () => {
+    const onPlayPause = vi.fn();
+    render(
+      <MemoryRouter>
+        <PlaylistHero playlist={playlist} onPlayPause={onPlayPause} isPlaying />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByTestId("button-play-pause-hero-playlist"));
+    expect(onPlayPause).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("mock-playlist-waveform")).toBeInTheDocument();
-    expect(screen.queryByText("Tracks")).not.toBeInTheDocument();
   });
-
 });

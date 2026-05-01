@@ -11,8 +11,9 @@ const CheckBox = ({ label, checked, onChange }: CheckboxProps) => {
   const [hovering, setHovering] = useState(false)
 
   return (
-    <label className="flex items-start gap-3 cursor-pointer group">
+    <label data-test={`checkbox-${label.toLowerCase().replace(/\s+/g, "-")}`} className="flex items-start gap-3 cursor-pointer group">
       <div
+        data-test="checkbox-toggle"
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
         onClick={() => onChange(!checked)}
@@ -41,7 +42,7 @@ const CheckBox = ({ label, checked, onChange }: CheckboxProps) => {
           </svg>
         )}
       </div>
-      <span className="text-sm font-bold leading-snug text-white">
+      <span data-test="checkbox-label" className="text-sm font-bold leading-snug text-white">
         {label}
       </span>
     </label>
