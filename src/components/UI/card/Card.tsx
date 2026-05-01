@@ -3,8 +3,6 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
-import { useAuthStore } from "@/stores/auth.store";
-import { useDownloadStore } from "@/stores/useDownload";
 import { getRelatedTracks } from "@/services/track.service";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import CardOverlay, {
@@ -111,47 +109,37 @@ const TrackCard = ({
   widthClassName,
   addToPlaylistTracks,
   contextQueue,
-  radioLikeMode = false,
-  radioPlaylistId,
+  radioLikeMode,
+  radioPlaylistId: _radioPlaylistId,
 }: TrackCardProps) => {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
-  const { user } = useAuthStore();
-  const { isDownloaded, toggleDownload } = useDownloadStore();
-  const {
-    isTrackLiked,
-    isRadioTrackLiked,
-    getRadioPlaylistId,
-    toggleTrack,
-    toggleRadioTrack,
-  } = useLikesStore();
+  const { isTrackLiked, toggleTrack, isRadioTrackLiked, toggleRadioTrack } = useLikesStore();
 
-  const savedRadioPlaylistId = radioPlaylistId ?? getRadioPlaylistId(track.id);
-  const liked = radioLikeMode ? isRadioTrackLiked(track.id) : isTrackLiked(track.id);
-  const downloaded = isDownloaded(track.id);
-  const isPro = user?.isPro ?? false;
-  
   const fetchTracksForModal = useCallback(async () => {
+    const previewTrack = {
+      id: String(track.id),
+      title: track.title,
+      artistName: track.artistName ?? "",
+      coverUrl: track.coverUrl ?? undefined,
+    };
+
     if (addToPlaylistTracks?.length) {
       const { tracks } = await getRelatedTracks(String(track.id));
-      return tracks.map((t) => ({
+      const related = tracks.map((t) => ({
         id: String(t.id),
         title: t.title,
         artistName: t.artistName ?? "",
         coverUrl: t.coverUrl ?? undefined,
       }));
+      return [previewTrack, ...related];
     }
-    return [
-      {
-        id: String(track.id),
-        title: track.title,
-        artistName: track.artistName,
-        coverUrl: track.coverUrl ?? undefined,
-      },
-    ];
+
+    return [previewTrack];
   }, [track.id, track.title, track.artistName, track.coverUrl, addToPlaylistTracks]);
 
+  const liked = radioLikeMode ? isRadioTrackLiked(track.id) : isTrackLiked(track.id);
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
@@ -161,9 +149,7 @@ const TrackCard = ({
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
-  const playlistPath = savedRadioPlaylistId
-    ? `/discover/personalised/${savedRadioPlaylistId}`
-    : `/discover/personalised/${playlistSlug}:${track.id}`;
+  const playlistPath = `/discover/personalised/${playlistSlug}:${track.id}`;
   // Handler for play button click (play/pause toggle)
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -198,24 +184,8 @@ const TrackCard = ({
           isLiked={liked}
           onLike={(e) => {
             e.stopPropagation();
-            if (radioLikeMode) {
-              void toggleRadioTrack(track);
-            } else {
-              void toggleTrack(track);
-            }
-          }}
-          downloadMenuItem={{
-            label: downloaded ? "Remove Download" : "Download",
-            iconNode: (
-              <i
-                className={`fa-solid ${
-                  downloaded ? "fa-check text-[#1D9E75]" : "fa-download"
-                } text-xs w-4`}
-              />
-            ),
-            onClick: () => {
-              toggleDownload(track, isPro);
-            },
+            if (radioLikeMode) toggleRadioTrack(track);
+            else toggleTrack(track);
           }}
           moreMenuItems={[
             {
