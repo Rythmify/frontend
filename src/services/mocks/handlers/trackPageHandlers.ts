@@ -175,6 +175,17 @@ const likedTracksByUser: Record<
   "nour-yehya": { items: mockTracksJson.slice(0, 1), total: 1 },
 };
 
+const repostedTracksByUser: Record<
+  string,
+  { items: typeof mockTracksJson; total: number }
+> = {
+  shahd: { items: mockTracksJson.slice(2, 5), total: 6 },
+  "lege-cy": { items: mockTracksJson.slice(0, 2), total: 4 },
+  ghaliaa: { items: mockTracksJson.slice(1, 4), total: 5 },
+  "hadeer-yehya": { items: mockTracksJson.slice(0, 3), total: 3 },
+  "nour-yehya": { items: mockTracksJson.slice(3, 5), total: 2 },
+};
+
 function toTrackSummary(track: (typeof mockTracksJson)[number]) {
   return {
     id: track.id,
@@ -192,6 +203,13 @@ function toTrackSummary(track: (typeof mockTracksJson)[number]) {
 
 function getLikedTracksForUser(userKey: string) {
   return likedTracksByUser[userKey.toLowerCase()] ?? {
+    items: [],
+    total: 0,
+  };
+}
+
+function getRepostedTracksForUser(userKey: string) {
+  return repostedTracksByUser[userKey.toLowerCase()] ?? {
     items: [],
     total: 0,
   };
@@ -250,6 +268,24 @@ export const trackPageHandlers = [
     return HttpResponse.json(mockTrackComments[params.id as string] ?? []);
   }),
 
+  http.get(`${BASE}/tracks/:id/likers`, () => {
+    return HttpResponse.json({
+      data: {
+        items: mockUsers.slice(0, 5),
+        meta: { limit: 5, offset: 0, total: 5 },
+      },
+    });
+  }),
+
+  http.get(`${BASE}/tracks/:id/reposters`, () => {
+    return HttpResponse.json({
+      data: {
+        items: mockUsers.slice(2, 4),
+        meta: { limit: 2, offset: 0, total: 2 },
+      },
+    });
+  }),
+
   http.post(`${BASE}/tracks/:id/comments`, async ({ request, params }) => {
     const body = (await request.json()) as { text: string; timestamp: number };
     return HttpResponse.json(
@@ -293,6 +329,25 @@ export const trackPageHandlers = [
       data: {
         items: liked.items.map(toTrackSummary),
         meta: { limit: liked.items.length, offset: 0, total: liked.total },
+      },
+    });
+  }),
+
+  http.get(`${BASE}/users/:userId/reposted-tracks`, ({ params }) => {
+    const userId = String(params.userId);
+    const user =
+      mockUsers.find((u) => String(u.id) === userId) ||
+      mockUsers.find((u) => u.username === userId);
+
+    if (!user) {
+      return HttpResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const reposted = getRepostedTracksForUser(user.username);
+    return HttpResponse.json({
+      data: {
+        items: reposted.items.map(toTrackSummary),
+        meta: { limit: reposted.items.length, offset: 0, total: reposted.total },
       },
     });
   }),

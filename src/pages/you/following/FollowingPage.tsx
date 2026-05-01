@@ -3,6 +3,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 import UserAvatar from "@/components/UI/UserAvatar";
+import NotFound from "@/pages/not-found/NotFound";
 import {
   getFollowing,
   getFollowStatus,
@@ -25,7 +26,8 @@ interface EnrichedUser {
 }
 
 async function enrich(u: UserSummary): Promise<EnrichedUser> {
-  const resolvedId = u.id || (u as UserSummary & { user_id?: string }).user_id || "";
+  const resolvedId =
+    u.id || (u as UserSummary & { user_id?: string }).user_id || "";
   if (!resolvedId) {
     console.warn("enrich: received item with no id", u);
     return {
@@ -50,7 +52,7 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
       followers: profile.followers_count ?? 0,
-      isVerified: profile.is_verified ?? u.is_verified,
+      isVerified: u.is_verified,
       isFollowing: followStatus.is_following,
       profilePath: `/${uname}`,
     };
@@ -82,6 +84,7 @@ export default function FollowingPage() {
     : profileUsername || "Profile";
   const profilePath = profileUsername ? `/${profileUsername}` : "/you";
   const profileAvatar = isOwner ? (currentUser?.avatar ?? "") : "";
+  const [profileNotFound, setProfileNotFound] = useState(false);
 
   const [rawFollowing, setRawFollowing] = useState<UserSummary[] | null>(null);
   const [following, setFollowing] = useState<EnrichedUser[]>([]);
@@ -93,6 +96,7 @@ export default function FollowingPage() {
     setLoaded(false);
     setRawFollowing(null);
     setFollowing([]);
+    setProfileNotFound(false);
 
     async function load() {
       try {
@@ -112,7 +116,10 @@ export default function FollowingPage() {
         if (!cancelled) setRawFollowing(res.items);
       } catch (err) {
         console.error("FollowingPage: failed to load", err);
-        if (!cancelled) setRawFollowing([]);
+        if (!cancelled) {
+          setProfileNotFound(true);
+          setRawFollowing([]);
+        }
       }
     }
 
@@ -146,6 +153,7 @@ export default function FollowingPage() {
   }, [rawFollowing]);
 
   if (!currentUser && isOwner) return null;
+  if (!isOwner && profileNotFound) return <NotFound />;
 
   const handleTabChange = (tab: string) => {
     const base = `/${profileUsername}`;
@@ -234,10 +242,7 @@ export default function FollowingPage() {
                 className="w-full cursor-pointer truncate px-1 text-center text-sm font-bold text-white"
                 onClick={() => navigate(u.profilePath)}
               >
-                {u.displayName || u.username}{" "}
-                {u.isVerified && (
-                  <i className="fa-solid fa-circle-check text-xs text-[#2196F3]" />
-                )}
+                {u.displayName || u.username}
               </span>
 
               <span
@@ -256,13 +261,13 @@ export default function FollowingPage() {
 
               <div className="flex h-8 items-center justify-center">
                 <div className="hidden group-hover:block">
-              <FollowButton
-                username={u.username}
-                userId={u.userId}
-                initialIsFollowing={u.isFollowing}
-                onFollowChange={(next) => {
-                  if (isOwner && !next) {
-                    setFollowing((prev) =>
+                  <FollowButton
+                    username={u.username}
+                    userId={u.userId}
+                    initialIsFollowing={u.isFollowing}
+                    onFollowChange={(next) => {
+                      if (isOwner && !next) {
+                        setFollowing((prev) =>
                           prev.filter((f) => f.userId !== u.userId),
                         );
                       }

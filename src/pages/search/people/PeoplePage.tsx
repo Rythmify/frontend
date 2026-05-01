@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { searchUsers } from "@/services/api/search/Searchapi";
 import UserCard from "@/components/SearchComponents/UserCard";
-
+import { useSearchFilters } from "@/pages/search/SearchPage";
 // ─── Mapped shape ─────────────────────────────────────────────────────────────
 // Backend formatUserResult returns:
 // { id, display_name, profile_picture, follower_count, is_following, score }
@@ -46,6 +46,7 @@ export default function PeoplePage() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const hasMoreRef  = useRef(false);
   const loadingRef  = useRef(false);
+  const { setFilters } = useSearchFilters();
 
   const fetchPage = useCallback(
     async (pageOffset: number, replace: boolean) => {
@@ -70,6 +71,7 @@ export default function PeoplePage() {
         setUsers((prev) => (replace ? mapped : [...prev, ...mapped]));
         setTotal(res.pagination.total);
         setOffset(pageOffset);
+        setFilters(res.filters);
         hasMoreRef.current = pageOffset + PAGE_SIZE < res.pagination.total;
       } catch (err: any) {
         if (err?.name === "CanceledError" || err?.name === "AbortError") return;
@@ -144,6 +146,9 @@ export default function PeoplePage() {
     );
   }
 
+  useEffect(() => {
+  return () => setFilters(null);
+}, []);
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col w-full">
@@ -159,7 +164,7 @@ export default function PeoplePage() {
       <div className="flex flex-col divide-y divide-white/5">
         {users.map((user) => (
           <UserCard
-            key={user.id}
+           key={user.id}
             id={user.id}
             username={user.username}
             displayName={user.displayName}

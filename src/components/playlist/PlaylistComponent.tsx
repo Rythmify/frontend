@@ -2,7 +2,7 @@
  * PlaylistComponent - reusable component for Search (Playlists tab)
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import WaveSurfer from "wavesurfer.js";
 import { FaPlay, FaPause, FaHeart, FaLock } from "react-icons/fa";
@@ -192,7 +192,7 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
         });
       }
 
-      ws.on("error", () => {});
+      ws.on("error", () => { });
       wsRef.current = ws;
     };
 
@@ -304,6 +304,10 @@ export interface PlaylistComponentProps {
   onCopyLink?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  urlSegment?: "sets" | "album";
+  variant?: "default" | "compact";
+  isEmbedded?: boolean;
+  uniqueId?: string;
 }
 
 export default function PlaylistComponent({
@@ -312,26 +316,34 @@ export default function PlaylistComponent({
   onCopyLink,
   onEdit,
   onDelete,
+  urlSegment = "sets",
+  variant = "default",
+  isEmbedded = false,
+  uniqueId,
 }: PlaylistComponentProps) {
-  const { currentTrack, isPlaying, setTrack, togglePlay, addTracksNext } = usePlayerStore();
+  const { currentTrack, isPlaying, setTrack, togglePlay, addTracksNext, activeSourceId } = usePlayerStore();
   const { user } = useAuthStore();
+
+  const instanceId = useMemo(() => uniqueId ?? `playlist-instance-${Math.random().toString(36).substr(2, 9)}`, [uniqueId]);
 
   const isOwner = !!user && user.username === playlist.creatorUsername;
 
   const firstTrack = playlist.tracks[0] ?? null;
 
   // The "active" track for this component: whichever playlist track is currently playing
-  const activeTrack = playlist.tracks.find((t) => t.id === currentTrack?.id) ?? null;
+  // AND this specific instance was the one that started it.
+  const isMatch = !activeSourceId || activeSourceId === instanceId;
+  const activeTrack = isMatch ? (playlist.tracks.find((t) => t.id === currentTrack?.id) ?? null) : null;
   const isComponentActive = !!activeTrack;
   const componentIsPlaying = isComponentActive && isPlaying;
 
-  const { 
-    isPlaylistLiked, 
-    togglePlaylist, 
-    isPlaylistReposted, 
+  const {
+    isPlaylistLiked,
+    togglePlaylist,
+    isPlaylistReposted,
     togglePlaylistRepost,
     getItemStats,
-    updateItemStats 
+    updateItemStats
   } = useLikesStore();
 
   const globalStats = getItemStats(playlist.id);
@@ -343,21 +355,6 @@ export default function PlaylistComponent({
 
   const [showSharePopup, setShowSharePopup] = useState(false);
 
-  // Synthetic Track object fed to SharePopup
-  const shareTrack = {
-    id: `playlist-${playlist.id}`,
-    title: playlist.title,
-    artistName: playlist.creatorName,
-    artistUsername: playlist.creatorUsername,
-    coverUrl: playlist.coverUrl ?? firstTrack?.coverUrl ?? "",
-    audioUrl: firstTrack?.audioUrl ?? "",
-    duration: firstTrack?.duration ?? "0:00",
-    waveformData: firstTrack?.waveformData,
-    playCount: playlist.tracks.reduce((acc, t) => acc + (t.playCount ?? 0), 0),
-    genre: firstTrack?.genre ?? "",
-    likeCount: playlist.likeCount ?? 0,
-    repostCount: playlist.repostCount ?? 0,
-  } as unknown as Track;
 
   useEffect(() => {
     if (globalStats.likeCount === undefined) {
@@ -417,20 +414,75 @@ export default function PlaylistComponent({
     if (isComponentActive) {
       togglePlay();
     } else if (firstTrack) {
-      setTrack(firstTrack, playlist.tracks);
+      setTrack(firstTrack, playlist.tracks, 0, instanceId);
     }
   };
 
   const handleTrackPlay = (track: Track) => {
-    if (currentTrack?.id === track.id) {
+    if (currentTrack?.id === track.id && isComponentActive) {
       togglePlay();
     } else {
-      setTrack(track, playlist.tracks);
+      setTrack(track, playlist.tracks, 0, instanceId);
     }
   };
 
   // Track shown in waveform: currently active track in the playlist, or first track
   const waveformTrack = activeTrack ?? firstTrack;
+
+  if (variant === "compact") {
+    return (
+      <div
+        data-test="playlist-component-compact"
+        className="flex items-center gap-3 p-3 bg-[#1a1a1a] border border-white/5 rounded-lg group/compact"
+      >
+        <div className="relative w-12 h-12 shrink-0 rounded overflow-hidden bg-[#333]">
+          {playlist.coverUrl ? (
+            <img src={playlist.coverUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-zinc-700 to-black" />
+          )}
+          <button
+            onClick={handlePlayPause}
+            className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/compact:opacity-100 transition-opacity"
+          >
+            {componentIsPlaying ? <FaPause size={12} className="text-white" /> : <FaPlay size={12} className="text-white ml-0.5" />}
+          </button>
+        </div>
+        <div className="flex-1 min-w-0">
+          <Link
+            to={`/${playlist.creatorUsername}/sets/${playlist.playlistSlug}`}
+            className="block text-sm font-bold text-white hover:text-[#f50] truncate"
+          >
+            {playlist.title}
+          </Link>
+          <div className="flex items-center gap-2 text-xs text-white/50">
+            <Link to={`/${playlist.creatorUsername}`} className="hover:text-white truncate">
+              {playlist.creatorName}
+            </Link>
+            <span>•</span>
+            <span>{playlist.trackCount} tracks</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-white/40">
+          <button
+            onClick={handleLike}
+            className={`p-1.5 hover:text-white transition-colors ${liked ? "text-[#f50]" : ""}`}
+          >
+            <FaHeart size={14} />
+          </button>
+          <button
+            onClick={() => setShowSharePopup(true)}
+            className="p-1.5 hover:text-white transition-colors"
+          >
+            <HiArrowUpOnSquare size={16} />
+          </button>
+        </div>
+        {showSharePopup && (
+          <SharePopup playlist={playlist} onClose={() => setShowSharePopup(false)} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -520,7 +572,7 @@ export default function PlaylistComponent({
             {/* Playlist title */}
             <Link
               data-test="playlist-component-title-link"
-              to={`/${playlist.creatorUsername}/sets/${playlist.playlistSlug ?? ""}`}
+              to={`/${playlist.creatorUsername}/${urlSegment}/${playlist.playlistSlug ?? ""}`}
               className="block text-sm sm:text-lg font-bold text-white hover:text-[#f50] transition-colors truncate"
             >
               {playlist.title}
@@ -546,7 +598,7 @@ export default function PlaylistComponent({
           <div className="hidden md:block mt-4">
             <PlaylistWaveform
               track={waveformTrack}
-              isActive={!!(activeTrack && activeTrack.id === waveformTrack.id)}
+              isActive={!!(activeTrack && activeTrack.id === waveformTrack.id) && !isEmbedded}
             />
           </div>
         )}
@@ -559,15 +611,15 @@ export default function PlaylistComponent({
                 key={t.id}
                 track={t}
                 index={i}
-                isActiveRow={currentTrack?.id === t.id}
-                isPlayingRow={currentTrack?.id === t.id && isPlaying}
+                isActiveRow={!!(currentTrack?.id && t.id && currentTrack.id === t.id && isMatch)}
+                isPlayingRow={!!(currentTrack?.id && t.id && currentTrack.id === t.id && isPlaying && isMatch)}
                 onPlay={() => handleTrackPlay(t)}
               />
             ))}
             {playlist.trackCount > 5 && (
               <Link
                 data-test="playlist-component-view-all-link"
-                to={`/${playlist.creatorUsername}/sets/${playlist.playlistSlug ?? ""}`}
+                to={`/${playlist.creatorUsername}/${urlSegment}/${playlist.playlistSlug ?? ""}`}
                 className="inline-block text-xs text-white/40 hover:text-white transition-colors mt-2"
               >
                 View all {playlist.trackCount} tracks →
@@ -592,16 +644,16 @@ export default function PlaylistComponent({
             )}
             <ScBtn icon={<HiArrowUpOnSquare size={17} />} tooltip="Share" onClick={() => setShowSharePopup(true)} dataTest="playlist-component-btn-share" />
             <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} dataTest="playlist-component-btn-copy" />
-            <ScBtn 
-              icon={<MdQueueMusic size={17} />} 
-              tooltip="Add to Next up" 
+            <ScBtn
+              icon={<MdQueueMusic size={17} />}
+              tooltip="Add to Next up"
               onClick={() => {
                 if (playlist.tracks.length > 0) {
                   addTracksNext(playlist.tracks);
                   toast.success(`Playlist "${playlist.title}" added to Next up`);
                 }
-              }} 
-              dataTest="playlist-component-btn-add-to-next" 
+              }}
+              dataTest="playlist-component-btn-add-to-next"
             />
           </div>
 
@@ -620,9 +672,8 @@ export default function PlaylistComponent({
         }
       `}</style>
 
-      {/* Share popup */}
       {showSharePopup && (
-        <SharePopup track={shareTrack} onClose={() => setShowSharePopup(false)} />
+        <SharePopup playlist={playlist} onClose={() => setShowSharePopup(false)} />
       )}
     </div>
   );

@@ -54,6 +54,22 @@ export async function removeRepost(trackId: string | number) {
   return data;
 }
 
+export async function getTrackLikers(
+  trackId: string | number,
+  params?: { limit?: number; offset?: number },
+): Promise<{ data: { items: any[]; meta: any } }> {
+  const res = await axiosInstance.get(`/tracks/${trackId}/likers`, { params });
+  return res.data;
+}
+
+export async function getTrackReposters(
+  trackId: string | number,
+  params?: { limit?: number; offset?: number },
+): Promise<{ data: { items: any[]; meta: any } }> {
+  const res = await axiosInstance.get(`/tracks/${trackId}/reposters`, { params });
+  return res.data;
+}
+
 // ─── Liked Content Fetching ───────────────────────────────────────────────────
 
 /**
@@ -114,8 +130,7 @@ export async function getMyLikedGenres(params?: {
 
 /**
  * GET /me/reposted-tracks
- * Owner only — the API has no GET /users/{userId}/reposts endpoint.
- * Do not add a getUserRepostedTracks equivalent; it will 404.
+ * Owner only endpoint for the authenticated user's reposted tracks.
  */
 export async function getMyRepostedTracks(params?: {
   limit?: number;
@@ -127,6 +142,39 @@ export async function getMyRepostedTracks(params?: {
   return {
     data: res.data.data.items ?? [],
     pagination: res.data.data.pagination ?? { limit: 0, offset: 0, total: 0 },
+  };
+}
+
+/**
+ * GET /users/{user_id}/reposted-tracks
+ * Public profile endpoint used to show reposts on another user's page.
+ */
+export async function getUserRepostedTracks(
+  userId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<{ data: any[]; pagination: any }> {
+  const res = await axiosInstance.get<{
+    data: any[] | { items: any[]; pagination?: any; meta?: any };
+    pagination?: any;
+  }>(`/users/${userId}/reposted-tracks`, { params });
+
+  const raw = res.data.data;
+  const pagination = res.data.pagination;
+
+  if (Array.isArray(raw)) {
+    return {
+      data: raw,
+      pagination: pagination ?? { limit: 0, offset: 0, total: raw.length },
+    };
+  }
+
+  return {
+    data: raw.items ?? [],
+    pagination:
+      raw.pagination ??
+      raw.meta ??
+      pagination ??
+      { limit: 0, offset: 0, total: raw.items?.length ?? 0 },
   };
 }
 
