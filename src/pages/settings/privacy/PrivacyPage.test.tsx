@@ -48,7 +48,9 @@ describe("PrivacyPage", () => {
 
     expect(screen.getByText("Privacy settings")).toBeInTheDocument();
     expect(screen.getByText("Blocked users")).toBeInTheDocument();
-    expect(screen.getByTestId("settings-privacy-cookie-manager-button")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /open cookie manager/i }),
+    ).toBeInTheDocument();
   });
 
   it("updates a setting optimistically and sends the correct patch", async () => {

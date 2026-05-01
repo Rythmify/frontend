@@ -115,7 +115,30 @@ export function MessageBox({
               embed = { type: "track", id, resource: trackRes.data, sourceUrl: url }
             } else if (type === "playlist" || type === "album") {
               const playlistRes = await fetchPlaylist(id)
-              embed = { type: "playlist", id, resource: playlistRes.data, sourceUrl: url }
+              const plData = playlistRes.data;
+              
+              // Explicitly fetch all tracks to ensure we have full data (waveform, etc.)
+              if (plData.tracks && plData.tracks.length > 0) {
+                try {
+                  const fetchPromises = plData.tracks.map(async (t: any) => {
+                    let trackId = t.id;
+                    if (!trackId && t.track_id) trackId = t.track_id;
+                    if (!trackId && typeof t === 'string') trackId = t;
+                    
+                    if (trackId && trackId !== "undefined" && trackId !== "") {
+                      const trackRes = await fetchTrack(trackId);
+                      return trackRes.data;
+                    }
+                    return t;
+                  });
+                  
+                  plData.tracks = await Promise.all(fetchPromises);
+                } catch (err) {
+                  console.error("Failed to fetch tracks for embedded playlist:", err);
+                }
+              }
+              
+              embed = { type: "playlist", id, resource: plData, sourceUrl: url }
             }
 
             resolvedUrlsRef.current.set(url, embed)

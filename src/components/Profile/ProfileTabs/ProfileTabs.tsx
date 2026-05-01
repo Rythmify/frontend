@@ -26,8 +26,8 @@ function TabButton({
       onClick={onSelect}
       className={`cursor-pointer pb-2.5 pt-3 px-1.5 text-sm transition-colors border-b-[2px] ${
         isSelected
-          ? "text-white font-bold border-white"
-          : "font-semibold border-transparent text-[#858687] hover:text-white"
+          ? "text-bg-inverted font-bold border-bg-inverted"
+          : "font-semibold border-transparent text-text-secondary hover:text-bg-inverted"
       }`}
     >
       {children}
@@ -117,7 +117,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           <button
             data-test="share-button"
             onClick={onShare}
-            className="cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
+            className="cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-bg-actionbutton rounded text-sm font-bold text-bg-inverted hover:text-text-secondary transition-colors"
           >
             <i className="fa-solid fa-arrow-up-from-bracket" />
             Share
@@ -125,7 +125,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           <button
             data-test="edit-button"
             onClick={onEdit}
-            className="cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
+            className="cursor-pointer flex items-center gap-2 px-3 py-1.25 bg-bg-actionbutton rounded text-sm font-bold text-bg-inverted hover:text-text-secondary transition-colors"
           >
             <i className="fa-solid fa-pencil" />
             Edit
@@ -144,7 +144,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
                   .replace(/-+/g, "-");
                 navigate(`/discover/stations/${stationSlug}:${userId}`);
               }}
-              className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
+              className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-bg-actionbutton rounded text-sm font-bold text-bg-inverted hover:text-text-secondary transition-colors"
             >
               <i className="fa-solid fa-tower-broadcast" />
               Station
@@ -161,7 +161,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
           <button
             data-test="share-button"
             onClick={onShare}
-            className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-[#313030] rounded text-sm font-bold text-white hover:text-[#737272] transition-colors"
+            className="cursor-pointer flex items-center gap-2 px-3 py-1.5 bg-bg-actionbutton rounded text-sm font-bold text-bg-inverted hover:text-text-secondary transition-colors"
           >
             <i className="fa-solid fa-arrow-up-from-bracket" />
             Share
@@ -169,7 +169,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
 
           <button
             data-test="message-button"
-            className="cursor-pointer flex items-center justify-center w-9 h-9 bg-[#313030] rounded text-white hover:text-[#737272] transition-colors"
+            className="cursor-pointer flex items-center justify-center w-9 h-9 bg-bg-actionbutton rounded text-bg-inverted hover:text-text-secondary transition-colors"
             onClick={() => setIsOpen(true)}
           >
             <i className="fa-solid fa-envelope" />
@@ -187,13 +187,13 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
             <button
               data-test="more-button"
               onClick={() => setShowMore((p) => !p)}
-              className="cursor-pointer flex items-center justify-center w-9 h-9 bg-[#313030] rounded text-white hover:text-[#737272] transition-colors"
+              className="cursor-pointer flex items-center justify-center w-9 h-9 bg-bg-actionbutton rounded text-bg-inverted hover:text-text-secondary transition-colors"
             >
               <i className="fa-solid fa-ellipsis" />
             </button>
 
             {showMore && (
-              <div className="absolute right-0 top-11 z-50 bg-[#1a1a1a] border border-border rounded shadow-lg w-52 py-1">
+              <div className="absolute right-0 top-11 z-50 bg-bg-inverted border border-border rounded shadow-lg w-52 py-1">
                 {extraActions ? (
                   <div className="px-2 py-1">{extraActions}</div>
                 ) : (
@@ -201,7 +201,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
                     data-test="block-button"
                     onClick={isBlocked ? onUnblock : onBlock}
                     disabled={blockDisabled || (isBlocked ? !onUnblock : !onBlock)}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-bg hover:bg-bg-actionbutton transition-colors"
                   >
                     <i className="fa-solid fa-ban text-xs w-4" />
                     {isBlocked
@@ -215,7 +215,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
                     setShowMore(false);
                     setIsReportOpen(true);
                   }}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-bg hover:bg-bg-actionbutton transition-colors"
                 >
                   <i className="fa-solid fa-circle-exclamation text-xs w-4" />
                   Report {displayName || username}

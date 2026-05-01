@@ -37,7 +37,7 @@ const defaultUser = {
   lastName: "User",
   bio: "My bio",
   city: "Cairo",
-  country: "Egypt",
+  country: "EG",
   avatar: "",
 };
 
@@ -90,7 +90,7 @@ describe("EditProfileModal", () => {
     expect(screen.getByTestId("edit-first-name-input")).toHaveValue("Test");
     expect(screen.getByTestId("edit-last-name-input")).toHaveValue("User");
     expect(screen.getByTestId("edit-city-input")).toHaveValue("Cairo");
-    expect(screen.getByTestId("edit-country-input")).toHaveValue("Egypt");
+    expect(screen.getByTestId("edit-country-input")).toHaveValue("EG");
     expect(screen.getByTestId("edit-bio-input")).toHaveValue("My bio");
   });
 
@@ -145,8 +145,8 @@ describe("EditProfileModal", () => {
         lastName: "User",
         bio: "My bio",
         city: "Cairo",
-        country: "Egypt",
-        location: "Cairo, Egypt",
+        country: "EG",
+        location: "Cairo, EG",
         avatarFile: null,
       }),
     );
@@ -204,7 +204,7 @@ describe("EditProfileModal", () => {
       />,
     );
     fireEvent.click(screen.getByTestId("edit-save-button"));
-    expect(screen.getByText("City cannot be numbers only.")).toBeInTheDocument();
+    expect(screen.getByText("City cannot contain numbers.")).toBeInTheDocument();
     expect(mockOnSave).not.toHaveBeenCalled();
   });
 
@@ -218,7 +218,7 @@ describe("EditProfileModal", () => {
     );
     fireEvent.click(screen.getByTestId("edit-save-button"));
     expect(
-      screen.getByText("Country cannot be numbers only."),
+      screen.getByText("Country cannot contain numbers."),
     ).toBeInTheDocument();
     expect(mockOnSave).not.toHaveBeenCalled();
   });
@@ -475,7 +475,7 @@ describe("EditProfileModal", () => {
     );
     fireEvent.click(screen.getByTestId("edit-save-button"));
     expect(mockOnSave).toHaveBeenCalledWith(
-      expect.objectContaining({ location: "Egypt" }),
+      expect.objectContaining({ location: "EG" }),
     );
   });
 
