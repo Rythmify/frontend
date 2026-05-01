@@ -220,7 +220,7 @@ describe("FollowerPage", () => {
   });
 
   it("renders owner follower list", async () => {
-    render(<FollowerPage />);
+    const { container } = render(<FollowerPage />);
     expect(
       await screen.findByTestId("follower-avatar-follower1"),
     ).toBeInTheDocument();

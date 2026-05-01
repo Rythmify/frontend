@@ -3,6 +3,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 import UserAvatar from "@/components/UI/UserAvatar";
+import NotFound from "@/pages/not-found/NotFound";
 import {
   getFollowing,
   getFollowStatus,
@@ -25,7 +26,8 @@ interface EnrichedUser {
 }
 
 async function enrich(u: UserSummary): Promise<EnrichedUser> {
-  const resolvedId = u.id || (u as UserSummary & { user_id?: string }).user_id || "";
+  const resolvedId =
+    u.id || (u as UserSummary & { user_id?: string }).user_id || "";
   if (!resolvedId) {
     console.warn("enrich: received item with no id", u);
     return {
@@ -50,7 +52,7 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
       followers: profile.followers_count ?? 0,
-      isVerified: profile.is_verified ?? u.is_verified,
+      isVerified: u.is_verified,
       isFollowing: followStatus.is_following,
       profilePath: `/${uname}`,
     };
@@ -82,6 +84,7 @@ export default function FollowingPage() {
     : profileUsername || "Profile";
   const profilePath = profileUsername ? `/${profileUsername}` : "/you";
   const profileAvatar = isOwner ? (currentUser?.avatar ?? "") : "";
+  const [profileNotFound, setProfileNotFound] = useState(false);
 
   const [rawFollowing, setRawFollowing] = useState<UserSummary[] | null>(null);
   const [following, setFollowing] = useState<EnrichedUser[]>([]);
@@ -93,6 +96,7 @@ export default function FollowingPage() {
     setLoaded(false);
     setRawFollowing(null);
     setFollowing([]);
+    setProfileNotFound(false);
 
     async function load() {
       try {
@@ -112,7 +116,10 @@ export default function FollowingPage() {
         if (!cancelled) setRawFollowing(res.items);
       } catch (err) {
         console.error("FollowingPage: failed to load", err);
-        if (!cancelled) setRawFollowing([]);
+        if (!cancelled) {
+          setProfileNotFound(true);
+          setRawFollowing([]);
+        }
       }
     }
 
@@ -146,6 +153,7 @@ export default function FollowingPage() {
   }, [rawFollowing]);
 
   if (!currentUser && isOwner) return null;
+  if (!isOwner && profileNotFound) return <NotFound />;
 
   const handleTabChange = (tab: string) => {
     const base = `/${profileUsername}`;
@@ -166,13 +174,13 @@ export default function FollowingPage() {
           name={profileDisplayName || profileUsername}
           alt={profileDisplayName || profileUsername}
           wrapperClassName="h-24 w-24 cursor-pointer flex-shrink-0 overflow-hidden rounded-full"
-          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
+          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
           onClick={() => navigate(profilePath)}
         />
         <div>
           <h1
             data-test="following-page-title"
-            className="cursor-pointer text-2xl font-bold text-white"
+            className="cursor-pointer text-2xl font-bold text-bg-inverted"
             onClick={() => navigate(profilePath)}
           >
             {profileDisplayName} is following
@@ -204,7 +212,7 @@ export default function FollowingPage() {
       {/* Empty state — only after load completes */}
       {loaded && following.length === 0 && (
         <div className="flex items-center justify-center py-24">
-          <p className="text-lg font-bold text-white">
+          <p className="text-lg font-bold text-bg-inverted">
             {isOwner
               ? "You're not following anyone yet."
               : `${profileDisplayName} isn't following anyone.`}
@@ -226,12 +234,12 @@ export default function FollowingPage() {
                 name={u.displayName || u.username}
                 alt={u.displayName || u.username}
                 wrapperClassName="aspect-square w-full cursor-pointer overflow-hidden rounded-full"
-                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
+                  initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
                 onClick={() => navigate(u.profilePath)}
               />
 
               <span
-                className="w-full cursor-pointer truncate px-1 text-center text-sm font-bold text-white"
+                className="w-full cursor-pointer truncate px-1 text-center text-sm font-bold text-bg-inverted"
                 onClick={() => navigate(u.profilePath)}
               >
                 {u.displayName || u.username}
@@ -253,13 +261,13 @@ export default function FollowingPage() {
 
               <div className="flex h-8 items-center justify-center">
                 <div className="hidden group-hover:block">
-              <FollowButton
-                username={u.username}
-                userId={u.userId}
-                initialIsFollowing={u.isFollowing}
-                onFollowChange={(next) => {
-                  if (isOwner && !next) {
-                    setFollowing((prev) =>
+                  <FollowButton
+                    username={u.username}
+                    userId={u.userId}
+                    initialIsFollowing={u.isFollowing}
+                    onFollowChange={(next) => {
+                      if (isOwner && !next) {
+                        setFollowing((prev) =>
                           prev.filter((f) => f.userId !== u.userId),
                         );
                       }

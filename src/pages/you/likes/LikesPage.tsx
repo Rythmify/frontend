@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useNavigate, useParams } from "react-router-dom";
+import NotFound from "@/pages/not-found/NotFound";
 import ShareModal from "@/components/Profile/ShareModal/ShareModal";
 import LikesContent from "@/components/UI/LikesContent/LikesContent";
 import UserAvatar from "@/components/UI/UserAvatar";
@@ -10,6 +11,7 @@ import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard
 import {
   getMyLikedTracks,
   getUserByUsername,
+  getUserLikedTracks,
   type TrackSummary,
 } from "@/services/user.service";
 import type { Playlist } from "@/services/api/playlist/playlist.service";
@@ -63,54 +65,87 @@ export default function LikesPage() {
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [profileAvatar, setProfileAvatar] = useState("");
   const [profileUsername, setProfileUsername] = useState("");
+  const [profileId, setProfileId] = useState("");
+  const [publicLikedTracks, setPublicLikedTracks] = useState<Track[]>([]);
+  const [profileNotFound, setProfileNotFound] = useState(false);
 
   const isOwner = !username || username === currentUser?.username;
 
-  // Resolve non-owner profile info
+  // Resolve profile info
   useEffect(() => {
     if (isOwner) {
+      setProfileNotFound(false);
       setProfileDisplayName(
         currentUser?.displayName ?? currentUser?.username ?? "",
       );
       setProfileAvatar(currentUser?.avatar ?? "");
       setProfileUsername(currentUser?.username ?? "");
-    } else if (username) {
-      getUserByUsername(username)
-        .then((profile) => {
-          setProfileDisplayName(profile.display_name);
-          setProfileAvatar(profile.profile_picture ?? "");
-          setProfileUsername(profile.username ?? username);
-        })
-        .catch(console.error);
-    }
-  }, [username, isOwner, currentUser]);
-
-  // Fetch liked tracks (owner only — public liked tracks not in API spec)
-  useEffect(() => {
-    if (!isOwner) {
-      setLoading(false);
+      setProfileId(currentUser?.id ?? "");
       return;
     }
 
-    setLoading(true);
-    getMyLikedTracks({ limit: 100 })
-      .then((res) => {
-        const fetchedTracks = res.items.map(mapToTrack);
-        useLikesStore.setState((state) => {
-          const merged = new Map(
-            [...fetchedTracks, ...state.likedTracks].map((track) => [
-              track.id,
-              track,
-            ]),
-          );
-          return { likedTracks: Array.from(merged.values()) };
-        });
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [isOwner]);
+    if (!username) return;
+    setProfileNotFound(false);
 
-  const displayedTracks = isOwner ? localLikedTracks : [];
+    getUserByUsername(username)
+      .then((profile) => {
+        setProfileDisplayName(profile.display_name);
+        setProfileAvatar(profile.profile_picture ?? "");
+        setProfileUsername(profile.username ?? username);
+        setProfileId(profile.id);
+      })
+      .catch((error) => {
+        console.error(error);
+        setProfileNotFound(true);
+      });
+  }, [username, isOwner, currentUser]);
+
+  // Fetch liked tracks.
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    const load = async () => {
+      try {
+        if (isOwner) {
+          const res = await getMyLikedTracks({ limit: 100 });
+          if (cancelled) return;
+          const fetchedTracks = res.items.map(mapToTrack);
+          useLikesStore.setState((state) => {
+            const merged = new Map(
+              [...fetchedTracks, ...state.likedTracks].map((track) => [
+                track.id,
+                track,
+              ]),
+            );
+            return { likedTracks: Array.from(merged.values()) };
+          });
+          return;
+        }
+
+        if (!profileId) {
+          if (!cancelled) setPublicLikedTracks([]);
+          return;
+        }
+
+        const res = await getUserLikedTracks(profileId, { limit: 100 });
+        if (cancelled) return;
+        setPublicLikedTracks(res.items.map(mapToTrack));
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setPublicLikedTracks([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner, profileId]);
+
+  const displayedTracks = isOwner ? localLikedTracks : publicLikedTracks;
   const displayedPlaylists = isOwner ? likedPlaylists : [];
   const displayedAlbums = isOwner ? likedAlbums : [];
   const showLoading = loading && displayedTracks.length === 0;
@@ -127,10 +162,10 @@ export default function LikesPage() {
   };
 
   if (!currentUser && isOwner) return null;
+  if (!isOwner && profileNotFound) return <NotFound />;
 
   return (
     <div className="py-8 container px-4 md:px-8 lg:px-20">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-3">
         <UserAvatar
           dataTest="likes-user-avatar"
@@ -138,18 +173,17 @@ export default function LikesPage() {
           name={profileDisplayName || profileUsername}
           alt={profileDisplayName || profileUsername}
           wrapperClassName="w-24 h-24 rounded-full overflow-hidden flex-shrink-0 cursor-pointer"
-          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
+          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
           onClick={() => navigate(`/${profileUsername}`)}
         />
         <h1
           data-test="likes-page-title"
-          className="text-white text-2xl font-bold"
+          className="text-bg-inverted text-2xl font-bold"
         >
           Likes by {profileDisplayName || profileUsername}
         </h1>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-6 mb-6">
         {tabs.map((tab) => (
           <button
@@ -167,7 +201,6 @@ export default function LikesPage() {
         ))}
       </div>
 
-      {/* Description + Share */}
       <div className="flex items-center justify-between mb-6">
         <p
           data-test="likes-description"
@@ -180,14 +213,13 @@ export default function LikesPage() {
         <button
           data-test="likes-share-button"
           onClick={() => setShowShare(true)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-input-bg text-white text-sm font-bold rounded hover:opacity-70"
+          className="flex items-center gap-2 px-3 py-1.5 bg-input-bg text-bg-inverted text-sm font-bold rounded hover:opacity-70"
         >
           <i className="fa-solid fa-arrow-up-from-bracket text-xs" />
           Share
         </button>
       </div>
 
-      {/* Content */}
       {showLoading ? (
         <div className="flex items-center justify-center py-24">
           <p className="text-text-secondary text-sm">Loading...</p>
@@ -200,7 +232,7 @@ export default function LikesPage() {
 
           {displayedPlaylists.length > 0 && (
             <section className="flex flex-col gap-4">
-              <h2 className="text-white text-lg font-semibold">
+              <h2 className="text-bg-inverted text-lg font-semibold">
                 Liked playlists
               </h2>
               <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1 scrollbar-hide">
@@ -217,7 +249,7 @@ export default function LikesPage() {
 
           {displayedAlbums.length > 0 && (
             <section className="flex flex-col gap-4">
-              <h2 className="text-white text-lg font-semibold">
+              <h2 className="text-bg-inverted text-lg font-semibold">
                 Liked albums
               </h2>
               <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-1 scrollbar-hide">
@@ -234,7 +266,7 @@ export default function LikesPage() {
         </div>
       ) : (
         <div className="flex items-center justify-center py-24">
-          <p className="text-white font-bold text-lg sm:text-2xl">
+          <p className="text-bg-inverted font-bold text-lg sm:text-2xl">
             {isOwner
               ? "You have no likes yet."
               : `${profileDisplayName || profileUsername} hasn't liked anything yet.`}
@@ -242,7 +274,6 @@ export default function LikesPage() {
         </div>
       )}
 
-      {/* Footer */}
       <div className="mt-16 flex flex-col gap-8">
         <div className="flex flex-wrap gap-x-1 text-xs text-text-secondary">
           {[

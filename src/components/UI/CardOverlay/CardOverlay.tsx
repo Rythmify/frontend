@@ -15,6 +15,7 @@ interface CardOverlayProps {
   onPlay: (e: React.MouseEvent) => void;
   isLiked: boolean;
   onLike: (e: React.MouseEvent) => void;
+  downloadMenuItem?: MoreMenuItem;
   moreMenuItems?: MoreMenuItem[];
   /** Extra z-index class, e.g. "z-40". StationCard needs this due to child layers z-10…z-30. */
   overlayZClass?: string;
@@ -47,6 +48,7 @@ export default function CardOverlay({
   onPlay,
   isLiked,
   onLike,
+  downloadMenuItem,
   moreMenuItems,
   overlayZClass = "",
   dataTestPrefix,
@@ -56,7 +58,11 @@ export default function CardOverlay({
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const menuPanelRef = useRef<HTMLDivElement>(null);
 
-  const hasMenu = !!moreMenuItems && moreMenuItems.length > 0;
+  const resolvedMenuItems = [
+    ...(downloadMenuItem ? [downloadMenuItem] : []),
+    ...(moreMenuItems ?? []),
+  ];
+  const hasMenu = resolvedMenuItems.length > 0;
 
   const playTest =
     dataTestPrefix && itemId ? `${dataTestPrefix}-play-${itemId}` : "button-play";
@@ -89,7 +95,7 @@ export default function CardOverlay({
   const handleOpenMore = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    const estimatedHeight = (moreMenuItems?.length ?? 1) * MENU_ITEM_HEIGHT_PX;
+    const estimatedHeight = resolvedMenuItems.length * MENU_ITEM_HEIGHT_PX;
     const flipUp = window.innerHeight - rect.bottom < estimatedHeight;
     setMenuPos({
       top: flipUp ? rect.top - estimatedHeight : rect.bottom,
@@ -165,7 +171,7 @@ export default function CardOverlay({
                     className="fixed z-[9999] bg-bg w-44 border font-bold border-[#353535] rounded shadow-xl overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {moreMenuItems!.map((menuItem, i) => (
+                    {resolvedMenuItems.map((menuItem, i) => (
                       <button
                         key={i}
                         className="w-full text-left px-3 py-2 text-[14px] text-white hover:text-[#717171] cursor-pointer transition-colors flex items-center gap-2"

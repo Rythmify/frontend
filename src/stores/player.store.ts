@@ -42,10 +42,11 @@ interface PlayerState {
   repeatMode: "none" | "one" | "all";
   isLiked: boolean;
   isAutoplay: boolean;
+  activeSourceId: string | null;
 
   // Actions
-  setTrack: (track: Track, queue?: Track[], startTime?: number) => void;
-  playContext: (sourceType: string, sourceId: string | null, fallbackTrack: Track, startTime?: number) => Promise<void>;
+  setTrack: (track: Track, queue?: Track[], startTime?: number, activeSourceId?: string | null) => void;
+  playContext: (sourceType: string, sourceId: string | null, fallbackTrack: Track, startTime?: number, activeSourceId?: string | null) => Promise<void>;
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
@@ -87,8 +88,9 @@ export const usePlayerStore = create<PlayerState>()(
       repeatMode: "none",
       isLiked: false,
       isAutoplay: true,
+      activeSourceId: null,
 
-      setTrack: (track, queue, startTime) => {
+      setTrack: (track, queue, startTime, activeSourceId) => {
         const newQueue = queue ?? get().queue;
         const index = newQueue.findIndex((t) => t.id === track.id);
         const isSameTrack = get().currentTrack?.id === track.id;
@@ -103,6 +105,7 @@ export const usePlayerStore = create<PlayerState>()(
             queueIndex: index >= 0 ? index : get().queueIndex,
             isPlaying: true,
             currentTime: startTime ?? get().currentTime,
+            activeSourceId: activeSourceId ?? get().activeSourceId,
           });
           return;
         }
@@ -117,17 +120,19 @@ export const usePlayerStore = create<PlayerState>()(
           isPlaying: true,
           currentTime: nextTime,
           isLiked: false,
+          activeSourceId: activeSourceId ?? null,
         });
       },
 
-      playContext: async (sourceType, sourceId, fallbackTrack, startTime) => {
+      playContext: async (sourceType, sourceId, fallbackTrack, startTime, activeSourceId) => {
         // Optimistically play the track immediately
         set({
           currentTrack: fallbackTrack,
           queue: [fallbackTrack],
           queueIndex: 0,
           isPlaying: true,
-          currentTime: startTime || 0
+          currentTime: startTime || 0,
+          activeSourceId: activeSourceId ?? null,
         });
         
         try {
@@ -174,8 +179,9 @@ export const usePlayerStore = create<PlayerState>()(
 
       next: () => {
         const { queue, queueIndex, isShuffle, isAutoplay, currentTrack } = get();
+        if (!queue.length) return;
         
-        if (queueIndex >= queue.length - 1 && isAutoplay && currentTrack) {
+        if (queue.length === 1 && queueIndex >= queue.length - 1 && isAutoplay && currentTrack) {
           import("../services/track.service").then(async (m) => {
             try {
               const { tracks } = await m.getRelatedTracks(String(currentTrack.id));
@@ -201,16 +207,10 @@ export const usePlayerStore = create<PlayerState>()(
           return;
         }
 
-        if (!queue.length) return;
         let nextIndex: number;
         if (isShuffle) {
           nextIndex = Math.floor(Math.random() * queue.length);
         } else {
-          // If we are at the end and repeat is none, just stop
-          if (queueIndex >= queue.length - 1 && get().repeatMode === "none") {
-            set({ isPlaying: false, currentTime: 0 });
-            return;
-          }
           nextIndex = (queueIndex + 1) % queue.length;
         }
         set({
@@ -252,12 +252,12 @@ export const usePlayerStore = create<PlayerState>()(
 
       setCurrentTime: (time) => set({ currentTime: time }),
       setDuration: (duration) => set({ duration }),
-      setVolume: (volume) => set({ volume }),
+      setVolume: (volume) => set({ volume, isMuted: volume === 0 }),
       toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
       toggleShuffle: () => set((s) => ({ isShuffle: !s.isShuffle })),
       toggleRepeat: () =>
         set((s) => {
-          const modes: ("none" | "one" | "all")[] = ["none", "one", "all"];
+          const modes: ("none" | "all" | "one")[] = ["none", "all", "one"];
           const current = modes.indexOf(s.repeatMode);
           return { repeatMode: modes[(current + 1) % modes.length] };
         }),

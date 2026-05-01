@@ -3,6 +3,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useNavigate, useParams } from "react-router-dom";
 import FollowButton from "@/components/UI/FollowButton";
 import UserAvatar from "@/components/UI/UserAvatar";
+import NotFound from "@/pages/not-found/NotFound";
 import {
   getFollowers,
   getFollowStatus,
@@ -52,7 +53,9 @@ async function enrich(u: UserSummary): Promise<EnrichedUser> {
       displayName: profile.display_name || u.display_name,
       avatar: profile.profile_picture ?? "",
       followers: profile.followers_count ?? 0,
-      isVerified: profile.is_verified ?? u.is_verified,
+      // Keep verification tied to the relationship list item itself.
+      // The profile fetch is only used for richer display data.
+      isVerified: u.is_verified,
       isFollowing: followStatus.is_following,
       profilePath: `/${uname}`,
     };
@@ -84,6 +87,7 @@ export default function FollowerPage() {
     : profileUsername || "Profile";
   const profilePath = profileUsername ? `/${profileUsername}` : "/you";
   const profileAvatar = isOwner ? (currentUser?.avatar ?? "") : "";
+  const [profileNotFound, setProfileNotFound] = useState(false);
 
   const [rawFollowers, setRawFollowers] = useState<UserSummary[] | null>(null);
   const [enriched, setEnriched] = useState<EnrichedUser[]>([]);
@@ -94,6 +98,7 @@ export default function FollowerPage() {
     setLoaded(false);
     setRawFollowers(null);
     setEnriched([]);
+    setProfileNotFound(false);
 
     async function load() {
       try {
@@ -111,7 +116,10 @@ export default function FollowerPage() {
         if (!cancelled) setRawFollowers(res.items);
       } catch (err) {
         console.error("FollowerPage: failed to load", err);
-        if (!cancelled) setRawFollowers([]);
+        if (!cancelled) {
+          setProfileNotFound(true);
+          setRawFollowers([]);
+        }
       }
     }
 
@@ -144,6 +152,7 @@ export default function FollowerPage() {
   }, [rawFollowers]);
 
   if (!currentUser && isOwner) return null;
+  if (!isOwner && profileNotFound) return <NotFound />;
 
   const handleTabChange = (tab: string) => {
     const base = `/${profileUsername}`;
@@ -157,19 +166,19 @@ export default function FollowerPage() {
   return (
     <div className="py-8 container px-4 md:px-8 lg:px-20">
       <div className="flex items-center gap-4 mb-3">
-        <UserAvatar
+          <UserAvatar
           dataTest="follower-page-avatar"
           src={profileAvatar}
           name={profileDisplayName || profileUsername}
           alt={profileDisplayName || profileUsername}
           wrapperClassName="w-24 h-24 cursor-pointer rounded-full overflow-hidden flex-shrink-0"
-          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
+          initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
           onClick={() => navigate(profilePath)}
         />
         <div>
           <h1
             data-test="follower-page-title"
-            className="text-white cursor-pointer text-2xl font-bold"
+            className="text-bg-inverted cursor-pointer text-2xl font-bold"
             onClick={() => navigate(profilePath)}
           >
             Followers of {profileDisplayName}
@@ -199,7 +208,7 @@ export default function FollowerPage() {
 
       {loaded && enriched.length === 0 && (
         <div className="flex items-center justify-center py-24">
-          <p className="text-white text-lg font-bold">
+          <p className="text-bg-inverted text-lg font-bold">
             {isOwner
               ? "You don't have any followers yet."
               : `${profileDisplayName} doesn't have any followers yet.`}
@@ -220,12 +229,12 @@ export default function FollowerPage() {
                 name={u.displayName || u.username}
                 alt={u.displayName || u.username}
                 wrapperClassName="w-full cursor-pointer aspect-square rounded-full overflow-hidden"
-                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-4xl font-bold"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
                 onClick={() => navigate(u.profilePath)}
               />
 
               <span
-                className="text-white cursor-pointer text-sm font-bold text-center truncate w-full px-1"
+                className="text-bg-inverted cursor-pointer text-sm font-bold text-center truncate w-full px-1"
                 onClick={() => navigate(u.profilePath)}
               >
                 {u.displayName || u.username}

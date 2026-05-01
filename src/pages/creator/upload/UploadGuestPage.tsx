@@ -151,7 +151,7 @@ const UploadGuestPage = () => {
             </button>
             <button
               data-test="learn-more-button"
-              onClick={() => navigate("/artist-pro")}
+              onClick={() => navigate("/premium")}
               className="text-text-ulink text-[22px] font-bold cursor-pointer bg-transparent border-none"
             >
               Learn more about Pro plans

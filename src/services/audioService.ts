@@ -142,18 +142,8 @@ usePlayerStore.subscribe((state, prev) => {
     }
   }
 
-  // Handle same-track restarts (e.g. next() called on 1-track queue)
-  // If track is same, isPlaying is true, but currentTime was reset to 0
-  // and we didn't just load this track (loadedAudioTrackId was already this track).
-  const isSameTrack = state.currentTrack && state.currentTrack.id === loadedAudioTrackId;
-  const isFreshTrackLoad = state.currentTrack?.id !== prev.currentTrack?.id;
-
-  if (isSameTrack && !isFreshTrackLoad && !seekInProgress &&
-      state.isPlaying && state.currentTime === 0 && prev.currentTime > 0) {
-    audio.currentTime = 0;
-    audio.play().catch(() => {});
-  }
-
+  // Removed the automatic same-track restart heuristic because it conflicted with WaveSurfer
+  // seeks and buffering, causing tracks to spontaneously repeat or jump to 0:00.
   // Volume / mute changed
   if (state.volume !== prev.volume || state.isMuted !== prev.isMuted) {
     audio.volume = state.isMuted ? 0 : Math.max(0, Math.min(1, state.volume));

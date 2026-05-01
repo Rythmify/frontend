@@ -20,8 +20,29 @@ export function durationToString(duration: any): string {
 //   Other contexts  → nested user object: user.display_name, user.username …
 
 export function mapTrack(t: any): Track {
+  if (typeof t === 'string') {
+    return {
+      id: t,
+      title: "Untitled",
+      artistName: "Unknown",
+      artistUsername: "unknown",
+      coverUrl: "",
+      audioUrl: "",
+      genre: "",
+      likeCount: 0,
+      repostCount: 0,
+      playCount: 0,
+      commentCount: 0,
+      duration: "0:00",
+      postedAt: "",
+      waveformData: [],
+      isPrivate: false,
+      trackSlug: t,
+    };
+  }
+
   return {
-    id: String(t.id ?? ""),
+    id: String(t.id ?? t.track_id ?? ""),
     title: t.title ?? "Untitled",
     // Search backend returns flat artist_name; other contexts return user object
     artistName:
@@ -30,7 +51,7 @@ export function mapTrack(t: any): Track {
       t.user?.displayName ??
       t.user?.username ??
       "Unknown",
-    artistUsername: t.user?.username ?? "unknown",
+    artistUsername: t.user?.username ?? t.artist_username ?? t.username ?? "unknown",
     // Search backend returns cover_image; other contexts return coverUrl
     coverUrl: t.cover_image ?? t.coverUrl ?? "",
     // Search backend returns stream_url; other contexts return audioUrl
@@ -58,7 +79,7 @@ export function mapPlaylist(pl: any): Playlist {
     id: pl.id,
     title: pl.title ?? "Untitled Playlist",
     creatorName: pl.owner?.display_name ?? pl.creatorName ?? "",
-    creatorUsername: pl.owner?.username ?? pl.creatorUsername ?? "",
+    creatorUsername: pl.owner?.username ?? pl.owner_username ?? pl.creatorUsername ?? pl.username ?? "unknown",
     coverUrl: pl.cover_image ?? pl.coverUrl ?? "",
     postedAt: pl.created_at ?? pl.postedAt ?? "",
     trackCount: pl.track_count ?? pl.trackCount ?? 0,

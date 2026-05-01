@@ -49,6 +49,7 @@ export default function CompleteProfilePage() {
       coverUrl: me.data.cover_photo,
       city: me.data.city,
       country: me.data.country,
+      links: [],
       following_ids: [],
     });
 

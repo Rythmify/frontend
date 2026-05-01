@@ -192,7 +192,7 @@ describe("FollowingPage", () => {
   });
 
   it("renders owner following list", async () => {
-    render(<FollowingPage />);
+    const { container } = render(<FollowingPage />);
     expect(
       await screen.findByTestId("following-avatar-artist1"),
     ).toBeInTheDocument();

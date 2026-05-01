@@ -66,6 +66,7 @@ function mapProfileToStoreUser(
     followers_ids: profile.followers_ids ?? currentUser?.followers_ids,
     date_of_birth: dateOfBirth,
     gender: profile.gender ?? currentUser?.gender ?? null,
+    links: currentUser?.links ?? [],
   };
 }
 
@@ -323,6 +324,32 @@ function EmailAddresses({
     }
   });
 
+  const getChangeEmailErrorMessage = (err: any) => {
+    const status = err?.response?.status;
+    const apiMessage =
+      err?.response?.data?.error?.message ?? err?.response?.data?.message;
+    if (typeof apiMessage === "string" && apiMessage.trim()) {
+      return apiMessage;
+    }
+
+    switch (status) {
+      case 400:
+        return "Please enter a valid email address.";
+      case 401:
+        return "Your session expired. Please sign in again.";
+      case 403:
+        return "This email address cannot be used for your account.";
+      case 409:
+        return "This email address is already in use.";
+      case 422:
+        return "We could not verify that email address.";
+      case 429:
+        return "Too many attempts. Please wait a moment and try again.";
+      default:
+        return "We couldn't send the verification email. Please try again.";
+    }
+  };
+
   // Persist pending emails per user
   useEffect(() => {
     localStorage.setItem(
@@ -370,11 +397,7 @@ function EmailAddresses({
       setShowInput(false);
       setNewEmail("");
     } catch (err: any) {
-      if (err?.response?.status === 401) {
-        onToast("Session expired. Please login again.", "error");
-        return;
-      }
-      onToast("Failed to send verification email.", "error");
+      onToast(getChangeEmailErrorMessage(err), "error");
     } finally {
       setLoading(false);
     }
