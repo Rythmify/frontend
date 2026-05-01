@@ -67,7 +67,8 @@ describe("ProfileTabs", () => {
   it("highlights the selected tab", () => {
     render(<ProfileTabs {...defaultOwnerProps} selectedTab="Tracks" />);
     const tracksTab = screen.getByTestId("tab-tracks");
-    expect(tracksTab).toHaveClass("text-white");
+    expect(tracksTab).toHaveClass("text-bg-inverted");
+    expect(tracksTab).toHaveClass("border-bg-inverted");
   });
 
   it("calls onTabChange when a tab is clicked", () => {

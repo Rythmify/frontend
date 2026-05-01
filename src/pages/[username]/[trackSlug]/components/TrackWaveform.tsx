@@ -160,8 +160,9 @@ const TrackWaveform = forwardRef<
   }, [track.audioUrl, track.id]);
 
   return (
-    <div>
+    <div data-test="track-waveform-component">
       <div
+        data-test="track-waveform-interactive-area"
         style={{ position: "relative", cursor: "pointer", width: "100%" }}
         onClick={() => {
           onPlayPause?.(lastInteractionTimeRef.current ?? undefined);
@@ -190,6 +191,7 @@ const TrackWaveform = forwardRef<
 
         <div
           ref={timeRef}
+          data-test="track-waveform-time"
           style={{
             position: "absolute",
             left: 0,
@@ -207,6 +209,7 @@ const TrackWaveform = forwardRef<
 
         <div
           ref={durationRef}
+          data-test="track-waveform-duration"
           style={{
             position: "absolute",
             right: 0,

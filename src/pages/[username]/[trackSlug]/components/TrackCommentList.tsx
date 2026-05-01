@@ -332,7 +332,7 @@ export default function TrackCommentList({
     return (
       <div key={commentIdStr} className={`group ${isReply ? 'mt-4 animate-in slide-in-from-left-4 duration-300' : 'relative'}`}>
         <div className="flex gap-4">
-          <Link to={`/${comment.author.username}`} className="shrink-0">
+          <Link to={`/${comment.author.username}`} data-test="comment-author-link" className="shrink-0">
             <img
               src={comment.author.avatar_url || "https://picsum.photos/seed/user/80/80"}
               className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-full object-cover border border-[var(--color-border)] hover:brightness-110 transition-all cursor-pointer`}
@@ -343,6 +343,7 @@ export default function TrackCommentList({
             <div className="flex items-center gap-2 mb-1">
               <Link 
                 to={`/${comment.author.username}`}
+                data-test="comment-author-name-link"
                 className={`text-[var(--color-text-muted)] ${isReply ? 'text-[12px]' : 'text-[13px]'} font-bold hover:text-white cursor-pointer transition-colors text-orange-500/80`}
               >
                 {comment.author.display_name}
@@ -356,12 +357,13 @@ export default function TrackCommentList({
                 {formatDate(comment.created_at)}
               </span>
             </div>
-            <p className={`text-[var(--color-text-hover)] ${isReply ? 'text-[13px]' : 'text-[14px]'} leading-relaxed mb-2 selection:bg-orange-500/30`}>
+            <p data-test="comment-content" className={`text-[var(--color-text-hover)] ${isReply ? 'text-[13px]' : 'text-[14px]'} leading-relaxed mb-2 selection:bg-orange-500/30`}>
               {comment.content}
             </p>
             <div className="flex items-center gap-5">
               <button 
                 onClick={() => handleLikeToggle(comment)}
+                data-test="button-like-comment"
                 className={`flex items-center gap-1.5 text-[11px] font-bold transition-all duration-200 ${
                   isLiked ? "text-[#f50]" : "text-[var(--color-text-muted)] hover:text-white"
                 }`}
@@ -377,6 +379,7 @@ export default function TrackCommentList({
                   setReplyingTo(replyingTo?.id === commentIdStr ? null : { id: commentIdStr, name: comment.author.display_name });
                   setReplyText(`@${comment.author.display_name} `);
                 }}
+                data-test="button-reply-comment"
                 className="flex items-center gap-1.5 text-[var(--color-text-muted)] text-[11px] font-bold hover:text-white transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
@@ -386,6 +389,7 @@ export default function TrackCommentList({
               {isOwner && (
                 <button 
                   onClick={() => handleDelete(commentIdStr)}
+                  data-test="button-delete-comment"
                   className="flex items-center gap-1.5 text-[var(--color-text-muted)] text-[11px] font-bold hover:text-red-500 transition-colors ml-auto opacity-0 group-hover:opacity-100"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -400,10 +404,12 @@ export default function TrackCommentList({
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder={`Reply to @${replyingTo.name}...`}
+                  data-test="input-reply-comment"
                   className="flex-1 bg-[#111] border border-[#333] rounded px-4 py-2 text-[13px] text-white focus:border-orange-500 outline-none"
                 />
                 <button 
                   onClick={() => handleReplySubmit(commentIdStr, parentId)} 
+                  data-test="button-post-reply"
                   className="bg-[#f50] text-white text-[12px] uppercase font-bold px-5 py-2 rounded"
                 >
                   Post
@@ -421,6 +427,7 @@ export default function TrackCommentList({
               <div className="ml-14 mt-3">
                 <button 
                   onClick={() => handleFetchReplies(commentIdStr)}
+                  data-test="button-view-replies"
                   className="text-[11px] font-bold text-[#f50] flex items-center gap-1.5 hover:brightness-125 transition-all"
                   disabled={loadingThreads.has(commentIdStr)}
                 >
@@ -435,6 +442,7 @@ export default function TrackCommentList({
                <div className="ml-14 mt-2">
                  <button 
                     onClick={() => handleFetchReplies(commentIdStr)}
+                    data-test="button-hide-replies"
                     className="text-[11px] font-bold text-[var(--color-text-muted)] hover:text-white"
                  >
                    Hide replies
