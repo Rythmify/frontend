@@ -11,7 +11,6 @@ import type { PlaylistCardData } from "@/components/UI/PlaylistCard/PlaylistCard
 import type { PersonalMix } from "@/services/api/discover.service";
 import { getRecentlyPlayed } from "@/services/api/discover.service";
 import { mapRecentlyPlayedEntry } from "@/services/api/discover.mapper";
-import { mockRecentlyPlayedTracks } from "@/services/mocks/discover";
 import { getMyPlaylists, getMyFollowing } from "@/services/api/library.service";
 import type {
   LibraryPlaylist,
@@ -211,7 +210,7 @@ export default function LibraryPage() {
   useEffect(() => {
     getRecentlyPlayed()
       .then((items) => setRecentlyPlayedApi(items.map(mapRecentlyPlayedEntry)))
-      .catch(() => setRecentlyPlayedApi(mockRecentlyPlayedTracks));
+      .catch(() => setRecentlyPlayedApi([]));
   }, []);
 
   useEffect(() => {
@@ -268,15 +267,12 @@ export default function LibraryPage() {
       .catch(() => setAlbums([]));
   }, []);
 
-  // History entries (all types) take priority; fall back to API/mock tracks
+  // History entries (all types) take priority; fall back to API tracks only
   const recentEntries = (() => {
     const list =
       entries.length > 0
         ? entries
-        : (recentlyPlayedApi.length > 0
-            ? recentlyPlayedApi
-            : mockRecentlyPlayedTracks
-          ).map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
+        : recentlyPlayedApi.map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
 
     const seen = new Set<string>();
     return list.filter((e) => {
