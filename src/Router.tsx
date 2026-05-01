@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import ErrorPage from "@/pages/error/ErrorPage";
 import { lazy, Suspense } from "react";
 
 // Layouts
@@ -19,6 +20,28 @@ import { PrivateRoute, PublicOnlyRoute } from "@/components/guards";
 // Lazy loading wrapper
 import Spinner from "@/components/UI/Spinner";
 
+const RELOAD_FLAG = "chunk_reload_attempted";
+
+// Retries a failed dynamic import once. If still failing, reloads the page
+// one time (fixes stale Vite HMR chunks). Uses sessionStorage to prevent
+// infinite reload loops when the module is genuinely broken.
+function lazyWithRetry<T extends React.ComponentType>(
+  factory: () => Promise<{ default: T }>,
+): React.LazyExoticComponent<T> {
+  return lazy(() =>
+    factory().catch(() =>
+      factory().catch((err) => {
+        if (!sessionStorage.getItem(RELOAD_FLAG)) {
+          sessionStorage.setItem(RELOAD_FLAG, "1");
+          window.location.reload();
+          return new Promise<never>(() => {});
+        }
+        throw err;
+      }),
+    ),
+  );
+}
+
 const Lazy = ({
   component: Component,
 }: {
@@ -32,167 +55,168 @@ const Lazy = ({
 // Page imports
 
 // Home
-const HomePage = lazy(() => import("@/pages/home/HomePage"));
+const HomePage = lazyWithRetry(() => import("@/pages/home/HomePage"));
 
-// Signin
-const SigninPage = lazy(() => import("@/pages/signin/SigninPage"));
-const ResetPasswordPage = lazy(() => import("@/pages/signin/ResetPassword"));
-const VerifyEmailPage = lazy(() => import("@/pages/signin/VerifyEmailPage"));
-const CompleteProfilePage = lazy(
+// Signin — imported directly (not lazy) to avoid CJS/ESM transform issues
+// with react-google-recaptcha-v3 and @react-oauth/google in Vite dev mode
+import SigninPage from "@/pages/signin/SigninPage";
+const ResetPasswordPage = lazyWithRetry(() => import("@/pages/signin/ResetPassword"));
+const VerifyEmailPage = lazyWithRetry(() => import("@/pages/signin/VerifyEmailPage"));
+const CompleteProfilePage = lazyWithRetry(
   () => import("@/pages/signin/CompleteProfilePage"),
 );
-const GitHubCallbackPage = lazy(
+const GitHubCallbackPage = lazyWithRetry(
   () => import("@/pages/signin/GitHubCallbackPage"),
 );
 
 // Download (the /download route — app download page, NOT offline downloads)
-const AppDownloadPage = lazy(() => import("@/pages/download/DownloadPage"));
+const AppDownloadPage = lazyWithRetry(() => import("@/pages/download/DownloadPage"));
 
 // People
-const PeoplePage = lazy(() => import("@/pages/people/PeoplePage"));
+const PeoplePage = lazyWithRetry(() => import("@/pages/people/PeoplePage"));
 
 // Discover
-const DiscoverPage = lazy(() => import("@/pages/feed/discover/DiscoverPage"));
-const MixForYouSlugPage = lazy(
+const DiscoverPage = lazyWithRetry(() => import("@/pages/feed/discover/DiscoverPage"));
+const MixForYouSlugPage = lazyWithRetry(
   () => import("@/pages/you/sets/MixForYouSlugPage"),
 );
-const MadeForYouSlugPage = lazy(
+const MadeForYouSlugPage = lazyWithRetry(
   () => import("@/pages/you/sets/MadeForYouSlugPage"),
 );
-const StationSlugPage = lazy(
+const StationSlugPage = lazyWithRetry(
   () => import("@/pages/you/stations/StationSlugPage"),
 );
-const MoreOfLikeSlugPage = lazy(
+const MoreOfLikeSlugPage = lazyWithRetry(
   () => import("@/pages/you/sets/MoreOfLikeSlugPage"),
 );
-const CuratedForYouSlugPage = lazy(
+const CuratedForYouSlugPage = lazyWithRetry(
   () => import("@/pages/you/sets/CuratedForYouSlugPage"),
 );
-const AlbumsForYouSlugPage = lazy(
+const AlbumsForYouSlugPage = lazyWithRetry(
   () => import("@/pages/you/albums/AlbumsForYouSlugPage"),
 );
-const TrendingByGenreSlugPage = lazy(
+const TrendingByGenreSlugPage = lazyWithRetry(
   () => import("@/pages/you/sets/TrendingByGenreSlugPage"),
 );
 // Feed
-const FeedPage = lazy(() => import("@/pages/feed/FeedPage"));
-const ChartsPage = lazy(() => import("@/pages/feed/charts/ChartsPage"));
+const FeedPage = lazyWithRetry(() => import("@/pages/feed/FeedPage"));
+const ChartsPage = lazyWithRetry(() => import("@/pages/feed/charts/ChartsPage"));
 
 // Search
-const SearchPage = lazy(() => import("@/pages/search/SearchPage"));
-const SoundsPage = lazy(() => import("@/pages/search/sounds/SoundsPage"));
-const PeopleSearchPage = lazy(() => import("@/pages/search/people/PeoplePage"));
-const AlbumsSearchPage = lazy(() => import("@/pages/search/albums/AlbumsPage"));
-const SetsSearchPage = lazy(() => import("@/pages/search/sets/SetsPage"));
+const SearchPage = lazyWithRetry(() => import("@/pages/search/SearchPage"));
+const SoundsPage = lazyWithRetry(() => import("@/pages/search/sounds/SoundsPage"));
+const PeopleSearchPage = lazyWithRetry(() => import("@/pages/search/people/PeoplePage"));
+const AlbumsSearchPage = lazyWithRetry(() => import("@/pages/search/albums/AlbumsPage"));
+const SetsSearchPage = lazyWithRetry(() => import("@/pages/search/sets/SetsPage"));
 
 // User Profile
-const UsernamePage = lazy(() => import("@/pages/[username]/UsernamePage"));
-const TracksPage = lazy(() => import("@/pages/[username]/tracks/TracksPage"));
-const UserAlbumsPage = lazy(
+const UsernamePage = lazyWithRetry(() => import("@/pages/[username]/UsernamePage"));
+const TracksPage = lazyWithRetry(() => import("@/pages/[username]/tracks/TracksPage"));
+const UserAlbumsPage = lazyWithRetry(
   () => import("@/pages/[username]/albums/AlbumsPage"),
 );
-const UserSetsPage = lazy(() => import("@/pages/[username]/sets/SetsPage"));
-const RepostsPage = lazy(
+const UserSetsPage = lazyWithRetry(() => import("@/pages/[username]/sets/SetsPage"));
+const RepostsPage = lazyWithRetry(
   () => import("@/pages/[username]/reposts/RepostsPage"),
 );
-const PopularTracksPage = lazy(
+const PopularTracksPage = lazyWithRetry(
   () => import("@/pages/[username]/popular-tracks/PopularTracksPage"),
 );
-const TrackSlugPage = lazy(
+const TrackSlugPage = lazyWithRetry(
   () => import("@/pages/[username]/[trackSlug]/TrackSlugPage"),
 );
-const TrackEngagementPage = lazy(
+const TrackEngagementPage = lazyWithRetry(
   () => import("@/pages/[username]/[trackSlug]/TrackEngagementPage"),
 );
 
 // Social
-const NotificationsPage = lazy(
+const NotificationsPage = lazyWithRetry(
   () => import("@/pages/social/notifications/NotificationsPage"),
 );
-const MessagesPage = lazy(() => import("@/pages/social/messages/MessagesPage"));
-const MessageIdPage = lazy(
+const MessagesPage = lazyWithRetry(() => import("@/pages/social/messages/MessagesPage"));
+const MessageIdPage = lazyWithRetry(
   () => import("@/pages/social/messages/[messageId]/MessageIdPage"),
 );
 
 // You
-const LibraryLayout = lazy(() => import("@/pages/you/library/LibraryLayout"));
-const LibraryPage = lazy(() => import("@/pages/you/library/LibraryPage"));
-const LikesPage = lazy(() => import("@/pages/you/likes/LikesPage"));
-const YouLikesPage = lazy(() => import("@/pages/you/likes/YouLikesPage"));
-const YouSetsPage = lazy(() => import("@/pages/you/sets/SetsPage"));
-const YouAlbumsPage = lazy(() => import("@/pages/you/albums/AlbumsPage"));
-const FollowingPage = lazy(() => import("@/pages/you/following/FollowingPage"));
-const YouFollowingPage = lazy(
+const LibraryLayout = lazyWithRetry(() => import("@/pages/you/library/LibraryLayout"));
+const LibraryPage = lazyWithRetry(() => import("@/pages/you/library/LibraryPage"));
+const LikesPage = lazyWithRetry(() => import("@/pages/you/likes/LikesPage"));
+const YouLikesPage = lazyWithRetry(() => import("@/pages/you/likes/YouLikesPage"));
+const YouSetsPage = lazyWithRetry(() => import("@/pages/you/sets/SetsPage"));
+const YouAlbumsPage = lazyWithRetry(() => import("@/pages/you/albums/AlbumsPage"));
+const FollowingPage = lazyWithRetry(() => import("@/pages/you/following/FollowingPage"));
+const YouFollowingPage = lazyWithRetry(
   () => import("@/pages/you/following/YouFollowingPage"),
 );
-const FollowerPage = lazy(() => import("@/pages/you/follower/FollowerPage"));
-const HistoryPage = lazy(() => import("@/pages/you/history/HistoryPage"));
-const StationsPage = lazy(() => import("@/pages/you/stations/StationsPage"));
-const InsightsPage = lazy(() => import("@/pages/you/insights/InsightsPage"));
-const PlaylistSlugPage = lazy(
+const FollowerPage = lazyWithRetry(() => import("@/pages/you/follower/FollowerPage"));
+const HistoryPage = lazyWithRetry(() => import("@/pages/you/history/HistoryPage"));
+const StationsPage = lazyWithRetry(() => import("@/pages/you/stations/StationsPage"));
+const InsightsPage = lazyWithRetry(() => import("@/pages/you/insights/InsightsPage"));
+const PlaylistSlugPage = lazyWithRetry(
   () => import("@/pages/you/sets/PlaylistSlugPage"),
 );
-const AlbumSlugPage = lazy(() => import("@/pages/you/albums/AlbumSlugPage"));
+const AlbumSlugPage = lazyWithRetry(() => import("@/pages/you/albums/AlbumSlugPage"));
 
 // ── Offline Downloads (new) ────────────────────────────────
-const OfflineDownloadsPage = lazy(
+const OfflineDownloadsPage = lazyWithRetry(
   () => import("@/pages/you/downloads/DownloadsPage"),
 );
 
 // Settings
-const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage"));
-const SubscriptionsPage = lazy(
+const SettingsPage = lazyWithRetry(() => import("@/pages/settings/SettingsPage"));
+const SubscriptionsPage = lazyWithRetry(
   () => import("@/pages/subscriptions/Subscriptions"),
 );
-const ContentPage = lazy(() => import("@/pages/settings/content/ContentPage"));
-const SettingsNotificationsPage = lazy(
+const ContentPage = lazyWithRetry(() => import("@/pages/settings/content/ContentPage"));
+const SettingsNotificationsPage = lazyWithRetry(
   () => import("@/pages/settings/notifications/NotificationsPage"),
 );
-const PrivacySettingsPage = lazy(
+const PrivacySettingsPage = lazyWithRetry(
   () => import("@/pages/settings/privacy/PrivacyPage"),
 );
-const AdvertisingPage = lazy(
+const AdvertisingPage = lazyWithRetry(
   () => import("@/pages/settings/advertising/AdvertisingPage"),
 );
-const TwoFactorPage = lazy(
+const TwoFactorPage = lazyWithRetry(
   () => import("@/pages/settings/two-factor/TwoFactorPage"),
 );
 
 // Creator
-const UploadPage = lazy(() => import("@/pages/creator/upload/UploadPage"));
-const UploadGuestPage = lazy(
+const UploadPage = lazyWithRetry(() => import("@/pages/creator/upload/UploadPage"));
+const UploadGuestPage = lazyWithRetry(
   () => import("@/pages/creator/upload/UploadGuestPage"),
 );
-const ArtistPage = lazy(() => import("@/pages/creator/artists/ArtistsPage"));
-const DistributionPage = lazy(
+const ArtistPage = lazyWithRetry(() => import("@/pages/creator/artists/ArtistsPage"));
+const DistributionPage = lazyWithRetry(
   () => import("@/pages/creator/artists/distribution/DistributionPage"),
 );
-const VinylPage = lazy(() => import("@/pages/creator/artists/vinyl/VinylPage"));
-const CommentsArtistPage = lazy(
+const VinylPage = lazyWithRetry(() => import("@/pages/creator/artists/vinyl/VinylPage"));
+const CommentsArtistPage = lazyWithRetry(
   () => import("@/pages/creator/artists/comments/ArtistsCommentsPage"),
 );
 
-const CheckoutPage = lazy(
+const CheckoutPage = lazyWithRetry(
   () => import("@/pages/creator/checkout/CheckoutPage"),
 );
-const PaymentPage = lazy(() => import("@/pages/creator/checkout/PaymentPage"));
-const PlanPage = lazy(() => import("@/pages/premium/PlanPage"));
+const PaymentPage = lazyWithRetry(() => import("@/pages/creator/checkout/PaymentPage"));
+const PlanPage = lazyWithRetry(() => import("@/pages/premium/PlanPage"));
 
 // Admin
-const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
-const AdminDashboardPage = lazy(
+const AdminLayout = lazyWithRetry(() => import("@/pages/admin/AdminLayout"));
+const AdminDashboardPage = lazyWithRetry(
   () => import("@/pages/admin/dashboard/AdminDashboardPage"),
 );
-const AdminReportsPage = lazy(
+const AdminReportsPage = lazyWithRetry(
   () => import("@/pages/admin/reports/AdminReportsPage"),
 );
-const AdminUsersPage = lazy(() => import("@/pages/admin/users/AdminUsersPage"));
-const AdminTracksPage = lazy(
+const AdminUsersPage = lazyWithRetry(() => import("@/pages/admin/users/AdminUsersPage"));
+const AdminTracksPage = lazyWithRetry(
   () => import("@/pages/admin/tracks/AdminTracksPage"),
 );
 
 // Not Found
-const NotFound = lazy(() => import("@/pages/not-found/NotFound"));
+const NotFound = lazyWithRetry(() => import("@/pages/not-found/NotFound"));
 
 // Helper components
 const YouRedirect = () => {
@@ -221,6 +245,7 @@ export const router = createBrowserRouter([
   // 1. Landing
   {
     element: <LandingLayout />,
+    errorElement: <ErrorPage />,
     children: [{ path: "/", element: <Lazy component={HomePage} /> }],
   },
 
@@ -228,16 +253,18 @@ export const router = createBrowserRouter([
   {
     path: "premium",
     element: <Lazy component={PlanPage} />,
+    errorElement: <ErrorPage />,
   },
 
   // 2. Guest-only
   {
     element: <GuestNavbarLayout />,
+    errorElement: <ErrorPage />,
     children: [
       {
         element: <PublicOnlyRoute />,
         children: [
-          { path: "signin", element: <Lazy component={SigninPage} /> },
+          { path: "signin", element: <SigninPage /> },
         ],
       },
     ],
@@ -246,6 +273,7 @@ export const router = createBrowserRouter([
   // 3. Dual-view
   {
     element: <DualViewLayout />,
+    errorElement: <ErrorPage />,
     children: [
       { path: "discover", element: <Lazy component={DiscoverPage} /> },
       {
@@ -327,6 +355,7 @@ export const router = createBrowserRouter([
   // 4. Auth-only
   {
     element: <AuthMainLayout />,
+    errorElement: <ErrorPage />,
     children: [
       {
         element: <PrivateRoute />,
@@ -438,12 +467,14 @@ export const router = createBrowserRouter([
   {
     path: "upload",
     element: <UploadRouter />,
+    errorElement: <ErrorPage />,
     children: [{ index: true, element: <Lazy component={UploadPage} /> }],
   },
 
   // 6. Checkout
   {
     element: <CheckoutLayout />,
+    errorElement: <ErrorPage />,
     children: [
       {
         element: <PrivateRoute />,
@@ -464,6 +495,7 @@ export const router = createBrowserRouter([
   // 7. Artist Studio
   {
     element: <ArtistStudioLayout />,
+    errorElement: <ErrorPage />,
     children: [
       {
         element: <PrivateRoute />,
@@ -488,29 +520,34 @@ export const router = createBrowserRouter([
   {
     path: "reset-password",
     element: <Lazy component={ResetPasswordPage} />,
+    errorElement: <ErrorPage />,
   },
 
   // 9. Verify Email
   {
     path: "verify-email",
     element: <Lazy component={VerifyEmailPage} />,
+    errorElement: <ErrorPage />,
   },
 
   // 10. Complete Profile (Google OAuth new users)
   {
     path: "complete-profile",
     element: <Lazy component={CompleteProfilePage} />,
+    errorElement: <ErrorPage />,
   },
 
   {
     path: "auth/callback",
     element: <Lazy component={GitHubCallbackPage} />,
+    errorElement: <ErrorPage />,
   },
 
   // 11. Admin
   {
     path: "admin",
     element: <Lazy component={AdminLayout} />,
+    errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Lazy component={AdminDashboardPage} /> },
       { path: "reports", element: <Lazy component={AdminReportsPage} /> },
@@ -523,5 +560,6 @@ export const router = createBrowserRouter([
   {
     path: "*",
     element: <Lazy component={NotFound} />,
+    errorElement: <ErrorPage />,
   },
 ]);

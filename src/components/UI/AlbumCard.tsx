@@ -5,6 +5,7 @@ import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import CoverImage from "@/components/UI/CoverImage";
 import { getPlaylist } from "@/services/api/playlist/playlist.service";
 import type { Track } from "@/types/track";
 
@@ -93,17 +94,11 @@ export default function AlbumCard({
       data-test="album-card"
     >
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {item.coverUrl ? (
-          <img
-            src={item.coverUrl}
-            alt={item.title}
-            className="w-full h-full object-cover transition-all duration-200 group-hover:brightness-75"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <i className="fa-solid fa-music text-3xl text-gray-500" />
-          </div>
-        )}
+        <CoverImage
+          src={item.coverUrl}
+          alt={item.title}
+          className="w-full h-full object-cover transition-all duration-200 group-hover:brightness-75"
+        />
 
         <CardOverlay
           isPlaying={isThisPlaying}

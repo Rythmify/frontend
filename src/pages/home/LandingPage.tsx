@@ -351,12 +351,12 @@ const LandingPage = () => {
             </p>
             <div className="flex items-center gap-3">
               {/* App Store badge */}
-              <a href="https://apps.apple.com/us/app/soundcloud-the-music-you-love/id336353151">
+              <a href=" https://github.com/Rythmify/cross/releases/latest/download/app-release.apk">
                 <img src="\images\app_store.png" />
               </a>
 
               {/* Google Play badge */}
-              <a href="https://play.google.com/store/apps/details?id=com.soundcloud.android&hl=us">
+              <a href=" https://github.com/Rythmify/cross/releases/latest/download/rythmify-windows.zip">
                 <img src="\images\google_store.png" />
               </a>
             </div>

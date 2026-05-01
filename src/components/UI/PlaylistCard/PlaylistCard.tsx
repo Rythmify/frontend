@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { useHistoryStore } from "@/stores/history.store";
 import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import CoverImage from "@/components/UI/CoverImage";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -101,17 +102,11 @@ export default function PlaylistCard({
       data-test="playlist-card"
     >
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {item.coverUrl ? (
-          <img
-            src={item.coverUrl}
-            alt={item.title}
-            className="w-full h-full object-cover transition-all duration-200 group-hover:brightness-75"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <i className="fa-solid fa-music text-3xl text-gray-500" />
-          </div>
-        )}
+        <CoverImage
+          src={item.coverUrl}
+          alt={item.title}
+          className="w-full h-full object-cover transition-all duration-200 group-hover:brightness-75"
+        />
 
         <CardOverlay
           isPlaying={isThisPlaylistPlaying}

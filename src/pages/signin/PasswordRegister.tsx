@@ -116,7 +116,7 @@ export default function PasswordRegister({ email, onBack, onContinue }: Props) {
           Continue
         </button>
 
-        <a href="/help" className="text-text-link hover:text-text-link-hover text-md">
+        <a href="https://help.soundcloud.com/hc/en-us/sections/46266771825691" className="text-text-link hover:text-text-link-hover text-md">
           Need help?
         </a>
       </div>

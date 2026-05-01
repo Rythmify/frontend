@@ -9,7 +9,9 @@ interface Props {
 }
 
 const MoreOfWhatYouLike = ({ tracks }: Props) => {
-  const items = tracks.length ? tracks.map(mapDiscoveryTrack) : [];
+  if (!tracks.length) return null;
+
+  const items = tracks.map(mapDiscoveryTrack);
 
   return (
     <div data-test="section-more-of-what-you-like">

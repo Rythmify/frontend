@@ -283,7 +283,7 @@ export default function UsernamePage() {
     profilePlaylists.length > 0;
 
   // ── Loading guard ─────────────────────────────────────────
-  if (isLoadingProfile && !isOwner && !profileData) {
+  if (!isOwner && !profileData) {
     return (
       <div className="container px-4 md:px-8 lg:px-20 flex items-center justify-center py-32">
         <p className="text-white text-sm">Loading profile…</p>

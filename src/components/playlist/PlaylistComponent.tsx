@@ -15,6 +15,7 @@ import { MdQueueMusic, MdPlaylistAdd } from "react-icons/md";
 import { FaPlay as FaPlayCount } from "react-icons/fa6";
 
 import type { Playlist } from "../../types/playlist";
+import CoverImage from "@/components/UI/CoverImage";
 import SharePopup from "../../pages/[username]/[trackSlug]/components/SharePopup";
 import type { Track } from "../../types/track";
 import { usePlayerStore } from "../../stores/player.store";
@@ -269,10 +270,7 @@ function TrackRow({ track, index, isActiveRow, isPlayingRow, onPlay }: TrackRowP
 
       {/* Thumbnail */}
       <div style={{ width: 32, height: 32, borderRadius: 2, overflow: "hidden", flexShrink: 0, background: "#1a1a1a" }}>
-        {track.coverUrl
-          ? <img src={track.coverUrl} alt={track.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#2d2d2d,#111)" }} />
-        }
+        <CoverImage src={track.coverUrl} alt={track.title} className="w-full h-full object-cover" />
       </div>
 
       {/* Artist & title */}
@@ -500,24 +498,7 @@ export default function PlaylistComponent({
         data-test="playlist-component-cover"
         className="relative w-20 h-20 sm:w-[160px] sm:h-[160px] shrink-0 rounded overflow-hidden bg-[#1a1a1a]"
       >
-        {playlist.coverUrl
-          ? <img src={playlist.coverUrl} alt={playlist.title} className="w-full h-full object-cover block" />
-          : (
-            // Mosaic fallback: first 4 track covers
-            <div className="grid grid-cols-2 w-full h-full">
-              {[0, 1, 2, 3].map((i) => {
-                const t = playlist.tracks[i];
-                return (
-                  <div key={i} className="bg-[#1a1a1a] overflow-hidden">
-                    {t?.coverUrl && (
-                      <img src={t.coverUrl} alt="" className="w-full h-full object-cover block" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )
-        }
+        <CoverImage src={playlist.coverUrl} alt={playlist.title} className="w-full h-full object-cover block" />
 
         {/* Play overlay */}
         <button

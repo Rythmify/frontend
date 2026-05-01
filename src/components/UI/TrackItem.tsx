@@ -10,6 +10,7 @@ import { getRelatedTracks } from "@/services/track.service";
 import SharePopup from "@/pages/[username]/[trackSlug]/components/SharePopup";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import type { Track } from "@/types/track";
+import CoverImage from "@/components/UI/CoverImage";
 
 interface TrackItemProps {
   id: string;
@@ -182,18 +183,14 @@ const TrackItem: React.FC<TrackItemProps> = ({
         className="w-12 h-12 cursor-pointer flex-shrink-0 bg-border rounded overflow-hidden relative"
         onMouseEnter={() => setCoverHovered(true)}
         onMouseLeave={() => setCoverHovered(false)}
+        onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
       >
-        {coverUrl ? (
-          <img
-            data-test={`track-cover-${id}`}
-            src={coverUrl}
-            alt={title}
-            className="w-full h-full object-cover"
-            onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
-          />
-        ) : (
-          <div className="w-full h-full bg-border" />
-        )}
+        <CoverImage
+          src={coverUrl}
+          alt={title}
+          className="w-full h-full object-cover"
+          data-test={`track-cover-${id}`}
+        />
 
         {/* Play Button Overlay - Shows on hover or when this track is playing */}
         {(coverHovered || isThisTrackPlaying) && (
