@@ -40,10 +40,7 @@ const makeAppeal = (overrides: Partial<ReportAppeal> = {}): ReportAppeal => ({
   original_report: {
     id: "report-1",
     resource_type: "track",
-    resource_id: "track-123",
     reason: "spam",
-    status: "resolved",
-    created_at: "2024-01-10T00:00:00Z",
   },
   ...overrides,
 });

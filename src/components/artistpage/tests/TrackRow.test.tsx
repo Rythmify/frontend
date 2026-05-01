@@ -7,14 +7,24 @@ import type { Track } from "@/services/api/upload/track.service";
 const makeTrack = (overrides: Partial<Track> = {}): Track => ({
   id: "track-abc",
   title: "My Song",
+  description: null,
   artists: "The Artist",
   genre: "Electronic",
+  tags: [],
   is_public: true,
+  is_hidden: false,
+  user_id: "u1",
   cover_image: null,
   audio_url: "http://audio.mp3",
+  stream_url: null,
+  preview_url: null,
+  waveform_url: null,
   duration: 180,
+  file_size: null,
+  bitrate: null,
   status: "ready",
   created_at: "2024-06-15T00:00:00Z",
+  updated_at: null,
   play_count: 42,
   like_count: 10,
   comment_count: 3,
@@ -155,8 +165,8 @@ describe("TrackRow", () => {
     expect(img).toHaveAttribute("src", "https://example.com/cover.jpg");
   });
 
-  it("renders dash for comment count when null", () => {
-    render(<TrackRow {...defaultProps} track={makeTrack({ comment_count: null })} />);
-    expect(screen.getAllByText("-").length).toBeGreaterThanOrEqual(1);
+  it("renders zero comment count as '0'", () => {
+    render(<TrackRow {...defaultProps} track={makeTrack({ comment_count: 0 })} />);
+    expect(screen.getByText("0")).toBeInTheDocument();
   });
 });
