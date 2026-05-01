@@ -288,4 +288,70 @@ describe("AlbumsForYouSlugPage", () => {
       expect(screen.getByText(/Album not found/i)).toBeInTheDocument(),
     );
   });
+
+  it("toggles playback when the active album track is clicked again", async () => {
+    const togglePlay = vi.fn();
+    vi.mocked(usePlayerStore).mockReturnValue({
+      isPlaying: true,
+      currentTrack: { id: "track-1", context: { playlist_id: "album-1" } },
+      togglePlay,
+      setTrack: vi.fn(),
+    } as any);
+    vi.mocked(getAlbumsForYou).mockResolvedValue({
+      data: [albumItem],
+    } as any);
+    vi.mocked(getPlaylist).mockResolvedValue({
+      data: albumPlaylist,
+    } as any);
+    vi.mocked(playlistExists).mockResolvedValue(true as any);
+    vi.mocked(getTrackById).mockResolvedValue({ track_id: "track-1", duration: "3:00", playCount: 1 } as any);
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "owner-1",
+      username: "album-owner",
+      display_name: "Album Owner",
+    } as any);
+
+    render(<AlbumsForYouSlugPage />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("playlist-hero")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByTestId("hero-play"));
+    expect(togglePlay).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByTestId("track-track-1"));
+    expect(togglePlay).toHaveBeenCalledTimes(2);
+  });
+
+  it("falls back when an album track hydrate request fails", async () => {
+    vi.mocked(getAlbumsForYou).mockResolvedValue({
+      data: [albumItem],
+    } as any);
+    vi.mocked(getPlaylist).mockResolvedValue({
+      data: {
+        ...albumPlaylist,
+        tracks: [
+          {
+            ...albumPlaylist.tracks[0],
+            duration: null,
+          },
+        ],
+      },
+    } as any);
+    vi.mocked(playlistExists).mockResolvedValue(false as any);
+    vi.mocked(getTrackById).mockRejectedValue(new Error("hydrate failed"));
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "owner-1",
+      username: "album-owner",
+      display_name: "Album Owner",
+    } as any);
+
+    render(<AlbumsForYouSlugPage />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("playlist-hero")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("track-list")).toHaveAttribute("data-count", "1");
+  });
 });

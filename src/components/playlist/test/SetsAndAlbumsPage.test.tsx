@@ -3,11 +3,16 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SetsPage from "@/pages/you/sets/SetsPage";
+import { getHome } from "@/services/api/discover.service";
 import {
   getMyPlaylists,
   getLikedPlaylists,
 } from "@/services/api/playlist/playlist.service";
 import { useLikesStore } from "@/stores/likes.store";
+
+vi.mock("@/services/api/discover.service", () => ({
+  getHome: vi.fn(),
+}));
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
   getMyPlaylists: vi.fn(),
@@ -49,7 +54,22 @@ const mockRes = (items: any[]) => ({
 describe("SetsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useLikesStore).mockReturnValue({ likedAlbums: [] } as any);
+    vi.mocked(useLikesStore).mockImplementation((selector?: any) =>
+      selector
+        ? selector({
+            seedFromHomeData: vi.fn(),
+            likedRadioTracks: [],
+          })
+        : ({
+            seedFromHomeData: vi.fn(),
+            likedRadioTracks: [],
+          } as any),
+    );
+    vi.mocked(getHome).mockResolvedValue({
+      made_for_you: null,
+      mixed_for_you: [],
+      trending_by_genre: { genres: [] },
+    } as any);
   });
 
   it("renders created playlists after load", async () => {

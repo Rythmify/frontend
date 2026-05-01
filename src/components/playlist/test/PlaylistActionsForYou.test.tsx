@@ -171,4 +171,109 @@ describe("PlaylistActionsForYou", () => {
       }),
     );
   });
+
+  it("handles station mode and opens the add-to-playlist modal", () => {
+    const toggleStation = vi.fn();
+    vi.mocked(useLikesStore).mockReturnValue({
+      isPlaylistLiked: vi.fn(() => false),
+      isMixLiked: vi.fn(() => false),
+      isStationLiked: vi.fn(() => false),
+      isRadioTrackLiked: vi.fn(() => false),
+      togglePlaylist: vi.fn(),
+      toggleMix: vi.fn(),
+      toggleStation,
+      toggleRadioTrack: vi.fn(),
+    } as any);
+
+    render(
+      <PlaylistActionsForYou
+        playlist={playlist}
+        isStation
+        engagementKind="station"
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("playlist-actions-for-you-like"));
+    expect(toggleStation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "pl-1",
+        name: "Test Playlist",
+        trackCount: 0,
+      }),
+    );
+
+    fireEvent.click(screen.getByTestId("playlist-actions-for-you-add-to-playlist"));
+    expect(screen.getByTestId("add-to-playlist-modal")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("close"));
+    expect(screen.queryByTestId("add-to-playlist-modal")).not.toBeInTheDocument();
+  });
+
+  it("closes the dropdown when clicking outside and handles make-public failures", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.mocked(updatePlaylist).mockRejectedValue(new Error("nope"));
+
+    render(
+      <PlaylistActionsForYou
+        playlist={playlist}
+        initialTracks={playlist.tracks}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("playlist-actions-for-you-more"));
+    expect(screen.getByText("Add to playlist")).toBeInTheDocument();
+
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByText("Add to playlist")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("playlist-actions-for-you-more"));
+    fireEvent.click(screen.getByText("Make public"));
+
+    await waitFor(() =>
+      expect(consoleError).toHaveBeenCalledWith(
+        "Failed to make playlist public:",
+        expect.any(Error),
+      ),
+    );
+
+    consoleError.mockRestore();
+  });
+
+  it("opens and closes the share popup", () => {
+    render(
+      <PlaylistActionsForYou
+        playlist={playlist}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("playlist-actions-for-you-share"));
+    expect(screen.getByTestId("share-popup")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("close"));
+    expect(screen.queryByTestId("share-popup")).not.toBeInTheDocument();
+  });
+
+  it("does nothing for radio tracks when no seed is available", () => {
+    const toggleRadioTrack = vi.fn();
+    vi.mocked(useLikesStore).mockReturnValue({
+      isPlaylistLiked: vi.fn(() => false),
+      isMixLiked: vi.fn(() => false),
+      isStationLiked: vi.fn(() => false),
+      isRadioTrackLiked: vi.fn(() => false),
+      togglePlaylist: vi.fn(),
+      toggleMix: vi.fn(),
+      toggleStation: vi.fn(),
+      toggleRadioTrack,
+    } as any);
+
+    render(
+      <PlaylistActionsForYou
+        playlist={{ ...playlist, tracks: [] }}
+        engagementKind="radioTracks"
+        initialTracks={[]}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("playlist-actions-for-you-like"));
+    expect(toggleRadioTrack).not.toHaveBeenCalled();
+  });
 });

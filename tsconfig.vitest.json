@@ -4,7 +4,6 @@
     "noEmit": false,
     "outDir": "./.vitest-out",
     "rootDir": ".",
-    "allowImportingTsExtensions": false,
     "declaration": false,
     "declarationMap": false,
     "sourceMap": true,

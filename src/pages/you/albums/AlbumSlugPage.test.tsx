@@ -262,4 +262,62 @@ describe("AlbumSlugPage", () => {
       expect(screen.getByText(/Failed to load playlist/i)).toBeInTheDocument(),
     );
   });
+
+  it("toggles playback when the active track is clicked again", async () => {
+    const togglePlay = vi.fn();
+    vi.mocked(usePlayerStore).mockReturnValue({
+      isPlaying: true,
+      currentTrack: { id: "track-1", context: { playlist_id: "album-1" } },
+      togglePlay,
+      setTrack: vi.fn(),
+    } as any);
+    vi.mocked(getPlaylist).mockResolvedValue({ data: playlistData } as any);
+    vi.mocked(playlistExists).mockResolvedValue(false as any);
+    vi.mocked(getTrackById).mockResolvedValue({ track_id: "track-1", duration: "3:30", playCount: 50 } as any);
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "owner-1",
+      username: "album-owner",
+      display_name: "Album Owner",
+    } as any);
+
+    render(<AlbumSlugPage />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("playlist-hero")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByTestId("hero-play"));
+    expect(togglePlay).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByTestId("track-track-1"));
+    expect(togglePlay).toHaveBeenCalledTimes(2);
+  });
+
+  it("falls back when a track hydrate request rejects", async () => {
+    vi.mocked(getPlaylist).mockResolvedValue({
+      data: {
+        ...playlistData,
+        tracks: [
+          {
+            ...playlistData.tracks[0],
+            duration: null,
+          },
+        ],
+      },
+    } as any);
+    vi.mocked(playlistExists).mockResolvedValue(false as any);
+    vi.mocked(getTrackById).mockRejectedValue(new Error("hydrate failed"));
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "owner-1",
+      username: "album-owner",
+      display_name: "Album Owner",
+    } as any);
+
+    render(<AlbumSlugPage />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("playlist-hero")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("track-list")).toHaveAttribute("data-count", "1");
+  });
 });

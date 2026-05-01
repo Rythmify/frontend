@@ -54,14 +54,21 @@ vi.mock("@/components/playlist/PlaylistHero", () => ({
 }));
 
 vi.mock("@/components/playlist/Made for you/PlaylistActionsForYou", () => ({
-  default: ({ playlist, initialTracks, engagementKind, radioSeedTrack }: any) => (
+  default: ({ playlist, initialTracks, engagementKind, radioSeedTrack, onPlaylistUpdated }: any) => (
     <div
       data-test="playlist-actions"
       data-count={String(initialTracks?.length ?? 0)}
       data-kind={String(engagementKind)}
       data-seed={radioSeedTrack?.id ?? ""}
       data-playlist={playlist?.playlist_id ?? ""}
-    />
+    >
+      <button
+        data-test="playlist-actions-update"
+        onClick={() => onPlaylistUpdated?.({ name: "Updated Related Mix" })}
+      >
+        update
+      </button>
+    </div>
   ),
 }));
 
@@ -347,6 +354,128 @@ describe("MoreOfLikeSlugPage", () => {
 
     await waitFor(() =>
       expect(screen.getByText(/Related tracks not found/i)).toBeInTheDocument(),
+    );
+  });
+
+  it("does not duplicate the seed track when it is already in the related list", async () => {
+    vi.mocked(useParams).mockReturnValue({
+      username: "listener",
+      playlistSlug: "seed-track-1",
+    } as any);
+    vi.mocked(getRelatedTracks).mockResolvedValue({
+      referenceTrack: mockSeedTrack as any,
+      tracks: [mockSeedTrack, mockRelatedTracks[1]] as any,
+    } as any);
+    vi.mocked(getUserById).mockImplementation(async (id: string) => {
+      if (id === "artist-a") {
+        return {
+          id: "artist-a",
+          username: "artist-a",
+          display_name: "Artist A",
+          followers_count: 15,
+        } as any;
+      }
+      if (id === "artist-b") {
+        return {
+          id: "artist-b",
+          username: "artist-b",
+          display_name: "Artist B",
+          followers_count: 9,
+        } as any;
+      }
+      return null as any;
+    });
+
+    render(<MoreOfLikeSlugPage />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("track-list")).toHaveAttribute("data-count", "2"),
+    );
+  });
+
+  it("toggles playback when the current track is already active", async () => {
+    const togglePlay = vi.fn();
+    vi.mocked(usePlayerStore).mockReturnValue({
+      isPlaying: true,
+      currentTrack: { id: "seed-track", context: { playlist_id: "seed-track" } },
+      togglePlay,
+      setTrack: vi.fn(),
+    } as any);
+    vi.mocked(useParams).mockReturnValue({
+      username: "listener",
+      playlistSlug: "seed-track-1",
+    } as any);
+    vi.mocked(getRelatedTracks).mockResolvedValue({
+      referenceTrack: mockSeedTrack as any,
+      tracks: mockRelatedTracks as any,
+    } as any);
+    vi.mocked(getUserById).mockImplementation(async (id: string) => {
+      if (id === "artist-a") {
+        return {
+          id: "artist-a",
+          username: "artist-a",
+          display_name: "Artist A",
+          followers_count: 15,
+        } as any;
+      }
+      if (id === "artist-b") {
+        return {
+          id: "artist-b",
+          username: "artist-b",
+          display_name: "Artist B",
+          followers_count: 9,
+        } as any;
+      }
+      return null as any;
+    });
+
+    render(<MoreOfLikeSlugPage />);
+
+    await waitFor(() => screen.getByTestId("playlist-hero"));
+    fireEvent.click(screen.getByTestId("hero-play"));
+
+    expect(togglePlay).toHaveBeenCalled();
+  });
+
+  it("propagates playlist updates from the actions panel", async () => {
+    vi.mocked(useParams).mockReturnValue({
+      username: "listener",
+      playlistSlug: "seed-track-1",
+    } as any);
+    vi.mocked(getRelatedTracks).mockResolvedValue({
+      referenceTrack: mockSeedTrack as any,
+      tracks: mockRelatedTracks as any,
+    } as any);
+    vi.mocked(getUserById).mockImplementation(async (id: string) => {
+      if (id === "artist-a") {
+        return {
+          id: "artist-a",
+          username: "artist-a",
+          display_name: "Artist A",
+          followers_count: 15,
+        } as any;
+      }
+      if (id === "artist-b") {
+        return {
+          id: "artist-b",
+          username: "artist-b",
+          display_name: "Artist B",
+          followers_count: 9,
+        } as any;
+      }
+      return null as any;
+    });
+
+    render(<MoreOfLikeSlugPage />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("playlist-hero")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByTestId("playlist-actions-update"));
+
+    expect(screen.getByTestId("hero-name")).toHaveTextContent(
+      "Updated Related Mix",
     );
   });
 });

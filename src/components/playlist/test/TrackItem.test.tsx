@@ -93,7 +93,7 @@ describe("Playlist TrackItem", () => {
       </Tooltip.Provider>,
     );
 
-    expect(screen.getByRole("link", { name: "ua" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "ArtA" })).toHaveAttribute(
       "href",
       expect.stringContaining("/ua"),
     );
@@ -232,7 +232,7 @@ describe("Playlist TrackItem", () => {
     fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
     fireEvent.click(screen.getByTestId("button-like-track-t1"));
 
-      expect(toggleTrack).toHaveBeenCalledWith(
+    expect(toggleTrack).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "t1",
         title: "Alpha",

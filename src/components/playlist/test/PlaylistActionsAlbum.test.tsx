@@ -31,7 +31,11 @@ vi.mock("@/stores/player.store", () => ({
 }));
 
 vi.mock("@/pages/[username]/[trackSlug]/components/SharePopup", () => ({
-  default: () => <div data-test="share-popup" />,
+  default: ({ onClose }: any) => (
+    <div data-test="share-popup">
+      <button onClick={onClose}>close</button>
+    </div>
+  ),
 }));
 
 vi.mock("../AddToPlaylistModal", () => ({
@@ -123,6 +127,128 @@ describe("PlaylistActionsAlbum", () => {
     expect(addToQueue).toHaveBeenCalledTimes(2);
   });
 
+  it("copies the page url and shows the success banner", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    render(<PlaylistActionsAlbum playlist={playlist} />);
+
+    fireEvent.click(screen.getByTestId("album-action-copy-link"));
+
+    expect(writeText).toHaveBeenCalledWith(window.location.href);
+    expect(await screen.findByText("Link copied")).toBeInTheDocument();
+  });
+
+  it("handles copy failures without showing the success banner", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockRejectedValue(new Error("clipboard")),
+      },
+    });
+
+    render(<PlaylistActionsAlbum playlist={playlist} />);
+
+    fireEvent.click(screen.getByTestId("album-action-copy-link"));
+
+    await waitFor(() =>
+      expect(consoleError).toHaveBeenCalledWith(
+        "Failed to copy playlist link:",
+        expect.any(Error),
+      ),
+    );
+    expect(screen.queryByText("Link copied")).not.toBeInTheDocument();
+    consoleError.mockRestore();
+  });
+
+  it("reposts and un-reposts the album for non-owners", async () => {
+    const repost = vi.mocked(repostPlaylist);
+    const remove = vi.mocked(removePlaylistRepost);
+    repost.mockResolvedValue(undefined as any);
+    remove.mockResolvedValue(undefined as any);
+
+    render(<PlaylistActionsAlbum playlist={playlist} />);
+
+    fireEvent.click(screen.getByTestId("album-action-repost"));
+    await waitFor(() => expect(repost).toHaveBeenCalledWith(playlist.playlist_id));
+
+    fireEvent.click(screen.getByTestId("album-action-repost"));
+    await waitFor(() => expect(remove).toHaveBeenCalledWith(playlist.playlist_id));
+  });
+
+  it("handles like failures without crashing", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.mocked(convertPlaylist).mockRejectedValue(new Error("convert fail"));
+
+    render(<PlaylistActionsAlbum playlist={playlist} backendPlaylistExists={false} />);
+
+    fireEvent.click(screen.getByTestId("album-action-like"));
+
+    await waitFor(() =>
+      expect(consoleError).toHaveBeenCalledWith(
+        "Failed to toggle playlist like:",
+        expect.any(Error),
+      ),
+    );
+    consoleError.mockRestore();
+  });
+
+  it("warns and skips conversion for non-UUID playlist ids", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const toggleAlbum = vi.fn();
+    vi.mocked(useLikesStore).mockReturnValue({
+      isAlbumLiked: vi.fn(() => false),
+      isPlaylistLiked: vi.fn(() => false),
+      isGenreLiked: vi.fn(() => false),
+      toggleAlbum,
+      togglePlaylist: vi.fn(),
+      toggleGenre: vi.fn(),
+    } as any);
+
+    render(
+      <PlaylistActionsAlbum
+        playlist={{ ...playlist, playlist_id: "not-a-uuid" }}
+        backendPlaylistExists={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("album-action-like"));
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Skipping convert for non-UUID album id:",
+      "not-a-uuid",
+    );
+    expect(convertPlaylist).not.toHaveBeenCalled();
+    expect(toggleAlbum).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it("returns early when there are no tracks and no next-up callback", () => {
+    const addToQueue = vi.fn();
+    vi.mocked(usePlayerStore).mockReturnValue({
+      addToQueue,
+    } as any);
+
+    render(
+      <PlaylistActionsAlbum
+        playlist={{ ...playlist, tracks: [] }}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("album-action-add-to-next-up"));
+    expect(addToQueue).not.toHaveBeenCalled();
+  });
+
+  it("opens and closes the share popup", () => {
+    render(<PlaylistActionsAlbum playlist={playlist} />);
+
+    fireEvent.click(screen.getByTestId("album-action-share"));
+    expect(screen.getByTestId("share-popup")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("close"));
+    expect(screen.queryByTestId("share-popup")).not.toBeInTheDocument();
+  });
+
   it("alerts the owner when they try to repost their own album", () => {
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
     vi.mocked(useAuthStore).mockReturnValue({
@@ -144,5 +270,50 @@ describe("PlaylistActionsAlbum", () => {
     expect(alertSpy).toHaveBeenCalledWith("You cannot repost your own playlist.");
     expect(repostPlaylist).not.toHaveBeenCalled();
     expect(removePlaylistRepost).not.toHaveBeenCalled();
+  });
+
+  it("uses the playlist and genre like flows when configured", async () => {
+    const togglePlaylist = vi.fn();
+    const toggleGenre = vi.fn();
+    vi.mocked(useLikesStore).mockReturnValue({
+      isAlbumLiked: vi.fn(() => false),
+      isPlaylistLiked: vi.fn(() => false),
+      isGenreLiked: vi.fn(() => false),
+      toggleAlbum: vi.fn(),
+      togglePlaylist,
+      toggleGenre,
+    } as any);
+
+    const playlistRender = render(
+      <PlaylistActionsAlbum
+        playlist={playlist}
+        engagementKind="playlist"
+        backendPlaylistExists
+      />,
+    );
+    fireEvent.click(playlistRender.getByTestId("album-action-like"));
+    expect(togglePlaylist).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: playlist.playlist_id,
+        title: playlist.name,
+      }),
+    );
+
+    playlistRender.unmount();
+
+    const genreRender = render(
+      <PlaylistActionsAlbum
+        playlist={playlist}
+        engagementKind="genre"
+        backendPlaylistExists
+      />,
+    );
+    fireEvent.click(genreRender.getByTestId("album-action-like"));
+    expect(toggleGenre).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: playlist.playlist_id,
+        genre: playlist.name,
+      }),
+    );
   });
 });
