@@ -61,12 +61,16 @@ vi.mock("@/components/playlist/SetsHeader", () => ({
   ),
 }));
 
-vi.mock("@/components/UI/AlbumCard", () => ({
+vi.mock("@/components/UI/PlaylistCard/PlaylistCard", () => ({
   default: ({ item }: any) => (
     <div
       data-test="album-card"
       data-owner={item.owner}
+      data-owner-username={item.ownerUsername ?? ""}
+      data-display-name={item.ownerDisplayName ?? ""}
       data-cover={item.coverUrl ?? ""}
+      data-liked={String(item.isLiked)}
+      data-private={String(item.isPrivate)}
     >
       {item.title}
     </div>
@@ -174,22 +178,154 @@ describe("AlbumsPage", () => {
       </MemoryRouter>,
     );
 
-    await waitFor(() => expect(screen.getAllByTestId("album-card")).toHaveLength(3));
-    expect(screen.getByText("Albums")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByTestId("album-card")).toHaveLength(2));
     expect(screen.getByText("Created Album")).toBeInTheDocument();
     expect(screen.getByText("Liked Album")).toBeInTheDocument();
-    expect(screen.getByText("Discover Album")).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("filter-created"));
     await waitFor(() => expect(screen.getAllByTestId("album-card")).toHaveLength(1));
     expect(screen.getByText("Created Album")).toBeInTheDocument();
     expect(screen.queryByText("Liked Album")).not.toBeInTheDocument();
-    expect(screen.queryByText("Discover Album")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("filter-liked"));
-    await waitFor(() => expect(screen.getAllByTestId("album-card")).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByTestId("album-card")).toHaveLength(1));
     expect(screen.queryByText("Created Album")).not.toBeInTheDocument();
     expect(screen.getByText("Liked Album")).toBeInTheDocument();
-    expect(screen.getByText("Discover Album")).toBeInTheDocument();
+  });
+
+  it("shows loading and empty/error states", async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue(mockResponse([]) as any);
+    vi.mocked(getLikedPlaylists).mockResolvedValue(mockResponse([]) as any);
+    vi.mocked(getUserById).mockResolvedValueOnce(null as any);
+
+    render(
+      <MemoryRouter>
+        <AlbumsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId("albums-page-content")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("You haven't liked any albums yet.")).toBeInTheDocument(),
+    );
+
+    fireEvent.change(screen.getByTestId("filter-input"), {
+      target: { value: "missing" },
+    });
+    expect(screen.getByText("No albums match your search.")).toBeInTheDocument();
+  });
+
+  it("shows an error when album fetch fails", async () => {
+    vi.mocked(getMyPlaylists).mockRejectedValueOnce(new Error("boom"));
+    vi.mocked(getLikedPlaylists).mockRejectedValueOnce(new Error("boom"));
+
+    render(
+      <MemoryRouter>
+        <AlbumsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Failed to load albums.")).toBeInTheDocument(),
+    );
+  });
+
+  it("requests owner lookup for created albums", async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue(
+      mockResponse([
+        {
+          ...createdAlbum,
+          owner_user_id: "owner-1",
+        },
+      ]) as any,
+    );
+    vi.mocked(getLikedPlaylists).mockResolvedValue(mockResponse([]) as any);
+    vi.mocked(getUserById).mockResolvedValue({
+      id: "owner-1",
+      username: "owner-user",
+      display_name: "Resolved Owner",
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <AlbumsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(getUserById).toHaveBeenCalledWith("owner-1"));
+    expect(getUserById).toHaveBeenCalledWith("owner-1");
+    expect(screen.getByText("Created Album")).toHaveAttribute("data-owner", "owner-1");
+    expect(screen.getByText("Created Album")).toHaveAttribute("data-owner-username", "owner");
+  });
+
+  it("handles created and liked filters separately", async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue(mockResponse([createdAlbum]) as any);
+    vi.mocked(getLikedPlaylists).mockResolvedValue(mockResponse([likedAlbum]) as any);
+
+    render(
+      <MemoryRouter>
+        <AlbumsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getAllByTestId("album-card")).toHaveLength(2));
+    fireEvent.click(screen.getByTestId("filter-created"));
+    expect(screen.getAllByTestId("album-card")).toHaveLength(1);
+    fireEvent.click(screen.getByTestId("filter-liked"));
+    expect(screen.getAllByTestId("album-card")).toHaveLength(1);
+  });
+
+  it("falls back to the current user username when the owner lookup fails", async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue(
+      mockResponse([
+        {
+          ...createdAlbum,
+          owner_user_id: "owner-1",
+        },
+      ]) as any,
+    );
+    vi.mocked(getLikedPlaylists).mockResolvedValue(mockResponse([]) as any);
+    vi.mocked(getUserById).mockRejectedValueOnce(new Error("missing"));
+
+    render(
+      <MemoryRouter>
+        <AlbumsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Created Album")).toHaveAttribute(
+        "data-owner-username",
+        "owner",
+      ),
+    );
+    expect(screen.getByText("Created Album")).toHaveAttribute(
+      "data-owner-username",
+      "owner",
+    );
+  });
+
+  it("includes store liked albums in the liked filter", async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue(mockResponse([createdAlbum]) as any);
+    vi.mocked(getLikedPlaylists).mockResolvedValue(mockResponse([]) as any);
+    vi.mocked(useLikesStore).mockImplementation((selector: any) =>
+      selector({
+        likedAlbums: [likedAlbum],
+      }),
+    );
+
+    render(
+      <MemoryRouter>
+        <AlbumsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText("Created Album")).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId("filter-liked"));
+    await waitFor(() => expect(screen.getByText("Liked Album")).toBeInTheDocument());
+    expect(screen.getByText("Liked Album")).toHaveAttribute(
+      "data-liked",
+      "true",
+    );
   });
 });
