@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import TrackItem from "@/components/playlist/TrackItem";
 import { useLikesStore } from "@/stores/likes.store";
+import { getUsernameFromId } from "@/services/user.service";
 
 const mockNavigate = vi.fn();
 const mockSetTrack = vi.fn();
@@ -36,6 +37,10 @@ vi.mock("@/stores/likes.store", () => ({
   useLikesStore: vi.fn(),
 }));
 
+vi.mock("@/services/user.service", () => ({
+  getUsernameFromId: vi.fn(),
+}));
+
 vi.mock("@/services/mocks/Track.service", () => ({
   repostTrack: (...args: unknown[]) => mockRepostTrack(...args),
 }));
@@ -52,6 +57,7 @@ const mockTrack = {
   track_id: "t1",
   title: "Alpha",
   artist_name: "ArtA",
+  artist_id: "ua-id",
   artist_username: "ua",
   play_count: 2500,
   duration: 120,
@@ -65,6 +71,7 @@ describe("Playlist TrackItem", () => {
     vi.clearAllMocks();
     mockNavigate.mockReset();
     mockWriteText.mockResolvedValue(undefined);
+    vi.mocked(getUsernameFromId).mockResolvedValue("ua");
     vi.mocked(useLikesStore).mockReturnValue({
       isTrackLiked: vi.fn(() => false),
       toggleTrack: vi.fn(),
@@ -86,7 +93,7 @@ describe("Playlist TrackItem", () => {
       </Tooltip.Provider>,
     );
 
-    expect(screen.getByRole("link", { name: "ArtA" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "ua" })).toHaveAttribute(
       "href",
       expect.stringContaining("/ua"),
     );
@@ -148,7 +155,7 @@ describe("Playlist TrackItem", () => {
       expect.objectContaining({
         id: "t1",
         title: "Alpha",
-        artistName: "ArtA",
+        artistName: "ua",
         artistUsername: "ua",
       }),
     );
@@ -197,7 +204,7 @@ describe("Playlist TrackItem", () => {
     fireEvent.click(screen.getByTestId("dropdown-station-track-t1"));
 
     expect(mockNavigate).toHaveBeenCalledWith(
-      "/discover/stations/arta:ua",
+      "/discover/stations/ua:ua-id",
     );
   });
 
@@ -225,11 +232,11 @@ describe("Playlist TrackItem", () => {
     fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
     fireEvent.click(screen.getByTestId("button-like-track-t1"));
 
-    expect(toggleTrack).toHaveBeenCalledWith(
+      expect(toggleTrack).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "t1",
         title: "Alpha",
-        artistName: "ArtA",
+        artistName: "ua",
       }),
     );
   });

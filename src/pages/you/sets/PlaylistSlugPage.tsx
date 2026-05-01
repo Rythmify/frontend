@@ -214,7 +214,7 @@ function PlaylistSlugPage() {
   return (
     <div
       data-test="playlist-slug-page"
-      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen"
+      className="container px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen overflow-x-hidden"
     >
       <PlaylistHero
         playlist={playlist}
@@ -226,8 +226,8 @@ function PlaylistSlugPage() {
         ownerUsername={albumOwner?.username ?? username}
       />
 
-      <div className="mx-auto">
-        <div className="flex flex-col lg:flex-row gap-8 py-6 w-full">
+      <div className="mx-auto w-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 w-full">
           {/* Left Column: Actions and Track List */}
           <div data-test="playlist-slug-main" className="flex-1 min-w-0">
             {showOwnerActions ? (
@@ -241,7 +241,7 @@ function PlaylistSlugPage() {
               <PlaylistActionsForYou playlist={playlist} />
             )}
 
-            <div data-test="playlist-slug-content" className="flex flex-col lg:flex-row gap-6 mt-8">
+            <div data-test="playlist-slug-content" className="flex flex-col gap-6 mt-6 lg:flex-row lg:mt-8">
               <OwnerInfo
                 ownerUserId={playlist.owner_user_id}
                 trackNum={playlist.tracks.length}

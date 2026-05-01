@@ -136,6 +136,7 @@ function PlanHeaderRow({ onGetStarted, isStarting, disabled, monthlyPrice }: Pla
           <button
             type="button"
             onClick={() => navigate("/subscriptions")}
+            data-test="premium-compare-back-to-basic"
             className="mt-1 cursor-pointer rounded-full border border-[#e5e7eb] px-5 py-[10px] text-[14px] font-semibold text-black/50 transition-colors hover:border-black/30"
           >
             Back to Basic
@@ -144,6 +145,7 @@ function PlanHeaderRow({ onGetStarted, isStarting, disabled, monthlyPrice }: Pla
           <button
             type="button"
             disabled
+            data-test="premium-compare-current-plan-basic"
             className="mt-1 rounded-full border border-[#e5e7eb] px-5 py-[10px] text-[14px] font-semibold text-black/50 cursor-default"
           >
             Current plan
@@ -162,7 +164,7 @@ function PlanHeaderRow({ onGetStarted, isStarting, disabled, monthlyPrice }: Pla
           <span>{yearlyDisplay ? `/month, billed yearly for ${yearlyDisplay}` : ""}</span>
         </p>
         {isPro ? (
-          <div className="mt-2 rounded-full border-2 border-[#cfb25d] px-6 py-3 text-[15px] font-bold text-[#cfb25d]">
+          <div data-test="premium-compare-current-plan-pro" className="mt-2 rounded-full border-2 border-[#cfb25d] px-6 py-3 text-[15px] font-bold text-[#cfb25d]">
             Current plan
           </div>
         ) : (
@@ -170,6 +172,7 @@ function PlanHeaderRow({ onGetStarted, isStarting, disabled, monthlyPrice }: Pla
             type="button"
             onClick={onGetStarted}
             disabled={isStarting || disabled}
+            data-test="premium-compare-get-started"
             className="mt-2 cursor-pointer rounded-full bg-black px-6 py-3 text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {isStarting ? "Loading…" : "Get started"}
@@ -190,7 +193,7 @@ export default function CompareTable({ onGetStarted, isStarting, disabled, month
   };
 
   return (
-    <section className="bg-white px-6 pb-20 md:px-10 lg:px-12 xl:px-16">
+    <section data-test="premium-compare-table" className="bg-white px-6 pb-20 md:px-10 lg:px-12 xl:px-16">
       <h2 className="mb-8 pt-14 text-center text-[2.25rem] font-extrabold tracking-[-0.03em] text-black">
         Compare features.
       </h2>
@@ -244,11 +247,12 @@ export default function CompareTable({ onGetStarted, isStarting, disabled, month
       </div>
 
       <footer className="mt-16 flex flex-col gap-3 border-t border-[#e5e7eb] pt-6 text-[12px] text-slate-400">
-        <p className="m-0">
+        <p data-test="premium-compare-footer" className="m-0">
           Signed in as {user?.displayName ?? user?.username ?? "User"}.{" "}
           <button
             type="button"
             onClick={handleSignOut}
+            data-test="premium-compare-sign-out"
             className="cursor-pointer border-0 bg-transparent p-0 text-[#ff5500] no-underline"
           >
             Sign out

@@ -177,6 +177,8 @@ export interface Playlist {
   repost_count: number;            
   created_at: string;
   updated_at: string;            
+  tracks?: any[];
+  preview_tracks?: any[];
 }
 
 export interface PlaylistResponse {
@@ -293,11 +295,11 @@ export const fetchConversations = async (
 export const fetchConversation = async (
   conversationId: string,
   limit: number = 50,
-  offset: number = 0
+  page: number = 1,
 ): Promise<ConversationDetailResponse> => {
   const response = await axiosInstance.get<ConversationDetailResponse>(
     `/messages/conversations/${conversationId}`,
-    { params: { limit, offset } }
+    { params: { limit, page } },
   );
   return response.data;
 };

@@ -114,7 +114,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             href={normalizeLinkHref(supportLink.url)}
             target="_blank"
             rel="noreferrer"
-            className="mt-4 flex h-9 items-center justify-center gap-2 rounded bg-white px-4 text-sm font-bold text-black hover:bg-gray-200 transition-colors"
+            className="mt-4 flex h-9 items-center justify-center gap-2 rounded bg-white px-4 text-sm font-bold text-black hover:opacity-80 transition-colors"
           >
             <i className="fa-solid fa-dollar-sign text-black" />
             <span>Support {user.displayName}</span>
@@ -132,7 +132,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           <span className="text-sm font-extrabold text-text-secondary">
             Followers
           </span>
-          <span className="text-3xl font-bold py-1.5 text-white">
+          <span className="text-3xl font-bold py-1.5 text-bg-inverted">
             {formatCount(stats.followers)}
           </span>
         </button>
@@ -145,7 +145,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           <span className="text-sm font-extrabold text-text-secondary">
             Following
           </span>
-          <span className="text-3xl font-bold py-1.5 text-white">
+          <span className="text-3xl font-bold py-1.5 text-bg-inverted">
             {formatCount(stats.following)}
           </span>
         </button>
@@ -158,7 +158,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           <span className="text-sm font-extrabold text-text-secondary">
             Tracks
           </span>
-          <span className="text-3xl font-bold py-1.5 text-white">
+          <span className="text-3xl font-bold py-1.5 text-bg-inverted">
             {formatCount(stats.tracks)}
           </span>
         </button>
@@ -182,14 +182,14 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 text-sm font-bold text-white hover:opacity-70 transition-opacity"
+                className="flex items-center gap-2 text-sm font-bold text-bg-inverted hover:opacity-70 transition-opacity"
               >
                 {content}
               </a>
             ) : (
               <div
                 key={link.id}
-                className="flex items-center gap-2 text-sm font-bold text-white"
+                className="flex items-center gap-2 text-sm font-bold text-bg-inverted"
               >
                 {content}
               </div>
@@ -203,7 +203,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         <div className="flex flex-col gap-1 w-[320px]">
           <p
             data-test="bio-text"
-            className="text-sm text-left text-white leading-relaxed"
+            className="text-sm text-left text-bg-inverted leading-relaxed"
           >
             {displayedBio}
           </p>
@@ -211,7 +211,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             <button
               data-test="bio-toggle"
               onClick={() => setBioExpanded((prev) => !prev)}
-              className="text-sm font-bold text-white text-left hover:opacity-70 transition-opacity"
+              className="text-sm font-bold text-bg-inverted text-left hover:opacity-70 transition-opacity"
             >
               {bioExpanded ? "Show less" : "Show more"}
             </button>
@@ -226,7 +226,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             <button
               data-test="likes-button"
               onClick={() => navigate(`/${user.username}/likes`)}
-              className="text-xs font-bold text-white cursor-pointer hover:text-text-secondary"
+              className="text-xs font-bold text-bg-inverted cursor-pointer hover:text-text-secondary"
             >
               {displayedLikedTracksCount} LIKES
             </button>
@@ -257,17 +257,17 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <i className="fa-solid fa-ticket text-text-secondary" />
-            <span className="text-xs font-bold text-white">ON TOUR</span>
+            <span className="text-xs font-bold text-bg-inverted">ON TOUR</span>
             <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
           </div>
-          <p className="text-xs text-left text-white border-t pt-4 border-white w-[320px]">
+          <p className="text-xs text-left text-bg-inverted border-t pt-4 border-border w-[320px]">
             With a Premium account, you can create ticketed live events on
             Rythmify, and list existing events.
           </p>
           <button
             data-test="upgrade-pro-button"
             onClick={() => navigate("/premium")}
-            className="w-[320px] py-3 bg-white text-black font-semibold text-sm rounded-full hover:bg-gray-200 transition-colors"
+            className="w-[320px] py-3 bg-bg text-bg-inverted font-semibold text-sm rounded-full hover:opacity-80 transition-colors"
           >
             Upgrade to Premium
           </button>
@@ -281,7 +281,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             <button
               data-test="followers-label"
               onClick={() => navigate(`/${user.username}/follower`)}
-              className="text-xs cursor-pointer font-bold text-white hover:opacity-70 transition-opacity"
+              className="text-xs cursor-pointer font-bold text-bg-inverted hover:opacity-70 transition-opacity"
             >
               {formatCount(stats.followers)} FOLLOWERS
             </button>
@@ -301,8 +301,8 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                 src={follower.avatar}
                 name={follower.username}
                 alt={follower.username}
-                wrapperClassName="w-10 h-10 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 border-2 border-[#111] hover:opacity-80 transition-opacity"
-                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
+                wrapperClassName="w-10 h-10 rounded-full overflow-hidden bg-input-bg flex-shrink-0 border-2 border-border hover:opacity-80 transition-opacity"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-sm font-bold"
                 onClick={() => navigate(`/${follower.username}`)}
                 style={{
                   marginLeft: index === 0 ? 0 : -8,
@@ -321,7 +321,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
             <button
               data-test="following-label"
               onClick={() => navigate(`/${user.username}/following`)}
-              className="text-xs cursor-pointer font-semibold text-white"
+              className="text-xs cursor-pointer font-semibold text-bg-inverted"
             >
               {formatCount(stats.following)} FOLLOWING
             </button>
@@ -346,8 +346,8 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                   src={u.avatar}
                   name={u.displayName || u.username}
                   alt={u.displayName || u.username}
-                  wrapperClassName="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-zinc-800 flex-shrink-0"
-                  initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-white text-sm font-bold"
+                  wrapperClassName="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-input-bg flex-shrink-0"
+                  initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-sm font-bold"
                   onClick={() => navigate(`/${u.username}`)}
                 />
                 <div className="flex flex-col">
@@ -355,7 +355,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
                     <button
                       data-test="following-username"
                       onClick={() => navigate(`/${u.username}`)}
-                      className="cursor-pointer text-sm font-bold text-white hover:opacity-70 transition-opacity"
+                      className="cursor-pointer text-sm font-bold text-bg-inverted hover:opacity-70 transition-opacity"
                     >
                       {u.username}
                     </button>
@@ -398,28 +398,28 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
 
       {/* Go Mobile */}
       <div className="flex flex-col gap-3 w-[320px]">
-        <span className="text-xs font-semibold text-left text-white">
+        <span className="text-xs font-semibold text-left text-bg-inverted">
           GO MOBILE
         </span>
         <div className="flex gap-3">
           <button
             data-test="app-store-button"
-            className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70"
+            className="flex items-center gap-2 px-1 py-1 border border-bg-inverted rounded-lg hover:opacity-70"
           >
-            <i className="fa-brands fa-apple text-white text-xl" />
+            <i className="fa-brands fa-apple text-bg-inverted text-xl" />
             <div className="flex flex-col items-start">
-              <span className="text-[8px] text-white">Download on the</span>
-              <span className="text-xs font-bold text-white">App Store</span>
+              <span className="text-[8px] text-bg-inverted">Download on the</span>
+              <span className="text-xs font-bold text-bg-inverted">App Store</span>
             </div>
           </button>
           <button
             data-test="google-play-button"
-            className="flex items-center gap-2 px-1 py-1 border border-white rounded-lg hover:opacity-70"
+            className="flex items-center gap-2 px-1 py-1 border border-bg-inverted rounded-lg hover:opacity-70"
           >
-            <i className="fa-brands fa-google-play text-white text-xl" />
+            <i className="fa-brands fa-google-play text-bg-inverted text-xl" />
             <div className="flex flex-col items-start">
-              <span className="text-[8px] text-white">GET IT ON</span>
-              <span className="text-xs font-bold text-white">Google Play</span>
+              <span className="text-[8px] text-bg-inverted">GET IT ON</span>
+              <span className="text-xs font-bold text-bg-inverted">Google Play</span>
             </div>
           </button>
         </div>

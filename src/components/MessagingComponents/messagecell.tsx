@@ -54,10 +54,10 @@ function EmbedCard({
   embedId: string;
   preloaded?: ApiTrack | ApiPlaylist;
 }) {
-  const [track, setTrack]       = useState<Track | null>(null);
+  const [track, setTrack] = useState<Track | null>(null);
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [failed, setFailed]     = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     // Map preloaded resource (optimistic send) — no network call needed
@@ -81,7 +81,27 @@ function EmbedCard({
           if (!cancelled) setTrack(mapTrack(res.data));
         } else if (embedType === 'playlist') {
           const res = await fetchPlaylist(embedId);
-          if (!cancelled) setPlaylist(mapPlaylist(res.data));
+          const pl = mapPlaylist(res.data);
+          
+          // Explicitly fetch all tracks to ensure we have full data (waveform, audioUrl, etc.)
+          if (pl.tracks && pl.tracks.length > 0) {
+            try {
+              const fetchPromises = pl.tracks.map(async (t) => {
+                const trackId = t.id;
+                if (trackId && trackId !== "undefined" && trackId !== "") {
+                  const trackRes = await fetchTrack(trackId);
+                  return mapTrack(trackRes.data);
+                }
+                return t;
+              });
+              
+              pl.tracks = await Promise.all(fetchPromises);
+            } catch (err) {
+              console.error("Failed to fetch tracks for embedded playlist:", err);
+            }
+          }
+          
+          if (!cancelled) setPlaylist(pl);
         }
       } catch {
         if (!cancelled) setFailed(true);
@@ -126,12 +146,12 @@ function EmbedCard({
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string): string {
-  const diff    = Date.now() - new Date(dateStr).getTime();
+  const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
-  const hours   = Math.floor(minutes / 60);
-  const days    = Math.floor(hours / 24);
-  if (days > 0)    return `${days} day${days > 1 ? 's' : ''} ago`;
-  if (hours > 0)   return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
   if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
   return 'just now';
 }

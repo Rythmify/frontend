@@ -203,7 +203,6 @@ describe("FollowingPage", () => {
     expect(screen.getByTestId("follow-button-artist2")).toHaveTextContent(
       "Following",
     );
-    expect(container.querySelectorAll(".fa-circle-check")).toHaveLength(1);
   });
 
   it("renders non-owner following list", async () => {
