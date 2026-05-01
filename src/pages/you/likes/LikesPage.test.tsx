@@ -143,6 +143,7 @@ vi.mock("@/services/user.service", () => ({
     profile_picture: null,
     username: "travis-scott",
   }),
+  getUserWebProfiles: vi.fn().mockResolvedValue([]),
   getUserLikedTracks: vi.fn().mockResolvedValue({
     items: [
       {
