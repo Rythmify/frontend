@@ -269,14 +269,6 @@ export default function SendMessageForm({
           }
         }}
       >
-        {/* Picker dropdown — rendered above the composer */}
-        {pickerOpen && (
-          <TrackPlaylistPicker
-            onPick={handlePick}
-            onClose={() => setPickerOpen(false)}
-          />
-        )}
-
         <label className="text-sm font-bold text-white">
           Write your message and add tracks or playlists{' '}
           <span className="text-red-500">*</span>
@@ -294,17 +286,25 @@ export default function SendMessageForm({
           externalEmbeds={embeds}
         />
 
+        {pickerOpen && (
+          <TrackPlaylistPicker
+            onPick={handlePick}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
+
         {error && <p data-test="send-message-error" className="text-xs text-red-400">{error}</p>}
 
         <div className="flex justify-between">
           {user?.role === 'artist' && (
             <button
+              type="button"
               data-test="add-track-playlist-button"
               onClick={() => setPickerOpen((o) => !o)}
-              className={`px-5 py-2 text-sm font-semibold text-white border rounded-lg transition-colors ${
+              className={`px-5 py-2 text-sm font-semibold text-black border rounded-lg transition-colors ${
                 pickerOpen
-                  ? 'border-[#f50] bg-[#f50]/10 text-[#f50]'
-                  : 'border-white/20 hover:bg-white/10'
+                  ? 'border-white bg-white'
+                  : 'border-white bg-white hover:bg-white/85'
               }`}
             >
               Add track or playlist

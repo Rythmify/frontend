@@ -34,6 +34,11 @@ const createConversation = (id: string): Conversation =>
     },
   } as Conversation);
 
+const baseProps = {
+  hasMore: false,
+  onLoadMore: vi.fn(),
+};
+
 describe("Chats", () => {
   it("renders loading spinner", () => {
     render(
@@ -41,6 +46,7 @@ describe("Chats", () => {
         conversations={[]}
         loading
         loadingMore={false}
+        {...baseProps}
         error={null}
         activeConversationId={null}
         onSelect={vi.fn()}
@@ -56,6 +62,7 @@ describe("Chats", () => {
         conversations={[]}
         loading={false}
         loadingMore={false}
+        {...baseProps}
         error="Something went wrong"
         activeConversationId={null}
         onSelect={vi.fn()}
@@ -71,6 +78,7 @@ describe("Chats", () => {
         conversations={[]}
         loading={false}
         loadingMore={false}
+        {...baseProps}
         error={null}
         activeConversationId={null}
         onSelect={vi.fn()}
@@ -88,6 +96,7 @@ describe("Chats", () => {
         conversations={conversations}
         loading={false}
         loadingMore={false}
+        {...baseProps}
         error={null}
         activeConversationId={null}
         onSelect={vi.fn()}
@@ -107,6 +116,7 @@ describe("Chats", () => {
         conversations={conversations}
         loading={false}
         loadingMore={false}
+        {...baseProps}
         error={null}
         activeConversationId={null}
         onSelect={onSelect}
@@ -126,6 +136,7 @@ describe("Chats", () => {
         conversations={conversations}
         loading={false}
         loadingMore={true}
+        {...baseProps}
         error={null}
         activeConversationId={null}
         onSelect={vi.fn()}
@@ -133,5 +144,34 @@ describe("Chats", () => {
     );
 
     expect(screen.getAllByTestId("spinner").length).toBeGreaterThan(0);
+  });
+
+  it("calls onLoadMore when scrolled near the bottom and more pages exist", () => {
+    const conversations = [createConversation("1")];
+    const onLoadMore = vi.fn();
+
+    render(
+      <Chats
+        conversations={conversations}
+        loading={false}
+        loadingMore={false}
+        hasMore
+        error={null}
+        activeConversationId={null}
+        onSelect={vi.fn()}
+        onLoadMore={onLoadMore}
+      />
+    );
+
+    const list = screen.getByTestId("chat-list");
+    Object.defineProperties(list, {
+      scrollHeight: { configurable: true, value: 500 },
+      scrollTop: { configurable: true, value: 330 },
+      clientHeight: { configurable: true, value: 100 },
+    });
+
+    fireEvent.scroll(list);
+
+    expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 });

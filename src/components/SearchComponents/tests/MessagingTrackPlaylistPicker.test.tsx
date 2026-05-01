@@ -47,6 +47,7 @@ const playlist = {
   name: "Studio Picks",
   cover_image: "playlist.png",
   track_count: 1,
+  is_public: false,
 };
 
 const repostedPlaylist = {
@@ -74,18 +75,26 @@ describe("TrackPlaylistPicker", () => {
     vi.restoreAllMocks();
   });
 
-  it("loads my tracks on mount and picks a track", async () => {
-    const user = userEvent.setup();
-    const { onPick, onClose } = renderPicker();
+  it("loads all track and playlist sources on mount", async () => {
+    renderPicker();
 
     expect(screen.getByTestId("track-playlist-picker")).toBeInTheDocument();
     expect(await screen.findByText("Midnight Loop")).toBeInTheDocument();
-    expect(screen.getByText("Mina")).toBeInTheDocument();
-    expect(screen.getByText("2:05")).toBeInTheDocument();
+    expect(screen.getByText("Shared Beat")).toBeInTheDocument();
+    expect(screen.getByText("Studio Picks")).toBeInTheDocument();
+    expect(screen.getByText("Borrowed Gems")).toBeInTheDocument();
+
     expect(mockFetchMyTracks).toHaveBeenCalledWith(50, 0);
+    expect(mockFetchMyRepostedTracks).toHaveBeenCalledWith(50, 0);
+    expect(mockFetchUserPlaylists).toHaveBeenCalledWith("me-1", 50, 0);
+    expect(mockFetchMyRepostedPlaylists).toHaveBeenCalledWith(50, 0);
+  });
 
-    await user.click(screen.getByText("Midnight Loop"));
+  it("picks tracks and playlists from the combined menu", async () => {
+    const user = userEvent.setup();
+    const { onPick, onClose } = renderPicker();
 
+    await user.click(await screen.findByText("Midnight Loop"));
     expect(onPick).toHaveBeenCalledWith({
       type: "track",
       id: "track-1",
@@ -93,50 +102,13 @@ describe("TrackPlaylistPicker", () => {
       artistName: "Mina",
       coverImage: "cover.png",
     });
-    expect(onClose).toHaveBeenCalled();
-  });
+    expect(onClose).toHaveBeenCalledTimes(1);
 
-  it("filters the active tab by search query", async () => {
-    const user = userEvent.setup();
-    renderPicker();
-    await screen.findByText("Midnight Loop");
+    onPick.mockClear();
+    onClose.mockClear();
+    renderPicker(onPick, onClose);
 
-    await user.type(screen.getByPlaceholderText("Select a track or playlist from your profile"), "nothing");
-    expect(screen.getByText("No tracks found.")).toBeInTheDocument();
-
-    await user.clear(screen.getByPlaceholderText("Select a track or playlist from your profile"));
-    await user.type(screen.getByPlaceholderText("Select a track or playlist from your profile"), "mina");
-    expect(screen.getByText("Midnight Loop")).toBeInTheDocument();
-  });
-
-  it("loads reposted tracks and handles missing duration and cover image", async () => {
-    const user = userEvent.setup();
-    const { onPick } = renderPicker();
-
-    await user.click(screen.getByText("Reposted Tracks"));
-    expect(await screen.findByText("Shared Beat")).toBeInTheDocument();
-    expect(mockFetchMyRepostedTracks).toHaveBeenCalledWith(50, 0);
-
-    await user.click(screen.getByText("Shared Beat"));
-    expect(onPick).toHaveBeenCalledWith({
-      type: "track",
-      id: "track-2",
-      title: "Shared Beat",
-      artistName: "Nour",
-      coverImage: null,
-    });
-  });
-
-  it("loads my playlists and picks a playlist", async () => {
-    const user = userEvent.setup();
-    const { onPick, onClose } = renderPicker();
-
-    await user.click(screen.getByText("My Playlists"));
-    expect(await screen.findByText("Studio Picks")).toBeInTheDocument();
-    expect(screen.getByText("1 track")).toBeInTheDocument();
-    expect(mockFetchUserPlaylists).toHaveBeenCalledWith("me-1", 50, 0);
-
-    await user.click(screen.getByText("Studio Picks"));
+    await user.click(await screen.findByText("Studio Picks"));
     expect(onPick).toHaveBeenCalledWith({
       type: "playlist",
       id: "playlist-1",
@@ -144,39 +116,43 @@ describe("TrackPlaylistPicker", () => {
       trackCount: 1,
       coverImage: "playlist.png",
     });
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("loads reposted playlists and renders plural track count", async () => {
+  it("filters combined results by search query", async () => {
     const user = userEvent.setup();
-    const { onPick } = renderPicker();
+    renderPicker();
+    await screen.findByText("Midnight Loop");
 
-    await user.click(screen.getByText("Reposted Playlists"));
-    expect(await screen.findByText("Borrowed Gems")).toBeInTheDocument();
-    expect(screen.getByText("4 tracks")).toBeInTheDocument();
-    expect(mockFetchMyRepostedPlaylists).toHaveBeenCalledWith(50, 0);
+    const input = screen.getByPlaceholderText("Select a track or playlist from your profile");
+    await user.type(input, "borrowed");
 
-    await user.click(screen.getByText("Borrowed Gems"));
-    expect(onPick).toHaveBeenCalledWith({
-      type: "playlist",
-      id: "playlist-2",
-      title: "Borrowed Gems",
-      trackCount: 4,
-      coverImage: null,
-    });
+    expect(screen.getByText("Borrowed Gems")).toBeInTheDocument();
+    expect(screen.queryByText("Midnight Loop")).not.toBeInTheDocument();
+    expect(screen.queryByText("Studio Picks")).not.toBeInTheDocument();
   });
 
-  it("shows empty states and ignores failed tab fetches", async () => {
-    const user = userEvent.setup();
-    mockFetchMyTracks.mockResolvedValueOnce({ data: [] });
-    mockFetchMyRepostedTracks.mockRejectedValueOnce(new Error("nope"));
+  it("displays fulfilled sources when another endpoint fails", async () => {
+    mockFetchMyTracks.mockRejectedValueOnce(new Error("no tracks"));
 
     renderPicker();
-    expect(await screen.findByText("No tracks found.")).toBeInTheDocument();
 
-    await user.click(screen.getByText("Reposted Tracks"));
-    await waitFor(() => expect(mockFetchMyRepostedTracks).toHaveBeenCalled());
-    expect(screen.getByText("No reposted tracks found.")).toBeInTheDocument();
+    await waitFor(() => expect(mockFetchMyTracks).toHaveBeenCalled());
+    expect(await screen.findByText("Shared Beat")).toBeInTheDocument();
+    expect(screen.getByText("Studio Picks")).toBeInTheDocument();
+    expect(screen.getByText("Borrowed Gems")).toBeInTheDocument();
+    expect(screen.queryByText("Midnight Loop")).not.toBeInTheDocument();
+  });
+
+  it("shows an empty state when every source returns no results", async () => {
+    mockFetchMyTracks.mockResolvedValueOnce({ data: [] });
+    mockFetchMyRepostedTracks.mockResolvedValueOnce({ data: [] });
+    mockFetchUserPlaylists.mockResolvedValueOnce({ data: [] });
+    mockFetchMyRepostedPlaylists.mockResolvedValueOnce({ data: [] });
+
+    renderPicker();
+
+    expect(await screen.findByText("No tracks or playlists found.")).toBeInTheDocument();
   });
 
   it("closes when clicking outside the picker", async () => {

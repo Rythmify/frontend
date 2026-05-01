@@ -1,312 +1,268 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AudioWaveform, Lock, ListMusic, Music } from "lucide-react";
 import {
   fetchMyTracks,
   fetchMyRepostedTracks,
   fetchMyRepostedPlaylists,
+  fetchUserPlaylists,
   type MyTrack,
   type RepostedTrack,
   type RepostedPlaylist,
+  type UserPlaylist,
 } from "../../services/api/messaging/conversationApi";
-import { fetchUserPlaylists, type UserPlaylist } from "../../services/api/messaging/conversationApi";
 import { useAuthStore } from "@/stores/auth.store";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type TabKey = "my-tracks" | "reposted-tracks" | "playlists" | "reposted-playlists";
-
 export type PickedItem =
-  | { type: "track";    id: string; title: string; artistName: string; coverImage: string | null }
-  | { type: "playlist"; id: string; title: string; trackCount: number;  coverImage: string | null };
+  | { type: "track"; id: string; title: string; artistName: string; coverImage: string | null }
+  | { type: "playlist"; id: string; title: string; trackCount: number; coverImage: string | null };
 
 interface TrackPlaylistPickerProps {
   onPick: (item: PickedItem) => void;
   onClose: () => void;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+type PickerItem =
+  | {
+      type: "track";
+      id: string;
+      title: string;
+      artistName: string;
+      coverImage: string | null;
+      isPrivate?: boolean;
+    }
+  | {
+      type: "playlist";
+      id: string;
+      title: string;
+      trackCount: number;
+      coverImage: string | null;
+      isPrivate?: boolean;
+    };
 
-function formatDuration(seconds: number | null): string {
-  if (!seconds) return "";
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
+const RESULT_LIMIT = 50;
+
+function getResponseItems<T>(response: unknown, fallbackKey: string): T[] {
+  if (Array.isArray(response)) return response as T[];
+
+  const payload = response as Record<string, unknown> | null;
+  if (!payload) return [];
+
+  if (Array.isArray(payload.data)) return payload.data as T[];
+  if (Array.isArray(payload[fallbackKey])) return payload[fallbackKey] as T[];
+
+  return [];
 }
 
-function CoverImage({ src, alt }: { src: string | null; alt: string }) {
+function normalizeTrack(track: MyTrack | RepostedTrack): PickerItem {
+  return {
+    type: "track",
+    id: track.id,
+    title: track.title,
+    artistName: track.artist_name ?? "",
+    coverImage: track.cover_image,
+  };
+}
+
+function normalizePlaylist(playlist: RepostedPlaylist | UserPlaylist): PickerItem {
+  const id = (playlist as UserPlaylist).playlist_id ?? (playlist as RepostedPlaylist).id;
+  const title = (playlist as UserPlaylist).name ?? (playlist as RepostedPlaylist).title ?? "Playlist";
+
+  return {
+    type: "playlist",
+    id,
+    title,
+    trackCount: playlist.track_count ?? 0,
+    coverImage: playlist.cover_image ?? null,
+    isPrivate: "is_public" in playlist ? !playlist.is_public : false,
+  };
+}
+
+function CoverImage({ item }: { item: PickerItem }) {
   return (
-    <div className="w-10 h-10 shrink-0 rounded overflow-hidden bg-[#333] flex items-center justify-center">
-      {src ? (
-        <img src={src} alt={alt} className="w-full h-full object-cover" />
+    <div className="w-10 h-10 shrink-0 overflow-hidden bg-[#6a4f5b] flex items-center justify-center">
+      {item.coverImage ? (
+        <img src={item.coverImage} alt="" className="w-full h-full object-cover" />
       ) : (
-        <svg className="w-5 h-5 text-[#666]" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
-        </svg>
+        <Music className="w-5 h-5 text-white/55" aria-hidden="true" />
       )}
     </div>
   );
 }
 
-function PlaylistIcon() {
-  return (
-    <svg className="w-4 h-4 text-[#888]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-      <rect x="3" y="3" width="8" height="8" rx="1" />
-      <rect x="13" y="3" width="8" height="8" rx="1" />
-      <rect x="3" y="13" width="8" height="8" rx="1" />
-      <rect x="13" y="13" width="8" height="8" rx="1" />
-    </svg>
-  );
-}
-
-function WaveformIcon() {
-  return (
-    <svg className="w-4 h-4 text-[#888]" fill="currentColor" viewBox="0 0 24 24">
-      <rect x="2"  y="10" width="2" height="4" rx="1" />
-      <rect x="6"  y="7"  width="2" height="10" rx="1" />
-      <rect x="10" y="4"  width="2" height="16" rx="1" />
-      <rect x="14" y="7"  width="2" height="10" rx="1" />
-      <rect x="18" y="10" width="2" height="4"  rx="1" />
-    </svg>
-  );
-}
-
-function LockIcon() {
-  return (
-    <svg className="w-3.5 h-3.5 text-[#888]" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M12 1a5 5 0 0 0-5 5v3H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V11a2 2 0 0 0-2-2h-2V6a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V6a3 3 0 0 1 3-3z" />
-    </svg>
-  );
-}
-
-// ─── Row components ───────────────────────────────────────────────────────────
-
-function TrackRow({ track, onPick }: { track: MyTrack | RepostedTrack; onPick: () => void }) {
+function PickerRow({ item, onPick }: { item: PickerItem; onPick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onPick}
-      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors text-left"
+      className="group grid w-full grid-cols-[40px_minmax(0,1fr)_44px] items-center gap-5 px-5 py-2.5 text-left transition-colors odd:bg-black even:bg-[#2f2f2f] hover:bg-[#3a3a3a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
     >
-      <CoverImage src={track.cover_image} alt={track.title} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-white font-medium truncate">{track.title}</p>
-        <p className="text-xs text-[#888] truncate">{track.artist_name}</p>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        {formatDuration((track as MyTrack).duration) && (
-          <span className="text-xs text-[#666]">{formatDuration((track as MyTrack).duration)}</span>
+      <CoverImage item={item} />
+      <span className="min-w-0 truncate text-base font-bold text-white">
+        {item.title}
+      </span>
+      <span className="flex items-center justify-end gap-3 text-[#a8a8a8]">
+        {item.isPrivate && <Lock className="h-4 w-4" aria-label="Private" />}
+        {item.type === "track" ? (
+          <AudioWaveform className="h-4 w-4" aria-label="Track" />
+        ) : (
+          <ListMusic className="h-4 w-4" aria-label="Playlist" />
         )}
-        <WaveformIcon />
-      </div>
+      </span>
     </button>
   );
 }
 
-function PlaylistRow({
-  playlist,
-  onPick,
-}: {
-  playlist: RepostedPlaylist | UserPlaylist;
-  onPick: () => void;
-}) {
-  const name       = (playlist as UserPlaylist).name       ?? (playlist as RepostedPlaylist).title ?? "Playlist";
-  const coverImage = (playlist as any).cover_image ?? null;
-  const trackCount = (playlist as any).track_count ?? 0;
-
+function EmptyState({ loading }: { loading: boolean }) {
   return (
-    <button
-      onClick={onPick}
-      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors text-left"
-    >
-      <CoverImage src={coverImage} alt={name} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-white font-medium truncate">{name}</p>
-        <p className="text-xs text-[#888]">{trackCount} track{trackCount !== 1 ? "s" : ""}</p>
-      </div>
-      <PlaylistIcon />
-    </button>
-  );
-}
-
-// ─── Empty / Loading states ───────────────────────────────────────────────────
-
-function LoadingState() {
-  return (
-    <div className="flex items-center justify-center py-8">
-      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+    <div className="px-5 py-6 text-center text-sm text-[#999]">
+      {loading ? "Loading tracks and playlists..." : "No tracks or playlists found."}
     </div>
   );
 }
 
-function EmptyState({ label }: { label: string }) {
-  return (
-    <div className="py-8 text-center text-sm text-[#666]">No {label} found.</div>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
-
 export default function TrackPlaylistPicker({ onPick, onClose }: TrackPlaylistPickerProps) {
-  const user = useAuthStore((s) => s.user);
-
-  const [activeTab,         setActiveTab]         = useState<TabKey>("my-tracks");
-  const [query,             setQuery]             = useState("");
-  const [loading,           setLoading]           = useState(false);
-
-  const [myTracks,          setMyTracks]          = useState<MyTrack[]>([]);
-  const [repostedTracks,    setRepostedTracks]    = useState<RepostedTrack[]>([]);
-  const [userPlaylists,     setUserPlaylists]     = useState<UserPlaylist[]>([]);
-  const [repostedPlaylists, setRepostedPlaylists] = useState<RepostedPlaylist[]>([]);
-
+  const user = useAuthStore((state) => state.user);
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<PickerItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    const handler = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        onClose();
+      }
     };
+
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose]);
 
-  // Fetch on tab change
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
 
-    const fetchers: Record<TabKey, () => Promise<void>> = {
-      "my-tracks": async () => {
-        const res = await fetchMyTracks(50, 0);
-        setMyTracks(res.data);
-      },
-      "reposted-tracks": async () => {
-        const res = await fetchMyRepostedTracks(50, 0);
-        setRepostedTracks(res.data);
-      },
-      "playlists": async () => {
-        if (!user?.id) return;
-        const res = await fetchUserPlaylists(user.id, 50, 0);
-        setUserPlaylists(res.data);
-      },
-      "reposted-playlists": async () => {
-        const res = await fetchMyRepostedPlaylists(50, 0);
-        setRepostedPlaylists(res.data);
-      },
+    const loadItems = async () => {
+      setLoading(true);
+
+      const requests = [
+        fetchMyTracks(RESULT_LIMIT, 0),
+        fetchMyRepostedTracks(RESULT_LIMIT, 0),
+        user?.id ? fetchUserPlaylists(user.id, RESULT_LIMIT, 0) : Promise.resolve({ data: [] }),
+        fetchMyRepostedPlaylists(RESULT_LIMIT, 0),
+      ] as const;
+
+      const [myTracks, repostedTracks, playlists, repostedPlaylists] =
+        await Promise.allSettled(requests);
+
+      if (cancelled) return;
+
+      const nextItems: PickerItem[] = [];
+
+      if (myTracks.status === "fulfilled") {
+        nextItems.push(...getResponseItems<MyTrack>(myTracks.value, "tracks").map(normalizeTrack));
+      }
+      if (repostedTracks.status === "fulfilled") {
+        nextItems.push(
+          ...getResponseItems<RepostedTrack>(repostedTracks.value, "tracks").map(normalizeTrack),
+        );
+      }
+      if (playlists.status === "fulfilled") {
+        nextItems.push(
+          ...getResponseItems<UserPlaylist>(playlists.value, "playlists").map(normalizePlaylist),
+        );
+      }
+      if (repostedPlaylists.status === "fulfilled") {
+        nextItems.push(
+          ...getResponseItems<RepostedPlaylist>(repostedPlaylists.value, "playlists").map(
+            normalizePlaylist,
+          ),
+        );
+      }
+
+      const seen = new Set<string>();
+      setItems(
+        nextItems.filter((item) => {
+          const key = `${item.type}:${item.id}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }),
+      );
+      setLoading(false);
     };
 
-    fetchers[activeTab]()
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [activeTab, user?.id]);
+    loadItems().catch(() => {
+      if (!cancelled) {
+        setItems([]);
+        setLoading(false);
+      }
+    });
 
-  // ─── Filter by search query ───────────────────────────────────────────────
-  const q = query.toLowerCase();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
-  const filteredMyTracks = myTracks.filter(
-    (t) => t.title.toLowerCase().includes(q) || t.artist_name?.toLowerCase().includes(q),
-  );
-  const filteredRepostedTracks = repostedTracks.filter(
-    (t) => t.title.toLowerCase().includes(q) || t.artist_name?.toLowerCase().includes(q),
-  );
-  const filteredUserPlaylists = userPlaylists.filter((p) =>
-    p.name.toLowerCase().includes(q),
-  );
-  const filteredRepostedPlaylists = repostedPlaylists.filter((p) =>
-    ((p as any).title ?? "").toLowerCase().includes(q),
-  );
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return items;
 
-  // ─── Pick helpers ─────────────────────────────────────────────────────────
-  const pickTrack = (t: MyTrack | RepostedTrack) => {
-    onPick({ type: "track", id: t.id, title: t.title, artistName: t.artist_name ?? "", coverImage: t.cover_image });
+    return items.filter((item) => {
+      const searchable =
+        item.type === "track"
+          ? `${item.title} ${item.artistName}`
+          : `${item.title} ${item.trackCount}`;
+
+      return searchable.toLowerCase().includes(normalizedQuery);
+    });
+  }, [items, query]);
+
+  const pickItem = (item: PickerItem) => {
+    if (item.type === "track") {
+      onPick({
+        type: "track",
+        id: item.id,
+        title: item.title,
+        artistName: item.artistName,
+        coverImage: item.coverImage,
+      });
+    } else {
+      onPick({
+        type: "playlist",
+        id: item.id,
+        title: item.title,
+        trackCount: item.trackCount,
+        coverImage: item.coverImage,
+      });
+    }
+
     onClose();
   };
-
-  const pickPlaylist = (p: RepostedPlaylist | UserPlaylist) => {
-    const id         = (p as UserPlaylist).playlist_id ?? (p as any).id;
-    const title      = (p as UserPlaylist).name        ?? (p as any).title ?? "Playlist";
-    const trackCount = (p as any).track_count ?? 0;
-    const coverImage = (p as any).cover_image ?? null;
-    onPick({ type: "playlist", id, title, trackCount, coverImage });
-    onClose();
-  };
-
-  // ─── Tab config ───────────────────────────────────────────────────────────
-  const tabs: { key: TabKey; label: string }[] = [
-    { key: "my-tracks",          label: "My Tracks"         },
-    { key: "reposted-tracks",    label: "Reposted Tracks"   },
-    { key: "playlists",          label: "My Playlists"      },
-    { key: "reposted-playlists", label: "Reposted Playlists"},
-  ];
 
   return (
     <div
       ref={ref}
       data-test="track-playlist-picker"
-      className="absolute bottom-full left-0 mb-2 w-full max-w-md z-50 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col"
-      style={{ maxHeight: "400px" }}
+      className="relative z-50 flex max-h-[360px] w-full flex-col overflow-hidden rounded border border-[#5d5d5d] bg-[#0f0f0f] shadow-2xl"
     >
-      {/* Search */}
-      <div className="px-3 pt-3 pb-2 border-b border-white/10 shrink-0">
+      <div className="border-b border-[#5d5d5d] bg-[#2e2e2e] px-5 py-3">
         <input
           autoFocus
           type="text"
           placeholder="Select a track or playlist from your profile"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-transparent text-sm text-white placeholder-[#666] outline-none"
+          onChange={(event) => setQuery(event.target.value)}
+          className="w-full bg-transparent text-base text-white placeholder:text-[#a8adb4] outline-none"
         />
       </div>
 
-      {/* Tabs */}
-      <div className="flex shrink-0 border-b border-white/10 overflow-x-auto scrollbar-none">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => { setActiveTab(tab.key); setQuery(""); }}
-            className={`px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
-              activeTab === tab.key
-                ? "text-white border-b-2 border-[#f50]"
-                : "text-[#666] hover:text-[#aaa]"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <LoadingState />
-        ) : activeTab === "my-tracks" ? (
-          filteredMyTracks.length === 0 ? (
-            <EmptyState label="tracks" />
-          ) : (
-            filteredMyTracks.map((t) => (
-              <TrackRow key={t.id} track={t} onPick={() => pickTrack(t)} />
-            ))
-          )
-        ) : activeTab === "reposted-tracks" ? (
-          filteredRepostedTracks.length === 0 ? (
-            <EmptyState label="reposted tracks" />
-          ) : (
-            filteredRepostedTracks.map((t) => (
-              <TrackRow key={t.id} track={t} onPick={() => pickTrack(t)} />
-            ))
-          )
-        ) : activeTab === "playlists" ? (
-          filteredUserPlaylists.length === 0 ? (
-            <EmptyState label="playlists" />
-          ) : (
-            filteredUserPlaylists.map((p) => (
-              <PlaylistRow key={p.playlist_id} playlist={p} onPick={() => pickPlaylist(p)} />
-            ))
-          )
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {filteredItems.length > 0 ? (
+          filteredItems.map((item) => (
+            <PickerRow key={`${item.type}:${item.id}`} item={item} onPick={() => pickItem(item)} />
+          ))
         ) : (
-          filteredRepostedPlaylists.length === 0 ? (
-            <EmptyState label="reposted playlists" />
-          ) : (
-            filteredRepostedPlaylists.map((p, i) => (
-              <PlaylistRow key={(p as any).id ?? i} playlist={p} onPick={() => pickPlaylist(p)} />
-            ))
-          )
+          <EmptyState loading={loading} />
         )}
       </div>
     </div>
