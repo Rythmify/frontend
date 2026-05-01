@@ -13,11 +13,11 @@ const UploadLayout = () => {
 
   const handleExit = () => {
     if (uploadSuccess) {
-      navigate("/discover");
+      navigate("/artists");
     } else if (isDetailsMode) {
       setShowQuitModal(true);
     } else {
-      navigate("/discover");
+      navigate("/artists");
     }
   };
 
@@ -28,7 +28,7 @@ const UploadLayout = () => {
           {/* Left side: Logo and page title */}
           <div className="flex items-center gap-6">
             <Link
-              to="/discover"
+              to="/artists"
               className="flex items-center text-4xl gap-2 hover:opacity-80 transition-opacity"
             >
               <i className="fa-brands fa-soundcloud text-text-hover" />
@@ -97,7 +97,7 @@ const UploadLayout = () => {
           onClose={() => setShowQuitModal(false)}
           onConfirm={() => {
             setShowQuitModal(false);
-            navigate("/discover");
+            navigate("/artists");
           }}
         />
       </header>
