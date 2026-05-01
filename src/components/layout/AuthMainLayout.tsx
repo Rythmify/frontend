@@ -6,6 +6,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { getMe, normalizeDateOfBirth } from "@/services/auth.service";
 import { getMySubscription } from "@/services/api/upload/subscription.service";
+import PremiumPromoModal from "@/components/Premium/PremiumPromoModal";
+import { usePromoModal } from "@/hooks/usePromoModal";
 import { getMyWebProfiles } from "@/services/user.service";
 
 const formatProfileTitle = (platform: string) => {
@@ -18,6 +20,7 @@ const AuthMainLayout = () => {
   const currentUser = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const hydrateFromApi = useLikesStore((s) => s.hydrateFromApi);
+  const { showPromo, closePromo } = usePromoModal();
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -81,8 +84,10 @@ const AuthMainLayout = () => {
     hydrateFromApi();
   }, [hydrateFromApi, isAuthenticated, setUser]);
 
+
   return (
     <div className="min-h-screen flex flex-col">
+      {showPromo && <PremiumPromoModal onClose={closePromo} />}
       <MainNavbar />
 
       {/* pb-14 reserves space so content doesn't hide behind the 56px player bar */}
