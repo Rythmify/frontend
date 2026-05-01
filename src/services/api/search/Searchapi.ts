@@ -308,3 +308,33 @@ export async function getSuggestions(
   );
   return data.data;
 }
+
+// ─── Tags ─────────────────────────────────────────────────────────────────────
+
+export interface PlatformTag {
+  id: string;
+  name: string;
+}
+
+export interface TagsResponse {
+  tags: PlatformTag[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+  };
+}
+
+export async function getTags(
+  params?: { limit?: number; offset?: number },
+): Promise<TagsResponse> {
+  const { data } = await axiosInstance.get<{
+    data: PlatformTag[];          // array directly, not { tags: [] }
+    pagination: { limit: number; offset: number; total: number };
+  }>('/tags', { params: params ?? {} });
+
+  return {
+    tags: data.data,              // data.data is the array
+    pagination: data.pagination,
+  };
+}
