@@ -212,7 +212,10 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
   if (pathname === "/search/sounds") {
     // Guard: make sure this is actually track filters before reading track-specific fields
     const available = (filters as any)?.available ?? {};
-    const tags        = Array.isArray(available.tags)        ? available.tags        : [];
+    const rawTags = Array.isArray(available.tags) ? available.tags : [];
+    const tags: string[] = rawTags.map((t: any) =>
+      typeof t === "string" ? t : (t?.value ?? t?.label ?? String(t))
+    );
     const activeTimeRange = searchParams.get("time_range") as TimeRange | null;
     const activeDuration  = searchParams.get("duration")   as Duration  | null;
     const activeTag       = searchParams.get("tag");
@@ -293,9 +296,13 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
 
   // ── People ─────────────────────────────────────────────────────────────────
   if (pathname === "/search/people") {
-    const locations    = Array.isArray((filters as any)?.available?.locations)
+    // Backend may return locations as strings OR as { label, value } objects
+    const rawLocations = Array.isArray((filters as any)?.available?.locations)
       ? (filters as any).available.locations
       : [];
+    const locations: string[] = rawLocations.map((loc: any) =>
+      typeof loc === "string" ? loc : (loc?.value ?? loc?.label ?? String(loc))
+    );
     const activeLocation = searchParams.get("location");
 
     return (
@@ -311,9 +318,12 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
 
   // ── Albums + Playlists ─────────────────────────────────────────────────────
   if (pathname === "/search/albums" || pathname === "/search/sets") {
-    const tags      = Array.isArray((filters as any)?.available?.tags)
+    const rawTags = Array.isArray((filters as any)?.available?.tags)
       ? (filters as any).available.tags
       : [];
+    const tags: string[] = rawTags.map((t: any) =>
+      typeof t === "string" ? t : (t?.value ?? t?.label ?? String(t))
+    );
     const activeTag = searchParams.get("tag");
 
     return (
