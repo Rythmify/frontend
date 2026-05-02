@@ -264,6 +264,7 @@ describe("ProfileSideBar", () => {
     );
     expect(screen.getByText("travis-scott")).toBeInTheDocument();
     expect(screen.getByText("1 FOLLOWING")).toBeInTheDocument();
+    expect(screen.getByText("6.0M")).toBeInTheDocument();
     expect(
       screen.getByTestId("follow-button-travis-scott"),
     ).toBeInTheDocument();
@@ -322,6 +323,10 @@ describe("ProfileSideBar", () => {
 
   it("navigates to checkout on Upgrade to Artist Pro click", () => {
     render(<ProfileSideBar {...defaultProps} isOwner={true} />);
+    expect(screen.getByTestId("upgrade-pro-button")).toHaveClass(
+      "bg-bg-inverted",
+    );
+    expect(screen.getByTestId("upgrade-pro-button")).toHaveClass("text-bg");
     fireEvent.click(screen.getByTestId("upgrade-pro-button"));
     expect(mockNavigate).toHaveBeenCalledWith("/premium");
   });

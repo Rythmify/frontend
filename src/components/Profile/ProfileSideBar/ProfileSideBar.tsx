@@ -270,7 +270,7 @@ const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
           <button
             data-test="upgrade-pro-button"
             onClick={() => navigate("/premium")}
-            className="w-[320px] py-3 bg-bg text-bg-inverted font-semibold text-sm rounded-full hover:opacity-80 transition-colors"
+            className="w-[320px] py-3 bg-bg-inverted text-bg font-semibold text-sm rounded-full hover:opacity-80 transition-colors"
           >
             Upgrade to Premium
           </button>
