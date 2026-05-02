@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import CardOverlay, {
   AddToPlaylistIcon,
 } from "@/components/UI/CardOverlay/CardOverlay";
+import CoverImage from "@/components/UI/CoverImage";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { getStationTracks } from "@/services/api/playlist/playlist.service";
 // ─── Color Schemes ────────────────────────────────────────
@@ -147,41 +148,29 @@ export default function StationCard({
         {/* Three artist circles */}
         {/* Circle 1 — top-left, small */}
         <div className="absolute top-[6%] left-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20 z-10">
-          {artists[0]?.avatarUrl ? (
-            <img
-              src={artists[0].avatarUrl}
-              alt={artists[0].displayName ?? ""}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-[#2a2a3a]" />
-          )}
+          <CoverImage
+            src={artists[0]?.avatarUrl}
+            alt={artists[0]?.displayName ?? ""}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         {/* Circle 2 — center, largest */}
         <div className="absolute top-[22%] left-[24%] w-[50%] aspect-square rounded-full overflow-hidden border-[2px] border-white/25 z-20">
-          {artists[1]?.avatarUrl ? (
-            <img
-              src={artists[1].avatarUrl}
-              alt={artists[1].displayName ?? ""}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-[#2a2a3a]" />
-          )}
+          <CoverImage
+            src={artists[1]?.avatarUrl}
+            alt={artists[1]?.displayName ?? ""}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         {/* Circle 3 — bottom-right, small */}
         <div className="absolute bottom-[14%] right-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20 z-10">
-          {artists[2]?.avatarUrl ? (
-            <img
-              src={artists[2].avatarUrl}
-              alt={artists[2].displayName ?? ""}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-[#2a2a3a]" />
-          )}
+          <CoverImage
+            src={artists[2]?.avatarUrl}
+            alt={artists[2]?.displayName ?? ""}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         {/* SoundCloud logo — top-right */}
