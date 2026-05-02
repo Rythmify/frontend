@@ -12,16 +12,19 @@ import ModalNewMessageBody from "@/pages/social/messages/ModalNewMessageBody";
 
 vi.mock("@/services/api/messaging/conversationApi", () => ({
   startConversation: vi.fn(),
+  sendMessage: vi.fn(),
 }));
 
 vi.mock("@/components/MessagingComponents/MessageBox", () => ({
   MessageBox: ({
     onValueChange,
+    onSubmit,
     hasError,
   }: {
     onValueChange: (v: string) => void;
     onIsEmptyChange: (empty: boolean) => void;
-    onEmbedResolved: (embed: unknown) => void;
+    onEmbedsResolved: (embeds: unknown[]) => void;
+    onSubmit?: () => void;
     hasError?: boolean;
   }) => (
     <div>
@@ -29,6 +32,12 @@ vi.mock("@/components/MessagingComponents/MessageBox", () => ({
         data-test="message-box-input"
         data-has-error={hasError ? "true" : "false"}
         onChange={(e) => onValueChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onSubmit?.();
+          }
+        }}
       />
     </div>
   ),
@@ -83,6 +92,12 @@ const getSendButton = () => screen.getByRole("button", { name: /^send$/i });
 describe("ModalNewMessageBody", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (startConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: {
+        conversation: { id: "conv-1" },
+        message: { id: "msg-1", conversation_id: "conv-1" },
+      },
+    });
   });
 
   // ── Rendering ────────────────────────────────────────────────────────────────
@@ -147,7 +162,6 @@ describe("ModalNewMessageBody", () => {
   // ── Success flow ─────────────────────────────────────────────────────────────
 
   it("calls startConversation with correct payload on valid send", async () => {
-    (startConversation as ReturnType<typeof vi.fn>).mockResolvedValue({});
     renderModal();
     await userEvent.click(screen.getByTestId("select-user"));
     await userEvent.type(screen.getByTestId("message-box-input"), "Hello Alice");
@@ -163,7 +177,6 @@ describe("ModalNewMessageBody", () => {
   });
 
   it("calls onClose after successful send", async () => {
-    (startConversation as ReturnType<typeof vi.fn>).mockResolvedValue({});
     const onClose = vi.fn();
     renderModal(onClose);
     await userEvent.click(screen.getByTestId("select-user"));
@@ -172,15 +185,47 @@ describe("ModalNewMessageBody", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 
-  it("navigates to recipient's messages after successful send", async () => {
-    (startConversation as ReturnType<typeof vi.fn>).mockResolvedValue({});
+  it("navigates to the returned conversation after successful send", async () => {
     renderModal();
     await userEvent.click(screen.getByTestId("select-user"));
     await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
     await userEvent.click(getSendButton());
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/messages/user-1")
+      expect(mockNavigate).toHaveBeenCalledWith("/messages/conv-1")
     );
+  });
+
+  it("does nothing when the API does not return a conversation id", async () => {
+    (startConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: {
+        conversation: {},
+        message: { id: "msg-1" },
+      },
+    });
+    const onClose = vi.fn();
+    renderModal(onClose);
+    await userEvent.click(screen.getByTestId("select-user"));
+    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
+    await userEvent.click(getSendButton());
+    await waitFor(() => expect(startConversation).toHaveBeenCalled());
+    expect(onClose).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(screen.getByTestId("message-box-input")).toHaveValue("Hello");
+  });
+
+  it("pressing Enter performs the same action as the send button", async () => {
+    renderModal();
+    await userEvent.click(screen.getByTestId("select-user"));
+    await userEvent.type(screen.getByTestId("message-box-input"), "Hello{enter}");
+    await waitFor(() =>
+      expect(startConversation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipient_id: "user-1",
+          body: "Hello",
+        })
+      )
+    );
+    expect(mockNavigate).toHaveBeenCalledWith("/messages/conv-1");
   });
 
   // ── Error flow ───────────────────────────────────────────────────────────────
@@ -208,13 +253,12 @@ describe("ModalNewMessageBody", () => {
     await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
     await userEvent.click(getSendButton());
     expect(screen.getByText(/sending…/i)).toBeInTheDocument();
-    resolve(undefined);
+    resolve({ data: { conversation: { id: "conv-1" } } });
   });
 
   // ── Clearing recipient ────────────────────────────────────────────────────────
 
   it("clears selected recipient when onClear is called", async () => {
-    (startConversation as ReturnType<typeof vi.fn>).mockResolvedValue({});
     renderModal();
     await userEvent.click(screen.getByTestId("select-user"));
     await userEvent.click(screen.getByTestId("clear-user"));

@@ -1,28 +1,47 @@
 import { ChatProfile } from "@/components/MessagingComponents/ChatProfile";
 import { type Conversation } from "@/services/api/messaging/conversationApi";
 import Spinner from "@/components/UI/Spinner";
+import type { UIEvent } from "react";
 
 interface ChatsProps {
   conversations: Conversation[];
   loading: boolean;
   loadingMore: boolean;
+  hasMore: boolean;
   error: string | null;
   activeConversationId: string | null;
   onSelect: (conversation: Conversation) => void;
+  onLoadMore: () => void;
 }
 
 export function Chats({
   conversations,
   loading,
   loadingMore,
+  hasMore,
   error,
   activeConversationId,
   onSelect,
+  onLoadMore,
 }: ChatsProps) {
+  const handleScroll = (e: UIEvent<HTMLDivElement>) => {
+    if (!hasMore || loadingMore) return;
+
+    const el = e.currentTarget;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+
+    if (distanceFromBottom <= 120) {
+      onLoadMore();
+    }
+  };
 
   // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) {
-    return <Spinner />;
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Spinner />
+      </div>
+    );
   }
 
   // ── Error ────────────────────────────────────────────────────────────────
@@ -48,7 +67,11 @@ export function Chats({
 
   // ── List ─────────────────────────────────────────────────────────────────
   return (
-    <div data-test="chat-list" className="flex flex-col width-full">
+    <div
+      data-test="chat-list"
+      onScroll={handleScroll}
+      className="flex flex-1 min-h-0 flex-col overflow-y-auto width-full"
+    >
       {conversations.map((conv) => (
         <ChatProfile
           key={conv.id}

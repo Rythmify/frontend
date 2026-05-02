@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { FaPlay, FaPause, FaLock } from "react-icons/fa";
 import { type PlaylistDetails } from "@/services/api/playlist/playlist.service";
 import { useAuthStore } from "@/stores/auth.store";
@@ -128,6 +129,11 @@ export default function PlaylistHero({
         ? user?.displayName
         : ownerUsername || playlist.owner_user_id;
 
+  const ownerProfileHref =  moreOfLike
+  ? `/${user?.username}`
+    : `/${ownerUsername}`
+      
+
   return (
     <div
       data-test="playlist-hero"
@@ -177,9 +183,18 @@ export default function PlaylistHero({
 
             {/* "Playlist owner" */}
             <div data-test="playlist-hero-owner" className="bg-[#121212] px-4 py-1.5">
-              <p className="text-[17px] text-white font-bold cursor-pointer">
-                {ownerLabel}
-              </p>
+              {ownerProfileHref ? (
+                <Link
+                  to={ownerProfileHref}
+                  className="text-[17px] text-white font-bold cursor-pointer hover:text-[#717171] transition-colors"
+                >
+                  {ownerLabel}
+                </Link>
+              ) : (
+                <p className="text-[17px] text-white font-bold cursor-pointer">
+                  {ownerLabel}
+                </p>
+              )}
             </div>
           </div>
         </div>

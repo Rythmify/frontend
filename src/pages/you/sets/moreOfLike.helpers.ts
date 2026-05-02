@@ -57,6 +57,7 @@ export function toPlaylistTrackItem(
     is_public: !track.isPrivate,
     deleted_at: null,
     artist_name: track.artistName || null,
+    artist_id: track.artistId || track.artistUsername || undefined,
     artist_username: track.artistUsername || null,
     audio_url: track.audioUrl || null,
     play_count: track.playCount ?? 0,
