@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { type Notification, markNotificationRead, fetchFollowStatus } from '@/services/api/notifications/notificationsAPI'
+import { type Notification, markNotificationRead, fetchFollowStatus, fetchComment } from '@/services/api/notifications/notificationsAPI'
 import FollowButton from '@/components/UI/FollowButton'
 import { Modal } from '@/components/UI/Modal'
 import { BlockUserModal } from '@/components/UI/BlockModal'
@@ -9,10 +9,11 @@ import { SpamModal } from '@/components/UI/SpamModal'
 import UserAvatar from '@/components/UI/UserAvatar'
 import { useAuthStore } from '@/stores/auth.store'
 import { useNotificationStore } from '@/stores/notification.store'
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatRelativeTime = (dateStr: string): string => {
- const diff    = Date.now() - new Date(dateStr).getTime();
+  const diff    = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
   const hours   = Math.floor(minutes / 60);
   const days    = Math.floor(hours / 24);
@@ -131,7 +132,14 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
 
     if (n.type === 'follow') {
       navigate(`/${n.actor.username}`)
-    } else if (n.resource_type === 'track' || n.resource_type === 'comment') {
+    } else if (n.type === 'comment' && n.resource_id) {
+      try {
+        const res = await fetchComment(n.resource_id)
+        navigate(`/track/${res.data.track_id}`)
+      } catch {
+        // silently fail — comment may have been deleted
+      }
+    } else if (n.resource_type === 'track') {
       navigate(`/track/${n.resource_id}`)
     } else if (n.resource_type === 'playlist') {
       navigate(`/${n.actor.username}/sets/${n.resource_id}`)

@@ -2,7 +2,7 @@ import axiosInstance from '../axiosInstance';
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
-export type NotificationType = 'follow' | 'like' | 'repost' | 'comment' | 'new_post_by_followed'|'artist_pro_activated';
+export type NotificationType = 'follow' | 'like' | 'repost' | 'comment' | 'new_post_by_followed' | 'artist_pro_activated';
 
 export interface NotificationActor {
   id: string;
@@ -20,7 +20,7 @@ export interface Notification {
   id: string;
   type: NotificationType;
   actor: NotificationActor;
-  resource_type: 'track' | 'user' | 'playlist' | 'comment'|'new_post_by_followed' | null  
+  resource_type: 'track' | 'user' | 'playlist' | 'comment' | 'new_post_by_followed' | null;
   resource_id: string | null;
   resource_details: NotificationResourceDetails | null;
   is_read: boolean;
@@ -152,6 +152,38 @@ export interface ReportCreatedResponse {
   message: string;
 }
 
+// ─── Comment Types ────────────────────────────────────────────────────────────
+
+export interface CommentAuthor {
+  user_id: string;
+  email: string;
+  display_name: string;
+  gender: string;
+  role: string;
+  is_verified: boolean;
+  profile_picture: string | null;
+}
+
+export interface Comment {
+  comment_id: string;
+  track_id: string;
+  user_id: string;
+  parent_comment_id: string | null;
+  content: string;
+  track_timestamp: number;
+  like_count: number;
+  reply_count: number;
+  is_liked_by_me: boolean;
+  is_user_blocked: boolean;
+  author: CommentAuthor;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommentSingleResponse {
+  data: Comment;
+}
+
 // ─── Notification API Functions ───────────────────────────────────────────────
 
 // GET /notifications
@@ -162,9 +194,10 @@ export const fetchNotifications = async (
 ): Promise<NotificationListResponse> => {
   const response = await axiosInstance.get<NotificationListResponse>(
     '/notifications',
-    { params: { page, limit, ...(type ? { type } : {}) },
-  headers: { 'Cache-Control': 'no-cache' },
- }
+    {
+      params: { page, limit, ...(type ? { type } : {}) },
+      headers: { 'Cache-Control': 'no-cache' },
+    }
   );
   return response.data;
 };
@@ -203,6 +236,16 @@ export const deleteNotification = async (
 ): Promise<SuccessMessageResponse> => {
   const response = await axiosInstance.delete<SuccessMessageResponse>(
     `/notifications/${notificationId}`
+  );
+  return response.data;
+};
+
+// GET /comments/:comment_id
+export const fetchComment = async (
+  commentId: string
+): Promise<CommentSingleResponse> => {
+  const response = await axiosInstance.get<CommentSingleResponse>(
+    `/comments/${commentId}`
   );
   return response.data;
 };
