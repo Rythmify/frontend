@@ -8,6 +8,7 @@ import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import CardOverlay, {
   AddToPlaylistIcon,
 } from "@/components/UI/CardOverlay/CardOverlay";
+import CoverImage from "@/components/UI/CoverImage";
 
 // ─── Props ────────────────────────────────────────────────
 interface TrackCardProps {
@@ -172,7 +173,7 @@ const TrackCard = ({
       data-test="card-track"
     >
       <div className={styles.imageWrapper}>
-        <img
+        <CoverImage
           src={track.coverUrl}
           alt={track.title}
           className={styles.image}

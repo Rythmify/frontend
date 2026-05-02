@@ -79,18 +79,37 @@ export default function FollowingPage() {
   const profileUsername = isOwner
     ? (currentUser?.username ?? "")
     : (username ?? "");
-  const profileDisplayName = isOwner
-    ? (currentUser?.displayName ?? profileUsername) || "Profile"
-    : profileUsername || "Profile";
   const profilePath = profileUsername ? `/${profileUsername}` : "/you";
-  const profileAvatar = isOwner ? (currentUser?.avatar ?? "") : "";
+
+  const [profileDisplayName, setProfileDisplayName] = useState(
+    isOwner ? (currentUser?.displayName ?? currentUser?.username ?? "") : "",
+  );
+  const [profileAvatar, setProfileAvatar] = useState(
+    isOwner ? (currentUser?.avatar ?? "") : "",
+  );
   const [profileNotFound, setProfileNotFound] = useState(false);
 
   const [rawFollowing, setRawFollowing] = useState<UserSummary[] | null>(null);
   const [following, setFollowing] = useState<EnrichedUser[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  // Step 1 — resolve user ID then fetch raw following list
+  useEffect(() => {
+    if (isOwner) {
+      setProfileDisplayName(
+        currentUser?.displayName ?? currentUser?.username ?? "",
+      );
+      setProfileAvatar(currentUser?.avatar ?? "");
+      return;
+    }
+    if (!username) return;
+    getUserByUsername(username)
+      .then((profile) => {
+        setProfileDisplayName(profile.display_name);
+        setProfileAvatar(profile.profile_picture ?? "");
+      })
+      .catch(() => setProfileNotFound(true));
+  }, [username, isOwner, currentUser]);
+
   useEffect(() => {
     let cancelled = false;
     setLoaded(false);
@@ -105,7 +124,6 @@ export default function FollowingPage() {
         if (isOwner) {
           userId = currentUser?.id;
         } else if (username) {
-          // getUserByUsername: GET /search?type=users&q=:username → GET /users/:id
           const profile = await getUserByUsername(username);
           userId = profile.id;
         }
@@ -129,7 +147,6 @@ export default function FollowingPage() {
     };
   }, [username, isOwner, currentUser?.id]);
 
-  // Step 2 — enrich with full profile data
   useEffect(() => {
     if (rawFollowing === null) return;
 
@@ -166,7 +183,6 @@ export default function FollowingPage() {
 
   return (
     <div className="container px-4 py-8 md:px-8 lg:px-20">
-      {/* Header */}
       <div className="mb-3 flex items-center gap-4">
         <UserAvatar
           dataTest="following-page-avatar"
@@ -183,7 +199,7 @@ export default function FollowingPage() {
             className="cursor-pointer text-2xl font-bold text-bg-inverted"
             onClick={() => navigate(profilePath)}
           >
-            {profileDisplayName} is following
+            {profileDisplayName || profileUsername} is following
           </h1>
           {profileUsername && (
             <p className="text-sm text-text-secondary">@{profileUsername}</p>
@@ -191,7 +207,6 @@ export default function FollowingPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="mb-8 flex gap-6">
         {tabs.map((tab) => (
           <button
@@ -209,18 +224,16 @@ export default function FollowingPage() {
         ))}
       </div>
 
-      {/* Empty state — only after load completes */}
       {loaded && following.length === 0 && (
         <div className="flex items-center justify-center py-24">
           <p className="text-lg font-bold text-bg-inverted">
             {isOwner
               ? "You're not following anyone yet."
-              : `${profileDisplayName} isn't following anyone.`}
+              : `${profileDisplayName || profileUsername} isn't following anyone.`}
           </p>
         </div>
       )}
 
-      {/* Grid */}
       {following.length > 0 && (
         <div className="grid grid-cols-6 gap-6">
           {following.map((u) => (
@@ -234,7 +247,7 @@ export default function FollowingPage() {
                 name={u.displayName || u.username}
                 alt={u.displayName || u.username}
                 wrapperClassName="aspect-square w-full cursor-pointer overflow-hidden rounded-full"
-                  initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-4xl font-bold"
                 onClick={() => navigate(u.profilePath)}
               />
 
@@ -287,7 +300,6 @@ export default function FollowingPage() {
         </div>
       )}
 
-      {/* Footer */}
       <div className="mt-16 flex flex-col gap-8">
         <div className="flex flex-wrap gap-x-1 text-xs text-text-secondary">
           {[

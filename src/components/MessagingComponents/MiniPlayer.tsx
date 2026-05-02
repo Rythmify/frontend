@@ -1,3 +1,5 @@
+import CoverImage from "@/components/UI/CoverImage";
+
 interface MiniPlayerProps {
   coverImage: string | null
   trackName: string
@@ -7,17 +9,13 @@ interface MiniPlayerProps {
 
 const MiniPlayer = ({ coverImage, trackName, artistName, onClose }: MiniPlayerProps) => {
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-bg border-t border-border">
+    <div data-test="mini-player" className="flex items-center justify-between px-4 py-2 bg-bg border-t border-border">
 
       {/* Left: avatar + info */}
       <div className="flex items-center gap-3">
         {/* Avatar */}
         <div className="w-9 h-9 rounded-sm overflow-hidden flex-shrink-0">
-          {coverImage ? (
-            <img src={coverImage} alt={artistName} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#b08a8a] to-[#6b5b6b]" />
-          )}
+          <CoverImage src={coverImage} alt={trackName} className="w-full h-full object-cover" />
         </div>
 
         {/* Track + Artist */}
@@ -30,6 +28,7 @@ const MiniPlayer = ({ coverImage, trackName, artistName, onClose }: MiniPlayerPr
 
       {/* Close */}
       <button
+        data-test="mini-player-close"
         onClick={onClose}
         className="text-text-secondary hover:text-white transition-colors text-lg px-2"
       >

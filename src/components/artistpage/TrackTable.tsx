@@ -34,7 +34,7 @@ function toUITrack(t: ServiceTrack): UITrack {
 export function TrackTable({ tracks, filter, onDeleteTrack }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editTrack, setEditTrack] = useState<ServiceTrack | null>(null);
-  const [playlistTrack, setPlaylistTrack] = useState<ServiceTrack | null>(null);
+  const [playlistTracks, setPlaylistTracks] = useState<ServiceTrack[]>([]);
 
   const allSelected = tracks.length > 0 && selected.size === tracks.length;
   const anySelected = selected.size > 0;
@@ -61,10 +61,9 @@ export function TrackTable({ tracks, filter, onDeleteTrack }: Props) {
     setEditTrack(track);
   }
 
-  function openPlaylist() {
-    const firstId = [...selected][0];
-    const track = tracks.find((t) => t.id === firstId) ?? null;
-    setPlaylistTrack(track);
+  function openPlaylist(ids: Iterable<string> = selected) {
+    const selectedTracks = tracks.filter((t) => [...ids].includes(t.id));
+    setPlaylistTracks(selectedTracks);
   }
 
   return (
@@ -100,7 +99,7 @@ export function TrackTable({ tracks, filter, onDeleteTrack }: Props) {
             <div className="relative group/tip">
               <button
                 type="button"
-                onClick={openPlaylist}
+                onClick={() => openPlaylist()}
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-[#2a2a2a] text-text-hover hover:bg-[#333] transition-colors cursor-pointer"
                 data-test="add-to-playlist-btn"
               >
@@ -149,7 +148,7 @@ export function TrackTable({ tracks, filter, onDeleteTrack }: Props) {
             selected={selected.has(track.id)}
             onToggle={toggleOne}
             onEdit={() => setEditTrack(track)}
-            onAddToPlaylist={() => setPlaylistTrack(track)}
+            onAddToPlaylist={() => openPlaylist([track.id])}
             onDelete={() => onDeleteTrack(track.id)}
           />
         ))
@@ -163,13 +162,20 @@ export function TrackTable({ tracks, filter, onDeleteTrack }: Props) {
         />
       )}
 
-      {playlistTrack && (
+      {playlistTracks.length > 0 && (
         <AddToPlaylistModal
-          trackId={playlistTrack.id}
-          trackTitle={playlistTrack.title}
-          trackCoverUrl={playlistTrack.cover_image ?? undefined}
-          artistName={playlistTrack.artists ?? undefined}
-          onClose={() => setPlaylistTrack(null)}
+          trackTitle={
+            playlistTracks.length === 1
+              ? playlistTracks[0].title
+              : `${playlistTracks.length} selected tracks`
+          }
+          initialTracks={playlistTracks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            artistName: t.artists ?? undefined,
+            coverUrl: t.cover_image ?? undefined,
+          }))}
+          onClose={() => setPlaylistTracks([])}
         />
       )}
     </div>

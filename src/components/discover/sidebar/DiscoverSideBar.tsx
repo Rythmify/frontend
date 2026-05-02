@@ -103,52 +103,44 @@ const DiscoverSidebar = () => {
       data-test="discover-sidebar"
       className="flex flex-col gap-6 w-full sticky"
     >
-      <div data-test="discover-sidebar-artist-tools">
-        <ArtistToolsCard />
-      </div>
+      <ArtistToolsCard />
 
-      <div data-test="discover-sidebar-suggested-artists">
+      {!artistsLoading && !artistsError && suggestedArtists.length > 0 && (
         <ArtistListSection
           title="ARTISTS YOU SHOULD FOLLOW"
-          artists={artistsLoading || artistsError ? [] : suggestedArtists}
+          artists={suggestedArtists}
           onRefresh={handleRefreshArtists}
           maxDisplay={3}
         />
-      </div>
+      )}
 
       {likedTracks.length > 0 && (
-        <div data-test="discover-sidebar-liked-tracks">
-          <TrackListSection
-            title={`${likedTracks.length} LIKES`}
-            viewAllLink="/you/likes"
-          >
-            {likedTracks.slice(0, 3).map((track) => (
-              <TrackItem
-                key={String(track.id)}
-                {...toItem(track)}
-              />
-            ))}
-          </TrackListSection>
-        </div>
+        <TrackListSection
+          title={`${likedTracks.length} LIKES`}
+          viewAllLink="/you/likes"
+        >
+          {likedTracks.slice(0, 3).map((track) => (
+            <TrackItem key={String(track.id)} {...toItem(track)} />
+          ))}
+        </TrackListSection>
       )}
 
       {historyTracks.length > 0 && (
-        <div data-test="discover-sidebar-listening-history">
-          <TrackListSection title="LISTENING HISTORY" viewAllLink="/you/history">
-            {historyTracks.map((track) => (
-              <TrackItem
-                key={String(track.id)}
-                {...toItem(track)}
-                initialLiked={false}
-              />
-            ))}
-          </TrackListSection>
-        </div>
+        <TrackListSection
+          title="LISTENING HISTORY"
+          viewAllLink="/you/history"
+        >
+          {historyTracks.map((track) => (
+            <TrackItem
+              key={String(track.id)}
+              {...toItem(track)}
+              initialLiked={false}
+            />
+          ))}
+        </TrackListSection>
       )}
 
-      <div data-test="discover-sidebar-go-mobile">
-        <GoMobileSection />
-      </div>
+      <GoMobileSection />
     </aside>
   );
 };

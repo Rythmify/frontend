@@ -7,13 +7,13 @@ import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { usePlayerStore } from "../../../stores/player.store";
 import { useAuthStore } from "@/stores/auth.store";
-import { getUserById, type PublicUser } from "@/services/user.service";
 import {
   getMadeForYouDaily,
   getMadeForYouWeekly,
   type PlaylistDetails,
   type PlaylistTrackItem,
 } from "@/services/api/playlist/playlist.service";
+import { getFeaturedArtists } from "@/services/featuredArtists.service";
 import type { MockUser } from "@/services/mocks/users";
 
 type MadeForYouKind = "daily" | "weekly";
@@ -29,33 +29,6 @@ function getMadeForYouKind(value: string | undefined): MadeForYouKind | null {
   if (value.startsWith("daily")) return "daily";
   if (value.startsWith("weekly")) return "weekly";
   return null;
-}
-
-function getTopArtistTrackCounts(
-  tracks: Array<Pick<PlaylistTrackItem, "artist_id"> & { user_id?: string }>,
-): [string, number][] {
-  const counts = new Map<string, number>();
-
-  for (const track of tracks) {
-    const artistId = (track.artist_id ?? track.user_id)?.trim();
-    if (!artistId) continue;
-    counts.set(artistId, (counts.get(artistId) ?? 0) + 1);
-  }
-
-  return Array.from(counts.entries());
-}
-
-function toFeaturedArtist(user: PublicUser, trackCount: number): MockUser {
-  return {
-    id: user.id as unknown as number,
-    username: user.username ?? user.display_name,
-    displayName: user.display_name,
-    avatarUrl:
-      user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
-    followerCount: user.followers_count ?? 0,
-    trackCount,
-    isFollowing: false,
-  };
 }
 
 function madeForYouToPlaylistDetails(
@@ -149,18 +122,10 @@ function MadeForYouSlugPage() {
           ),
         );
 
-        const artistIds = getTopArtistTrackCounts(payload.tracks);
-        const artists = await Promise.all(
-          artistIds.slice(0, 3).map(async ([artistId, trackCount]) => {
-            const user = await getUserById(artistId).catch(() => null);
-            return user ? toFeaturedArtist(user, trackCount) : null;
-          }),
-        );
+        const artists = await getFeaturedArtists(payload.tracks, user);
 
         if (!cancelled) {
-          setFeaturedArtists(
-            artists.filter((artist): artist is MockUser => !!artist),
-          );
+          setFeaturedArtists(artists);
         }
       } catch (err) {
         console.error(err);

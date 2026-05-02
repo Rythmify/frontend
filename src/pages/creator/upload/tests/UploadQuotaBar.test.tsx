@@ -45,6 +45,27 @@ describe("UploadQuotaBar", () => {
     expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
   });
 
+  it("uses the provided quota prop without fetching", () => {
+    render(
+      <MemoryRouter>
+        <UploadQuotaBar
+          quota={{
+            usedTracks: 2,
+            trackLimit: 5,
+            canUpload: true,
+            usedPlaylists: 0,
+            playlistLimit: 3,
+            canCreatePlaylist: true,
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText(/uploads used/i)).toBeInTheDocument();
+    expect(screen.getByText(/40\.00% of uploads used/i)).toBeInTheDocument();
+    expect(mockGetUploadQuota).not.toHaveBeenCalled();
+  });
+
   it("does not render the quota bar content while loading", () => {
     mockGetUploadQuota.mockReturnValue(new Promise(() => {}));
     renderWithRouter();
@@ -140,13 +161,13 @@ describe("UploadQuotaBar", () => {
     );
   });
 
-  it("renders 'Get unlimited uploads' button for a premium plan", async () => {
+  it("does not render 'Get unlimited uploads' button for a premium plan", async () => {
     mockGetUploadQuota.mockResolvedValue({ usedTracks: 10, trackLimit: null });
     renderWithRouter();
     await waitFor(() =>
       expect(
-        screen.getByTestId("get-unlimited-uploads-button-quota-bar"),
-      ).toBeInTheDocument(),
+        screen.queryByTestId("get-unlimited-uploads-button-quota-bar"),
+      ).not.toBeInTheDocument(),
     );
   });
 

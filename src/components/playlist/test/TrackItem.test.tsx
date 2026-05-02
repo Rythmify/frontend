@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import TrackItem from "@/components/playlist/TrackItem";
 import { useLikesStore } from "@/stores/likes.store";
+import { usePlayerStore } from "@/stores/player.store";
 import { getUsernameFromId } from "@/services/user.service";
 
 const mockNavigate = vi.fn();
@@ -46,11 +47,24 @@ vi.mock("@/services/mocks/Track.service", () => ({
 }));
 
 vi.mock("@/pages/[username]/[trackSlug]/components/SharePopup", () => ({
-  default: () => <div data-test="share-popup" />,
+  default: ({ onClose }: any) => (
+    <div data-test="share-popup">
+      <button onClick={onClose}>close</button>
+    </div>
+  ),
 }));
 
+const mockAddToPlaylistModal = vi.fn();
+
 vi.mock("@/components/playlist/AddToPlaylistModal", () => ({
-  default: () => <div data-test="add-to-playlist-modal" />,
+  default: (props: any) => {
+    mockAddToPlaylistModal(props);
+    return (
+      <div data-test="add-to-playlist-modal">
+        <button onClick={props.onClose}>close</button>
+      </div>
+    );
+  },
 }));
 
 const mockTrack = {
@@ -93,7 +107,7 @@ describe("Playlist TrackItem", () => {
       </Tooltip.Provider>,
     );
 
-    expect(screen.getByRole("link", { name: "ua" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "ArtA" })).toHaveAttribute(
       "href",
       expect.stringContaining("/ua"),
     );
@@ -107,6 +121,29 @@ describe("Playlist TrackItem", () => {
       "/ua/t1",
     );
     expect(screen.getByText("2.5K")).toBeInTheDocument();
+  });
+
+  it("falls back to the SoundCloud home URL when the cover image fails", () => {
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.error(screen.getByAltText("Alpha"));
+
+    expect(screen.getByAltText("Alpha")).toHaveAttribute(
+      "src",
+      "https://cdn.prod.website-files.com/62a0a0168756b795debc65bc/65df5bfb519e57f33c35d493_419679-1x1_SoundCloudLogo_cloudmark-f5912b-large-1645807040%20(2).jpg",
+    );
   });
 
   it("calls onPlay when the play button is clicked", () => {
@@ -232,7 +269,7 @@ describe("Playlist TrackItem", () => {
     fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
     fireEvent.click(screen.getByTestId("button-like-track-t1"));
 
-      expect(toggleTrack).toHaveBeenCalledWith(
+    expect(toggleTrack).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "t1",
         title: "Alpha",
@@ -289,5 +326,220 @@ describe("Playlist TrackItem", () => {
       `${window.location.origin}/ua/t1`,
     );
     expect(await screen.findByText("Link copied")).toBeInTheDocument();
+  });
+
+  it("falls back to the track username when artist_id is missing", async () => {
+    const fallbackTrack = { ...mockTrack, artist_id: undefined, artist_username: "fallback-user" };
+
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={fallbackTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    expect(getUsernameFromId).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "ArtA" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/fallback-user"),
+    );
+  });
+
+  it("keeps the fallback username when the lookup fails", async () => {
+    vi.mocked(getUsernameFromId).mockRejectedValueOnce(new Error("boom"));
+
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn() }
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "ArtA" })).toHaveAttribute(
+        "href",
+        expect.stringContaining("/ua"),
+      ),
+    );
+  });
+
+  it("adds the track to the next up queue from the more menu", () => {
+    const addToQueue = vi.fn();
+    vi.mocked(useLikesStore).mockReturnValue({
+      isTrackLiked: vi.fn(() => false),
+      toggleTrack: vi.fn(),
+    } as any);
+    vi.mocked(usePlayerStore).mockImplementation((selector: any) =>
+      selector({ setTrack: mockSetTrack, addToQueue }),
+    );
+
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
+    fireEvent.click(screen.getByTestId("button-more-track-t1"));
+    fireEvent.click(screen.getByText("Add to Next up"));
+
+    expect(addToQueue).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the add-to-playlist modal from the more menu", () => {
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
+    fireEvent.click(screen.getByTestId("button-more-track-t1"));
+    fireEvent.click(screen.getByText("Add to Playlist"));
+
+    expect(screen.getByTestId("add-to-playlist-modal")).toBeInTheDocument();
+    expect(mockAddToPlaylistModal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        trackId: "t1",
+        trackTitle: "Alpha",
+        onClose: expect.any(Function),
+      }),
+    );
+    fireEvent.click(screen.getByText("close"));
+    expect(screen.queryByTestId("add-to-playlist-modal")).not.toBeInTheDocument();
+  });
+
+  it("opens the share popup and lets it close again", () => {
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
+    fireEvent.click(screen.getByTestId("button-share-track"));
+    expect(screen.getByTestId("share-popup")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("close"));
+    expect(screen.queryByTestId("share-popup")).not.toBeInTheDocument();
+  });
+
+  it("does not bubble clicks from the artist or title links", () => {
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.click(screen.getByRole("link", { name: "ArtA" }));
+    fireEvent.click(screen.getByTestId("link-track-title-t1"));
+
+    expect(mockSetTrack).not.toHaveBeenCalled();
+  });
+
+  it("resets the hover menu when the row loses hover", () => {
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    const row = screen.getByTestId("track-Item-t1");
+    fireEvent.mouseEnter(row);
+    fireEvent.click(screen.getByTestId("button-more-track-t1"));
+    expect(screen.getByTestId("dropdown-more-track-t1")).toBeInTheDocument();
+    fireEvent.mouseLeave(row);
+    expect(screen.queryByTestId("dropdown-more-track-t1")).not.toBeInTheDocument();
+  });
+
+  it("logs repost and copy failures without crashing", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockRepostTrack.mockRejectedValueOnce(new Error("boom"));
+    mockWriteText.mockRejectedValueOnce(new Error("copy boom"));
+
+    render(
+      <Tooltip.Provider>
+        <MemoryRouter>
+          <TrackItem
+            track={mockTrack}
+            index={1}
+            isCurrent={false}
+            isPlaying={false}
+            onLike={vi.fn()}
+          />
+        </MemoryRouter>
+      </Tooltip.Provider>,
+    );
+
+    fireEvent.mouseEnter(screen.getByTestId("track-Item-t1"));
+    fireEvent.click(screen.getByTestId("button-repost-track-t1"));
+    fireEvent.click(screen.getByTestId("button-copy-link-track-t1"));
+
+    await waitFor(() =>
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Failed to repost track:",
+        expect.any(Error),
+      ),
+    );
+    await waitFor(() =>
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Failed to copy link:",
+        expect.any(Error),
+      ),
+    );
+    errorSpy.mockRestore();
   });
 });

@@ -177,23 +177,24 @@ export default function SendMessageForm({
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div data-test="send-message-form" className="flex flex-col h-full min-h-0">
       {/* ── Scrollable message list ── */}
       <div
+        data-test="send-message-list"
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto flex flex-col gap-4 px-3 py-3 min-h-0"
       >
         {/* Sentinel at TOP — becomes visible when user scrolls up, triggers older page load */}
-        <div ref={sentinelRef} className="h-1 w-full shrink-0" />
+        <div ref={sentinelRef} data-test="send-message-sentinel" className="h-1 w-full shrink-0" />
 
         {loadingMessages && hasMoreMessages && (
-          <div className="text-xs text-[#666] text-center py-2 shrink-0">
+          <div data-test="send-message-loading-more" className="text-xs text-[#666] text-center py-2 shrink-0">
             Loading older messages…
           </div>
         )}
 
         {loadingMessages && existingMessages.length === 0 ? (
-          <div className="text-sm text-[#666] text-center py-4">
+          <div data-test="send-message-loading" className="text-sm text-[#666] text-center py-4">
             Loading messages…
           </div>
         ) : (
@@ -208,7 +209,7 @@ export default function SendMessageForm({
         )}
 
         {isTyping && (
-          <p className="text-xs text-[#999] italic px-1 pb-1 shrink-0">
+          <p data-test="typing-indicator" className="text-xs text-[#999] italic px-1 pb-1 shrink-0">
             typing…
           </p>
         )}
@@ -239,10 +240,11 @@ export default function SendMessageForm({
           hasError={!!error}
         />
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p data-test="send-message-error" className="text-xs text-red-400">{error}</p>}
 
         <div className="flex justify-end">
           <button
+            data-test="send-message-button"
             onClick={handleSend}
             disabled={isSending}
             className="px-5 py-2 text-sm font-semibold text-black transition-colors bg-white rounded-lg hover:text-[color:#838383] disabled:opacity-50"

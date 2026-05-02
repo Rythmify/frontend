@@ -100,6 +100,7 @@ function DropdownItem({
 }) {
   return (
     <button
+      data-test={`search-filter-item-${label.toLowerCase().replace(/\s+/g, "-")}`}
       onClick={onClick}
       className={`w-full text-left px-3 py-1.5 text-sm transition-colors rounded-sm
         ${active
@@ -126,6 +127,7 @@ function FilterDropdown({
   return (
     <div className="flex flex-col">
       <button
+        data-test={`search-filter-dropdown-btn-${label.toLowerCase().replace(/\s+/g, "-")}`}
         onClick={() => setOpen((p) => !p)}
         className="flex items-center justify-between py-2 text-sm text-text hover:text-text-hover transition-colors"
       >
@@ -155,7 +157,7 @@ function TagFilter({
   if (!Array.isArray(tags) || tags.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 pt-2">
+    <div data-test="search-filter-by-tag" className="flex flex-col gap-2 pt-2">
       <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
         Filter by tag
       </span>
@@ -163,6 +165,7 @@ function TagFilter({
         {tags.map((tag) => (
           <button
             key={tag}
+            data-test={`search-filter-tag-${tag.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
             onClick={() => onSelect(activeTag === tag ? null : tag)}
             className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition-colors
               ${activeTag === tag
@@ -191,7 +194,7 @@ function LocationFilter({
   if (!Array.isArray(locations) || locations.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 pt-2">
+    <div data-test="search-filter-by-location" className="flex flex-col gap-2 pt-2">
       <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
         Filter by location
       </span>
@@ -243,12 +246,12 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
     const activeTag       = searchParams.get("tag");
 
     return (
-      <div className="flex flex-col gap-1 border-t border-border pt-4">
-        <span className="text-xs font-semibold text-text uppercase tracking-wider mb-2">
-          Filter results
-        </span>
+    <div data-test="search-filters" className="flex flex-col gap-1 border-t border-border pt-4">
+      <span data-test="search-filters-title" className="text-xs font-semibold text-text uppercase tracking-wider mb-2">
+        Filter results
+      </span>
 
-        {/* Time range */}
+      {/* Time range */}
         <FilterDropdown
           label="Added any time"
           activeLabel={activeTimeRange ? TIME_RANGE_LABELS[activeTimeRange] : null}
@@ -316,7 +319,7 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
     const activeLocation = searchParams.get("location");
 
     return (
-      <div className="flex flex-col gap-1 border-t border-border pt-4">
+      <div data-test="search-filters" className="flex flex-col gap-1 border-t border-border pt-4">
         <LocationFilter
           locations={locations}
           activeLocation={activeLocation}
@@ -331,7 +334,7 @@ export default function SearchFilters({ filters }: SearchFiltersProps) {
     const activeTag = searchParams.get("tag");
 
     return (
-      <div className="flex flex-col gap-1 border-t border-border pt-4">
+      <div data-test="search-filters" className="flex flex-col gap-1 border-t border-border pt-4">
         <TagFilter
           tags={platformTags}
           activeTag={activeTag}

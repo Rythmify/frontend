@@ -12,14 +12,15 @@ const MessagesPage = () => {
       <MessagingHeader />
 
       {/* Empty state */}
-      <div className="container px-4  flex flex-col items-center justify-center flex-grow w-full text-center pt-43">
-        <p className="font-semibold text-white text-s">
+      <div data-test="empty-messages-page" className="container px-4  flex flex-col items-center justify-center flex-grow w-full text-center pt-43">
+        <p data-test="empty-messages-title" className="font-semibold text-white text-s">
           You have no messages
         </p>
 
         <p className="mt-2 text-sm text-white">
           Send someone a message and make their day.
           <button
+            data-test="empty-messages-write-button"
             onClick={() => setIsOpen(true)}
             className="ml-1 text-[#699FFF] hover:underline"
           >

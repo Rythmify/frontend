@@ -17,6 +17,7 @@ export default function DeleteConversationButton({
   return (
     <>
       <button
+        data-test="delete-conversation-button"
         onClick={() => setIsModalOpen(true)}
         aria-label="Delete conversation"
         className="inline-flex h-10 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#2a2a2a] text-white hover:text-[#838383] transition-all active:scale-95"

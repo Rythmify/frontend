@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import CoverImage from "@/components/UI/CoverImage";
 import type { Track } from "@/services/api/upload/track.service";
 import { PERIOD_LABELS } from "./insights.types";
 import type { Period } from "./insights.types";
@@ -30,14 +31,8 @@ export function InsightsTopTracks({ tracks, period }: Props) {
               data-test={`insights-top-track-${track.id}`}
             >
               <span className="text-text text-xs w-4 shrink-0 text-right">{i + 1}</span>
-              <div className="w-9 h-9 shrink-0 rounded-sm bg-input-bg overflow-hidden flex items-center justify-center">
-                {track.cover_image ? (
-                  <img src={track.cover_image} alt={track.title} className="w-full h-full object-cover" />
-                ) : (
-                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-text" fill="currentColor">
-                    <path d="m10 16.5 6-4.5-6-4.5z" />
-                  </svg>
-                )}
+              <div className="w-9 h-9 shrink-0 rounded-sm overflow-hidden">
+                <CoverImage src={track.cover_image} alt={track.title} className="w-full h-full object-cover" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-text-hover text-sm font-semibold truncate">{track.title}</p>

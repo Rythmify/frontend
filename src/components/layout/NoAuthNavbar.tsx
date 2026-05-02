@@ -111,14 +111,11 @@ const NoAuthNavbar = () => {
                   <DropdownLink label="Upload" to="/upload" onClick={() => setShowMoreMenu(false)} />
                   <div className="border-t border-border my-1" />
                 </div>
-                <DropdownLink label="About us" to="/pages/contact" onClick={() => setShowMoreMenu(false)} />
-                <DropdownLink label="Legal" to="/terms-of-use" onClick={() => setShowMoreMenu(false)} />
-                <DropdownLink label="Copyright" to="/pages/copyright" onClick={() => setShowMoreMenu(false)} />
-                <DropdownLink label="Mobile apps" to="/download" onClick={() => setShowMoreMenu(false)} />
+                
                 <DropdownLink label="Artist Membership" to="/premium" onClick={() => setShowMoreMenu(false)} />
                 <div className="border-t border-border my-1" />
-                <DropdownLink label="Keyboard shortcuts" to="#" onClick={() => setShowMoreMenu(false)} />
-                    <div className="border-t border-border my-1" />
+                
+                   
                 <DropdownLink label="Pro Plan" to="/premium" onClick={() => setShowMoreMenu(false)} />
               </div>
               

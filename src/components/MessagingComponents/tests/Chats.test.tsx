@@ -30,6 +30,7 @@ const makeConversation = (id: string): Conversation => ({
 const defaultProps = {
   conversations: [],
   loading: false,
+  loadingMore: false,
   error: null,
   activeConversationId: null,
   onSelect: vi.fn(),
@@ -79,6 +80,7 @@ describe("Chats", () => {
       <Chats
         {...defaultProps}
         conversations={[makeConversation("a"), makeConversation("b")]}
+        
       />
     );
     expect(screen.getByTestId("chat-list")).toBeInTheDocument();

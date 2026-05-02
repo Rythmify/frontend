@@ -84,10 +84,10 @@ export default function InsightsPage() {
     ) : (
       <>
         <div className="mb-10">
-          <h2 className="text-white font-extrabold text-5xl tracking-tighter">
+          <h2 className="text-white font-extrabold text-3xl md:text-5xl tracking-tighter">
             {getMetricTotal(tracks, metric).toLocaleString()}{" "}
             <span className="font-extrabold">{metric}</span>{" "}
-            <span className="text-[#81C784] text-5xl font-extrabold">{PERIOD_SUFFIX[period]}</span>
+            <span className="text-[#81C784] font-extrabold">{PERIOD_SUFFIX[period]}</span>
           </h2>
         </div>
 
@@ -106,8 +106,8 @@ export default function InsightsPage() {
   return (
     <div className="container pt-6 pb-24 px-4 md:px-8 lg:px-12 xl:px-20" data-test="insights-page">
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-white font-extrabold text-4xl tracking-tight">Insights</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h1 className="text-white font-extrabold text-2xl md:text-4xl tracking-tight">Insights</h1>
         {tab === "Rythmify" && (
           <InsightsPeriodDropdown period={period} onChange={setPeriod} />
         )}
