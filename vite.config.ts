@@ -5,11 +5,19 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),tailwindcss()],
+  cacheDir: 'C:/vite-cache/rythmify',
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  optimizeDeps: {
+    include: [
+      'react-google-recaptcha-v3',
+      '@react-oauth/google',
+      'socket.io-client',
+    ],
   },
   test: {
     environment: 'jsdom',

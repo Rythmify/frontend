@@ -6,6 +6,7 @@ import { useLikesStore } from "@/stores/likes.store";
 import { usePlayerStore } from "@/stores/player.store";
 import { useAuthStore } from "@/stores/auth.store";
 import CardOverlay from "@/components/UI/CardOverlay/CardOverlay";
+import CoverImage from "@/components/UI/CoverImage";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { getTrendingByGenre } from "@/services/api/discover.service";
 import type { Track } from "@/types/track";
@@ -133,14 +134,12 @@ export default function GenreCard({
     >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {item.cover_image && (
-          <img
-            src={item.cover_image}
-            alt={item.genre}
-            className="w-full h-full object-cover transition-all duration-200"
-            data-test="genre-card-image"
-          />
-        )}
+        <CoverImage
+          src={item.cover_image}
+          alt={item.genre}
+          className="w-full h-full object-cover transition-all duration-200"
+          data-test="genre-card-image"
+        />
 
         {/* Genre badge — bottom-left */}
         <div
