@@ -28,7 +28,7 @@ const FeedItemCard = ({ item }: FeedItemCardProps) => {
 
   const cardBody =
     item.content_type === "track" ? (
-      <TrackCard track={item.track} disableComments />
+      <TrackCard track={item.track} />
     ) : (
       <PlaylistComponent playlist={item.playlist} />
     );

@@ -1,7 +1,13 @@
+/**
+ * Track API layer — all calls use the shared axios instance, which attaches
+ * `X-Country-Code` (see `config/playbackRegion.ts`) so stream/preview URLs match
+ * the listener’s region.
+ */
 import axiosInstance from "./api/axiosInstance";
 import type { Track } from "../types/track";
 import type { Comment } from "../types/comment";
 import { formatPostedAt } from "./Time";
+import { resolvePlaybackAudioUrl } from "../utils/playbackAccess";
 
 /**
  * Normalizes a raw API track object into the frontend Track type.
@@ -25,6 +31,7 @@ function normalizeTrack(raw: any): Track {
       waveformData: [],
       audioUrl: "",
       isPrivate: false,
+      enableAppPlayback: true,
     };
   }
 
@@ -38,12 +45,13 @@ function normalizeTrack(raw: any): Track {
     duration = durationRaw;
   }
 
-  return {
+  const streamUrlRaw = raw.stream_url || raw.audio_url || raw.audioUrl || null;
+  const previewUrlRaw = raw.preview_url ?? raw.previewUrl ?? null;
+
+  const merged = {
     ...raw,
     id: raw.id,
     title: raw.title ?? "",
-    // FIX: map all possible audio URL field names so the player always has a URL
-    audioUrl: raw.stream_url || raw.audio_url || raw.audioUrl || "",
     coverUrl: raw.cover_image || raw.cover_url || raw.coverUrl || "",
     artistName:
       raw.artist_name || raw.user?.display_name || raw.artistName || "",
@@ -54,9 +62,7 @@ function normalizeTrack(raw: any): Track {
       raw.username ||
       raw.owner_username ||
       "",
-    // FIX: map slug field from API, fallback to id to ensure valid navigation URL
     trackSlug: raw.slug || raw.track_slug || raw.trackSlug || raw.id || "",
-    // FIX: format ISO timestamp into human-readable string
     postedAt: formatPostedAt(raw.created_at || raw.postedAt || ""),
     playCount: raw.play_count ?? raw.playCount ?? 0,
     likeCount: raw.like_count ?? raw.likeCount ?? 0,
@@ -69,6 +75,23 @@ function normalizeTrack(raw: any): Track {
       raw.is_reposted_by_me ?? raw.is_reposted ?? raw.isReposted ?? false,
     artistId: raw.user_id || raw.artistId || "",
     duration,
+    streamUrl:
+      typeof streamUrlRaw === "string" && streamUrlRaw.trim()
+        ? streamUrlRaw.trim()
+        : undefined,
+    previewUrl:
+      typeof previewUrlRaw === "string" && previewUrlRaw.trim()
+        ? previewUrlRaw.trim()
+        : undefined,
+    isGeoBlocked: raw.is_geo_blocked === true,
+    playbackRestrictionReason: raw.playback_restriction_reason ?? null,
+    enableAppPlayback: raw.enable_app_playback !== false,
+  };
+
+  return {
+    ...merged,
+    // `audioUrl` is the actual source for `<audio>` / WaveSurfer (stream vs preview vs none).
+    audioUrl: resolvePlaybackAudioUrl(merged),
   } as Track;
 }
 
