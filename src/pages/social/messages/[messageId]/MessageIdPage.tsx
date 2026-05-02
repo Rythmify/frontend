@@ -39,15 +39,13 @@ export default function MessageIdPage() {
   const [showMobileChat, setShowMobileChat] = useState(false);
 
   // ─── Conversation-list pagination ─────────────────────────────────────────
-  const [convPage, setConvPage]                 = useState(1);
   const [loadingMoreConvs, setLoadingMoreConvs] = useState(false);
+  const [hasMoreConvs, setHasMoreConvs]         = useState(false);
 
   // Refs so the IntersectionObserver callback never captures stale state
   const hasMoreConvsRef  = useRef(false);
   const loadingMoreRef   = useRef(false);
   const convPageRef      = useRef(1);
-  const sentinelRef          = useRef<HTMLDivElement>(null);
-  const scrollContainerRef   = useRef<HTMLDivElement>(null);
 
   const { refreshUnreadCount } = useMessagingStore();
 
@@ -134,6 +132,12 @@ export default function MessageIdPage() {
   }, [activeConvId, loadingMsgs, hasPrevPage, currentPage]);
 
   // ─── Fetch a page of conversations and append ─────────────────────────────
+  const syncHasMoreConvs = useCallback((loadedCount: number, totalItems: number) => {
+    const hasMore = loadedCount < totalItems;
+    hasMoreConvsRef.current = hasMore;
+    setHasMoreConvs(hasMore);
+  }, []);
+
   const fetchConvPage = useCallback((page: number) => {
     if (loadingMoreRef.current || !hasMoreConvsRef.current) return;
 
@@ -144,41 +148,27 @@ export default function MessageIdPage() {
       .then((res) => {
         const { items, pagination } = res.data;
         setConversations((prev) => {
-          const next = [...prev, ...items];
+          const existingIds = new Set(prev.map((conv) => conv.id));
+          const uniqueItems = items.filter((conv) => !existingIds.has(conv.id));
+          const next = [...prev, ...uniqueItems];
           // FIX: sync ref synchronously inside the updater so the
           // IntersectionObserver always sees the correct value on its
           // next intersection event — no async useEffect lag.
-          hasMoreConvsRef.current = next.length < pagination.total_items;
+          syncHasMoreConvs(next.length, pagination.total_items ?? next.length);
           return next;
         });
         convPageRef.current = page;
-        setConvPage(page);
       })
       .catch(() => setError("Could not load more conversations."))
       .finally(() => {
         loadingMoreRef.current = false;
         setLoadingMoreConvs(false);
       });
-  }, []);
+  }, [syncHasMoreConvs]);
 
   // ─── IntersectionObserver ─────────────────────────────────────────────────
-  useEffect(() => {
-    const sentinel        = sentinelRef.current;
-    const scrollContainer = scrollContainerRef.current;
-    if (!sentinel || !scrollContainer) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && hasMoreConvsRef.current && !loadingMoreRef.current) {
-          fetchConvPage(convPageRef.current + 1);
-        }
-      },
-      { root: scrollContainer, rootMargin: "100px" },
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
+  const loadMoreConversations = useCallback(() => {
+    fetchConvPage(convPageRef.current + 1);
   }, [fetchConvPage]);
 
   // ─── 1. Initial fetch ─────────────────────────────────────────────────────
@@ -188,11 +178,8 @@ export default function MessageIdPage() {
       .then((res) => {
         const { items, pagination } = res.data;
         setConversations(items);
-        // FIX: sync ref synchronously here too, before any observer
-        // callback can fire and find it still false.
-        hasMoreConvsRef.current = items.length < pagination.total_items;
+        syncHasMoreConvs(items.length, pagination.total_items ?? items.length);
         convPageRef.current = 1;
-        setConvPage(1);
 
         if (items.length === 0) return;
 
@@ -204,7 +191,7 @@ export default function MessageIdPage() {
       })
       .catch(() => setError("Could not load conversations."))
       .finally(() => setLoadingConvs(false));
-  }, []);
+  }, [loadConversation, messageId, syncHasMoreConvs]);
 
   // ─── 2. Socket room management ────────────────────────────────────────────
   useEffect(() => {
@@ -406,16 +393,17 @@ export default function MessageIdPage() {
         } flex-col w-full md:w-85 shrink-0 sticky top-0 h-[calc(100vh-64px)]`}
       >
         <MessagingHeader onConversationCreated={handleConversationCreated} />
-        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex flex-1 min-h-0">
           <Chats
             conversations={conversations}
             loading={loadingConvs}
             loadingMore={loadingMoreConvs}
+            hasMore={hasMoreConvs}
             error={error}
             activeConversationId={activeConvId}
             onSelect={handleSelectConversation}
+            onLoadMore={loadMoreConversations}
           />
-          <div ref={sentinelRef} className="h-1" />
         </div>
       </div>
 

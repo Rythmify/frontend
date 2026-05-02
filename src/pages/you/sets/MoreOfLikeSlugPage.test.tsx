@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useParams } from "react-router-dom";
 
 import MoreOfLikeSlugPage from "./MoreOfLikeSlugPage";
-import { getRelatedTracks } from "@/services/track.service";
+import { getRelatedTracks, getTrackById } from "@/services/track.service";
 import { getRadioTracks } from "@/services/api/playlist/playlist.service";
 import { getUserById } from "@/services/user.service";
 import { usePlayerStore } from "@/stores/player.store";
@@ -22,10 +22,25 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@/services/track.service", () => ({
   getRelatedTracks: vi.fn(),
+  getTrackById: vi.fn(),
 }));
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
   getRadioTracks: vi.fn(),
+  formatDuration: (seconds: number) => {
+    const safeSeconds = Math.max(0, Math.floor(seconds));
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const remainingSeconds = safeSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, "0")}:${String(
+        remainingSeconds,
+      ).padStart(2, "0")}`;
+    }
+
+    return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+  },
 }));
 
 vi.mock("@/services/user.service", () => ({
@@ -46,6 +61,7 @@ vi.mock("@/components/playlist/PlaylistHero", () => ({
       <span data-test="hero-name">{playlist?.name}</span>
       <span data-test="hero-owner">{ownerUsername ?? ""}</span>
       <span data-test="hero-title">{moreOfLikeTitle ?? ""}</span>
+      <span data-test="hero-track-count">{playlist?.track_count ?? ""}</span>
       <button data-test="hero-play" onClick={onPlayPause}>
         play
       </button>
@@ -149,8 +165,9 @@ const mockSeedTrack = {
   ...mockRelatedTracks[0],
   title: "Seed Track",
   id: "seed-track",
-  artistUsername: "11111111-1111-1111-1111-111111111111",
-  artistId: "artist-a",
+  artistUsername: "seed-artist",
+  artistId: "seed-artist",
+  artistName: "Seed Artist",
 };
 
 const mockRadioPayload = {
@@ -230,6 +247,12 @@ describe("MoreOfLikeSlugPage", () => {
       referenceTrack: mockSeedTrack as any,
       tracks: mockRelatedTracks as any,
     } as any);
+    vi.mocked(getTrackById).mockResolvedValue({
+      ...mockSeedTrack,
+      title: "Hydrated Seed Track",
+      trackSlug: "hydrated-seed-track",
+      playCount: 777,
+    } as any);
     vi.mocked(getUserById).mockImplementation(async (id: string) => {
       if (id === "artist-a") {
         return {
@@ -247,11 +270,12 @@ describe("MoreOfLikeSlugPage", () => {
           followers_count: 9,
         } as any;
       }
-      if (id === "11111111-1111-1111-1111-111111111111") {
+      if (id === "seed-artist") {
         return {
-          id: id,
-          username: "album-owner",
-          display_name: "Album Owner",
+          id,
+          username: "seed-artist",
+          display_name: "Seed Artist",
+          followers_count: 50,
         } as any;
       }
       return null as any;
@@ -264,10 +288,12 @@ describe("MoreOfLikeSlugPage", () => {
     );
 
     expect(screen.getByTestId("hero-name")).toHaveTextContent(
-      "Related tracks: Seed Track",
+      "Related tracks: Hydrated Seed Track",
     );
-    expect(screen.getByTestId("hero-owner")).toHaveTextContent("album-owner");
+    expect(screen.getByTestId("hero-owner")).toHaveTextContent("Seed Artist");
     expect(screen.getByTestId("hero-title")).toHaveTextContent("Seed Track");
+    expect(screen.getByTestId("hero-track-count")).toHaveTextContent("3");
+    expect(getTrackById).toHaveBeenCalledWith("seed-track-1");
     expect(screen.getByTestId("track-list")).toHaveAttribute("data-count", "3");
     expect(screen.getByTestId("playlist-actions")).toHaveAttribute(
       "data-kind",
@@ -275,9 +301,9 @@ describe("MoreOfLikeSlugPage", () => {
     );
     expect(screen.getByTestId("playlist-sidebar")).toHaveAttribute(
       "data-featured-count",
-      "2",
+      "3",
     );
-    expect(screen.getByText("artist-a")).toBeInTheDocument();
+    expect(screen.getByText("seed-artist")).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("hero-play"));
 

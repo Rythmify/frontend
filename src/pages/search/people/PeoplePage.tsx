@@ -122,6 +122,10 @@ export default function PeoplePage() {
     hasMoreRef.current = users.length < total;
   }, [users.length, total]);
 
+  useEffect(() => {
+    return () => setFilters(null);
+  }, []);
+
   // ── Empty query ───────────────────────────────────────────────────────────
   if (!q.trim()) {
     return (
@@ -146,9 +150,6 @@ export default function PeoplePage() {
     );
   }
 
-  useEffect(() => {
-  return () => setFilters(null);
-}, []);
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col w-full">

@@ -22,7 +22,6 @@ export default function SearchSidebar({ query, filters }: SearchSidebarProps) {
   const activePath = TABS.find((t) => location.pathname === t.path)?.path ?? "/search";
 
   const handleTabClick = (path: string) => {
-    if (path === activePath) return;
     const qs = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : "";
     navigate(`${path}${qs}`);
   };

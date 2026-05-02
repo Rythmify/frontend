@@ -21,7 +21,7 @@ describe("PlaylistCover", () => {
 
     expect(screen.getByAltText("My Playlist")).toHaveAttribute(
       "src",
-      expect.stringContaining("unsplash"),
+      expect.stringContaining("cdn.prod.website-files.com"),
     );
     expect(
       screen.getByTestId("button-upload-cover-hero-playlist"),
@@ -139,5 +139,22 @@ describe("PlaylistCover", () => {
     );
 
     expect(screen.getByAltText("Upload")).toHaveAttribute("src", "cover.jpg");
+  });
+
+  it("falls back to the SoundCloud home URL when the cover image fails", () => {
+    render(
+      <PlaylistCover
+        playlistId="pl-1"
+        playlistName="Broken Cover"
+        coverImage="https://example.com/broken.jpg"
+      />,
+    );
+
+    fireEvent.error(screen.getByAltText("Broken Cover"));
+
+    expect(screen.getByAltText("Broken Cover")).toHaveAttribute(
+      "src",
+      "https://cdn.prod.website-files.com/62a0a0168756b795debc65bc/65df5bfb519e57f33c35d493_419679-1x1_SoundCloudLogo_cloudmark-f5912b-large-1645807040%20(2).jpg",
+    );
   });
 });

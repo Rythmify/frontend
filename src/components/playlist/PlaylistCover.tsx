@@ -17,6 +17,8 @@ const BADGE_COLORS: { bg: string; text: string }[] = [
 ];
 
 const RADII = [18, 36, 54, 72, 90, 108, 126, 144];
+const FALLBACK_COVER_URL =
+  "https://cdn.prod.website-files.com/62a0a0168756b795debc65bc/65df5bfb519e57f33c35d493_419679-1x1_SoundCloudLogo_cloudmark-f5912b-large-1645807040%20(2).jpg";
 
 function StationRings({ colorIndex = 0 }: { colorIndex?: number }) {
   const { a, b } = COLOR_SCHEMES[colorIndex % COLOR_SCHEMES.length];
@@ -111,7 +113,7 @@ export default function PlaylistCover({
     localPreviewUrl ||
     coverImages?.[0] ||
     coverImage ||
-    "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=800&q=80";
+    FALLBACK_COVER_URL;
 
   const body = (
     <div data-test="playlist-cover-body" className="relative group">
@@ -121,6 +123,9 @@ export default function PlaylistCover({
             src={src}
             alt={playlistName}
             className="w-full h-full object-cover transition-all duration-200"
+            onError={(event) => {
+              event.currentTarget.src = FALLBACK_COVER_URL;
+            }}
           />
 
           <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 opacity-70 z-10">
@@ -160,6 +165,9 @@ export default function PlaylistCover({
             alt={playlistName}
             className="w-full h-full object-cover transition-all duration-200 group-hover:brightness-75"
             data-test="mix-card-image"
+            onError={(event) => {
+              event.currentTarget.src = FALLBACK_COVER_URL;
+            }}
           />
 
           <div
@@ -230,10 +238,13 @@ export default function PlaylistCover({
                 localPreviewUrl ||
                 coverImages?.[0] ||
                 coverImage ||
-                "https://unsplash.com/photos/close-up-view-of-retro-audio-cassette-and-pencils-on-pink-backdrop-DWWjwQfLmqE"
+                FALLBACK_COVER_URL
               }
               alt={playlistName}
               className="w-full h-full object-cover"
+              onError={(event) => {
+                event.currentTarget.src = FALLBACK_COVER_URL;
+              }}
             />
           </div>
           <div className="absolute top-[22%] left-[24%] w-[50%] aspect-square rounded-full overflow-hidden border-[2px] border-white/25">
@@ -244,10 +255,13 @@ export default function PlaylistCover({
                 coverImages?.[1] ||
                 coverImages?.[0] ||
                 coverImage ||
-                "https://picsum.photos/seed/playlist-2/600/600"
+                FALLBACK_COVER_URL
               }
               alt={playlistName}
               className="w-full h-full object-cover"
+              onError={(event) => {
+                event.currentTarget.src = FALLBACK_COVER_URL;
+              }}
             />
           </div>
           <div className="absolute bottom-[14%] right-[4%] w-[30%] aspect-square rounded-full overflow-hidden border-[2px] border-white/20">
@@ -258,10 +272,13 @@ export default function PlaylistCover({
                 coverImages?.[2] ||
                 coverImages?.[1] ||
                 coverImage ||
-                "https://picsum.photos/seed/playlist-3/600/600"
+                FALLBACK_COVER_URL
               }
               alt={playlistName}
               className="w-full h-full object-cover"
+              onError={(event) => {
+                event.currentTarget.src = FALLBACK_COVER_URL;
+              }}
             />
           </div>
         </div>
@@ -270,6 +287,9 @@ export default function PlaylistCover({
           src={src}
           alt={playlistName}
           className="w-64 h-64 lg:w-80 lg:h-80 object-cover shadow-2xl rounded-md border border-white/5"
+          onError={(event) => {
+            event.currentTarget.src = FALLBACK_COVER_URL;
+          }}
         />
       )}
 

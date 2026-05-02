@@ -12,6 +12,7 @@ import {
 } from "@/services/api/playlist/playlist.service";
 import { type Playlist, type PlaylistDetails } from "@/services/api/playlist/playlist.service";
 import { getUserById, type PublicUser } from "@/services/user.service";
+import { getFeaturedArtists } from "@/services/featuredArtists.service";
 import { useHistoryStore } from "@/stores/history.store";
 import type { MockUser } from "@/services/mocks/users";
 
@@ -52,19 +53,6 @@ function toStationPlaylistDetails(
   };
 }
 
-function toFeaturedArtist(user: PublicUser, station: StationView): MockUser {
-  return {
-    id: 0,
-    username: user.username ?? slugify(user.display_name),
-    displayName: user.display_name,
-    avatarUrl:
-      user.profile_picture ?? "https://picsum.photos/seed/station-artist/100/100",
-    followerCount: user.followers_count ?? 0,
-    trackCount: station.track_count,
-    isFollowing: false,
-  };
-}
-
 export default function StationSlugPage() {
   const { stationSlug } = useParams<{ stationSlug: string }>();
   const addStation = useHistoryStore((state) => state.addStation);
@@ -72,6 +60,7 @@ export default function StationSlugPage() {
   const [station, setStation] = useState<StationView | null>(null);
   const [stationTracks, setStationTracks] = useState<PlaylistTrackItem[]>([]);
   const [seedArtist, setSeedArtist] = useState<PublicUser | null>(null);
+  const [featuredArtists, setFeaturedArtists] = useState<MockUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -108,8 +97,13 @@ export default function StationSlugPage() {
         try {
           // Use artist_id from station if available, otherwise fallback to the ID we used
           const artistId = stationRes.station.artist_id || primaryId;
+          const artists = await getFeaturedArtists([{ artist_id: artistId }], null);
           const artist = await getUserById(artistId);
-          if (!cancelled) setSeedArtist(artist);
+          if (!cancelled) {
+            setSeedArtist(artist);
+            setStationTracks(stationRes.tracks);
+            setFeaturedArtists(artists);
+          }
         } catch {
           if (!cancelled) setSeedArtist(null);
         }
@@ -154,7 +148,6 @@ export default function StationSlugPage() {
   }
 
   const stationPlaylistDetails = toStationPlaylistDetails(station, stationTracks);
-  const featuredArtists = seedArtist ? [toFeaturedArtist(seedArtist, station)] : [];
 
   const handlePlayStation = () => {
     addStation({

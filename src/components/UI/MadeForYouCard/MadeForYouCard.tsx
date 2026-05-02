@@ -6,6 +6,7 @@ import { usePlayerStore } from "@/stores/player.store";
 import { useHistoryStore } from "@/stores/history.store";
 import type { Track } from "@/types/track";
 import CardOverlay, { AddToPlaylistIcon } from "@/components/UI/CardOverlay/CardOverlay";
+import CoverImage from "@/components/UI/CoverImage";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import { getMadeForYouDaily, getMadeForYouWeekly } from "@/services/api/playlist/playlist.service";
 
@@ -105,7 +106,7 @@ export default function MadeForYouCard({
     >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        <img
+        <CoverImage
           src={item.coverUrl}
           alt={item.title}
           className="w-full h-full object-cover transition-all duration-200"
