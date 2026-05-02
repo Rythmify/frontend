@@ -333,6 +333,9 @@ export default function PlaylistComponent({
 
   const instanceId = useMemo(() => uniqueId ?? `playlist-instance-${Math.random().toString(36).substr(2, 9)}`, [uniqueId]);
 
+  // Defensive: check for valid playlistSlug
+  const hasValidSlug = !!playlist.playlistSlug && playlist.playlistSlug !== "undefined" && playlist.playlistSlug !== "";
+
   const isOwner = !!user && user.username === playlist.creatorUsername;
 
   const firstTrack = playlist.tracks[0] ?? null;
@@ -576,13 +579,23 @@ export default function PlaylistComponent({
             </div>
 
             {/* Playlist title */}
-            <Link
-              data-test="playlist-component-title-link"
-              to={`/${playlist.creatorUsername}/${urlSegment}/${playlist.playlistSlug ?? ""}`}
-              className="block text-sm sm:text-lg font-bold text-white hover:text-[#f50] transition-colors truncate"
-            >
-              {playlist.title}
-            </Link>
+            {hasValidSlug ? (
+              <Link
+                data-test="playlist-component-title-link"
+                to={`/${playlist.creatorUsername}/${urlSegment}/${playlist.playlistSlug}`}
+                className="block text-sm sm:text-lg font-bold text-white hover:text-[#f50] transition-colors truncate"
+              >
+                {playlist.title}
+              </Link>
+            ) : (
+              <span
+                data-test="playlist-component-title-link-disabled"
+                className="block text-sm sm:text-lg font-bold text-white/50 truncate cursor-not-allowed"
+                title="Invalid playlist link"
+              >
+                {playlist.title}
+              </span>
+            )}
           </div>
 
           {/* Timestamp + track count */}

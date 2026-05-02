@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import WaveSurfer from "wavesurfer.js";
-import { FaPlay, FaPause, FaHeart } from "react-icons/fa";
+import { FaPlay, FaPause, FaHeart, FaLock } from "react-icons/fa";
 import { BiRepost } from "react-icons/bi";
 import { LuCopy, LuPencil, LuTrash2 } from "react-icons/lu";
 import { HiDotsHorizontal } from "react-icons/hi";
@@ -39,6 +39,8 @@ import EditTrackModal from "./EditTrackModal";
 import DeleteTrackModal from "./DeleteTrackModal";
 import ReplaceAudioModal from "./ReplaceAudioModal";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import { usePlaybackAccess } from "../../hooks/usePlaybackAccess";
+import type { PlaybackAccessState } from "../../utils/playbackAccess";
 
 // helpers
 
@@ -175,6 +177,10 @@ interface CardWaveformProps {
   onWaveformClick: (ratio: number) => void;
   comments: Comment[];
   pendingRatio: number | null;
+  /** From `getPlaybackState` — blocks waveform seek/load when not playable/preview. */
+  playbackState: PlaybackAccessState;
+  /** When true (e.g. feed), waveform does not open the comment UI. */
+  disableComments?: boolean;
 }
 
 function CardWaveform({
@@ -183,6 +189,8 @@ function CardWaveform({
   onWaveformClick,
   comments,
   pendingRatio,
+  playbackState,
+  disableComments = false,
 }: CardWaveformProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wsRef = useRef<WaveSurfer | null>(null);
@@ -251,6 +259,9 @@ function CardWaveform({
           setWaveformDuration(dur);
         });
       } else {
+        const canInteract = playbackState !== "blocked";
+        const remoteUrl =
+          canInteract && !hasPeaks && track.audioUrl ? track.audioUrl : undefined;
         ws = WaveSurfer.create({
           container: containerRef.current!,
           waveColor: g,
@@ -259,13 +270,14 @@ function CardWaveform({
           barGap: 0.5,
           barRadius: 2,
           height: 80,
-          interact: true, // Enable interaction even if not active so user can click waveform to comment
+          interact: canInteract,
           peaks: hasPeaks ? [peaks] : undefined,
           duration: durationFallback > 0 ? durationFallback : undefined,
-          url: !hasPeaks ? track.audioUrl : undefined,
+          url: remoteUrl,
         });
 
         ws.on("interaction", (newTime: number) => {
+          if (!canInteract) return;
           const dur = durationFallback;
           onWaveformClick?.(dur > 0 ? newTime / dur : 0);
         });
@@ -289,7 +301,7 @@ function CardWaveform({
       } catch { /* ok */ }
       wsRef.current = null;
     };
-  }, [isActive, track.id, track.audioUrl]);
+  }, [isActive, track.id, track.audioUrl, playbackState]);
 
   const durSec = waveformDuration || parseDur(track.duration);
 
@@ -378,6 +390,24 @@ function CardWaveform({
             />
           )}
         </div>
+
+        {/* Geo-blocked tracks use WaveSurfer with interact:false (no playback), so clicks never fire.
+            This layer restores "click waveform to comment" using the same ratio as WaveSurfer would. */}
+        {playbackState === "blocked" && !disableComments && (
+          <button
+            type="button"
+            aria-label="Add comment at this position on the waveform"
+            className="absolute inset-0 z-8 cursor-pointer border-0 bg-transparent p-0"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio =
+                rect.width > 0
+                  ? Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+                  : 0;
+              onWaveformClick(ratio);
+            }}
+          />
+        )}
       </div>
     </div>
   );
@@ -500,6 +530,7 @@ export default function TrackCard({
   // Local overrides applied after a successful edit (so title/cover/genre update instantly)
   const [trackPatch, setTrackPatch] = useState<Partial<Track>>({});
   const displayTrack = { ...track, ...trackPatch };
+  const playbackAccess = usePlaybackAccess(displayTrack);
 
   // Seed initial stats from track prop
   useEffect(() => {
@@ -544,6 +575,7 @@ export default function TrackCard({
   useEffect(() => {
     let hasCounted = false;
     if (currentTrack?.id !== track.id) return;
+    if (playbackAccess.isBlocked) return;
 
     const unsubscribe = usePlayerStore.subscribe((state) => {
       if (!hasCounted && state.currentTrack?.id === track.id) {
@@ -559,9 +591,13 @@ export default function TrackCard({
     });
 
     return () => unsubscribe();
-  }, [track.id, currentTrack?.id, track.duration]);
+  }, [track.id, currentTrack?.id, track.duration, playbackAccess.isBlocked]);
 
   const handlePlayPause = () => {
+    if (playbackAccess.isBlocked) {
+      toast.message("Playback unavailable in your region or for this track.");
+      return;
+    }
     if (isActive) {
       togglePlay();
     } else {
@@ -576,6 +612,10 @@ export default function TrackCard({
   const handleWaveformClick = (ratio: number) => {
     if (!disableComments) {
       setShowCommentBar(true);
+      setShowDiscussion(true);
+    }
+    if (playbackAccess.isBlocked) {
+      return;
     }
     if (!isActive) {
       const dur = parseDur(track.duration);
@@ -671,15 +711,30 @@ export default function TrackCard({
           alt={displayTrack.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
+        {playbackAccess.isPreview && !playbackAccess.isBlocked && (
+          <span
+            data-test="track-card-preview-badge"
+            className="absolute top-1 right-1 z-10 rounded bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-black"
+          >
+            Preview
+          </span>
+        )}
         <button
+          type="button"
           onClick={handlePlayPause}
-          className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+          disabled={playbackAccess.isBlocked}
+          aria-disabled={playbackAccess.isBlocked}
+          className={`absolute inset-0 flex items-center justify-center bg-black/30 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity ${playbackAccess.isBlocked ? "cursor-not-allowed" : ""}`}
         >
-          <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center bg-[#f50] rounded-full text-white shadow-xl">
-            {isActive && isPlaying ? (
+          <div
+            className={`w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-full text-white shadow-xl ${playbackAccess.isBlocked ? "bg-white/25" : "bg-[#f50]"}`}
+          >
+            {playbackAccess.isBlocked ? (
+              <FaLock size={isActive ? 12 : 18} className="sm:scale-100 scale-75" data-test="track-card-lock-icon" />
+            ) : isActive && isPlaying ? (
               <FaPause size={isActive ? 12 : 18} className="sm:scale-100 scale-75" />
             ) : (
-              <FaPlay size={isActive ? 12 : 18} className="translate-x-0.5 sm:scale-100 scale-75" />
+              <FaPlay size={isActive ? 12 : 18} className="translate-x-0.5 sm:scale-100 scale-75" data-test="track-card-play-icon" />
             )}
           </div>
         </button>
@@ -732,10 +787,12 @@ export default function TrackCard({
         {/* Waveform Area - Hidden on mobile for professional look */}
         <div className="hidden md:block relative">
           <CardWaveform
-            track={track}
+            track={displayTrack}
             isActive={isActive}
             comments={comments}
             pendingRatio={null}
+            playbackState={playbackAccess.state}
+            disableComments={disableComments}
             onWaveformClick={handleWaveformClick}
           />
         </div>
@@ -813,10 +870,20 @@ export default function TrackCard({
             <ScBtn icon={<LuCopy size={14} />} tooltip="Copy Link" onClick={onCopyLink} data-test="track-card-btn-copy" />
             <ScBtn
               icon={<MdQueueMusic size={16} />}
-              tooltip={addedToQueue ? "Added!" : "Add to Next up"}
+              tooltip={
+                playbackAccess.isBlocked
+                  ? "Playback unavailable for this track"
+                  : addedToQueue
+                    ? "Added!"
+                    : "Add to Next up"
+              }
               active={addedToQueue}
               data-test="track-card-btn-queue"
               onClick={() => {
+                if (playbackAccess.isBlocked) {
+                  toast.message("This track cannot be queued for playback here.");
+                  return;
+                }
                 addNextInQueue(track);
                 setAddedToQueue(true);
                 toast.success(`"${track.title}" added to Next up`, {
