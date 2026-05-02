@@ -45,6 +45,14 @@ type SetsMixCardItem = {
 
 type SetsCarouselItem = MadeForYouItem | SetsMixCardItem;
 
+function getPersonalMixCoverUrl(mix: PersonalMix) {
+  return mix.cover_image ?? mix.preview_track.cover_image ?? null;
+}
+
+function getMadeForYouCoverUrl(mix: HomeData["made_for_you"] extends infer T ? NonNullable<T> extends { daily_mix: infer D } ? D : never : never) {
+  return mix.cover_url ?? mix.preview_track.cover_image ?? "";
+}
+
 const SkeletonCard = () => (
   <div className={`flex flex-col gap-2 ${CARD_WIDTH} shrink-0 animate-pulse`}>
     <div className="w-full aspect-square rounded-md bg-[#303030]" />
@@ -152,7 +160,7 @@ export default function SetsPage() {
         id: homeData.made_for_you.daily_mix.id,
         title: homeData.made_for_you.daily_mix.label,
         subtitle: homeData.made_for_you.daily_mix.description,
-        coverUrl: homeData.made_for_you.daily_mix.cover_url ?? "",
+        coverUrl: getMadeForYouCoverUrl(homeData.made_for_you.daily_mix),
         madeKind: "daily",
         badgeWords: ["DAILY", "DROPS"],
         badgeBg: "#1a237e",
@@ -165,7 +173,7 @@ export default function SetsPage() {
         id: homeData.made_for_you.weekly_mix.id,
         title: homeData.made_for_you.weekly_mix.label,
         subtitle: homeData.made_for_you.weekly_mix.description,
-        coverUrl: homeData.made_for_you.weekly_mix.cover_url ?? "",
+        coverUrl: getMadeForYouCoverUrl(homeData.made_for_you.weekly_mix),
         madeKind: "weekly",
         badgeWords: ["WEEKLY", "WAVE"],
         badgeBg: "#1b5e20",
@@ -188,7 +196,7 @@ export default function SetsPage() {
             mix.flavor === "listening_history"
               ? "Based on listening history"
               : "Based on your taste",
-          cover_image: mix.cover_image ?? mix.preview_track.cover_image ?? null,
+          cover_image: getPersonalMixCoverUrl(mix),
           badgeWords: ["MIX", ""],
           badgeBg: mix.flavor === "listening_history" ? "#1a237e" : "#1b5e20",
           previewTrack: mapDiscoveryTrack(mix.preview_track),
@@ -299,7 +307,7 @@ export default function SetsPage() {
                       label: mix.title,
                       flavor: "listening_history",
                       genre_name: null,
-                      cover_image: mix.cover_image,
+                      cover_image: mix.cover_image ?? mix.previewTrack?.coverUrl ?? null,
                       track_count: 0,
                       generated_at: new Date().toISOString(),
                       preview_track: {
