@@ -18,6 +18,15 @@ function debouncedSave(userId: string, state: PlayerState) {
   }, 2000);
 }
 
+function buildShuffledOrder(queueLength: number, currentIndex: number): number[] {
+  const others = Array.from({ length: queueLength }, (_, i) => i).filter(i => i !== currentIndex);
+  for (let i = others.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [others[i], others[j]] = [others[j], others[i]];
+  }
+  return [currentIndex, ...others];
+}
+
 // Dynamic import for audioService to avoid circular dependencies
 let _seekAudio: ((time: number) => void) | null = null;
 function getSeekAudio() {
@@ -39,6 +48,8 @@ interface PlayerState {
   volume: number;
   isMuted: boolean;
   isShuffle: boolean;
+  shuffledIndices: number[];
+  shuffledPos: number;
   repeatMode: "none" | "one" | "all";
   isLiked: boolean;
   isAutoplay: boolean;
@@ -85,6 +96,8 @@ export const usePlayerStore = create<PlayerState>()(
       volume: 1,
       isMuted: false,
       isShuffle: false,
+      shuffledIndices: [],
+      shuffledPos: 0,
       repeatMode: "none",
       isLiked: false,
       isAutoplay: true,
@@ -94,33 +107,38 @@ export const usePlayerStore = create<PlayerState>()(
         const newQueue = queue ?? get().queue;
         const index = newQueue.findIndex((t) => t.id === track.id);
         const isSameTrack = get().currentTrack?.id === track.id;
+        const { isShuffle } = get();
 
         if (isSameTrack) {
+          const newIndex = index >= 0 ? index : get().queueIndex;
           set({
             currentTrack: {
               ...(get().currentTrack ?? track),
               ...track,
             },
             queue: newQueue,
-            queueIndex: index >= 0 ? index : get().queueIndex,
+            queueIndex: newIndex,
             isPlaying: true,
             currentTime: startTime ?? get().currentTime,
             activeSourceId: activeSourceId ?? get().activeSourceId,
+            ...(isShuffle && { shuffledIndices: buildShuffledOrder(newQueue.length, newIndex), shuffledPos: 1 }),
           });
           return;
         }
 
         const isFromNullState = get().currentTrack === null;
         const nextTime = startTime ?? (isFromNullState ? get().currentTime : 0);
+        const newIndex = index >= 0 ? index : 0;
 
         set({
           currentTrack: track,
           queue: newQueue,
-          queueIndex: index >= 0 ? index : 0,
+          queueIndex: newIndex,
           isPlaying: true,
           currentTime: nextTime,
           isLiked: false,
           activeSourceId: activeSourceId ?? null,
+          ...(isShuffle && { shuffledIndices: buildShuffledOrder(newQueue.length, newIndex), shuffledPos: 1 }),
         });
       },
 
@@ -161,11 +179,13 @@ export const usePlayerStore = create<PlayerState>()(
                commentCount: q.commentCount || 0,
             } as Track));
             
-            const qIndex = mappedQueue.findIndex(t => String(t.id) === String(fallbackTrack.id));
-            
+            const qIndex = Math.max(0, mappedQueue.findIndex(t => String(t.id) === String(fallbackTrack.id)));
+            const { isShuffle } = get();
+
             set({
                queue: mappedQueue,
-               queueIndex: Math.max(0, qIndex)
+               queueIndex: qIndex,
+               ...(isShuffle && { shuffledIndices: buildShuffledOrder(mappedQueue.length, qIndex), shuffledPos: 1 }),
             });
           }
         } catch (e) {
@@ -178,9 +198,9 @@ export const usePlayerStore = create<PlayerState>()(
       togglePlay: () => set((s) => ({ isPlaying: !s.isPlaying })),
 
       next: () => {
-        const { queue, queueIndex, isShuffle, isAutoplay, currentTrack } = get();
+        const { queue, queueIndex, isShuffle, shuffledIndices, shuffledPos, isAutoplay, currentTrack } = get();
         if (!queue.length) return;
-        
+
         if (queue.length === 1 && queueIndex >= queue.length - 1 && isAutoplay && currentTrack) {
           import("../services/track.service").then(async (m) => {
             try {
@@ -188,7 +208,7 @@ export const usePlayerStore = create<PlayerState>()(
               if (tracks && tracks.length > 0) {
                 const filtered = tracks.filter((t: Track) => !queue.some(q => q.id === t.id));
                 if (filtered.length > 0) {
-                   set((s) => ({ 
+                   set((s) => ({
                      queue: [...s.queue, ...filtered],
                      currentTrack: filtered[0],
                      queueIndex: s.queueIndex + 1,
@@ -201,18 +221,33 @@ export const usePlayerStore = create<PlayerState>()(
             } catch (err) {
               console.error("Autoplay failed", err);
             }
-            const nextIndex = isShuffle ? Math.floor(Math.random() * queue.length) : (queueIndex + 1) % queue.length;
+            const nextIndex = (queueIndex + 1) % queue.length;
             set({ currentTrack: queue[nextIndex], queueIndex: nextIndex, isPlaying: true, currentTime: 0 });
           });
           return;
         }
 
-        let nextIndex: number;
         if (isShuffle) {
-          nextIndex = Math.floor(Math.random() * queue.length);
-        } else {
-          nextIndex = (queueIndex + 1) % queue.length;
+          let indices = shuffledIndices;
+          let pos = shuffledPos;
+          if (pos >= indices.length) {
+            // All tracks played — re-shuffle for next cycle
+            indices = buildShuffledOrder(queue.length, queueIndex);
+            pos = 0;
+          }
+          const nextIndex = indices[pos];
+          set({
+            currentTrack: queue[nextIndex],
+            queueIndex: nextIndex,
+            isPlaying: true,
+            currentTime: 0,
+            shuffledIndices: indices,
+            shuffledPos: pos + 1,
+          });
+          return;
         }
+
+        const nextIndex = (queueIndex + 1) % queue.length;
         set({
           currentTrack: queue[nextIndex],
           queueIndex: nextIndex,
@@ -254,7 +289,13 @@ export const usePlayerStore = create<PlayerState>()(
       setDuration: (duration) => set({ duration }),
       setVolume: (volume) => set({ volume, isMuted: volume === 0 }),
       toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
-      toggleShuffle: () => set((s) => ({ isShuffle: !s.isShuffle })),
+      toggleShuffle: () => set((s) => {
+        if (s.isShuffle) {
+          return { isShuffle: false, shuffledIndices: [], shuffledPos: 0 };
+        }
+        const indices = buildShuffledOrder(s.queue.length, s.queueIndex);
+        return { isShuffle: true, shuffledIndices: indices, shuffledPos: 1 };
+      }),
       toggleRepeat: () =>
         set((s) => {
           const modes: ("none" | "all" | "one")[] = ["none", "all", "one"];
