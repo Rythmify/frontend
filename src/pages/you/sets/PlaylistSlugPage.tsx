@@ -68,6 +68,7 @@ function PlaylistSlugPage() {
             return {
               ...track,
               play_count: fullTrack?.playCount ?? track.play_count ?? 0,
+              audio_url: fullTrack?.audioUrl ?? track.audio_url ?? "",
             };
           }),
         );
@@ -122,60 +123,39 @@ function PlaylistSlugPage() {
     isPrivate: !track.is_public,
   });
 
+  const isPlaylistActive =
+  isPlaying &&
+  !!playlist &&
+  playlist.tracks.some((track) => track.track_id === currentTrack?.id);
+
   const handleHeroPlayPause = () => {
     if (!playlist || !playlist.tracks.length) return;
-
     const firstTrack = playlist.tracks[0];
     const playerTrack = toPlayerTrack(firstTrack);
     const queue = playlist.tracks.map(toPlayerTrack);
-    const isThisPlaylistPlaying =
-      (currentTrack as any)?.context?.playlist_id === playlist.playlist_id;
 
-    if (isThisPlaylistPlaying) {
+    if (isPlaylistActive) {
       togglePlay();
       return;
     }
-
-    setPlayerTrack(
-      {
-        ...playerTrack,
-        context: {
-          type: "playlist",
-          playlist_id: playlist.playlist_id,
-          queue: playlist.tracks.map((t) => t.track_id),
-        },
-      } as any,
-      queue,
-    );
+    setPlayerTrack(playerTrack, queue);
   };
 
   const handleTrackPlay = (track: PlaylistTrackItem) => {
     const playerTrack = toPlayerTrack(track);
     const queue = playlist?.tracks.map(toPlayerTrack) ?? [];
-    const playlistContext = {
-      type: "playlist",
-      playlist_id: playlist?.playlist_id,
-      queue: playlist?.tracks.map((t) => t.track_id) ?? [],
-    };
 
-    if (currentTrack?.id === playerTrack.id) {
+    const isThisTrackFromThisPlaylist =
+      currentTrack?.id === playerTrack.id && isPlaylistActive;
+
+    if (isThisTrackFromThisPlaylist) {
       togglePlay();
       return;
     }
 
-    setPlayerTrack(
-      {
-        ...playerTrack,
-        context: playlistContext,
-      } as any,
-      queue,
-    );
+    setPlayerTrack(playerTrack, queue);
   };
 
-  const isPlaylistActive =
-    isPlaying &&
-    !!playlist &&
-    playlist.tracks.some((track) => track.track_id === currentTrack?.id);
 
   const handleCoverUpload = async (file: File) => {
     if (!playlist) return;

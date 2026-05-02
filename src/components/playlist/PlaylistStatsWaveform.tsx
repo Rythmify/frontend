@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import WaveSurfer from "wavesurfer.js";
 import {
   formatDuration,
   type PlaylistDetails,
 } from "@/services/api/playlist/playlist.service";
 import { getTrackComments } from "@/services/mocks/Track.service";
-import TrackWaveform from "@/pages/[username]/[trackSlug]/components/TrackWaveform";
+import { audio, seekAudio, setGlobalWaveSurfer, setTrackLoadedLocally } from "@/services/audioService";
+import { getTrackWaveform } from "@/services/track.service";
 import type { Track } from "@/types/track";
 
 interface Comment {
@@ -19,6 +21,94 @@ interface PlaylistStatsCommentsProps {
   activeTrackId?: string;
   comments?: Comment[];
   extraDurationSeconds?: number;
+}
+
+function fmt(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec) % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function StaticWaveform({ track, isActive }: { track: Track; isActive: boolean }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const wsRef = useRef<WaveSurfer | null>(null);
+  const timeRef = useRef<HTMLDivElement | null>(null);
+  const durRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const init = async () => {
+      if (!containerRef.current) return;
+      if (wsRef.current) { try { wsRef.current.destroy(); } catch (e) { /* ignore */ } wsRef.current = null; }
+      containerRef.current.innerHTML = "";
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const g = ctx.createLinearGradient(0, 0, 0, 100);
+      g.addColorStop(0, "#656666"); g.addColorStop(0.7, "#656666");
+      g.addColorStop(0.71, "#ffffff"); g.addColorStop(0.72, "#ffffff");
+      g.addColorStop(0.73, "#B1B1B1"); g.addColorStop(1, "#B1B1B1");
+
+      const pg = ctx.createLinearGradient(0, 0, 0, 100);
+      pg.addColorStop(0, "#F6B094"); pg.addColorStop(0.7, "#F6B094");
+      pg.addColorStop(0.71, "#ffffff"); pg.addColorStop(0.72, "#ffffff");
+      pg.addColorStop(0.73, "#EB4926"); pg.addColorStop(1, "#EE772F");
+
+      const peaks = track.waveformData?.length > 0
+        ? track.waveformData
+        : await getTrackWaveform(track.id);
+      if (!isMounted || !containerRef.current) return;
+
+      let parsedDur = 0;
+      const parts = track.duration?.split(":");
+      if (parts?.length === 2) parsedDur = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+
+      const ws = WaveSurfer.create({
+        container: containerRef.current,
+        waveColor: g,
+        progressColor: pg,
+        barWidth: 2, barGap: 1, barRadius: 2,
+        height: 80,
+        ...(isActive ? { backend: "MediaElement" as const, media: audio } : {}),
+        peaks: peaks.length > 0 ? [peaks] : undefined,
+        duration: parsedDur > 0 ? parsedDur : undefined,
+      });
+
+      wsRef.current = ws;
+
+      if (isActive) {
+        setTrackLoadedLocally(null);
+        setGlobalWaveSurfer(ws, track.id);
+        ws.on("interaction", (t: number) => seekAudio(t));
+        ws.on("timeupdate", (t: number) => {
+          if (timeRef.current) timeRef.current.textContent = fmt(t);
+        });
+      }
+
+      ws.on("decode", (d: number) => {
+        if (durRef.current) durRef.current.textContent = fmt(d);
+      });
+      ws.on("error", () => {});
+    };
+
+    init();
+    return () => {
+      isMounted = false;
+      if (wsRef.current) { try { wsRef.current.destroy(); } catch (e) { /* ignore */ } wsRef.current = null; }
+    };
+  }, [track.id, track.audioUrl, isActive]);
+
+  return (
+    <div style={{ position: "relative", width: "100%", height: 80 }}>
+      <div ref={containerRef} style={{ transform: "scaleY(-1)", height: 80 }} />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.08)", pointerEvents: "none", opacity: 0.5, borderRadius: 2 }} />
+      <div ref={timeRef} style={{ position: "absolute", left: 0, top: "55%", transform: "translateY(-50%)", fontSize: 11, background: "rgba(0,0,0,0.75)", color: "#fff", padding: "2px", zIndex: 10 }}>0:00</div>
+      <div ref={durRef} style={{ position: "absolute", right: 0, top: "55%", transform: "translateY(-50%)", fontSize: 11, background: "rgba(0,0,0,0.75)", color: "#fff", padding: "2px", zIndex: 10 }}>0:00</div>
+    </div>
+  );
 }
 
 export default function PlaylistStatsWaveform({
@@ -73,7 +163,6 @@ export default function PlaylistStatsWaveform({
         setComments([]);
         return;
       }
-
       try {
         const res = await getTrackComments(activeTrackId);
         const raw = Array.isArray(res) ? res : ((res as any)?.data ?? []);
@@ -87,7 +176,6 @@ export default function PlaylistStatsWaveform({
             timestamp: Number(item?.timestamp ?? item?.timestampSec ?? 0),
           }))
           .slice(0, 5);
-
         if (!cancelled) setComments(mapped);
       } catch {
         if (!cancelled) setComments([]);
@@ -95,9 +183,7 @@ export default function PlaylistStatsWaveform({
     }
 
     loadComments();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [activeTrackId, commentsProp, showComments]);
 
   return (
@@ -107,11 +193,12 @@ export default function PlaylistStatsWaveform({
           <div
             data-test="playlist-waveform-container"
             className="transition-opacity duration-150 w-full min-w-0"
-            style={{ minHeight: "120px" }}
+            style={{ minHeight: "80px" }}
           >
-            <TrackWaveform
+            <StaticWaveform
               key={`${playlist.playlist_id}-${waveformTrack.id}`}
               track={waveformTrack}
+              isActive={isPlaying && hasActiveTrackInPlaylist}
             />
           </div>
         </div>

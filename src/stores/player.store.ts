@@ -5,13 +5,12 @@ import { useAuthStore } from "./auth.store";
 import { savePlayerState, getPlayerState } from "../services/api/playback.service";
 import { getPlaybackState, resolvePlaybackAudioUrl } from "../utils/playbackAccess";
 
-// Backend rejects saves without a real track_id; skip when nothing is playing.
 const TRACK_ID_UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Debounced helper to avoid spamming the backend
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 function debouncedSave(userId: string, state: PlayerState) {
+  if (!state.currentTrack?.id) return;
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
     const trackId = state.currentTrack?.id;
@@ -39,7 +38,6 @@ function buildShuffledOrder(queueLength: number, currentIndex: number): number[]
   return [currentIndex, ...others];
 }
 
-// Dynamic import for audioService to avoid circular dependencies
 let _seekAudio: ((time: number) => void) | null = null;
 function getSeekAudio() {
   if (!_seekAudio) {
@@ -67,7 +65,6 @@ interface PlayerState {
   isAutoplay: boolean;
   activeSourceId: string | null;
 
-  // Actions
   setTrack: (track: Track, queue?: Track[], startTime?: number, activeSourceId?: string | null) => void;
   playContext: (sourceType: string, sourceId: string | null, fallbackTrack: Track, startTime?: number, activeSourceId?: string | null) => Promise<void>;
   play: () => void;
@@ -157,7 +154,6 @@ export const usePlayerStore = create<PlayerState>()(
 
       playContext: async (sourceType, sourceId, fallbackTrack, startTime, activeSourceId) => {
         const canPlayFallback = getPlaybackState(fallbackTrack) !== "blocked";
-        // Optimistically load the track; respect geo / tier blocking (no audio URL).
         set({
           currentTrack: fallbackTrack,
           queue: [fallbackTrack],
@@ -166,19 +162,18 @@ export const usePlayerStore = create<PlayerState>()(
           currentTime: startTime || 0,
           activeSourceId: activeSourceId ?? null,
         });
-        
+
         try {
           const { postQueueContext } = await import("../services/api/playback.service");
           const res = await postQueueContext({
             interaction_type: "play",
             source_type: sourceType,
             source_id: sourceId,
-            target_user_id: null
+            target_user_id: null,
           });
-          
+
           if (res && res.queue) {
-            // Map backend queue format to frontend Track[]
-            const mappedQueue = res.queue.map((q) => {
+            const mappedQueue = res.queue.map((q: any) => {
               const base = {
                 id: String(q.track_id || q.id),
                 title: q.track_title || q.title || "Unknown Title",
@@ -211,14 +206,14 @@ export const usePlayerStore = create<PlayerState>()(
                 audioUrl: resolvePlaybackAudioUrl(base),
               } as Track;
             });
-            
-            const qIndex = Math.max(0, mappedQueue.findIndex(t => String(t.id) === String(fallbackTrack.id)));
+
+            const qIndex = Math.max(0, mappedQueue.findIndex((t: Track) => String(t.id) === String(fallbackTrack.id)));
             const { isShuffle } = get();
 
             set({
-               queue: mappedQueue,
-               queueIndex: qIndex,
-               ...(isShuffle && { shuffledIndices: buildShuffledOrder(mappedQueue.length, qIndex), shuffledPos: 1 }),
+              queue: mappedQueue,
+              queueIndex: qIndex,
+              ...(isShuffle && { shuffledIndices: buildShuffledOrder(mappedQueue.length, qIndex), shuffledPos: 1 }),
             });
           }
         } catch (e) {
@@ -241,14 +236,14 @@ export const usePlayerStore = create<PlayerState>()(
               if (tracks && tracks.length > 0) {
                 const filtered = tracks.filter((t: Track) => !queue.some(q => q.id === t.id));
                 if (filtered.length > 0) {
-                   set((s) => ({
-                     queue: [...s.queue, ...filtered],
-                     currentTrack: filtered[0],
-                     queueIndex: s.queueIndex + 1,
-                     isPlaying: true,
-                     currentTime: 0
-                   }));
-                   return;
+                  set((s) => ({
+                    queue: [...s.queue, ...filtered],
+                    currentTrack: filtered[0],
+                    queueIndex: s.queueIndex + 1,
+                    isPlaying: true,
+                    currentTime: 0,
+                  }));
+                  return;
                 }
               }
             } catch (err) {
@@ -264,7 +259,6 @@ export const usePlayerStore = create<PlayerState>()(
           let indices = shuffledIndices;
           let pos = shuffledPos;
           if (pos >= indices.length) {
-            // All tracks played — re-shuffle for next cycle
             indices = buildShuffledOrder(queue.length, queueIndex);
             pos = 0;
           }
@@ -306,12 +300,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       seek: (time) => {
-        const seekFn = getSeekAudio();
-        if (seekFn) {
-          seekFn(time);
-        } else {
-          set({ currentTime: time });
-        }
+        getSeekAudio()?.(time);
       },
 
       seekTo: (time) => {
@@ -322,13 +311,14 @@ export const usePlayerStore = create<PlayerState>()(
       setDuration: (duration) => set({ duration }),
       setVolume: (volume) => set({ volume, isMuted: volume === 0 }),
       toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
-      toggleShuffle: () => set((s) => {
-        if (s.isShuffle) {
-          return { isShuffle: false, shuffledIndices: [], shuffledPos: 0 };
-        }
-        const indices = buildShuffledOrder(s.queue.length, s.queueIndex);
-        return { isShuffle: true, shuffledIndices: indices, shuffledPos: 1 };
-      }),
+      toggleShuffle: () =>
+        set((s) => {
+          if (s.isShuffle) {
+            return { isShuffle: false, shuffledIndices: [], shuffledPos: 0 };
+          }
+          const indices = buildShuffledOrder(s.queue.length, s.queueIndex);
+          return { isShuffle: true, shuffledIndices: indices, shuffledPos: 1 };
+        }),
       toggleRepeat: () =>
         set((s) => {
           const modes: ("none" | "all" | "one")[] = ["none", "all", "one"];
@@ -339,8 +329,7 @@ export const usePlayerStore = create<PlayerState>()(
       toggleLike: () => set((s) => ({ isLiked: !s.isLiked })),
       toggleAutoplay: () => set((s) => ({ isAutoplay: !s.isAutoplay })),
 
-      addToQueue: (track) =>
-        set((s) => ({ queue: [...s.queue, track] })),
+      addToQueue: (track) => set((s) => ({ queue: [...s.queue, track] })),
 
       addNextInQueue: (track) =>
         set((s) => {
@@ -393,10 +382,11 @@ export const usePlayerStore = create<PlayerState>()(
           return { queue: newQueue, queueIndex: newQueueIndex };
         }),
 
-      clearQueue: () => set((s) => ({ 
-        queue: s.currentTrack ? [s.currentTrack] : [], 
-        queueIndex: 0 
-      })),
+      clearQueue: () =>
+        set((s) => ({
+          queue: s.currentTrack ? [s.currentTrack] : [],
+          queueIndex: 0,
+        })),
 
       reset: () =>
         set({
@@ -415,21 +405,37 @@ export const usePlayerStore = create<PlayerState>()(
           const backendState = await getPlayerState();
           if (!backendState || !backendState.track_id) return;
 
-          // Fetch full track details to ensure we have a working audio URL
           const { getTrackById } = await import("../services/track.service");
           const fullTrack = await getTrackById(backendState.track_id);
 
           set({
             currentTrack: fullTrack,
-            queue: Array.isArray(backendState.queue) && backendState.queue.length > 0 
-              ? backendState.queue 
-              : [fullTrack],
+            queue:
+              Array.isArray(backendState.queue) && backendState.queue.length > 0
+                ? backendState.queue
+                : [fullTrack],
             queueIndex: 0,
             currentTime: backendState.position_seconds || 0,
             duration: backendState.duration || Number(fullTrack.duration) || 0,
             volume: backendState.volume ?? 1,
             isPlaying: false,
           });
+
+          // Prime the audio element so sticky player works immediately after login
+          const { audio, setTrackLoadedLocally } = await import("../services/audioService");
+          const time = backendState.position_seconds || 0;
+          audio.src = fullTrack.audioUrl;
+          audio.load();
+          if (time > 0) {
+            audio.addEventListener(
+              "loadedmetadata",
+              () => {
+                audio.currentTime = time;
+              },
+              { once: true },
+            );
+          }
+          setTrackLoadedLocally(fullTrack.id);
         } catch (e) {
           console.error("Failed to rehydrate player from backend", e);
         }
@@ -462,13 +468,15 @@ usePlayerStore.subscribe((state, prev) => {
   const trackChanged = state.currentTrack?.id !== prev.currentTrack?.id;
   const volumeChanged = state.volume !== prev.volume;
   const queueChanged = state.queue.length !== prev.queue.length;
-  const progressStepped = Math.floor(state.currentTime / 5) !== Math.floor(prev.currentTime / 5);
+  const progressStepped =
+    Math.floor(state.currentTime / 5) !== Math.floor(prev.currentTime / 5);
 
   if (trackChanged && state.currentTrack) {
-    // Automatically add to listening history whenever a track starts
-    import("./history.store").then((m) => {
-      m.useHistoryStore.getState().addTrack(state.currentTrack!);
-    }).catch(e => console.error("Failed to add track to history", e));
+    import("./history.store")
+      .then((m) => {
+        m.useHistoryStore.getState().addTrack(state.currentTrack!);
+      })
+      .catch((e) => console.error("Failed to add track to history", e));
   }
 
   if (trackChanged || volumeChanged || queueChanged || progressStepped) {
@@ -481,16 +489,19 @@ usePlayerStore.subscribe((state, prev) => {
 
 useAuthStore.subscribe((state, prev) => {
   if (state.isAuthenticated && !prev.isAuthenticated) {
-    // On login, hydrate everything from backend
     usePlayerStore.getState().loadFromBackend();
-    
-    import("./likes.store").then((m) => {
-      m.useLikesStore.getState().hydrateFromApi();
-    }).catch(e => console.error("Failed to hydrate likes", e));
 
-    import("./history.store").then((m) => {
-      m.useHistoryStore.getState().hydrateFromBackend();
-    }).catch(e => console.error("Failed to hydrate history", e));
+    import("./likes.store")
+      .then((m) => {
+        m.useLikesStore.getState().hydrateFromApi();
+      })
+      .catch((e) => console.error("Failed to hydrate likes", e));
+
+    import("./history.store")
+      .then((m) => {
+        m.useHistoryStore.getState().hydrateFromBackend();
+      })
+      .catch((e) => console.error("Failed to hydrate history", e));
   }
 });
 
@@ -500,9 +511,19 @@ window.addEventListener("storage", (event) => {
     try {
       const newValue = JSON.parse(event.newValue || "{}");
       if (newValue.state) {
-        const { currentTrack, queue, queueIndex, isPlaying, volume, isMuted, repeatMode, isShuffle, currentTime } = newValue.state;
+        const {
+          currentTrack,
+          queue,
+          queueIndex,
+          isPlaying,
+          volume,
+          isMuted,
+          repeatMode,
+          isShuffle,
+          currentTime,
+        } = newValue.state;
         const currentState = usePlayerStore.getState();
-        
+
         usePlayerStore.setState({
           currentTrack,
           queue,
@@ -513,9 +534,9 @@ window.addEventListener("storage", (event) => {
           repeatMode,
           isShuffle,
         });
-        
+
         if (isPlaying && currentState.isPlaying) {
-           currentState.pause();
+          currentState.pause();
         }
       }
     } catch (e) {

@@ -88,66 +88,57 @@ export function setTrackLoadedLocally(trackId: string | null) {
 // Wire store -> audio directly via subscribe (no React, no useEffect)
 usePlayerStore.subscribe((state, prev) => {
 
-  // New track 
-  // Only fires when the track id genuinely changes (not a same-track seek).
-  if (state.currentTrack && state.currentTrack.id !== loadedAudioTrackId) {
-    // Kill the old WaveSurfer instance synchronously before we change audio.src.
-    // ONLY if the global instance belongs to a different track.
-    if (globalWaveSurfer && globalWaveSurferTrackId !== state.currentTrack.id) {
-      try {
-        globalWaveSurfer.destroy();
-      } catch (e) {
-        // Ignore destruction errors
-      }
-      globalWaveSurfer = null;
-      globalWaveSurferTrackId = null;
-    }
+
+    if (state.currentTrack && state.currentTrack.id !== loadedAudioTrackId) {
+        if (globalWaveSurfer && globalWaveSurferTrackId !== state.currentTrack.id) {
+          try { globalWaveSurfer.destroy(); } catch (e) { /* ignore */ }
+          globalWaveSurfer = null;
+          globalWaveSurferTrackId = null;
+        }
 
     loadedAudioTrackId = state.currentTrack.id;
     const targetTime = state.currentTime;
     const url = (state.currentTrack.audioUrl || "").trim();
 
-    audio.pause();
-    // Blocked or missing URLs: keep element empty so we never request a bad src.
-    if (!url) {
-      audio.removeAttribute("src");
-      return;
-    }
-
-    audio.src = url;
-    audio.load();
+        audio.pause();
+        if (!audio.src || audio.src === window.location.href || !audio.src.includes(state.currentTrack.audioUrl)) {
+          audio.src = state.currentTrack.audioUrl;
+          audio.load();
+        }
 
     // Seek to the preserved position once metadata is ready.
-    const onLoaded = () => {
-      if (targetTime > 0) {
-        audio.currentTime = targetTime;
+      const onLoaded = () => {
+          if (targetTime > 0) {
+            audio.currentTime = targetTime;
+          }
+          audio.removeEventListener("loadedmetadata", onLoaded);
+        };
+
+        if (audio.readyState >= 1) {
+          onLoaded();
+        } else {
+          audio.addEventListener("loadedmetadata", onLoaded);
+        }
+
+        if (state.isPlaying) {
+          notifyOtherTabs();
+          audio.play().catch(() => {});
+        }
+        return;
       }
-      audio.removeEventListener("loadedmetadata", onLoaded);
-    };
-
-    if (audio.readyState >= 1) {
-      onLoaded();
-    } else {
-      audio.addEventListener("loadedmetadata", onLoaded);
-    }
-
-    if (state.isPlaying) {
-      notifyOtherTabs();
-      audio.play().catch(() => { });
-    }
-    return;
-  }
 
   if (state.isPlaying !== prev.isPlaying) {
-    if (state.isPlaying) {
-      notifyOtherTabs();
-      if (!seekInProgress) {
-        audio.play().catch(() => { });
+      if (state.isPlaying) {
+        notifyOtherTabs();
+        if (!seekInProgress) {
+          audio.play().catch(() => { });
+        } else {
+          setTimeout(() => audio.play().catch(() => {}), 350);
+        }
+      } else {
+        audio.pause();
       }
-    } else {
-      audio.pause();
     }
-  }
 
   // Removed the automatic same-track restart heuristic because it conflicted with WaveSurfer
   // seeks and buffering, causing tracks to spontaneously repeat or jump to 0:00.
@@ -191,8 +182,15 @@ audio.addEventListener("ended", () => {
  * Sets audio.currentTime directly and marks a seek as in-progress so the
  * store subscriber won't fire audio.play() and interrupt the operation.
  */
+
 export function seekAudio(time: number) {
   markSeekInProgress();
-  audio.currentTime = time;
-  usePlayerStore.getState().seekTo(time);
+  if (globalWaveSurfer && globalWaveSurferTrackId === usePlayerStore.getState().currentTrack?.id) {
+    globalWaveSurfer.setTime(time);
+  } else {
+    audio.currentTime = time;
+  }
+  // Don't call seekTo — it pollutes the store and causes isPlaying side effects
 }
+
+(window as any).__seekAudio = seekAudio;
