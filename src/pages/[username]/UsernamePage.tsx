@@ -238,6 +238,8 @@ export default function UsernamePage() {
       plays: t.play_count,
       likes: t.like_count,
       artistId: t.user_id,
+      artistUsername: t.artist_username ?? "",
+      trackSlug: t.track_slug ?? t.id,
     }),
   );
 

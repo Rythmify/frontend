@@ -120,7 +120,7 @@ export default function TracksPage() {
             tracks.map((track) => (
               <TrackCard
                 key={track.id}
-                track={track}
+                track={{ ...track, artistUsername: track.artistUsername || username || "" }}
                 onCopyLink={() =>
                   navigator.clipboard.writeText(
                     `${window.location.origin}/${track.artistUsername}/${track.id}`,

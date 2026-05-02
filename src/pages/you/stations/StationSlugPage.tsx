@@ -169,7 +169,7 @@ export default function StationSlugPage() {
   return (
     <div
       data-test="station-slug-page"
-      className="flex-1 w-full bg-bg min-h-screen"
+      className="container px-4 md:px-8 lg:px-12 xl:px-20 flex-1 w-full bg-bg min-h-screen"
     >
       <div data-test="station-slug-hero">
         <PlaylistHero
