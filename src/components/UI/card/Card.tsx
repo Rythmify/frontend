@@ -3,6 +3,8 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
+import { useAuthStore } from "@/stores/auth.store";
+import { useDownloadStore } from "@/stores/useDownload";
 import { getRelatedTracks } from "@/services/track.service";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import CardOverlay, {
@@ -117,6 +119,8 @@ const TrackCard = ({
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const { isTrackLiked, toggleTrack, isRadioTrackLiked, toggleRadioTrack } = useLikesStore();
+  const { user } = useAuthStore();
+  const { isDownloaded, toggleDownload } = useDownloadStore();
 
   const fetchTracksForModal = useCallback(async () => {
     const previewTrack = {
@@ -141,6 +145,8 @@ const TrackCard = ({
   }, [track.id, track.title, track.artistName, track.coverUrl, addToPlaylistTracks]);
 
   const liked = radioLikeMode ? isRadioTrackLiked(track.id) : isTrackLiked(track.id);
+  const isPro = !!user?.isPro;
+  const downloaded = isDownloaded(track.id);
 
   // Check if this card's track is the one currently playing
   const isThisTrackPlaying = currentTrack?.id === track.id && isPlaying;
@@ -151,6 +157,21 @@ const TrackCard = ({
     .replace(/-+/g, "-");
 
   const playlistPath = `/discover/personalised/${playlistSlug}:${track.id}`;
+  const downloadMenuItem = {
+    label: downloaded ? "Remove Download" : "Download",
+    iconNode: (
+      <i
+        className={`fa-solid ${downloaded ? "fa-check" : "fa-download"} text-xs w-4 ${downloaded ? "text-[#1D9E75]" : ""}`}
+      />
+    ),
+    onClick: () => {
+      if (!isPro) {
+        navigate("/premium");
+        return;
+      }
+      toggleDownload(track, true);
+    },
+  };
   // Handler for play button click (play/pause toggle)
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -188,6 +209,7 @@ const TrackCard = ({
             if (radioLikeMode) toggleRadioTrack(track);
             else toggleTrack(track);
           }}
+          downloadMenuItem={downloadMenuItem}
           moreMenuItems={[
             {
               label: "Add to playlist",

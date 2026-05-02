@@ -96,8 +96,9 @@ usePlayerStore.subscribe((state, prev) => {
           globalWaveSurferTrackId = null;
         }
 
-        loadedAudioTrackId = state.currentTrack.id;
-        const targetTime = state.currentTime;
+    loadedAudioTrackId = state.currentTrack.id;
+    const targetTime = state.currentTime;
+    const url = (state.currentTrack.audioUrl || "").trim();
 
         audio.pause();
         if (!audio.src || audio.src === window.location.href || !audio.src.includes(state.currentTrack.audioUrl)) {

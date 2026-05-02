@@ -39,16 +39,18 @@ export default function TrackHero({
     const currentSec = Math.floor(currentTime);
     if (currentSec !== lastSecondRef.current) {
       lastSecondRef.current = currentSec;
-
       const commentAtThisTime = comments.find(c => Math.floor(c.track_timestamp) === currentSec);
       if (commentAtThisTime) {
         setActiveComment(commentAtThisTime);
         setShowFloating(true);
-        const timer = setTimeout(() => setShowFloating(false), 3000);
-        return () => clearTimeout(timer);
+        return; // skip hide check so the new comment isn't immediately dismissed
       }
     }
-  }, [currentTime, comments]);
+    // Hide once the playhead has passed the comment
+    if (activeComment && currentTime > activeComment.track_timestamp + 1) {
+      setShowFloating(false);
+    }
+  }, [currentTime, comments, activeComment]);
 
   return (
     <div

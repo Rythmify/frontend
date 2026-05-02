@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getPlaybackCountryCode } from '../../config/playbackRegion';
 
 const REFRESH_FAILURE_COOLDOWN_MS = 30_000;
 
@@ -26,6 +27,10 @@ axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Geo / tier-aware track and playback responses depend on this header.
+  if (config.url && !config.url.includes('/auth/')) {
+    config.headers['X-Country-Code'] = getPlaybackCountryCode();
   }
   return config;
 });

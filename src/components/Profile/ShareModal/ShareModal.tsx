@@ -114,7 +114,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ url, onClose }) => {
         <button
           data-test="share-modal-close"
           onClick={onClose}
-          className="cursor-pointer fixed top-3 right-3 text-bg text-lg hover:opacity-70 z-50 bg-bg-inverted rounded-full w-8 h-8 flex items-center justify-center mt-6 mr-6"
+          className="fixed top-14 right-4 sm:top-16 sm:right-6 z-50 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-bg-actionbutton text-text-secondary hover:text-text hover:opacity-80"
         >
           <i className="fa-solid fa-xmark" />
         </button>

@@ -82,9 +82,10 @@ export function mapTrack(t: any): Track {
 //   created_at, score, preview_tracks: Track[] }
 
 export function mapPlaylist(pl: any): Playlist {
+  const id = pl.id ?? pl.playlist_id ?? "";
   return {
-    id: pl.id,
-    title: pl.title ?? "Untitled Playlist",
+    id,
+    title: pl.title ?? pl.name ?? "Untitled Playlist",
     creatorName: pl.owner?.display_name ?? pl.creatorName ?? "",
     creatorUsername: pl.owner?.username ?? pl.owner_username ?? pl.creatorUsername ?? pl.username ?? "unknown",
     coverUrl: pl.cover_image ?? pl.coverUrl ?? "",
@@ -92,7 +93,7 @@ export function mapPlaylist(pl: any): Playlist {
     trackCount: pl.track_count ?? pl.trackCount ?? 0,
     likeCount: pl.like_count ?? pl.likeCount ?? 0,
     repostCount: pl.repost_count ?? pl.repostCount ?? 0,
-    playlistSlug: pl.playlist_slug ?? pl.playlistSlug ?? String(pl.id),
+    playlistSlug: pl.playlist_slug ?? pl.slug ?? pl.playlistSlug ?? String(id),
     isPrivate: pl.is_private ?? pl.isPrivate ?? false,
     tracks: (pl.preview_tracks ?? pl.tracks ?? []).map(mapTrack),
   };

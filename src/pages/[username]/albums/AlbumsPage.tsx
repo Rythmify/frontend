@@ -108,7 +108,7 @@ export default function AlbumsPage() {
     username: u.username || u.id,
     displayName: u.display_name,
     avatar: u.profile_picture ?? "",
-    followers: 0,
+    followers: (u as { followers_count?: number }).followers_count ?? 0,
     tracks: 0,
     isVerified: u.is_verified,
   }));
@@ -118,7 +118,7 @@ export default function AlbumsPage() {
     username: u.username || u.id,
     displayName: u.display_name,
     avatar: u.profile_picture ?? "",
-    followers: 0,
+    followers: (u as { followers_count?: number }).followers_count ?? 0,
     tracks: 0,
     isVerified: u.is_verified,
     isFollowing: u.isFollowing,

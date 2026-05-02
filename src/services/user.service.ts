@@ -105,6 +105,8 @@ export interface TrackSummary {
   cover_image: string | null;
   user_id: string;
   artist_name: string;
+  artist_username?: string;
+  track_slug?: string;
   play_count: number;
   like_count: number;
   stream_url: string | null;

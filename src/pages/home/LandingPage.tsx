@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { Track } from "@/types/track";
+import CoverImage from "@/components/UI/CoverImage";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 // ── Types ──────────────────────────────────────────────────────────────
 interface SlideData {
@@ -62,17 +63,11 @@ const TrendingTrackCard = ({ track }: { track: Track }) => (
     className="group block"
   >
     <div className="aspect-square rounded bg-[#333] mb-2 overflow-hidden relative">
-      {track.coverUrl ? (
-        <img
-          src={track.coverUrl}
-          alt={track.title}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-xs text-[#666]">
-          {/* Placeholder */}
-        </div>
-      )}
+      <CoverImage
+        src={track.coverUrl}
+        alt={track.title}
+        className="w-full h-full object-cover"
+      />
       {/* Hover overlay with action icons */}
       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3 gap-3">
         <button aria-label="Like" className="text-white/80 hover:text-white text-sm">♥</button>
