@@ -1,93 +1,101 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import DeleteConversationButton from "../DeleteConversationButton";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
-// Mock path is relative to THIS file (inside /tests/), so modal is one level up ("../")
-// Button labels match the real modal: "Cancel" to close, "Archive" to confirm
-vi.mock("../DeleteConversationModal", () => ({
+vi.mock('../DeleteConversationModal', () => ({
   default: ({
+    conversationId,
+    participantId,
     onClose,
     onDeleted,
-    conversationId,
   }: {
-    onClose: () => void;
-    onDeleted?: (id: string) => void;
-    conversationId: string;
+    conversationId: string
+    participantId: string
+    onClose: () => void
+    onDeleted?: (id: string) => void
   }) => (
-    <div data-test="delete-modal">
-      <button onClick={onClose}>Cancel</button>
-      <button onClick={() => onDeleted?.(conversationId)}>Archive</button>
+    <div data-test="delete-modal" data-conv-id={conversationId} data-part-id={participantId}>
+      <button data-test="modal-close" onClick={onClose}>Close</button>
+      <button data-test="modal-confirm" onClick={() => onDeleted?.(conversationId)}>Confirm</button>
     </div>
   ),
-}));
+}))
 
-const renderButton = (
-  props: {
-    conversationId?: string;
-    participantId?: string;
-    onDeleted?: (id: string) => void;
-  } = {}
-) =>
-  render(
-    <DeleteConversationButton
-      conversationId="conv-1"
-      participantId="user-1"
-      onDeleted={vi.fn()}
-      {...props}
-    />
-  );
+import DeleteConversationButton from '../DeleteConversationButton'
 
-describe("DeleteConversationButton", () => {
-  // ── Rendering ──────────────────────────────────────────────────────────────
+describe('DeleteConversationButton', () => {
+  const defaultProps = {
+    conversationId: 'conv-1',
+    participantId: 'user-2',
+    onDeleted: vi.fn(),
+  }
 
-  it("renders a button with aria-label", () => {
-    renderButton();
-    expect(
-      screen.getByRole("button", { name: /delete conversation/i })
-    ).toBeInTheDocument();
-  });
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-  it("does not render modal initially", () => {
-    renderButton();
-    expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
-  });
+  describe('rendering', () => {
+    it('renders the delete button', () => {
+      render(<DeleteConversationButton {...defaultProps} />)
+      expect(screen.getByTestId('delete-conversation-button')).toBeInTheDocument()
+    })
 
-  it("renders a trash SVG icon inside the button", () => {
-    const { container } = renderButton();
-    expect(container.querySelector("svg")).toBeInTheDocument();
-  });
+    it('renders the trash SVG icon', () => {
+      render(<DeleteConversationButton {...defaultProps} />)
+      expect(screen.getByTestId('delete-conversation-button').querySelector('svg')).toBeInTheDocument()
+    })
 
-  // ── Open modal ─────────────────────────────────────────────────────────────
+    it('does not render modal initially', () => {
+      render(<DeleteConversationButton {...defaultProps} />)
+      expect(screen.queryByTestId('delete-modal')).not.toBeInTheDocument()
+    })
 
-  it("opens the modal when the button is clicked", async () => {
-    renderButton();
-    await userEvent.click(
-      screen.getByRole("button", { name: /delete conversation/i })
-    );
-    expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
-  });
+    it('has aria-label "Delete conversation"', () => {
+      render(<DeleteConversationButton {...defaultProps} />)
+      expect(screen.getByTestId('delete-conversation-button')).toHaveAttribute('aria-label', 'Delete conversation')
+    })
+  })
 
-  // ── Close modal ────────────────────────────────────────────────────────────
+  describe('interactions', () => {
+    it('shows modal when delete button is clicked', async () => {
+      render(<DeleteConversationButton {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-button'))
+      expect(screen.getByTestId('delete-modal')).toBeInTheDocument()
+    })
 
-  it("closes the modal when Cancel is clicked", async () => {
-    renderButton();
-    await userEvent.click(
-      screen.getByRole("button", { name: /delete conversation/i })
-    );
-    await userEvent.click(screen.getByText("Cancel"));
-    expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
-  });
+    it('passes correct conversationId to modal', async () => {
+      render(<DeleteConversationButton {...defaultProps} conversationId="conv-99" />)
+      await userEvent.click(screen.getByTestId('delete-conversation-button'))
+      expect(screen.getByTestId('delete-modal')).toHaveAttribute('data-conv-id', 'conv-99')
+    })
 
-  // ── onDeleted propagation ──────────────────────────────────────────────────
+    it('passes correct participantId to modal', async () => {
+      render(<DeleteConversationButton {...defaultProps} participantId="user-77" />)
+      await userEvent.click(screen.getByTestId('delete-conversation-button'))
+      expect(screen.getByTestId('delete-modal')).toHaveAttribute('data-part-id', 'user-77')
+    })
 
-  it("calls onDeleted with conversationId when Archive is clicked", async () => {
-    const onDeleted = vi.fn();
-    renderButton({ onDeleted, conversationId: "conv-42" });
-    await userEvent.click(
-      screen.getByRole("button", { name: /delete conversation/i })
-    );
-    await userEvent.click(screen.getByText("Archive"));
-    expect(onDeleted).toHaveBeenCalledWith("conv-42");
-  });
-});
+    it('hides modal when modal onClose is called', async () => {
+      render(<DeleteConversationButton {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-button'))
+      expect(screen.getByTestId('delete-modal')).toBeInTheDocument()
+      await userEvent.click(screen.getByTestId('modal-close'))
+      expect(screen.queryByTestId('delete-modal')).not.toBeInTheDocument()
+    })
+
+    it('calls onDeleted when modal confirms deletion', async () => {
+      const onDeleted = vi.fn()
+      render(<DeleteConversationButton {...defaultProps} onDeleted={onDeleted} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-button'))
+      await userEvent.click(screen.getByTestId('modal-confirm'))
+      expect(onDeleted).toHaveBeenCalledWith('conv-1')
+    })
+
+    it('works without onDeleted prop', async () => {
+      render(<DeleteConversationButton conversationId="c1" participantId="u1" />)
+      await userEvent.click(screen.getByTestId('delete-conversation-button'))
+      await userEvent.click(screen.getByTestId('modal-confirm'))
+      // no error
+    })
+  })
+})

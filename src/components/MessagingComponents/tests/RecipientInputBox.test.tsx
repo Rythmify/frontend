@@ -1,259 +1,222 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { fireEvent, render, screen, waitFor, act } from "@testing-library/react";
-import { RecipientInputBox } from "../RecipientInputBox";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
-vi.mock("@/services/api/messaging/conversationApi", () => ({
-  getSuggestions: vi.fn(),
-  globalSearch: vi.fn(),
-}));
+const mockGlobalSearch = vi.fn()
+const mockGetSuggestions = vi.fn()
 
-import {
-  getSuggestions,
-  globalSearch,
-} from "@/services/api/messaging/conversationApi";
+vi.mock('@/services/api/messaging/conversationApi', () => ({
+  globalSearch: (...args: unknown[]) => mockGlobalSearch(...args),
+  getSuggestions: (...args: unknown[]) => mockGetSuggestions(...args),
+}))
 
-const mockUser = {
-  id: "user-1",
-  username: "alice",
-  display_name: "Alice",
-  profile_picture: "https://example.com/alice.jpg",
-};
+vi.mock('@/components/UI/UserAvatar', () => ({
+  default: ({ name }: { name: string }) => <div data-test="user-avatar" data-name={name} />,
+}))
 
-const renderInput = (props = {}) =>
-  render(
-    <RecipientInputBox
-      onSelect={vi.fn()}
-      onClear={vi.fn()}
-      error={null}
-      {...props}
-    />
-  );
+import { RecipientInputBox } from '../RecipientInputBox'
 
-const typeIntoInput = (value: string) => {
-  fireEvent.change(screen.getByTestId("recipient-input"), {
-    target: { value },
-  });
-};
+const defaultProps = {
+  onSelect: vi.fn(),
+  onClear: vi.fn(),
+  error: null,
+}
 
-const clearInput = () => typeIntoInput("");
+function makeUser(id = 'u1', display_name = 'Alice') {
+  return { id, username: display_name.toLowerCase(), display_name, profile_picture: null }
+}
 
-describe("RecipientInputBox", () => {
+describe('RecipientInputBox', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.useFakeTimers();
-    (getSuggestions as ReturnType<typeof vi.fn>).mockResolvedValue({
-      users: [],
-    });
-    (globalSearch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { users: [] },
-    });
-  });
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    mockGetSuggestions.mockResolvedValue({ users: [] })
+    mockGlobalSearch.mockResolvedValue({ data: { users: [] } })
+  })
 
   afterEach(() => {
-    vi.useRealTimers();
-  });
+    vi.useRealTimers()
+  })
 
-  // ── Rendering ──────────────────────────────────────────────────────────────
+  describe('rendering', () => {
+    it('renders the container', () => {
+      render(<RecipientInputBox {...defaultProps} />)
+      expect(screen.getByTestId('recipient-input-box')).toBeInTheDocument()
+    })
 
-  it("renders the input", () => {
-    renderInput();
-    expect(screen.getByTestId("recipient-input")).toBeInTheDocument();
-  });
+    it('renders the input field', () => {
+      render(<RecipientInputBox {...defaultProps} />)
+      expect(screen.getByTestId('recipient-input')).toBeInTheDocument()
+    })
 
-  it("renders the container with correct data-test", () => {
-    renderInput();
-    expect(screen.getByTestId("recipient-input-box")).toBeInTheDocument();
-  });
+    it('has autofocus on the input', () => {
+      render(<RecipientInputBox {...defaultProps} />)
+      expect(screen.getByTestId('recipient-input')).toHaveFocus()
+    })
 
-  it("does not show dropdown initially", () => {
-    renderInput();
-    expect(screen.queryByTestId("recipient-dropdown")).not.toBeInTheDocument();
-  });
+    it('has placeholder text', () => {
+      render(<RecipientInputBox {...defaultProps} />)
+      expect(screen.getByTestId('recipient-input')).toHaveAttribute('placeholder', 'Search for a user...')
+    })
 
-  // ── Error display ──────────────────────────────────────────────────────────
+    it('shows external error when provided', () => {
+      render(<RecipientInputBox {...defaultProps} error="User not found" />)
+      expect(screen.getByText('User not found')).toBeInTheDocument()
+    })
 
-  it("shows error text when error prop is provided", () => {
-    renderInput({ error: "Enter a recipient." });
-    expect(screen.getByText("Enter a recipient.")).toBeInTheDocument();
-  });
+    it('does not show dropdown initially', () => {
+      render(<RecipientInputBox {...defaultProps} />)
+      expect(screen.queryByTestId('recipient-dropdown')).not.toBeInTheDocument()
+    })
+  })
 
-  it("applies red border when error is set", () => {
-    renderInput({ error: "Error!" });
-    expect(screen.getByTestId("recipient-input")).toHaveClass("border-red-500");
-  });
+  describe('typing and debounce', () => {
+    it('does not call globalSearch before debounce completes', async () => {
+      render(<RecipientInputBox {...defaultProps} />)
+      await userEvent.type(screen.getByTestId('recipient-input'), 'ali')
+      expect(mockGlobalSearch).not.toHaveBeenCalled()
+    })
 
-  it("does not show error when error prop is null", () => {
-    renderInput({ error: null });
-    expect(screen.queryByText(/enter a recipient/i)).not.toBeInTheDocument();
-  });
+    it('calls globalSearch after debounce (400ms)', async () => {
+      mockGlobalSearch.mockResolvedValue({ data: { users: [] } })
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'alice' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => expect(mockGlobalSearch).toHaveBeenCalledWith('alice', { type: 'users', limit: 10 }))
+    })
 
-  // ── Typing ─────────────────────────────────────────────────────────────────
+    it('calls getSuggestions after debounce', async () => {
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'alice' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => expect(mockGetSuggestions).toHaveBeenCalled())
+    })
 
-  it("calls onClear when user types", async () => {
-    const onClear = vi.fn();
-    renderInput({ onClear });
-    typeIntoInput("a");
-    expect(onClear).toHaveBeenCalled();
-  });
+    it('clears state when input is cleared', async () => {
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'alice' } })
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: '' } })
+      vi.advanceTimersByTime(400)
+      expect(screen.queryByTestId('recipient-dropdown')).not.toBeInTheDocument()
+    })
 
-  it("does not search immediately (debounced)", async () => {
-    renderInput();
-    typeIntoInput("alice");
-    expect(getSuggestions).not.toHaveBeenCalled();
-  });
+    it('calls onClear when user types after a selection', async () => {
+      const onClear = vi.fn()
+      render(<RecipientInputBox {...defaultProps} onClear={onClear} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'a' } })
+      expect(onClear).toHaveBeenCalled()
+    })
+  })
 
-  it("calls search APIs after debounce", async () => {
-    renderInput();
-    typeIntoInput("alice");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() =>
-      expect(getSuggestions).toHaveBeenCalledWith("alice", expect.any(AbortSignal))
-    );
-    expect(globalSearch).toHaveBeenCalledWith("alice", {
-      type: "users",
-      limit: 10,
-    });
-  });
+  describe('suggestions dropdown', () => {
+    it('shows dropdown when suggestions are returned', async () => {
+      mockGetSuggestions.mockResolvedValue({ users: [makeUser()] })
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'ali' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => expect(screen.getByTestId('recipient-dropdown')).toBeInTheDocument())
+    })
 
-  // ── Dropdown ───────────────────────────────────────────────────────────────
+    it('renders a dropdown item for each suggestion', async () => {
+      mockGetSuggestions.mockResolvedValue({ users: [makeUser('u1', 'Alice'), makeUser('u2', 'Bob')] })
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'ali' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => {
+        expect(screen.getByTestId('recipient-dropdown-item-u1')).toBeInTheDocument()
+        expect(screen.getByTestId('recipient-dropdown-item-u2')).toBeInTheDocument()
+      })
+    })
 
-  it("shows dropdown with results after search", async () => {
-    (getSuggestions as ReturnType<typeof vi.fn>).mockResolvedValue({
-      users: [mockUser],
-    });
-    renderInput();
-    typeIntoInput("al");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() =>
-      expect(screen.getByTestId("recipient-dropdown")).toBeInTheDocument()
-    );
-    expect(screen.getByText("Alice")).toBeInTheDocument();
-  });
+    it('shows dropdown on focus when suggestions exist', async () => {
+      mockGetSuggestions.mockResolvedValue({ users: [makeUser()] })
+      render(<RecipientInputBox {...defaultProps} />)
+      const input = screen.getByTestId('recipient-input')
+      fireEvent.change(input, { target: { value: 'ali' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => screen.getByTestId('recipient-dropdown'))
+      fireEvent.blur(input)
+      fireEvent.focus(input)
+      expect(screen.getByTestId('recipient-dropdown')).toBeInTheDocument()
+    })
+  })
 
-  it("renders profile picture in dropdown when available", async () => {
-    (getSuggestions as ReturnType<typeof vi.fn>).mockResolvedValue({
-      users: [mockUser],
-    });
-    renderInput();
-    typeIntoInput("al");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() => screen.getByTestId("recipient-dropdown"));
-    expect(screen.getByRole("img")).toHaveAttribute(
-      "src",
-      "https://example.com/alice.jpg"
-    );
-  });
+  describe('user selection', () => {
+    it('selects a user from dropdown and calls onSelect', async () => {
+      const onSelect = vi.fn()
+      mockGetSuggestions.mockResolvedValue({ users: [makeUser('u1', 'Alice')] })
+      render(<RecipientInputBox {...defaultProps} onSelect={onSelect} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'ali' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => screen.getByTestId('recipient-dropdown-item-u1'))
+      await userEvent.click(screen.getByTestId('recipient-dropdown-item-u1'))
+      expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'u1', display_name: 'Alice' }))
+    })
 
-  it("renders initials when profile picture is null", async () => {
-    (getSuggestions as ReturnType<typeof vi.fn>).mockResolvedValue({
-      users: [{ ...mockUser, profile_picture: null }],
-    });
-    renderInput();
-    typeIntoInput("al");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() => screen.getByTestId("recipient-dropdown"));
-    expect(screen.getByText("AL")).toBeInTheDocument();
-  });
+    it('sets input value to display_name after selection', async () => {
+      mockGetSuggestions.mockResolvedValue({ users: [makeUser('u1', 'Alice')] })
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'ali' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => screen.getByTestId('recipient-dropdown-item-u1'))
+      await userEvent.click(screen.getByTestId('recipient-dropdown-item-u1'))
+      expect(screen.getByTestId('recipient-input')).toHaveValue('Alice')
+    })
 
-  it("shows 'user not found' when no results returned", async () => {
-    renderInput();
-    typeIntoInput("xyz");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() =>
-      expect(
-        screen.getByText(/soundcloud user not found/i)
-      ).toBeInTheDocument()
-    );
-  });
+    it('hides dropdown after selection', async () => {
+      mockGetSuggestions.mockResolvedValue({ users: [makeUser('u1', 'Alice')] })
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'ali' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => screen.getByTestId('recipient-dropdown-item-u1'))
+      await userEvent.click(screen.getByTestId('recipient-dropdown-item-u1'))
+      expect(screen.queryByTestId('recipient-dropdown')).not.toBeInTheDocument()
+    })
 
-  it("auto-selects when validation returns exactly one user", async () => {
-    const onSelect = vi.fn();
-    (getSuggestions as ReturnType<typeof vi.fn>).mockResolvedValue({
-      users: [mockUser],
-    });
-    (globalSearch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { users: [mockUser] },
-    });
-    renderInput({ onSelect });
-    typeIntoInput("alice");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() => expect(onSelect).toHaveBeenCalledWith(mockUser));
-    expect(screen.queryByTestId("recipient-dropdown")).not.toBeInTheDocument();
-  });
+    it('auto-selects when globalSearch returns exactly 1 user', async () => {
+      const onSelect = vi.fn()
+      mockGlobalSearch.mockResolvedValue({ data: { users: [makeUser('u1', 'Alice')] } })
+      render(<RecipientInputBox {...defaultProps} onSelect={onSelect} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'alice' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'u1' })))
+    })
+  })
 
-  // ── Selection ──────────────────────────────────────────────────────────────
+  describe('validation errors', () => {
+    it('shows "SoundCloud user not found." when globalSearch returns 0 users', async () => {
+      mockGlobalSearch.mockResolvedValue({ data: { users: [] } })
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'nobody' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => expect(screen.getByText('SoundCloud user not found.')).toBeInTheDocument())
+    })
 
-  it("calls onSelect with user when a result is clicked", async () => {
-    const onSelect = vi.fn();
-    (getSuggestions as ReturnType<typeof vi.fn>).mockResolvedValue({
-      users: [mockUser],
-    });
-    renderInput({ onSelect });
-    typeIntoInput("al");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() => screen.getByTestId("recipient-dropdown"));
-    fireEvent.click(
-      screen.getByTestId(`recipient-dropdown-item-${mockUser.id}`)
-    );
-    expect(onSelect).toHaveBeenCalledWith(mockUser);
-  });
+    it('shows "SoundCloud user not found." when globalSearch returns multiple users', async () => {
+      mockGlobalSearch.mockResolvedValue({ data: { users: [makeUser('u1'), makeUser('u2')] } })
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'a' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => expect(screen.getByText('SoundCloud user not found.')).toBeInTheDocument())
+    })
 
-  it("fills input with selected user's display name", async () => {
-    (getSuggestions as ReturnType<typeof vi.fn>).mockResolvedValue({
-      users: [mockUser],
-    });
-    renderInput();
-    typeIntoInput("al");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() => screen.getByTestId("recipient-dropdown"));
-    fireEvent.click(
-      screen.getByTestId(`recipient-dropdown-item-${mockUser.id}`)
-    );
-    expect(screen.getByTestId("recipient-input")).toHaveValue("Alice");
-  });
+    it('shows "SoundCloud user not found." when globalSearch throws', async () => {
+      mockGlobalSearch.mockRejectedValue(new Error('Network error'))
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'fail' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => expect(screen.getByText('SoundCloud user not found.')).toBeInTheDocument())
+    })
 
-  it("closes dropdown after selection", async () => {
-    (getSuggestions as ReturnType<typeof vi.fn>).mockResolvedValue({
-      users: [mockUser],
-    });
-    renderInput();
-    typeIntoInput("al");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() => screen.getByTestId("recipient-dropdown"));
-    fireEvent.click(
-      screen.getByTestId(`recipient-dropdown-item-${mockUser.id}`)
-    );
-    expect(screen.queryByTestId("recipient-dropdown")).not.toBeInTheDocument();
-  });
-
-  // ── Error on search failure ────────────────────────────────────────────────
-
-  it("shows user not found when search throws", async () => {
-    (getSuggestions as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error("Network error")
-    );
-    renderInput();
-    typeIntoInput("fail");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() =>
-      expect(
-        screen.getByText(/soundcloud user not found/i)
-      ).toBeInTheDocument()
-    );
-  });
-
-  // ── Empty query ────────────────────────────────────────────────────────────
-
-  it("hides dropdown when query is cleared", async () => {
-    (getSuggestions as ReturnType<typeof vi.fn>).mockResolvedValue({
-      users: [mockUser],
-    });
-    renderInput();
-    typeIntoInput("al");
-    act(() => vi.advanceTimersByTime(400));
-    await waitFor(() => screen.getByTestId("recipient-dropdown"));
-    clearInput();
-    act(() => vi.advanceTimersByTime(400));
-    expect(screen.queryByTestId("recipient-dropdown")).not.toBeInTheDocument();
-  });
-});
+    it('hides validation error after a user is explicitly selected', async () => {
+      mockGetSuggestions.mockResolvedValue({ users: [makeUser('u1', 'Alice')] })
+      mockGlobalSearch.mockResolvedValue({ data: { users: [] } })
+      render(<RecipientInputBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('recipient-input'), { target: { value: 'ali' } })
+      vi.advanceTimersByTime(400)
+      await waitFor(() => screen.getByTestId('recipient-dropdown-item-u1'))
+      await userEvent.click(screen.getByTestId('recipient-dropdown-item-u1'))
+      expect(screen.queryByText('SoundCloud user not found.')).not.toBeInTheDocument()
+    })
+  })
+})

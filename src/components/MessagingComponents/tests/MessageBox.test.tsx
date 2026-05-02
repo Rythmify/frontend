@@ -1,239 +1,264 @@
-// import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-// import { render, screen, fireEvent, act } from "@testing-library/react";
-// import userEvent from "@testing-library/user-event";
-// import { MessageBox } from "../MessageBox";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
-// vi.mock("@/services/api/messaging/conversationApi", () => ({
-//   resolvePermalink: vi.fn(),
-//   fetchTrack: vi.fn(),
-//   fetchPlaylist: vi.fn(),
-// }));
+const mockResolvePermalink = vi.fn()
+const mockFetchTrack = vi.fn()
+const mockFetchPlaylist = vi.fn()
 
-// import {
-//   resolvePermalink,
-//   fetchTrack,
-//   fetchPlaylist,
-// } from "@/services/api/messaging/conversationApi";
+vi.mock('@/services/api/messaging/conversationApi', () => ({
+  resolvePermalink: (...args: unknown[]) => mockResolvePermalink(...args),
+  fetchTrack: (...args: unknown[]) => mockFetchTrack(...args),
+  fetchPlaylist: (...args: unknown[]) => mockFetchPlaylist(...args),
+}))
 
-// const renderBox = (props = {}) =>
-//   render(
-//     <MessageBox
-//       onValueChange={vi.fn()}
-//       onIsEmptyChange={vi.fn()}
-//       onEmbedResolved={vi.fn()}
-//       {...props}
-//     />
-//   );
+vi.mock('../MiniPlayer', () => ({
+  default: ({ trackName, onClose }: { trackName: string; onClose: () => void }) => (
+    <div data-test="mini-player" data-track={trackName}>
+      <button data-test="mini-player-close" onClick={onClose}>×</button>
+    </div>
+  ),
+}))
 
-// // Synchronously sets the textarea value and fires onChange.
-// // Used in debounce tests so fake timers control ALL async work —
-// // userEvent.type uses its own internal setTimeout delays which
-// // conflict with vi.useFakeTimers() and cause indefinite hangs.
-// const fireType = (element: HTMLElement, value: string) =>
-//   fireEvent.change(element, { target: { value } });
+import { MessageBox } from '../MessageBox'
 
-// // Fires all pending timers AND flushes resulting Promise microtasks,
-// // then wraps everything in act() so React commits all setState calls to the DOM.
-// const runAllTimers = () => act(async () => { await vi.runAllTimersAsync(); });
+const defaultProps = {
+  onValueChange: vi.fn(),
+  onIsEmptyChange: vi.fn(),
+  onEmbedsResolved: vi.fn(),
+  hasError: false,
+}
 
-// describe("MessageBox", () => {
-//   beforeEach(() => {
-//     vi.clearAllMocks();
-//   });
+const mockTrack = {
+  id: 'track-1',
+  title: 'My Track',
+  artist_name: 'Artist',
+  cover_image: null,
+  description: null,
+  genre: null,
+  duration: null,
+  bitrate: null,
+  status: 'public',
+  is_public: true,
+  is_hidden: false,
+  user_id: 'u1',
+  play_count: 0,
+  like_count: 0,
+  stream_url: null,
+  preview_url: null,
+  waveform_url: null,
+  artists: null,
+  created_at: '',
+  updated_at: '',
+}
 
-//   // ── Rendering ──────────────────────────────────────────────────────────────
+const mockPlaylist = {
+  playlist_id: 'pl-1',
+  name: 'My Playlist',
+  cover_image: null,
+  track_count: 3,
+  tracks: [],
+  owner_user_id: 'u1',
+  slug: null,
+  description: null,
+  is_public: true,
+  like_count: 0,
+  repost_count: 0,
+  created_at: '',
+  updated_at: '',
+}
 
-//   it("renders the textarea", () => {
-//     renderBox();
-//     expect(screen.getByTestId("message-input")).toBeInTheDocument();
-//   });
+describe('MessageBox', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
 
-//   it("does not render title initially", () => {
-//     renderBox();
-//     expect(screen.queryByTestId("message-box-title")).not.toBeInTheDocument();
-//   });
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
-//   it("has correct data-test on wrapper", () => {
-//     renderBox();
-//     expect(screen.getByTestId("message-box")).toBeInTheDocument();
-//   });
+  describe('rendering', () => {
+    it('renders the message-box container', () => {
+      render(<MessageBox {...defaultProps} />)
+      expect(screen.getByTestId('message-box')).toBeInTheDocument()
+    })
 
-//   // ── Typing (real timers + userEvent) ───────────────────────────────────────
+    it('renders the textarea', () => {
+      render(<MessageBox {...defaultProps} />)
+      expect(screen.getByTestId('message-input')).toBeInTheDocument()
+    })
 
-//   it("calls onValueChange when user types", async () => {
-//     const user = userEvent.setup();
-//     const onValueChange = vi.fn();
-//     renderBox({ onValueChange });
-//     await user.type(screen.getByTestId("message-input"), "Hello");
-//     expect(onValueChange).toHaveBeenCalledWith("Hello");
-//   });
+    it('textarea starts empty', () => {
+      render(<MessageBox {...defaultProps} />)
+      expect(screen.getByTestId('message-input')).toHaveValue('')
+    })
 
-//   it("calls onIsEmptyChange(false) when text is entered", async () => {
-//     const user = userEvent.setup();
-//     const onIsEmptyChange = vi.fn();
-//     renderBox({ onIsEmptyChange });
-//     await user.type(screen.getByTestId("message-input"), "H");
-//     expect(onIsEmptyChange).toHaveBeenCalledWith(false);
-//   });
+    it('applies error border class when hasError is true', () => {
+      render(<MessageBox {...defaultProps} hasError={true} />)
+      expect(screen.getByTestId('message-input')).toHaveClass('border-red-500')
+    })
 
-//   it("calls onIsEmptyChange(true) when text is cleared", async () => {
-//     const user = userEvent.setup();
-//     const onIsEmptyChange = vi.fn();
-//     renderBox({ onIsEmptyChange });
-//     const input = screen.getByTestId("message-input");
-//     await user.type(input, "H");
-//     await user.clear(input);
-//     expect(onIsEmptyChange).toHaveBeenCalledWith(true);
-//   });
+    it('applies normal border class when hasError is false', () => {
+      render(<MessageBox {...defaultProps} hasError={false} />)
+      expect(screen.getByTestId('message-input')).not.toHaveClass('border-red-500')
+    })
 
-//   it("calls onEmbedResolved(null) when no URL is in text", async () => {
-//     const user = userEvent.setup();
-//     const onEmbedResolved = vi.fn();
-//     renderBox({ onEmbedResolved });
-//     await user.type(screen.getByTestId("message-input"), "Just text");
-//     expect(onEmbedResolved).toHaveBeenCalledWith(null);
-//   });
+    it('does not render MiniPlayer when no embeds', () => {
+      render(<MessageBox {...defaultProps} />)
+      expect(screen.queryByTestId('mini-player')).not.toBeInTheDocument()
+    })
 
-//   // ── Error styling ──────────────────────────────────────────────────────────
+    it('renders MiniPlayer for external track embed', () => {
+      const externalEmbeds = [{ type: 'track' as const, id: 't1', resource: mockTrack, sourceUrl: '' }]
+      render(<MessageBox {...defaultProps} externalEmbeds={externalEmbeds} />)
+      expect(screen.getByTestId('mini-player')).toBeInTheDocument()
+    })
 
-//   it("applies error border class when hasError is true", () => {
-//     renderBox({ hasError: true });
-//     expect(screen.getByTestId("message-input")).toHaveClass("border-red-500");
-//   });
+    it('renders MiniPlayer for external playlist embed', () => {
+      const externalEmbeds = [{ type: 'playlist' as const, id: 'pl1', resource: mockPlaylist as any, sourceUrl: '' }]
+      render(<MessageBox {...defaultProps} externalEmbeds={externalEmbeds} />)
+      expect(screen.getByTestId('mini-player')).toBeInTheDocument()
+    })
 
-//   it("applies normal border class when hasError is false", () => {
-//     renderBox({ hasError: false });
-//     expect(screen.getByTestId("message-input")).not.toHaveClass("border-red-500");
-//   });
+    it('renders multiple MiniPlayers for multiple embeds', () => {
+      const externalEmbeds = [
+        { type: 'track' as const, id: 't1', resource: mockTrack, sourceUrl: '' },
+        { type: 'track' as const, id: 't2', resource: { ...mockTrack, id: 't2', title: 'Track 2' }, sourceUrl: '' },
+      ]
+      render(<MessageBox {...defaultProps} externalEmbeds={externalEmbeds} />)
+      expect(screen.getAllByTestId('mini-player')).toHaveLength(2)
+    })
+  })
 
-//   // ── Debounced URL embed detection ──────────────────────────────────────────
-//   //
-//   // PROBLEM (the last 2 failures):
-//   //   vi.runAllTimersAsync() fires the debounce setTimeout and drains Promise
-//   //   microtasks (resolvePermalink, fetchTrack chains), but React's setTitle()
-//   //   calls happen INSIDE those async callbacks. React batches setState and
-//   //   only commits them to the DOM when the update is flushed inside act().
-//   //   Without act(), the DOM never updates — so getByTestId("message-box-title")
-//   //   finds nothing even though setTitle("Awesome Track") was called.
-//   //
-//   // FIX:
-//   //   Wrap vi.runAllTimersAsync() inside act(async () => { ... }).
-//   //   act() tells React "flush everything now" — timers fire, promises drain,
-//   //   and all resulting setState calls are committed to the DOM before we assert.
-//   //
-//   //   Extracted into the runAllTimers() helper above for readability.
+  describe('typing', () => {
+    it('calls onValueChange when user types', () => {
+      const onValueChange = vi.fn()
+      render(<MessageBox {...defaultProps} onValueChange={onValueChange} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'hello' } })
+      expect(onValueChange).toHaveBeenCalledWith('hello')
+    })
 
-//   describe("debounced URL embed detection", () => {
-//     beforeEach(() => {
-//       vi.useFakeTimers();
-//     });
+    it('calls onIsEmptyChange with false when text is entered', () => {
+      const onIsEmptyChange = vi.fn()
+      render(<MessageBox {...defaultProps} onIsEmptyChange={onIsEmptyChange} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'hi' } })
+      expect(onIsEmptyChange).toHaveBeenCalledWith(false)
+    })
 
-//     afterEach(() => {
-//       vi.useRealTimers();
-//     });
+    it('calls onIsEmptyChange with true when text is cleared', () => {
+      const onIsEmptyChange = vi.fn()
+      render(<MessageBox {...defaultProps} onIsEmptyChange={onIsEmptyChange} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'hi' } })
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: '' } })
+      expect(onIsEmptyChange).toHaveBeenCalledWith(true)
+    })
 
-//     it("does not call resolvePermalink immediately on URL input (debounced)", () => {
-//       renderBox();
-//       fireType(
-//         screen.getByTestId("message-input"),
-//         "https://rythmify.com/tracks/123"
-//       );
-//       expect(resolvePermalink).not.toHaveBeenCalled();
-//     });
+    it('calls onEmbedsResolved with empty array when no URL in text', () => {
+      const onEmbedsResolved = vi.fn()
+      render(<MessageBox {...defaultProps} onEmbedsResolved={onEmbedsResolved} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'just text' } })
+      expect(onEmbedsResolved).toHaveBeenCalled()
+    })
+  })
 
-//     it("calls resolvePermalink after debounce when URL is typed", async () => {
-//       (resolvePermalink as ReturnType<typeof vi.fn>).mockResolvedValue({
-//         data: { type: "track", id: "t-1" },
-//       });
-//       (fetchTrack as ReturnType<typeof vi.fn>).mockResolvedValue({
-//         data: { title: "My Track", id: "t-1" },
-//       });
+  describe('keyboard submit', () => {
+    it('calls onSubmit when Enter is pressed without Shift', () => {
+      const onSubmit = vi.fn()
+      render(<MessageBox {...defaultProps} onSubmit={onSubmit} />)
+      fireEvent.keyDown(screen.getByTestId('message-input'), { key: 'Enter', shiftKey: false })
+      expect(onSubmit).toHaveBeenCalledTimes(1)
+    })
 
-//       renderBox();
-//       fireType(
-//         screen.getByTestId("message-input"),
-//         "https://rythmify.com/tracks/t-1"
-//       );
+    it('does not call onSubmit when Shift+Enter is pressed', () => {
+      const onSubmit = vi.fn()
+      render(<MessageBox {...defaultProps} onSubmit={onSubmit} />)
+      fireEvent.keyDown(screen.getByTestId('message-input'), { key: 'Enter', shiftKey: true })
+      expect(onSubmit).not.toHaveBeenCalled()
+    })
+  })
 
-//       await runAllTimers();
+  describe('URL resolution (debounced)', () => {
+    it('calls resolvePermalink for URLs in text after debounce', async () => {
+      mockResolvePermalink.mockResolvedValue({ data: { type: 'track', id: 'track-1' } })
+      mockFetchTrack.mockResolvedValue({ data: mockTrack })
 
-//       expect(resolvePermalink).toHaveBeenCalled();
-//     });
+      render(<MessageBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), {
+        target: { value: 'https://soundcloud.com/artist/track' },
+      })
+      vi.advanceTimersByTime(600)
+      await waitFor(() => expect(mockResolvePermalink).toHaveBeenCalledWith('https://soundcloud.com/artist/track'))
+    })
 
-//     it("renders track title after successful track embed resolution", async () => {
-//       (resolvePermalink as ReturnType<typeof vi.fn>).mockResolvedValue({
-//         data: { type: "track", id: "t-1" },
-//       });
-//       (fetchTrack as ReturnType<typeof vi.fn>).mockResolvedValue({
-//         data: { title: "Awesome Track", id: "t-1" },
-//       });
+    it('fetches track data when permalink resolves to track type', async () => {
+      mockResolvePermalink.mockResolvedValue({ data: { type: 'track', id: 'track-1' } })
+      mockFetchTrack.mockResolvedValue({ data: mockTrack })
 
-//       renderBox();
-//       fireType(
-//         screen.getByTestId("message-input"),
-//         "https://rythmify.com/tracks/t-1"
-//       );
+      render(<MessageBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), {
+        target: { value: 'https://soundcloud.com/artist/track' },
+      })
+      vi.advanceTimersByTime(600)
+      await waitFor(() => expect(mockFetchTrack).toHaveBeenCalledWith('track-1'))
+    })
 
-//       await runAllTimers();
+    it('fetches playlist data when permalink resolves to playlist type', async () => {
+      mockResolvePermalink.mockResolvedValue({ data: { type: 'playlist', id: 'pl-1' } })
+      mockFetchPlaylist.mockResolvedValue({ data: mockPlaylist })
 
-//       expect(screen.getByTestId("message-box-title")).toHaveTextContent("Awesome Track");
-//     });
+      render(<MessageBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), {
+        target: { value: 'https://soundcloud.com/artist/sets/playlist' },
+      })
+      vi.advanceTimersByTime(600)
+      await waitFor(() => expect(mockFetchPlaylist).toHaveBeenCalledWith('pl-1'))
+    })
 
-//     it("renders playlist title after successful playlist embed resolution", async () => {
-//       (resolvePermalink as ReturnType<typeof vi.fn>).mockResolvedValue({
-//         data: { type: "playlist", id: "p-1" },
-//       });
-//       (fetchPlaylist as ReturnType<typeof vi.fn>).mockResolvedValue({
-//         data: { title: "My Playlist", id: "p-1" },
-//       });
+    it('ignores user type from resolvePermalink', async () => {
+      mockResolvePermalink.mockResolvedValue({ data: { type: 'user', id: 'u1' } })
+      render(<MessageBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), {
+        target: { value: 'https://soundcloud.com/artist' },
+      })
+      vi.advanceTimersByTime(600)
+      await waitFor(() => expect(mockResolvePermalink).toHaveBeenCalled())
+      expect(mockFetchTrack).not.toHaveBeenCalled()
+    })
 
-//       renderBox();
-//       fireType(
-//         screen.getByTestId("message-input"),
-//         "https://rythmify.com/playlists/p-1"
-//       );
+    it('handles resolvePermalink failure gracefully', async () => {
+      mockResolvePermalink.mockRejectedValue(new Error('fail'))
+      render(<MessageBox {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), {
+        target: { value: 'https://soundcloud.com/artist/track' },
+      })
+      vi.advanceTimersByTime(600)
+      await waitFor(() => expect(mockResolvePermalink).toHaveBeenCalled())
+      // no crash
+    })
+  })
 
-//       await runAllTimers();
+  describe('embed removal', () => {
+    it('removes MiniPlayer when close button is clicked (external embeds)', async () => {
+      const onEmbedsResolved = vi.fn()
+      const externalEmbeds = [{ type: 'track' as const, id: 't1', resource: mockTrack, sourceUrl: '' }]
+      render(<MessageBox {...defaultProps} externalEmbeds={externalEmbeds} onEmbedsResolved={onEmbedsResolved} />)
+      await userEvent.click(screen.getByTestId('mini-player-close'))
+      expect(onEmbedsResolved).toHaveBeenCalledWith([])
+    })
 
-//       expect(screen.getByTestId("message-box-title")).toHaveTextContent("My Playlist");
-//     });
-
-//     it("clears title when embed resolution fails", async () => {
-//       (resolvePermalink as ReturnType<typeof vi.fn>).mockRejectedValue(
-//         new Error("Not found")
-//       );
-
-//       renderBox();
-//       fireType(
-//         screen.getByTestId("message-input"),
-//         "https://rythmify.com/tracks/bad"
-//       );
-
-//       await runAllTimers();
-
-//       expect(screen.queryByTestId("message-box-title")).not.toBeInTheDocument();
-//     });
-
-//     it("calls onEmbedResolved with track embed data on success", async () => {
-//       const onEmbedResolved = vi.fn();
-//       (resolvePermalink as ReturnType<typeof vi.fn>).mockResolvedValue({
-//         data: { type: "track", id: "t-99" },
-//       });
-//       (fetchTrack as ReturnType<typeof vi.fn>).mockResolvedValue({
-//         data: { title: "Track 99", id: "t-99" },
-//       });
-
-//       renderBox({ onEmbedResolved });
-//       fireType(
-//         screen.getByTestId("message-input"),
-//         "https://rythmify.com/tracks/t-99"
-//       );
-
-//       await runAllTimers();
-
-//       expect(onEmbedResolved).toHaveBeenCalledWith(
-//         expect.objectContaining({ type: "track", id: "t-99" })
-//       );
-//     });
-//   });
-// });
+    it('removes only the clicked embed when multiple embeds exist', async () => {
+      const onEmbedsResolved = vi.fn()
+      const externalEmbeds = [
+        { type: 'track' as const, id: 't1', resource: mockTrack, sourceUrl: '' },
+        { type: 'track' as const, id: 't2', resource: { ...mockTrack, id: 't2', title: 'Track 2' }, sourceUrl: '' },
+      ]
+      render(<MessageBox {...defaultProps} externalEmbeds={externalEmbeds} onEmbedsResolved={onEmbedsResolved} />)
+      const closeBtns = screen.getAllByTestId('mini-player-close')
+      await userEvent.click(closeBtns[0])
+      const lastCall = onEmbedsResolved.mock.calls[onEmbedsResolved.mock.calls.length - 1][0]
+      expect(lastCall).toHaveLength(1)
+      expect(lastCall[0].id).toBe('t2')
+    })
+  })
+})

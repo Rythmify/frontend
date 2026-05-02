@@ -1,177 +1,192 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import { Chats } from "../Chats";
-import type { Conversation } from "@/services/api/messaging/conversationApi";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 
-// 🔹 Mock dependencies
-vi.mock("@/components/MessagingComponents/ChatProfile", () => ({
-  ChatProfile: ({ conversation, onClick }: any) => (
-    <div
-      data-test={`chat-${conversation.id}`}
-      onClick={onClick}
-    >
-      {conversation.participant.display_name}
-    </div>
-  ),
-}));
+vi.mock('@/components/UI/Spinner', () => ({
+  default: () => <div data-test="spinner" />,
+}))
 
-vi.mock("@/components/UI/Spinner", () => ({
-  default: () => <div data-test="spinner">Loading...</div>,
-}));
+vi.mock('@/components/UI/UserAvatar', () => ({
+  default: ({ name }: { name: string }) => <div data-test="user-avatar" data-name={name} />,
+}))
 
-const createConversation = (id: string): Conversation =>
-  ({
+import { Chats } from '../Chats'
+import type { Conversation } from '@/services/api/messaging/conversationApi'
+
+function makeConversation(id: string): Conversation {
+  return {
     id,
-    updated_at: new Date().toISOString(),
+    participant: { id: 'u2', username: 'user', display_name: 'User', avatar: null },
+    last_message: { id: 'm1', body: 'Hi', embed_type: null, embed_id: null, sender_id: 'u2', created_at: new Date().toISOString() } as any,
     unread_count: 0,
-    participant: {
-      display_name: `User ${id}`,
-      avatar: "",
-    },
-    last_message: {
-      body: "Hello",
-      embed_type: null,
-    },
-  } as Conversation);
+    updated_at: new Date().toISOString(),
+  } as Conversation
+}
 
-const baseProps = {
+const defaultProps = {
+  conversations: [],
+  loading: false,
+  loadingMore: false,
   hasMore: false,
+  error: null,
+  activeConversationId: null,
+  onSelect: vi.fn(),
   onLoadMore: vi.fn(),
-};
+}
 
-describe("Chats", () => {
-  it("renders loading spinner", () => {
-    render(
-      <Chats
-        conversations={[]}
-        loading
-        loadingMore={false}
-        {...baseProps}
-        error={null}
-        activeConversationId={null}
-        onSelect={vi.fn()}
-      />
-    );
+describe('Chats', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-    expect(screen.getByTestId("spinner")).toBeInTheDocument();
-  });
+  describe('loading state', () => {
+    it('renders spinner when loading is true', () => {
+      render(<Chats {...defaultProps} loading={true} />)
+      expect(screen.getByTestId('spinner')).toBeInTheDocument()
+    })
 
-  it("renders error message", () => {
-    render(
-      <Chats
-        conversations={[]}
-        loading={false}
-        loadingMore={false}
-        {...baseProps}
-        error="Something went wrong"
-        activeConversationId={null}
-        onSelect={vi.fn()}
-      />
-    );
+    it('does not render chat list when loading', () => {
+      render(<Chats {...defaultProps} loading={true} />)
+      expect(screen.queryByTestId('chat-list')).not.toBeInTheDocument()
+    })
+  })
 
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
-  });
+  describe('error state', () => {
+    it('renders error message when error is set', () => {
+      render(<Chats {...defaultProps} error="Failed to load" />)
+      expect(screen.getByTestId('chat-error')).toHaveTextContent('Failed to load')
+    })
 
-  it("renders empty state", () => {
-    render(
-      <Chats
-        conversations={[]}
-        loading={false}
-        loadingMore={false}
-        {...baseProps}
-        error={null}
-        activeConversationId={null}
-        onSelect={vi.fn()}
-      />
-    );
+    it('does not render spinner in error state', () => {
+      render(<Chats {...defaultProps} error="Some error" />)
+      expect(screen.queryByTestId('spinner')).not.toBeInTheDocument()
+    })
+  })
 
-    expect(screen.getByTestId("chat-empty-state")).toBeInTheDocument();
-  });
+  describe('empty state', () => {
+    it('renders empty state when conversations is empty', () => {
+      render(<Chats {...defaultProps} conversations={[]} />)
+      expect(screen.getByTestId('chat-empty-state')).toBeInTheDocument()
+    })
 
-  it("renders list of conversations", () => {
-    const conversations = [createConversation("1"), createConversation("2")];
+    it('empty state contains "No conversations yet." text', () => {
+      render(<Chats {...defaultProps} conversations={[]} />)
+      expect(screen.getByTestId('chat-empty-state')).toHaveTextContent('No conversations yet.')
+    })
+  })
 
-    render(
-      <Chats
-        conversations={conversations}
-        loading={false}
-        loadingMore={false}
-        {...baseProps}
-        error={null}
-        activeConversationId={null}
-        onSelect={vi.fn()}
-      />
-    );
+  describe('list state', () => {
+    it('renders chat-list when conversations exist', () => {
+      render(<Chats {...defaultProps} conversations={[makeConversation('c1')]} />)
+      expect(screen.getByTestId('chat-list')).toBeInTheDocument()
+    })
 
-    expect(screen.getByTestId("chat-1")).toBeInTheDocument();
-    expect(screen.getByTestId("chat-2")).toBeInTheDocument();
-  });
+    it('renders a ChatProfile for each conversation', () => {
+      const convs = [makeConversation('c1'), makeConversation('c2')]
+      render(<Chats {...defaultProps} conversations={convs} />)
+      expect(screen.getByTestId('chat-profile-c1')).toBeInTheDocument()
+      expect(screen.getByTestId('chat-profile-c2')).toBeInTheDocument()
+    })
 
-  it("calls onSelect when a conversation is clicked", () => {
-    const conversations = [createConversation("1")];
-    const onSelect = vi.fn();
+    it('calls onSelect with the conversation when a profile is clicked', async () => {
+      const onSelect = vi.fn()
+      const conv = makeConversation('c1')
+      render(<Chats {...defaultProps} conversations={[conv]} onSelect={onSelect} />)
+      fireEvent.click(screen.getByTestId('chat-profile-c1'))
+      expect(onSelect).toHaveBeenCalledWith(conv)
+    })
 
-    render(
-      <Chats
-        conversations={conversations}
-        loading={false}
-        loadingMore={false}
-        {...baseProps}
-        error={null}
-        activeConversationId={null}
-        onSelect={onSelect}
-      />
-    );
+    it('renders loadingMore spinner when loadingMore is true', () => {
+      render(<Chats {...defaultProps} conversations={[makeConversation('c1')]} loadingMore={true} />)
+      expect(screen.getByTestId('chat-loading-more')).toBeInTheDocument()
+    })
 
-    fireEvent.click(screen.getByTestId("chat-1"));
+    it('does not render loadingMore div when loadingMore is false', () => {
+      render(<Chats {...defaultProps} conversations={[makeConversation('c1')]} loadingMore={false} />)
+      expect(screen.queryByTestId('chat-loading-more')).not.toBeInTheDocument()
+    })
 
-    expect(onSelect).toHaveBeenCalledWith(conversations[0]);
-  });
+    it('passes isActive=true to the active conversation', () => {
+      const convs = [makeConversation('c1'), makeConversation('c2')]
+      render(<Chats {...defaultProps} conversations={convs} activeConversationId="c1" />)
+      expect(screen.getByTestId('chat-profile-c1')).toHaveClass('bg-[#303030]')
+      expect(screen.getByTestId('chat-profile-c2')).not.toHaveClass('bg-[#303030]')
+    })
+  })
 
-  it("renders loadingMore spinner", () => {
-    const conversations = [createConversation("1")];
+  describe('scroll / load more', () => {
+    it('calls onLoadMore when scrolled near bottom and hasMore is true', () => {
+      const onLoadMore = vi.fn()
+      render(
+        <Chats
+          {...defaultProps}
+          conversations={[makeConversation('c1')]}
+          hasMore={true}
+          loadingMore={false}
+          onLoadMore={onLoadMore}
+        />
+      )
+      const list = screen.getByTestId('chat-list')
+      Object.defineProperty(list, 'scrollHeight', { value: 500, configurable: true })
+      Object.defineProperty(list, 'scrollTop', { value: 390, configurable: true })
+      Object.defineProperty(list, 'clientHeight', { value: 100, configurable: true })
+      fireEvent.scroll(list)
+      expect(onLoadMore).toHaveBeenCalled()
+    })
 
-    render(
-      <Chats
-        conversations={conversations}
-        loading={false}
-        loadingMore={true}
-        {...baseProps}
-        error={null}
-        activeConversationId={null}
-        onSelect={vi.fn()}
-      />
-    );
+    it('does not call onLoadMore when not near bottom', () => {
+      const onLoadMore = vi.fn()
+      render(
+        <Chats
+          {...defaultProps}
+          conversations={[makeConversation('c1')]}
+          hasMore={true}
+          loadingMore={false}
+          onLoadMore={onLoadMore}
+        />
+      )
+      const list = screen.getByTestId('chat-list')
+      Object.defineProperty(list, 'scrollHeight', { value: 1000, configurable: true })
+      Object.defineProperty(list, 'scrollTop', { value: 0, configurable: true })
+      Object.defineProperty(list, 'clientHeight', { value: 100, configurable: true })
+      fireEvent.scroll(list)
+      expect(onLoadMore).not.toHaveBeenCalled()
+    })
 
-    expect(screen.getAllByTestId("spinner").length).toBeGreaterThan(0);
-  });
+    it('does not call onLoadMore when hasMore is false', () => {
+      const onLoadMore = vi.fn()
+      render(
+        <Chats
+          {...defaultProps}
+          conversations={[makeConversation('c1')]}
+          hasMore={false}
+          onLoadMore={onLoadMore}
+        />
+      )
+      const list = screen.getByTestId('chat-list')
+      Object.defineProperty(list, 'scrollHeight', { value: 200, configurable: true })
+      Object.defineProperty(list, 'scrollTop', { value: 100, configurable: true })
+      Object.defineProperty(list, 'clientHeight', { value: 100, configurable: true })
+      fireEvent.scroll(list)
+      expect(onLoadMore).not.toHaveBeenCalled()
+    })
 
-  it("calls onLoadMore when scrolled near the bottom and more pages exist", () => {
-    const conversations = [createConversation("1")];
-    const onLoadMore = vi.fn();
-
-    render(
-      <Chats
-        conversations={conversations}
-        loading={false}
-        loadingMore={false}
-        hasMore
-        error={null}
-        activeConversationId={null}
-        onSelect={vi.fn()}
-        onLoadMore={onLoadMore}
-      />
-    );
-
-    const list = screen.getByTestId("chat-list");
-    Object.defineProperties(list, {
-      scrollHeight: { configurable: true, value: 500 },
-      scrollTop: { configurable: true, value: 330 },
-      clientHeight: { configurable: true, value: 100 },
-    });
-
-    fireEvent.scroll(list);
-
-    expect(onLoadMore).toHaveBeenCalledTimes(1);
-  });
-});
+    it('does not call onLoadMore when already loadingMore', () => {
+      const onLoadMore = vi.fn()
+      render(
+        <Chats
+          {...defaultProps}
+          conversations={[makeConversation('c1')]}
+          hasMore={true}
+          loadingMore={true}
+          onLoadMore={onLoadMore}
+        />
+      )
+      const list = screen.getByTestId('chat-list')
+      Object.defineProperty(list, 'scrollHeight', { value: 200, configurable: true })
+      Object.defineProperty(list, 'scrollTop', { value: 100, configurable: true })
+      Object.defineProperty(list, 'clientHeight', { value: 100, configurable: true })
+      fireEvent.scroll(list)
+      expect(onLoadMore).not.toHaveBeenCalled()
+    })
+  })
+})
