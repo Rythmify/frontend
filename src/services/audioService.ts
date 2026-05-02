@@ -91,7 +91,7 @@ usePlayerStore.subscribe((state, prev) => {
 
     if (state.currentTrack && state.currentTrack.id !== loadedAudioTrackId) {
         if (globalWaveSurfer && globalWaveSurferTrackId !== state.currentTrack.id) {
-          try { globalWaveSurfer.destroy(); } catch (e) {}
+          try { globalWaveSurfer.destroy(); } catch (e) { /* ignore */ }
           globalWaveSurfer = null;
           globalWaveSurferTrackId = null;
         }

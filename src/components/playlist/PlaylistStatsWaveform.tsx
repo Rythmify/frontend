@@ -40,7 +40,7 @@ function StaticWaveform({ track, isActive }: { track: Track; isActive: boolean }
 
     const init = async () => {
       if (!containerRef.current) return;
-      if (wsRef.current) { try { wsRef.current.destroy(); } catch {} wsRef.current = null; }
+      if (wsRef.current) { try { wsRef.current.destroy(); } catch (e) { /* ignore */ } wsRef.current = null; }
       containerRef.current.innerHTML = "";
 
       const canvas = document.createElement("canvas");
@@ -97,7 +97,7 @@ function StaticWaveform({ track, isActive }: { track: Track; isActive: boolean }
     init();
     return () => {
       isMounted = false;
-      if (wsRef.current) { try { wsRef.current.destroy(); } catch {} wsRef.current = null; }
+      if (wsRef.current) { try { wsRef.current.destroy(); } catch (e) { /* ignore */ } wsRef.current = null; }
     };
   }, [track.id, track.audioUrl, isActive]);
 
