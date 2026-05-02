@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { Track } from "../../../../types/track";
 import type { MockUser } from "../../../../services/mocks/users";
@@ -12,6 +12,9 @@ interface TrackSidebarProps {
 }
 
 export default function TrackSidebar({ track, featuredArtists, relatedTracks = [] }: TrackSidebarProps) {
+  const { username: urlUsername } = useParams<{ username: string }>();
+  const artistUsername = track.artistUsername || urlUsername || "unknown";
+
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>
       <aside data-test="track-sidebar" className="flex flex-col w-full">
@@ -65,11 +68,20 @@ export default function TrackSidebar({ track, featuredArtists, relatedTracks = [
         <div data-test="sidebar-related-tracks">
           <p className="text-[var(--color-text-muted)] text-[11px] font-bold uppercase tracking-widest mb-4 flex justify-between items-center">
             Related Tracks
-            <button className="text-[10px] lowercase font-normal hover:text-[var(--color-text-hover)]">View all</button>
+            <Link 
+              to={`/${artistUsername}/${track.trackSlug || track.id}/related`}
+              className="text-[10px] lowercase font-normal hover:text-[var(--color-text-hover)] cursor-pointer"
+            >
+              View all
+            </Link>
           </p>
           <div className="flex flex-col gap-4">
             {relatedTracks.slice(0, 3).map((t) => (
-              <div key={t.id} className="flex gap-3 group cursor-pointer group">
+              <Link 
+                key={t.id} 
+                to={`/${t.artistUsername || artistUsername}/${t.trackSlug || t.id}`}
+                className="flex gap-3 group cursor-pointer"
+              >
                 <div className="relative w-12 h-12 shrink-0">
                   <img
                     src={t.coverUrl || `https://picsum.photos/seed/${t.id}/80/80`}
@@ -95,7 +107,7 @@ export default function TrackSidebar({ track, featuredArtists, relatedTracks = [
                      </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
