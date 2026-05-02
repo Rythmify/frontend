@@ -31,8 +31,18 @@ vi.mock('../Modal', () => ({
 }))
 
 vi.mock('@/components/UI/BlockModal', () => ({
-  BlockUserModal: ({ onClose, onBlocked }: { onClose: () => void; onBlocked: () => void }) => (
-    <div data-test="block-modal">
+  BlockUserModal: ({
+    userId,
+    username,
+    onClose,
+    onBlocked,
+  }: {
+    userId: string
+    username: string
+    onClose: () => void
+    onBlocked: () => void
+  }) => (
+    <div data-test="block-modal" data-user-id={userId} data-username={username}>
       <button data-test="block-confirm" onClick={onBlocked}>Block</button>
       <button data-test="block-close" onClick={onClose}>Cancel</button>
     </div>
@@ -40,8 +50,18 @@ vi.mock('@/components/UI/BlockModal', () => ({
 }))
 
 vi.mock('@/components/UI/ReportModal', () => ({
-  ReportModal: ({ onClose, onSpamSelected }: { onClose: () => void; onSpamSelected: () => void }) => (
-    <div data-test="report-modal">
+  ReportModal: ({
+    userId,
+    username,
+    onClose,
+    onSpamSelected,
+  }: {
+    userId: string
+    username: string
+    onClose: () => void
+    onSpamSelected: () => void
+  }) => (
+    <div data-test="report-modal" data-user-id={userId} data-username={username}>
       <button data-test="report-spam" onClick={onSpamSelected}>Spam</button>
       <button data-test="report-close" onClick={onClose}>Close</button>
     </div>
@@ -49,8 +69,16 @@ vi.mock('@/components/UI/ReportModal', () => ({
 }))
 
 vi.mock('@/components/UI/SpamModal', () => ({
-  SpamModal: ({ onClose }: { onClose: () => void }) => (
-    <div data-test="spam-modal">
+  SpamModal: ({
+    userId,
+    username,
+    onClose,
+  }: {
+    userId: string
+    username: string
+    onClose: () => void
+  }) => (
+    <div data-test="spam-modal" data-user-id={userId} data-username={username}>
       <button data-test="spam-close" onClick={onClose}>Close</button>
     </div>
   ),
@@ -204,6 +232,33 @@ describe('ConversationHeader', () => {
       expect(screen.getByTestId('block-modal')).toBeInTheDocument()
     })
 
+    it('passes recipient props to BlockUserModal', async () => {
+      mockFetchFollowStatus.mockResolvedValue({ data: { is_blocking: false } })
+      renderHeader()
+      await waitFor(() => screen.getByTestId('conversation-block-button'))
+      await userEvent.click(screen.getByTestId('conversation-block-button'))
+      expect(screen.getByTestId('block-modal')).toHaveAttribute('data-user-id', 'user-2')
+      expect(screen.getByTestId('block-modal')).toHaveAttribute('data-username', 'John')
+    })
+
+    it('closes block modal from BlockUserModal onClose', async () => {
+      mockFetchFollowStatus.mockResolvedValue({ data: { is_blocking: false } })
+      renderHeader()
+      await waitFor(() => screen.getByTestId('conversation-block-button'))
+      await userEvent.click(screen.getByTestId('conversation-block-button'))
+      await userEvent.click(screen.getByTestId('block-close'))
+      expect(screen.queryByTestId('block-modal')).not.toBeInTheDocument()
+    })
+
+    it('closes block modal from the Modal onClose callback', async () => {
+      mockFetchFollowStatus.mockResolvedValue({ data: { is_blocking: false } })
+      renderHeader()
+      await waitFor(() => screen.getByTestId('conversation-block-button'))
+      await userEvent.click(screen.getByTestId('conversation-block-button'))
+      await userEvent.click(screen.getByTestId('modal-close'))
+      expect(screen.queryByTestId('block-modal')).not.toBeInTheDocument()
+    })
+
     it('calls unblockUser when Unblock is clicked', async () => {
       mockFetchFollowStatus.mockResolvedValue({ data: { is_blocking: true } })
       renderHeader()
@@ -229,11 +284,59 @@ describe('ConversationHeader', () => {
       expect(screen.getByTestId('report-modal')).toBeInTheDocument()
     })
 
+    it('passes recipient props to ReportModal', async () => {
+      renderHeader()
+      await userEvent.click(screen.getByTestId('conversation-report-button'))
+      expect(screen.getByTestId('report-modal')).toHaveAttribute('data-user-id', 'user-2')
+      expect(screen.getByTestId('report-modal')).toHaveAttribute('data-username', 'John')
+    })
+
+    it('closes report modal from ReportModal onClose', async () => {
+      renderHeader()
+      await userEvent.click(screen.getByTestId('conversation-report-button'))
+      await userEvent.click(screen.getByTestId('report-close'))
+      expect(screen.queryByTestId('report-modal')).not.toBeInTheDocument()
+    })
+
+    it('closes report modal from the Modal onClose callback', async () => {
+      renderHeader()
+      await userEvent.click(screen.getByTestId('conversation-report-button'))
+      await userEvent.click(screen.getByTestId('modal-close'))
+      expect(screen.queryByTestId('report-modal')).not.toBeInTheDocument()
+    })
+
     it('opens spam modal when spam is selected in report modal', async () => {
       renderHeader()
       await userEvent.click(screen.getByTestId('conversation-report-button'))
       await userEvent.click(screen.getByTestId('report-spam'))
       await waitFor(() => expect(screen.getByTestId('spam-modal')).toBeInTheDocument())
+    })
+
+    it('passes recipient props to SpamModal', async () => {
+      renderHeader()
+      await userEvent.click(screen.getByTestId('conversation-report-button'))
+      await userEvent.click(screen.getByTestId('report-spam'))
+      await waitFor(() => expect(screen.getByTestId('spam-modal')).toBeInTheDocument())
+      expect(screen.getByTestId('spam-modal')).toHaveAttribute('data-user-id', 'user-2')
+      expect(screen.getByTestId('spam-modal')).toHaveAttribute('data-username', 'John')
+    })
+
+    it('closes spam modal from SpamModal onClose', async () => {
+      renderHeader()
+      await userEvent.click(screen.getByTestId('conversation-report-button'))
+      await userEvent.click(screen.getByTestId('report-spam'))
+      await waitFor(() => expect(screen.getByTestId('spam-modal')).toBeInTheDocument())
+      await userEvent.click(screen.getByTestId('spam-close'))
+      expect(screen.queryByTestId('spam-modal')).not.toBeInTheDocument()
+    })
+
+    it('closes spam modal from the Modal onClose callback', async () => {
+      renderHeader()
+      await userEvent.click(screen.getByTestId('conversation-report-button'))
+      await userEvent.click(screen.getByTestId('report-spam'))
+      await waitFor(() => expect(screen.getByTestId('spam-modal')).toBeInTheDocument())
+      await userEvent.click(screen.getByTestId('modal-close'))
+      expect(screen.queryByTestId('spam-modal')).not.toBeInTheDocument()
     })
   })
 

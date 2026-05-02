@@ -151,7 +151,8 @@ describe('DeleteConversationModal', () => {
     it('calls submitReport when spam checkbox is checked before archiving', async () => {
       render(<DeleteConversationModal {...defaultProps} />)
       const checkbox = screen.getByTestId('checkbox-toggle')
-      fireEvent.change(checkbox, { target: { checked: true } })
+      fireEvent.click(checkbox)
+      expect(checkbox).toBeChecked()
       await userEvent.click(screen.getByTestId('delete-conversation-confirm'))
       await waitFor(() =>
         expect(mockSubmitReport).toHaveBeenCalledWith({
