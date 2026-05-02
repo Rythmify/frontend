@@ -348,13 +348,25 @@ export const usePlayerStore = create<PlayerState>()(
             currentTime: backendState.position_seconds || 0,
             duration: backendState.duration || Number(fullTrack.duration) || 0,
             volume: backendState.volume ?? 1,
-            isPlaying: false,
-          });
+           isPlaying: false,
+      });
+
+      const { audio, setTrackLoadedLocally } = await import("../services/audioService");
+      const time = backendState.position_seconds || 0;
+          audio.src = fullTrack.audioUrl;
+          audio.load();
+          if (time > 0) {
+            audio.addEventListener("loadedmetadata", () => {
+              audio.currentTime = time;
+            }, { once: true });
+          }
+          setTrackLoadedLocally(fullTrack.id);
+
         } catch (e) {
           console.error("Failed to rehydrate player from backend", e);
         }
       },
-    }),
+      }),
     {
       name: "rythmify-player-storage",
       version: 1,

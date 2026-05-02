@@ -100,9 +100,7 @@ usePlayerStore.subscribe((state, prev) => {
         const targetTime = state.currentTime;
 
         audio.pause();
-        // Only set src if audio doesn't already have this track loaded
-        // (WaveSurfer may have already set it via the media backend)
-        if (!audio.src || !audio.src.includes(state.currentTrack.audioUrl)) {
+        if (!audio.src || audio.src === window.location.href || !audio.src.includes(state.currentTrack.audioUrl)) {
           audio.src = state.currentTrack.audioUrl;
           audio.load();
         }
@@ -129,15 +127,17 @@ usePlayerStore.subscribe((state, prev) => {
       }
 
   if (state.isPlaying !== prev.isPlaying) {
-    if (state.isPlaying) {
-      notifyOtherTabs();
-      if (!seekInProgress) {
-        audio.play().catch(() => { });
+      if (state.isPlaying) {
+        notifyOtherTabs();
+        if (!seekInProgress) {
+          audio.play().catch(() => { });
+        } else {
+          setTimeout(() => audio.play().catch(() => {}), 350);
+        }
+      } else {
+        audio.pause();
       }
-    } else {
-      audio.pause();
     }
-  }
 
   // Removed the automatic same-track restart heuristic because it conflicted with WaveSurfer
   // seeks and buffering, causing tracks to spontaneously repeat or jump to 0:00.
