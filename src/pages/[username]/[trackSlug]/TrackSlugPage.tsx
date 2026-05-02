@@ -106,7 +106,7 @@ export default function TrackSlugPage() {
         t,
         [track!, ...relatedTracks].filter(Boolean) as Track[]
       );
-      navigate(`/${t.artistUsername}/${t.id}`);
+      navigate(`/${t.artistUsername || "unknown"}/${t.trackSlug || t.id}`);
     }
   };
 
