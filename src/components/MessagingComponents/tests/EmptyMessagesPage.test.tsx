@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import MessagesPage from './MessagesPage'
+import MessagesPage from '@/pages/social/messages/emptyMessagesPage'
 
 // Mock child components
 vi.mock('@/components/MessagingComponents/Modal', () => ({
