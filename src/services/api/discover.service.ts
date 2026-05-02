@@ -106,7 +106,6 @@ export interface HomeData {
   artists_to_watch: EmergingArtist[];
 }
 
-// Missing artist name — user_id only. needs getUserById()
 export interface TrackSummary {
   id: string;
   title: string;
@@ -114,6 +113,9 @@ export interface TrackSummary {
   duration: number | null;
   cover_image: string | null;
   user_id: string;
+  artist_name?: string;
+  artist_username?: string;
+  track_slug?: string;
   play_count: number;
   like_count: number;
   stream_url: string | null;

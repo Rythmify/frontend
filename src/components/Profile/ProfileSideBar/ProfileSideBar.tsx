@@ -33,6 +33,8 @@ interface LikedTrack {
   comments?: number;
   audioUrl?: string;
   artistId?: string;
+  artistUsername?: string;
+  trackSlug?: string;
 }
 
 interface ProfileSideBarProps {

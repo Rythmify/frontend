@@ -9,7 +9,12 @@ import {
 import { MdRepeat, MdRepeatOne } from "react-icons/md";
 import { toast } from "sonner";
 
-export default function PlayerControls() {
+interface PlayerControlsProps {
+  /** When true, play/pause has no audio source (blocked region or missing URLs). */
+  playbackDisabled?: boolean;
+}
+
+export default function PlayerControls({ playbackDisabled = false }: PlayerControlsProps) {
   const {
     isPlaying,
     isShuffle,
@@ -54,12 +59,23 @@ export default function PlayerControls() {
       {/* Play / Pause */}
       <button
         data-test="player-button-play-pause"
-        onClick={togglePlay}
-        className="
+        type="button"
+        disabled={playbackDisabled}
+        onClick={() => {
+          if (playbackDisabled) {
+            toast.message("Playback is not available for this track.");
+            return;
+          }
+          togglePlay();
+        }}
+        className={`
           w-9 h-9 rounded-full flex items-center justify-center shrink-0
-          bg-white text-black hover:bg-[#ccc]
-          transition-colors duration-150 cursor-pointer mx-1
-        "
+          text-black transition-colors duration-150 mx-1
+          ${playbackDisabled
+            ? "bg-white/40 cursor-not-allowed"
+            : "bg-white hover:bg-[#ccc] cursor-pointer"
+          }
+        `}
       >
         {isPlaying
           ? <FaPause className="text-md" />

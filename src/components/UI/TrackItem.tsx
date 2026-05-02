@@ -98,7 +98,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
   const finalArtistSlug =
     artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-");
 
-  const trackPath = `/discover/personalised/${trackSlug ?? ""}:${id}`;
+  const trackPath = `/${finalArtistSlug}/${trackSlug ?? id}`;
   const trackForActions: Track = {
     id,
     title,
@@ -196,7 +196,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
         className="w-12 h-12 cursor-pointer flex-shrink-0 bg-border rounded overflow-hidden relative"
         onMouseEnter={() => setCoverHovered(true)}
         onMouseLeave={() => setCoverHovered(false)}
-        onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
+        onClick={() => navigate(`/${finalArtistSlug}/${trackSlug ?? id}`)}
       >
         <CoverImage
           src={coverUrl}

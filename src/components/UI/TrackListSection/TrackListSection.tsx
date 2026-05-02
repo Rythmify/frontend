@@ -27,11 +27,6 @@ const TrackListSection = ({
 }: TrackListSectionProps) => {
   const navigate = useNavigate();
 
-  // ✅ Early return if no children
-  if (!children) {
-    return null;
-  }
-
   return (
     <div className={styles.container} data-test="track-list-section">
       {/* Header */}

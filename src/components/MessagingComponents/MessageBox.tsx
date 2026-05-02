@@ -195,6 +195,7 @@ export function MessageBox({
         data-test="message-input"
         value={value}
         onChange={handleChange}
+        autoFocus
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault()
