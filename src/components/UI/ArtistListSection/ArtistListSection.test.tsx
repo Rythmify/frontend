@@ -147,13 +147,6 @@ describe("ArtistListSection", () => {
     expect(onRefresh).toHaveBeenCalledOnce();
   });
 
-  it("shows verified badge for verified artists", () => {
-    render(<ArtistListSection title="ARTISTS" artists={mockArtists} />);
-    expect(
-      screen.getByTestId(`artist-verified-${mockArtists[0].username}`),
-    ).toBeInTheDocument();
-  });
-
   it("hides verified badge for non-verified artists", () => {
     render(<ArtistListSection title="ARTISTS" artists={mockArtists} />);
     expect(

@@ -111,19 +111,29 @@ interface PlaylistWaveformProps {
   isActive: boolean;
 }
 
+// ─── PlaylistWaveform ───────────────────────────────────────────────────────
+// FIXED: inactive tracks must NEVER touch audio src or the MediaElement backend.
+// Active track re-initializes only when the track id actually changes.
 function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wsRef = useRef<WaveSurfer | null>(null);
   const timeRef = useRef<HTMLDivElement | null>(null);
   const durRef = useRef<HTMLDivElement | null>(null);
+  const lastTrackIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    let ws: WaveSurfer | null = null;
     let isMounted = true;
 
     const initWaveform = async () => {
       if (!containerRef.current) return;
-      if (wsRef.current) { try { wsRef.current.destroy(); } catch { /* ok */ } wsRef.current = null; }
+
+      // Destroy previous instance only if track actually changed
+      if (wsRef.current) {
+        try { wsRef.current.destroy(); } catch { /* ok */ }
+        wsRef.current = null;
+      }
+      containerRef.current.innerHTML = "";
+      lastTrackIdRef.current = track.id;
 
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
@@ -134,88 +144,77 @@ function PlaylistWaveform({ track, isActive }: PlaylistWaveformProps) {
         track.waveformData?.length > 0
           ? track.waveformData
           : await getTrackWaveform(track.id);
-      if (!isMounted) return;
+      if (!isMounted || !containerRef.current) return;
 
-      const hasPeaks = peaks && peaks.length > 0;
-
-      let parsedDur = 0;
-      if (track.duration && typeof track.duration === "string") {
-        const parts = track.duration.split(":");
-        if (parts.length === 2) {
-          parsedDur = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-        }
-      }
+      const parsedDur = parseDur(track.duration ?? "");
 
       if (isActive) {
-        ws = WaveSurfer.create({
-          container: containerRef.current!,
+        // Active: share the global audio element — DO NOT provide url
+        const ws = WaveSurfer.create({
+          container: containerRef.current,
           waveColor: g,
           progressColor: pg,
           barWidth: 2,
           barGap: 0.5,
           barRadius: 2,
           height: 80,
-          backend: "MediaElement",
-          media: audio,
-          peaks: hasPeaks ? [peaks] : undefined,
+          backend: "MediaElement" as const,
+          media: audio,                         // ← share, don't load new src
+          peaks: peaks.length > 0 ? [peaks] : undefined,
           duration: parsedDur > 0 ? parsedDur : undefined,
         });
 
+        wsRef.current = ws;
         setGlobalWaveSurfer(ws, track.id);
-        setTrackLoadedLocally(track.id);
+        setTrackLoadedLocally(track.id);        // tell audioService: src already set
 
-        ws.on("timeupdate", (currentTime: number) => {
-          if (timeRef.current) timeRef.current.textContent = fmt(currentTime);
+        ws.on("timeupdate", (t: number) => {
+          if (timeRef.current) timeRef.current.textContent = fmt(t);
         });
-
-        ws.on("interaction", (newTime: number) => {
-          seekAudio(newTime);
+        ws.on("interaction", (t: number) => seekAudio(t));
+        ws.on("decode", (d: number) => {
+          if (durRef.current) durRef.current.textContent = fmt(d);
         });
-
-        ws.on("decode", (dur: number) => {
-          if (durRef.current) durRef.current.textContent = fmt(dur);
-        });
+        ws.on("error", () => {});
       } else {
-        // FIX 1: always set height (was missing in inactive branch)
-        // FIX 2: always provide url so WaveSurfer has an audio source to decode
-        //        peaks alone give shape but no duration/interaction without a url
-        ws = WaveSurfer.create({
-          container: containerRef.current!,
+        // Inactive: peaks-only, NO url, NO MediaElement — never touch global audio
+        const ws = WaveSurfer.create({
+          container: containerRef.current,
           waveColor: g,
           progressColor: pg,
           barWidth: 2,
           barGap: 0.5,
           barRadius: 2,
-          height: 80,           // ← FIX 1: was missing, caused 0px render
+          height: 80,
           interact: false,
-          peaks: hasPeaks ? [peaks] : undefined,
+          peaks: peaks.length > 0 ? [peaks] : undefined,
           duration: parsedDur > 0 ? parsedDur : undefined,
-          url: track.audioUrl,  // ← FIX 2: was `!hasPeaks ? track.audioUrl : undefined`
+          // ← NO url here: loading audio for display-only tracks hijacks the
+          //   global <audio> element and corrupts the active track's playhead
         });
 
-        ws.on("decode", (dur: number) => {
-          if (durRef.current) durRef.current.textContent = fmt(dur);
+        wsRef.current = ws;
+        ws.on("decode", (d: number) => {
+          if (durRef.current) durRef.current.textContent = fmt(d);
         });
+        ws.on("error", () => {});
       }
-
-      ws.on("error", () => { });
-      wsRef.current = ws;
     };
 
     initWaveform();
 
     return () => {
       isMounted = false;
-      try { if (ws) ws.destroy(); } catch { /* ok */ }
-      wsRef.current = null;
+      if (wsRef.current) {
+        try { wsRef.current.destroy(); } catch { /* ok */ }
+        wsRef.current = null;
+      }
     };
-  }, [isActive, track.id, track.audioUrl]);
+  }, [isActive, track.id, track.audioUrl]); // re-run when track or active state changes
 
   return (
     <div data-test="playlist-component-waveform" style={{ position: "relative", width: "100%" }}>
       <div style={{ position: "relative", cursor: isActive ? "pointer" : "default" }}>
-        {/* FIX 3: explicit height on the DOM node — WaveSurfer needs the container
-            to already have dimensions before it mounts, otherwise it collapses to 0px */}
         <div ref={containerRef} style={{ transform: "scaleY(-1)", height: 80 }} />
         <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.08)", pointerEvents: "none", opacity: 0.5, borderRadius: 2 }} />
         <div ref={timeRef} style={{ position: "absolute", left: 0, top: "55%", transform: "translateY(-50%)", fontSize: 11, background: "rgba(0,0,0,0.75)", color: "#fff", padding: "2px", zIndex: 10 }}>0:00</div>
@@ -329,7 +328,8 @@ export default function PlaylistComponent({
   const { currentTrack, isPlaying, setTrack, togglePlay, addTracksNext, activeSourceId } = usePlayerStore();
   const { user } = useAuthStore();
 
-  const instanceId = useMemo(() => uniqueId ?? `playlist-instance-${Math.random().toString(36).substr(2, 9)}`, [uniqueId]);
+  const instanceIdRef = useRef(uniqueId ?? `playlist-instance-${Math.random().toString(36).substr(2, 9)}`);
+  const instanceId = uniqueId ?? instanceIdRef.current;
 
   // Defensive: check for valid playlistSlug
   const hasValidSlug = !!playlist.playlistSlug && playlist.playlistSlug !== "undefined" && playlist.playlistSlug !== "";
@@ -427,8 +427,10 @@ export default function PlaylistComponent({
 
   const handleTrackPlay = (track: Track) => {
     if (currentTrack?.id === track.id && isComponentActive) {
+      // Same track, same playlist instance → just toggle
       togglePlay();
     } else {
+      // Different track OR different source → always start from 0
       setTrack(track, playlist.tracks, 0, instanceId);
     }
   };

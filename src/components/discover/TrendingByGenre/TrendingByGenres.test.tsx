@@ -57,14 +57,14 @@ describe("TrendingByGenres", () => {
   // ── Rendering ───────────────────────────────────────────
 
   it("renders the section container", () => {
-    render(<TrendingByGenres genres={[]} />);
+    render(<TrendingByGenres genres={[{ genre_id: "g-001", genre_name: "Pop" }]} />);
     expect(
       screen.getByTestId("section-trending-by-genres"),
     ).toBeInTheDocument();
   });
 
   it("renders the 'Trending by genres' carousel title", () => {
-    render(<TrendingByGenres genres={[]} />);
+    render(<TrendingByGenres genres={[{ genre_id: "g-001", genre_name: "Pop" }]} />);
     expect(screen.getByTestId("carousel-title")).toHaveTextContent(
       "Trending by genres",
     );

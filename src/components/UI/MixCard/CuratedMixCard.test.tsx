@@ -122,7 +122,7 @@ describe("CuratedMixCard", () => {
     );
   });
 
-  it("does not render an image when both cover_url and cover_image are null", () => {
+  it("renders image with fallback when both cover_url and cover_image are null", () => {
     const mix: CuratedHomeMixPreview = {
       ...baseMix,
       cover_url: null,
@@ -130,8 +130,8 @@ describe("CuratedMixCard", () => {
     };
     render(<CuratedMixCard mix={mix} />);
     expect(
-      screen.queryByTestId("curated-mix-card-image"),
-    ).not.toBeInTheDocument();
+      screen.getByTestId("curated-mix-card-image"),
+    ).toBeInTheDocument();
   });
 
   // ── Play icon state ──────────────────────────────────────

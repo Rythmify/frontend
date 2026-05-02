@@ -154,11 +154,13 @@ function TrackRow({
           <span className="text-[var(--color-text-muted)] text-xs shrink-0">
             ·
           </span>
-          <span
-            className={`text-sm font-bold truncate ${isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-hover)]"}`}
+          <Link
+            to={`/${track.artistUsername || "unknown"}/${track.trackSlug || track.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className={`text-sm font-bold truncate hover:underline ${isCurrent ? "text-[var(--color-accent)]" : "text-[var(--color-text-hover)]"}`}
           >
             {track.title}
-          </span>
+          </Link>
         </div>
 
         {/* ── Right: hover icons OR play count ── */}

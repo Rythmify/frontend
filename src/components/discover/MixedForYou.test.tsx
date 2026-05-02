@@ -61,7 +61,7 @@ describe("MixedForYou", () => {
   });
 
   it("renders the section container", () => {
-    render(<MixedForYou mixes={[]} />);
+    render(<MixedForYou mixes={[makeMix("m1")]} />);
     expect(screen.getByTestId("section-mixed-for-you")).toBeInTheDocument();
   });
 

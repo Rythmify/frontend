@@ -128,6 +128,9 @@ const TrackSlugPage = lazyWithRetry(
 const TrackEngagementPage = lazyWithRetry(
   () => import("@/pages/[username]/[trackSlug]/TrackEngagementPage"),
 );
+const TrackRelatedPage = lazyWithRetry(
+  () => import("@/pages/[username]/[trackSlug]/TrackRelatedPage"),
+);
 
 // Social
 const NotificationsPage = lazyWithRetry(
@@ -349,6 +352,7 @@ export const router = createBrowserRouter([
           { path: ":trackId", element: <Lazy component={TrackSlugPage} /> },
           { path: ":trackId/likes", element: <Lazy component={TrackEngagementPage} /> },
           { path: ":trackId/reposts", element: <Lazy component={TrackEngagementPage} /> },
+          { path: ":trackId/related", element: <Lazy component={TrackRelatedPage} /> },
           {
             path: "sets/:playlistSlug",
             element: <Lazy component={PlaylistSlugPage} />,

@@ -15,6 +15,14 @@ vi.mock("@/stores/likes.store", () => ({
   useLikesStore: vi.fn(),
 }));
 
+vi.mock("@/stores/auth.store", () => ({
+  useAuthStore: vi.fn(() => ({ user: { isPro: false } })),
+}));
+
+vi.mock("@/components/Premium/PremiumPromoModal", () => ({
+  default: () => null,
+}));
+
 vi.mock("@/components/UI/Spinner", () => ({
   default: () => <div data-test="spinner" />,
 }));
