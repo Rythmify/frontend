@@ -125,6 +125,12 @@ describe("EditProfileModal", () => {
         onSave={mockOnSave}
       />,
     );
+    expect(screen.getByTestId("edit-modal-close-button")).toHaveClass(
+      "bg-bg-actionbutton",
+    );
+    expect(screen.getByTestId("edit-modal-close-button")).toHaveClass(
+      "text-text-secondary",
+    );
     fireEvent.click(screen.getByTestId("edit-modal-close-button"));
     expect(mockOnClose).toHaveBeenCalled();
   });

@@ -208,7 +208,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       <button
         data-test="edit-modal-close-button"
         onClick={onClose}
-        className="fixed top-14 right-4 sm:top-16 sm:right-6 cursor-pointer text-bg text-lg hover:opacity-70 z-60 bg-bg-inverted rounded-full w-8 h-8 flex items-center justify-center"
+        className="fixed top-14 right-4 sm:top-16 sm:right-6 z-60 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-bg-actionbutton text-text-secondary hover:text-text hover:opacity-80"
       >
         <i className="fa-solid fa-xmark" />
       </button>
