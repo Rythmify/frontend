@@ -34,7 +34,7 @@ const buildActionText = (n: Notification): string => {
     case 'repost':
       return `reposted your ${rType} "${title}"`
     case 'comment':
-      return `commented "${n.resource_details?.content ?? ''}" on your ${rType}`
+      return `commented "${n.resource_details?.content ?? ''}" on your track`
     case 'new_post_by_followed':
       return `posted a new ${rType} `
     default:
@@ -126,8 +126,8 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
     }
     if (n.type === 'follow') {
       navigate(`/${n.actor.username}`)
-    } else if (n.resource_type==="track") {
-      navigate(`/${n.resource_type}/${n.resource_id}`)
+    } else if (n.resource_type==="track"||n.resource_type==="comment") {
+      navigate(`/track/${n.resource_id}`)
     } else if (n.resource_type==="playlist") {
       navigate(`/${n.actor.username}/sets/${n.resource_id}`)
     }

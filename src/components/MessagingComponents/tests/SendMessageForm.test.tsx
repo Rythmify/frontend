@@ -6,6 +6,8 @@ const mockSendMessage = vi.fn()
 const mockEmitMessageSent = vi.fn()
 const mockEmitStopTyping = vi.fn()
 const mockUseAuthStore = vi.fn()
+let mockObserver: { observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn>; unobserve: ReturnType<typeof vi.fn> }
+let intersectionCallback: IntersectionObserverCallback = () => {}
 
 vi.mock('@/services/api/messaging/conversationApi', () => ({
   sendMessage: (...args: unknown[]) => mockSendMessage(...args),
@@ -67,6 +69,14 @@ vi.mock('../TrackPlaylistPicker', () => ({
       >
         Pick Track
       </button>
+      <button
+        data-test="picker-pick-playlist"
+        onClick={() =>
+          onPick({ type: 'playlist', id: 'p1', title: 'My Playlist', trackCount: 12, coverImage: null })
+        }
+      >
+        Pick Playlist
+      </button>
       <button data-test="picker-close" onClick={onClose}>
         Close
       </button>
@@ -90,6 +100,13 @@ function makeMessage(id: string, body: string, senderId = 'user-1'): Message {
   } as Message
 }
 
+function setScrollHeight(element: Element, value: number) {
+  Object.defineProperty(element, 'scrollHeight', {
+    configurable: true,
+    value,
+  })
+}
+
 const defaultProps = {
   conversationId: 'conv-1',
   existingMessages: [],
@@ -109,9 +126,16 @@ describe('SendMessageForm', () => {
     )
     mockSendMessage.mockResolvedValue({ data: makeMessage('new-msg', 'Hello') })
 
-    // IntersectionObserver mock
-    const mockObserver = { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() }
-    vi.stubGlobal('IntersectionObserver', vi.fn(() => mockObserver))
+    // IntersectionObserver mock — must use `function`, not an arrow, so `new` works
+    mockObserver = { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() }
+    intersectionCallback = () => {}
+    vi.stubGlobal(
+      'IntersectionObserver',
+      vi.fn(function (callback: IntersectionObserverCallback) {
+        intersectionCallback = callback
+        return mockObserver
+      })
+    )
   })
 
   afterEach(() => {
@@ -264,9 +288,121 @@ describe('SendMessageForm', () => {
     it('sends via Enter key in the composer', async () => {
       render(<SendMessageForm {...defaultProps} />)
       fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
-      const composer = screen.getByTestId('send-message-form').querySelector('.shrink-0')!
+      const composer = screen.getByTestId('message-input').closest('.shrink-0')!
       fireEvent.keyDown(composer, { key: 'Enter', shiftKey: false })
       await waitFor(() => expect(mockSendMessage).toHaveBeenCalled())
+    })
+
+    it('does not send via Shift+Enter in the composer', () => {
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      const composer = screen.getByTestId('message-input').closest('.shrink-0')!
+      fireEvent.keyDown(composer, { key: 'Enter', shiftKey: true })
+      expect(mockSendMessage).not.toHaveBeenCalled()
+    })
+
+    it('clears empty-message error when MessageBox reports empty content', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      expect(screen.getByTestId('send-message-error')).toBeInTheDocument()
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'x' } })
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: '' } })
+      expect(screen.queryByTestId('send-message-error')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('loading older messages', () => {
+    it('calls onLoadMore when the top sentinel intersects and more messages exist', () => {
+      const onLoadMore = vi.fn()
+      render(<SendMessageForm {...defaultProps} hasMoreMessages={true} onLoadMore={onLoadMore} />)
+      intersectionCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
+      expect(onLoadMore).toHaveBeenCalled()
+    })
+
+    it('does not load more when sentinel is not intersecting', () => {
+      const onLoadMore = vi.fn()
+      render(<SendMessageForm {...defaultProps} hasMoreMessages={true} onLoadMore={onLoadMore} />)
+      intersectionCallback([{ isIntersecting: false } as IntersectionObserverEntry], {} as IntersectionObserver)
+      expect(onLoadMore).not.toHaveBeenCalled()
+    })
+
+    it('does not load more while messages are already loading', () => {
+      const onLoadMore = vi.fn()
+      render(
+        <SendMessageForm
+          {...defaultProps}
+          hasMoreMessages={true}
+          loadingMessages={true}
+          existingMessages={[makeMessage('m1', 'Hi')]}
+          onLoadMore={onLoadMore}
+        />
+      )
+      intersectionCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
+      expect(onLoadMore).not.toHaveBeenCalled()
+    })
+
+    it('does not load more when there are no older messages', () => {
+      const onLoadMore = vi.fn()
+      render(<SendMessageForm {...defaultProps} hasMoreMessages={false} onLoadMore={onLoadMore} />)
+      intersectionCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
+      expect(onLoadMore).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('scroll management', () => {
+    it('scrolls to the bottom when messages load for the first time', () => {
+      const { rerender } = render(<SendMessageForm {...defaultProps} existingMessages={[]} />)
+      const list = screen.getByTestId('send-message-list')
+      setScrollHeight(list, 420)
+
+      rerender(<SendMessageForm {...defaultProps} existingMessages={[makeMessage('m1', 'Hello')]} />)
+
+      expect(list.scrollTop).toBe(420)
+    })
+
+    it('scrolls to the bottom when a newer message is appended', () => {
+      const { rerender } = render(
+        <SendMessageForm {...defaultProps} existingMessages={[makeMessage('m1', 'Hello')]} />
+      )
+      const list = screen.getByTestId('send-message-list')
+      setScrollHeight(list, 640)
+
+      rerender(
+        <SendMessageForm
+          {...defaultProps}
+          existingMessages={[makeMessage('m1', 'Hello'), makeMessage('m2', 'New message')]}
+        />
+      )
+
+      expect(list.scrollTop).toBe(640)
+    })
+
+    it('preserves scroll position when older messages are prepended', () => {
+      const onLoadMore = vi.fn()
+      const { rerender } = render(
+        <SendMessageForm
+          {...defaultProps}
+          hasMoreMessages={true}
+          existingMessages={[makeMessage('m2', 'Newest')]}
+          onLoadMore={onLoadMore}
+        />
+      )
+      const list = screen.getByTestId('send-message-list')
+      setScrollHeight(list, 300)
+
+      intersectionCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
+      setScrollHeight(list, 500)
+
+      rerender(
+        <SendMessageForm
+          {...defaultProps}
+          hasMoreMessages={true}
+          existingMessages={[makeMessage('m1', 'Older'), makeMessage('m2', 'Newest')]}
+          onLoadMore={onLoadMore}
+        />
+      )
+
+      expect(list.scrollTop).toBe(200)
     })
   })
 
@@ -309,6 +445,30 @@ describe('SendMessageForm', () => {
       await userEvent.click(screen.getByTestId('add-track-playlist-button'))
       await userEvent.click(screen.getByTestId('add-track-playlist-button'))
       expect(screen.queryByTestId('track-playlist-picker')).not.toBeInTheDocument()
+    })
+
+    it('sends a picked track as an embed resource', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('add-track-playlist-button'))
+      await userEvent.click(screen.getByTestId('picker-pick-track'))
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() =>
+        expect(mockSendMessage).toHaveBeenCalledWith('conv-1', {
+          resource: { type: 'track', id: 't1' },
+        })
+      )
+    })
+
+    it('sends a picked playlist as an embed resource', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('add-track-playlist-button'))
+      await userEvent.click(screen.getByTestId('picker-pick-playlist'))
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() =>
+        expect(mockSendMessage).toHaveBeenCalledWith('conv-1', {
+          resource: { type: 'playlist', id: 'p1' },
+        })
+      )
     })
   })
 })

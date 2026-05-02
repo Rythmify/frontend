@@ -37,6 +37,13 @@ const mockPlaylist = (id: string, title = `Playlist ${id}`) => ({
   is_public: true,
 })
 
+const mockRepostedPlaylist = (id: string, title = `Reposted Playlist ${id}`) => ({
+  id,
+  title,
+  track_count: 12,
+  cover_image: null,
+})
+
 const defaultProps = {
   onPick: vi.fn(),
   onClose: vi.fn(),
@@ -95,6 +102,26 @@ describe('TrackPlaylistPicker', () => {
       await waitFor(() => screen.getByText('My Track'))
       expect(screen.getAllByText('My Track')).toHaveLength(1)
     })
+
+    it('renders private playlists with cover art and private indicator', async () => {
+      mockFetchMyTracks.mockResolvedValue({ data: [] })
+      mockFetchUserPlaylists.mockResolvedValue({
+        data: [
+          {
+            ...mockPlaylist('pl-private', 'Private Mix'),
+            cover_image: 'https://example.com/private.jpg',
+            is_public: false,
+          },
+        ],
+      })
+
+      render(<TrackPlaylistPicker {...defaultProps} />)
+
+      await waitFor(() => expect(screen.getByText('Private Mix')).toBeInTheDocument())
+      const privateRow = screen.getByRole('button', { name: /Private Mix/ })
+      expect(privateRow.querySelector('img')).toHaveAttribute('src', 'https://example.com/private.jpg')
+      expect(screen.getByLabelText('Private')).toBeInTheDocument()
+    })
   })
 
   describe('search/filter', () => {
@@ -127,6 +154,19 @@ describe('TrackPlaylistPicker', () => {
         target: { value: 'xyz-does-not-exist' },
       })
       expect(screen.getByText('No tracks or playlists found.')).toBeInTheDocument()
+    })
+
+    it('filters playlists by track count text', async () => {
+      mockFetchMyTracks.mockResolvedValue({ data: [] })
+      mockFetchUserPlaylists.mockResolvedValue({ data: [mockPlaylist('pl12', 'Dozen Songs')] })
+      render(<TrackPlaylistPicker {...defaultProps} />)
+      await waitFor(() => screen.getByText('Dozen Songs'))
+
+      fireEvent.change(screen.getByPlaceholderText('Select a track or playlist from your profile'), {
+        target: { value: '2' },
+      })
+
+      expect(screen.getByText('Dozen Songs')).toBeInTheDocument()
     })
   })
 
@@ -204,6 +244,14 @@ describe('TrackPlaylistPicker', () => {
       await waitFor(() => screen.getByTestId('track-playlist-picker'))
       // should not crash
     })
+
+    it('falls back to empty state when request setup throws', async () => {
+      mockFetchMyTracks.mockImplementation(() => {
+        throw new Error('boom')
+      })
+      render(<TrackPlaylistPicker {...defaultProps} />)
+      await waitFor(() => expect(screen.getByText('No tracks or playlists found.')).toBeInTheDocument())
+    })
   })
 
   describe('reposted tracks from array response', () => {
@@ -211,6 +259,20 @@ describe('TrackPlaylistPicker', () => {
       mockFetchMyRepostedTracks.mockResolvedValue([mockTrack('t2', 'Reposted Track')])
       render(<TrackPlaylistPicker {...defaultProps} />)
       await waitFor(() => expect(screen.getByText('Reposted Track')).toBeInTheDocument())
+    })
+
+    it('handles fallback tracks and playlists response keys', async () => {
+      mockFetchMyTracks.mockResolvedValue({ tracks: [mockTrack('t3', 'Fallback Track')] })
+      mockFetchUserPlaylists.mockResolvedValue({ playlists: [mockPlaylist('pl3', 'Fallback Playlist')] })
+      mockFetchMyRepostedPlaylists.mockResolvedValue({
+        playlists: [mockRepostedPlaylist('rp1', 'Fallback Repost')],
+      })
+
+      render(<TrackPlaylistPicker {...defaultProps} />)
+
+      await waitFor(() => expect(screen.getByText('Fallback Track')).toBeInTheDocument())
+      expect(screen.getByText('Fallback Playlist')).toBeInTheDocument()
+      expect(screen.getByText('Fallback Repost')).toBeInTheDocument()
     })
   })
 })
