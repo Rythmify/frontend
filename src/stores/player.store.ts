@@ -3,19 +3,40 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { Track } from "../types/track";
 import { useAuthStore } from "./auth.store";
 import { savePlayerState, getPlayerState } from "../services/api/playback.service";
+import { getPlaybackState, resolvePlaybackAudioUrl } from "../utils/playbackAccess";
+
+// Backend rejects saves without a real track_id; skip when nothing is playing.
+const TRACK_ID_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Debounced helper to avoid spamming the backend
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 function debouncedSave(userId: string, state: PlayerState) {
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
+    const trackId = state.currentTrack?.id;
+    if (!trackId || !TRACK_ID_UUID_RE.test(String(trackId))) return;
+
+    const queue = state.queue
+      .map((t) => t.id)
+      .filter((id) => id && TRACK_ID_UUID_RE.test(String(id)));
+
     savePlayerState({
-      trackId: state.currentTrack?.id,
+      trackId,
       positionSeconds: state.currentTime,
       volume: state.volume,
-      queue: state.queue.map((t) => t.id),
+      queue,
     });
   }, 2000);
+}
+
+function buildShuffledOrder(queueLength: number, currentIndex: number): number[] {
+  const others = Array.from({ length: queueLength }, (_, i) => i).filter(i => i !== currentIndex);
+  for (let i = others.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [others[i], others[j]] = [others[j], others[i]];
+  }
+  return [currentIndex, ...others];
 }
 
 // Dynamic import for audioService to avoid circular dependencies
@@ -39,6 +60,8 @@ interface PlayerState {
   volume: number;
   isMuted: boolean;
   isShuffle: boolean;
+  shuffledIndices: number[];
+  shuffledPos: number;
   repeatMode: "none" | "one" | "all";
   isLiked: boolean;
   isAutoplay: boolean;
@@ -85,6 +108,8 @@ export const usePlayerStore = create<PlayerState>()(
       volume: 1,
       isMuted: false,
       isShuffle: false,
+      shuffledIndices: [],
+      shuffledPos: 0,
       repeatMode: "none",
       isLiked: false,
       isAutoplay: true,
@@ -94,43 +119,50 @@ export const usePlayerStore = create<PlayerState>()(
         const newQueue = queue ?? get().queue;
         const index = newQueue.findIndex((t) => t.id === track.id);
         const isSameTrack = get().currentTrack?.id === track.id;
+        const { isShuffle } = get();
+        const canPlayThisTrack = getPlaybackState(track) !== "blocked";
 
         if (isSameTrack) {
+          const newIndex = index >= 0 ? index : get().queueIndex;
           set({
             currentTrack: {
               ...(get().currentTrack ?? track),
               ...track,
             },
             queue: newQueue,
-            queueIndex: index >= 0 ? index : get().queueIndex,
+            queueIndex: newIndex,
             isPlaying: true,
             currentTime: startTime ?? get().currentTime,
             activeSourceId: activeSourceId ?? get().activeSourceId,
+            ...(isShuffle && { shuffledIndices: buildShuffledOrder(newQueue.length, newIndex), shuffledPos: 1 }),
           });
           return;
         }
 
         const isFromNullState = get().currentTrack === null;
         const nextTime = startTime ?? (isFromNullState ? get().currentTime : 0);
+        const newIndex = index >= 0 ? index : 0;
 
         set({
           currentTrack: track,
           queue: newQueue,
-          queueIndex: index >= 0 ? index : 0,
+          queueIndex: newIndex,
           isPlaying: true,
           currentTime: nextTime,
           isLiked: false,
           activeSourceId: activeSourceId ?? null,
+          ...(isShuffle && { shuffledIndices: buildShuffledOrder(newQueue.length, newIndex), shuffledPos: 1 }),
         });
       },
 
       playContext: async (sourceType, sourceId, fallbackTrack, startTime, activeSourceId) => {
-        // Optimistically play the track immediately
+        const canPlayFallback = getPlaybackState(fallbackTrack) !== "blocked";
+        // Optimistically load the track; respect geo / tier blocking (no audio URL).
         set({
           currentTrack: fallbackTrack,
           queue: [fallbackTrack],
           queueIndex: 0,
-          isPlaying: true,
+          isPlaying: canPlayFallback,
           currentTime: startTime || 0,
           activeSourceId: activeSourceId ?? null,
         });
@@ -146,26 +178,47 @@ export const usePlayerStore = create<PlayerState>()(
           
           if (res && res.queue) {
             // Map backend queue format to frontend Track[]
-            const mappedQueue = res.queue.map(q => ({
-               id: q.track_id || q.id,
-               title: q.track_title || q.title || "Unknown Title",
-               artistName: q.artist_name || q.artistName || "Unknown Artist",
-               artistUsername: q.artist_username || q.username || q.artistUsername || "unknown",
-               audioUrl: q.stream_url || q.audioUrl || "",
-               coverUrl: q.cover_image || q.coverUrl || "",
-               duration: String(q.duration || 0),
-               waveformData: q.waveformData || [],
-               playCount: q.playCount || 0,
-               likeCount: q.likeCount || 0,
-               repostCount: q.repostCount || 0,
-               commentCount: q.commentCount || 0,
-            } as Track));
+            const mappedQueue = res.queue.map((q) => {
+              const base = {
+                id: String(q.track_id || q.id),
+                title: q.track_title || q.title || "Unknown Title",
+                artistName: q.artist_name || q.artistName || "Unknown Artist",
+                artistUsername: q.artist_username || q.username || q.artistUsername || "unknown",
+                coverUrl: q.cover_image || q.coverUrl || "",
+                duration: String(q.duration || 0),
+                waveformData: q.waveformData || [],
+                playCount: q.playCount || 0,
+                likeCount: q.likeCount || 0,
+                repostCount: q.repostCount || 0,
+                commentCount: q.commentCount || 0,
+                streamUrl:
+                  typeof q.stream_url === "string" && q.stream_url
+                    ? q.stream_url
+                    : typeof q.audio_url === "string" && q.audio_url
+                      ? q.audio_url
+                      : undefined,
+                previewUrl:
+                  typeof q.preview_url === "string" && q.preview_url
+                    ? q.preview_url
+                    : undefined,
+                isGeoBlocked: q.is_geo_blocked === true,
+                playbackRestrictionReason: q.playback_restriction_reason ?? null,
+                enableAppPlayback: q.enable_app_playback !== false,
+                trackSlug: q.track_slug || q.slug || String(q.track_id || q.id),
+              };
+              return {
+                ...base,
+                audioUrl: resolvePlaybackAudioUrl(base),
+              } as Track;
+            });
             
-            const qIndex = mappedQueue.findIndex(t => String(t.id) === String(fallbackTrack.id));
-            
+            const qIndex = Math.max(0, mappedQueue.findIndex(t => String(t.id) === String(fallbackTrack.id)));
+            const { isShuffle } = get();
+
             set({
                queue: mappedQueue,
-               queueIndex: Math.max(0, qIndex)
+               queueIndex: qIndex,
+               ...(isShuffle && { shuffledIndices: buildShuffledOrder(mappedQueue.length, qIndex), shuffledPos: 1 }),
             });
           }
         } catch (e) {
@@ -178,9 +231,9 @@ export const usePlayerStore = create<PlayerState>()(
       togglePlay: () => set((s) => ({ isPlaying: !s.isPlaying })),
 
       next: () => {
-        const { queue, queueIndex, isShuffle, isAutoplay, currentTrack } = get();
+        const { queue, queueIndex, isShuffle, shuffledIndices, shuffledPos, isAutoplay, currentTrack } = get();
         if (!queue.length) return;
-        
+
         if (queue.length === 1 && queueIndex >= queue.length - 1 && isAutoplay && currentTrack) {
           import("../services/track.service").then(async (m) => {
             try {
@@ -188,7 +241,7 @@ export const usePlayerStore = create<PlayerState>()(
               if (tracks && tracks.length > 0) {
                 const filtered = tracks.filter((t: Track) => !queue.some(q => q.id === t.id));
                 if (filtered.length > 0) {
-                   set((s) => ({ 
+                   set((s) => ({
                      queue: [...s.queue, ...filtered],
                      currentTrack: filtered[0],
                      queueIndex: s.queueIndex + 1,
@@ -201,18 +254,33 @@ export const usePlayerStore = create<PlayerState>()(
             } catch (err) {
               console.error("Autoplay failed", err);
             }
-            const nextIndex = isShuffle ? Math.floor(Math.random() * queue.length) : (queueIndex + 1) % queue.length;
+            const nextIndex = (queueIndex + 1) % queue.length;
             set({ currentTrack: queue[nextIndex], queueIndex: nextIndex, isPlaying: true, currentTime: 0 });
           });
           return;
         }
 
-        let nextIndex: number;
         if (isShuffle) {
-          nextIndex = Math.floor(Math.random() * queue.length);
-        } else {
-          nextIndex = (queueIndex + 1) % queue.length;
+          let indices = shuffledIndices;
+          let pos = shuffledPos;
+          if (pos >= indices.length) {
+            // All tracks played — re-shuffle for next cycle
+            indices = buildShuffledOrder(queue.length, queueIndex);
+            pos = 0;
+          }
+          const nextIndex = indices[pos];
+          set({
+            currentTrack: queue[nextIndex],
+            queueIndex: nextIndex,
+            isPlaying: true,
+            currentTime: 0,
+            shuffledIndices: indices,
+            shuffledPos: pos + 1,
+          });
+          return;
         }
+
+        const nextIndex = (queueIndex + 1) % queue.length;
         set({
           currentTrack: queue[nextIndex],
           queueIndex: nextIndex,
@@ -254,7 +322,13 @@ export const usePlayerStore = create<PlayerState>()(
       setDuration: (duration) => set({ duration }),
       setVolume: (volume) => set({ volume, isMuted: volume === 0 }),
       toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
-      toggleShuffle: () => set((s) => ({ isShuffle: !s.isShuffle })),
+      toggleShuffle: () => set((s) => {
+        if (s.isShuffle) {
+          return { isShuffle: false, shuffledIndices: [], shuffledPos: 0 };
+        }
+        const indices = buildShuffledOrder(s.queue.length, s.queueIndex);
+        return { isShuffle: true, shuffledIndices: indices, shuffledPos: 1 };
+      }),
       toggleRepeat: () =>
         set((s) => {
           const modes: ("none" | "all" | "one")[] = ["none", "all", "one"];

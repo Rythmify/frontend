@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useDownloadStore } from "@/stores/useDownload";
-import * as engagementService from "@/services/engagement.service";
 import { getRelatedTracks } from "@/services/track.service";
 import SharePopup from "@/pages/[username]/[trackSlug]/components/SharePopup";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
@@ -66,22 +65,40 @@ const TrackItem: React.FC<TrackItemProps> = ({
   const [hovered, setHovered] = useState(false);
   const [coverHovered, setCoverHovered] = useState(false);
   const [showMore, setShowMore] = useState(false);
-  const [reposted, setReposted] = useState(initialReposted);
   const [shareOpen, setShareOpen] = useState(false);
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
   const navigate = useNavigate();
   const { setTrack, currentTrack, isPlaying, togglePlay } = usePlayerStore();
   const isTrackLiked = useLikesStore((s) => s.isTrackLiked);
+  const storeReposted = useLikesStore((s) => s.isTrackReposted(id));
+  const storeHasRepostInfo = useLikesStore((s) => {
+    const trackStats = s.itemStats[String(id)];
+    return (
+      s.repostedTrackIds.includes(String(id)) ||
+      trackStats?.isReposted !== undefined
+    );
+  });
   const toggleTrack = useLikesStore((s) => s.toggleTrack);
+  const toggleRepost = useLikesStore((s) => s.toggleRepost);
   const { addTrack } = useHistoryStore();
   const { user } = useAuthStore();
   const { isDownloaded, toggleDownload } = useDownloadStore();
 
   const liked = isTrackLiked(id);
+  const [reposted, setReposted] = useState(() =>
+    storeHasRepostInfo ? storeReposted : initialReposted,
+  );
+
+  useEffect(() => {
+    if (storeHasRepostInfo && reposted !== storeReposted) {
+      setReposted(storeReposted);
+    }
+  }, [storeHasRepostInfo, storeReposted, reposted]);
+
   const finalArtistSlug =
     artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-");
 
-  const trackPath = `/discover/personalised/${trackSlug ?? ""}:${id}`;
+  const trackPath = `/${finalArtistSlug}/${trackSlug ?? id}`;
   const trackForActions: Track = {
     id,
     title,
@@ -118,11 +135,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
     const wasReposted = reposted;
     setReposted(!wasReposted);
     try {
-      if (wasReposted) {
-        await engagementService.removeRepost(id);
-      } else {
-        await engagementService.repostTrack(id);
-      }
+      await toggleRepost(trackForActions);
     } catch (err) {
       console.error("Repost failed", err);
       setReposted(wasReposted);
@@ -183,7 +196,7 @@ const TrackItem: React.FC<TrackItemProps> = ({
         className="w-12 h-12 cursor-pointer flex-shrink-0 bg-border rounded overflow-hidden relative"
         onMouseEnter={() => setCoverHovered(true)}
         onMouseLeave={() => setCoverHovered(false)}
-        onClick={() => navigate(`/${finalArtistSlug}/${id}`)}
+        onClick={() => navigate(`/${finalArtistSlug}/${trackSlug ?? id}`)}
       >
         <CoverImage
           src={coverUrl}

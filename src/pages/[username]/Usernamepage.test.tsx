@@ -26,8 +26,16 @@ vi.mock("react-router-dom", () => ({
 }));
 
 vi.mock("@/stores/auth.store", () => ({
-  useAuthStore: vi.fn(),
+  useAuthStore: Object.assign(vi.fn(), {
+    subscribe: vi.fn(),
+    getState: vi.fn(),
+  }),
 }));
+
+const mockAuthStore = {
+  user: null,
+  setUser: vi.fn(),
+};
 
 vi.mock("@/services/user.service", () => ({
   getMyProfile: (...args: unknown[]) => mockGetMyProfile(...args),
@@ -228,13 +236,19 @@ describe("UsernamePage", () => {
       message: "ok",
     });
     const authStoreMock = useAuthStore as unknown as ReturnType<typeof vi.fn>;
-    authStoreMock.mockReturnValue({
-      user: mockCurrentUser,
-      setUser: vi.fn(),
+    authStoreMock.mockImplementation((selector?: unknown) => {
+      const state = {
+        ...mockAuthStore,
+        user: mockCurrentUser,
+      };
+      if (typeof selector === "function") {
+        return (selector as (value: typeof state) => unknown)(state);
+      }
+      return state;
     });
     (authStoreMock as unknown as { getState: () => unknown }).getState = () => ({
+      ...mockAuthStore,
       user: mockCurrentUser,
-      setUser: vi.fn(),
     });
     (useLocation as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       pathname: "/me",

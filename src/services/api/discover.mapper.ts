@@ -62,8 +62,8 @@ export function mapTrackSummaryToTrack(api: TrackSummary): Track {
   return {
     id: api.id as unknown as string,
     title: api.title,
-    artistName: "", // user_id only — call getUserById(api.user_id) to get display_name
-    artistUsername: "",
+    artistName: api.artist_name ?? "",
+    artistUsername: api.artist_username ?? "",
     coverUrl: api.cover_image ?? "",
     genre: api.genre ?? "",
     likeCount: api.like_count,
@@ -71,8 +71,9 @@ export function mapTrackSummaryToTrack(api: TrackSummary): Track {
     playCount: api.play_count,
     commentCount: 0,
     duration: api.duration ? formatDuration(api.duration) : "0:00",
-    postedAt: "", // TrackSummary has no created_at
+    postedAt: "",
     audioUrl: api.stream_url ?? "",
+    trackSlug: api.track_slug ?? api.id,
     waveformData: [],
   };
 }

@@ -27,7 +27,11 @@ vi.mock("@/stores/player.store", () => ({
 
 const mockLikesStore = {
   isTrackLiked: vi.fn().mockReturnValue(false),
+  isTrackReposted: vi.fn().mockReturnValue(false),
+  repostedTrackIds: [],
+  itemStats: {},
   toggleTrack: vi.fn(),
+  toggleRepost: vi.fn().mockResolvedValue(undefined),
 };
 
 vi.mock("@/stores/likes.store", () => ({
@@ -147,5 +151,27 @@ describe("TrackItem", () => {
     fireEvent.click(screen.getByTestId("track-more-button-1"));
     fireEvent.click(screen.getByTestId("track-more-download-1"));
     expect(mockNavigate).toHaveBeenCalledWith("/premium");
+  });
+
+  it("shows Unrepost when the track is already reposted", () => {
+    render(<TrackItem {...defaultProps} initialReposted />);
+    const container = screen.getByTestId("track-item-1");
+    fireEvent.mouseEnter(container);
+    fireEvent.click(screen.getByTestId("track-more-button-1"));
+    expect(screen.getByTestId("track-more-repost-1")).toHaveTextContent(
+      "Unrepost",
+    );
+  });
+
+  it("switches back to Repost when unreposted", async () => {
+    render(<TrackItem {...defaultProps} initialReposted />);
+    const container = screen.getByTestId("track-item-1");
+    fireEvent.mouseEnter(container);
+    fireEvent.click(screen.getByTestId("track-more-button-1"));
+    fireEvent.click(screen.getByTestId("track-more-repost-1"));
+    expect(mockLikesStore.toggleRepost).toHaveBeenCalled();
+    expect(screen.getByTestId("track-more-repost-1")).toHaveTextContent(
+      "Repost",
+    );
   });
 });

@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import TrackCard from "@/components/UI/card/Card";
 import type { Track } from "@/types/track";
+import { useAuthStore } from "@/stores/auth.store";
+import { useDownloadStore } from "@/stores/useDownload";
 
 // ─── Mocks ────────────────────────────────────────────────
 
@@ -37,6 +39,8 @@ const mockLikesStore = {
   toggleRadioTrack: vi.fn(),
 };
 
+const mockToggleDownload = vi.fn();
+
 vi.mock("@/stores/likes.store", () => ({
   useLikesStore: vi.fn(() => mockLikesStore),
 }));
@@ -47,14 +51,25 @@ vi.mock("@/stores/history.store", () => ({
   })),
 }));
 
+vi.mock("@/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
+
+vi.mock("@/stores/useDownload", () => ({
+  useDownloadStore: vi.fn(),
+}));
+
 vi.mock("@/components/UI/CardOverlay/CardOverlay", () => ({
-  default: ({ isPlaying, onPlay, isLiked, onLike, moreMenuItems }: any) => (
+  default: ({ isPlaying, onPlay, isLiked, onLike, downloadMenuItem, moreMenuItems }: any) => (
     <div data-test="card-overlay">
       <button data-test="button-play" onClick={onPlay}>
         {isPlaying ? "Pause" : "Play"}
       </button>
       <button data-test="button-like" onClick={onLike}>
         {isLiked ? "Unlike" : "Like"}
+      </button>
+      <button data-test="button-download" onClick={downloadMenuItem?.onClick}>
+        {downloadMenuItem?.label ?? "No download"}
       </button>
       <button data-test="button-more" onClick={moreMenuItems[0]?.onClick}>
         More
@@ -102,6 +117,11 @@ describe("TrackCard", () => {
     mockPlayerStore.currentTrack = null;
     mockPlayerStore.isPlaying = false;
     mockLikesStore.isTrackLiked.mockReturnValue(false);
+    vi.mocked(useAuthStore).mockReturnValue({ user: { isPro: true } } as any);
+    vi.mocked(useDownloadStore).mockReturnValue({
+      isDownloaded: vi.fn().mockReturnValue(false),
+      toggleDownload: mockToggleDownload,
+    } as any);
   });
 
   it("renders cover image, title and artist", () => {
@@ -165,5 +185,25 @@ describe("TrackCard", () => {
     fireEvent.click(screen.getByTestId("button-more"));
     
     expect(screen.getByTestId("add-to-playlist-modal")).toBeInTheDocument();
+  });
+
+  it("passes a download action into the overlay for pro users", () => {
+    render(<TrackCard track={mockTrack} />);
+
+    expect(screen.getByTestId("button-download")).toHaveTextContent("Download");
+    fireEvent.click(screen.getByTestId("button-download"));
+
+    expect(mockToggleDownload).toHaveBeenCalledWith(mockTrack, true);
+  });
+
+  it("sends non-pro users to premium from the overlay download action", () => {
+    vi.mocked(useAuthStore).mockReturnValue({ user: { isPro: false } } as any);
+
+    render(<TrackCard track={mockTrack} />);
+
+    expect(screen.getByTestId("button-download")).toHaveTextContent("Download");
+    fireEvent.click(screen.getByTestId("button-download"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/premium");
   });
 });
