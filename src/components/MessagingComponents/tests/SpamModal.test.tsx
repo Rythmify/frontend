@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { SpamModal } from "./SpamModal"
-import * as conversationApi from "../../services/api/messaging/conversationApi"
+import { SpamModal } from "@/components/UI/SpamModal"
+import * as conversationApi from "@/services/api/messaging/conversationApi"
 
-vi.mock("../../services/api/messaging/conversationApi", () => ({
+vi.mock("@/services/api/messaging/conversationApi", () => ({
   blockUser: vi.fn(),
   submitReport: vi.fn(),
 }))

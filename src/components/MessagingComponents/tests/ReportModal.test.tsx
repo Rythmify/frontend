@@ -1,9 +1,9 @@
 import { render, screen, fireEvent } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { ReportModal } from "./ReportModal"
-import * as externalHandler from "../MessagingComponents/externalhandler"
+import { ReportModal } from "@/components/UI/ReportModal"
+import * as externalHandler from "@/components/MessagingComponents/externalhandler"
 
-vi.mock("../MessagingComponents/externalhandler", () => ({
+vi.mock("@/components/MessagingComponents/externalhandler", () => ({
   handleExternalAbuse:        vi.fn(),
   handleExternalImpersonation: vi.fn(),
   handleExternalOther:        vi.fn(),
