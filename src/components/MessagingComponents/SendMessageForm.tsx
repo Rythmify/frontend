@@ -6,6 +6,8 @@ import type { ResolvedEmbed } from './MessageBox';
 import MessageCell from './messagecell';
 import { useAuthStore } from '@/stores/auth.store';
 import { emitMessageSent, emitStopTyping } from '@/services/api/messaging/socketService';
+import TrackPlaylistPicker from './TrackPlaylistPicker';
+import type { PickedItem } from './TrackPlaylistPicker';
 
 interface SendMessageFormProps {
   conversationId: string;
@@ -35,17 +37,19 @@ export default function SendMessageForm({
   isTyping,
   ParticipantInfo,
 }: SendMessageFormProps) {
-  const [value, setValue]         = useState('');
-  const [embeds, setEmbeds]       = useState<ResolvedEmbed[]>([]);
-  const [error, setError]         = useState<string | null>(null);
-  const [isSending, setIsSending] = useState(false);
-  const [boxKey, setBoxKey]       = useState(0);
+  const [value, setValue]           = useState('');
+  const [embeds, setEmbeds]         = useState<ResolvedEmbed[]>([]);
+  const [error, setError]           = useState<string | null>(null);
+  const [isSending, setIsSending]   = useState(false);
+  const [boxKey, setBoxKey]         = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const scrollContainerRef  = useRef<HTMLDivElement>(null);
   const sentinelRef         = useRef<HTMLDivElement>(null);
   const prevMsgCountRef     = useRef(0);
   const prevScrollHeightRef = useRef(0);
   const isPrependingRef     = useRef(false);
+  const composerRef         = useRef<HTMLDivElement>(null);
 
   // ─── Scroll management ────────────────────────────────────────────────────
   useEffect(() => {
@@ -56,23 +60,19 @@ export default function SendMessageForm({
     const current = existingMessages.length;
 
     if (isPrependingRef.current) {
-      // Older messages were prepended — restore the user's scroll position
-      // so the view doesn't jump to the top
       const newScrollHeight = container.scrollHeight;
       container.scrollTop   = newScrollHeight - prevScrollHeightRef.current;
       isPrependingRef.current = false;
     } else if (prev === 0 && current > 0) {
-      // Initial load — jump to bottom to show newest messages
       container.scrollTop = container.scrollHeight;
     } else if (current > prev) {
-      // New message sent or received — scroll to bottom
       container.scrollTop = container.scrollHeight;
     }
 
     prevMsgCountRef.current = current;
   }, [existingMessages]);
 
-  // ─── IntersectionObserver — sentinel at TOP, loads older messages ─────────
+  // ─── IntersectionObserver — sentinel at TOP ───────────────────────────────
   const handleIntersect = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (!entries[0].isIntersecting) return;
@@ -80,7 +80,6 @@ export default function SendMessageForm({
 
       const container = scrollContainerRef.current;
       if (container) {
-        // Snapshot current scroll height before prepend so we can restore position
         prevScrollHeightRef.current = container.scrollHeight;
         isPrependingRef.current     = true;
       }
@@ -100,6 +99,51 @@ export default function SendMessageForm({
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [handleIntersect]);
+
+  // ─── Handle pick from TrackPlaylistPicker ─────────────────────────────────
+  // The picker emits a PickedItem; we inject it as a URL-less embed directly
+  // so the user sees a MiniPlayer card without having to paste a link.
+  const handlePick = useCallback((item: PickedItem) => {
+    // Build a synthetic ResolvedEmbed so MessageBox / send logic handles it
+    const syntheticEmbed: ResolvedEmbed =
+      item.type === 'track'
+        ? {
+            type: 'track',
+            id: item.id,
+            sourceUrl: '',          // no URL to strip from textarea
+            resource: {
+              id: item.id,
+              title: item.title,
+              cover_image: item.coverImage,
+              artist_name: item.artistName,
+              // required Message fields that aren't displayed in the picker
+              description: null, genre: null, duration: null, bitrate: null,
+              status: 'public', is_public: true, is_hidden: false,
+              user_id: '', play_count: 0, like_count: 0,
+              stream_url: null, preview_url: null, waveform_url: null,
+              artists: null, created_at: '', updated_at: '',
+            } as any,
+          }
+        : {
+            type: 'playlist',
+            id: item.id,
+            sourceUrl: '',
+            resource: {
+              playlist_id: item.id,
+              name: item.title,
+              cover_image: item.coverImage,
+              track_count: item.trackCount,
+              owner_user_id: '', slug: null, description: null,
+              is_public: true, like_count: 0, repost_count: 0,
+              created_at: '', updated_at: '',
+            } as any,
+          };
+
+    setEmbeds((prev) => [...prev, syntheticEmbed]);
+    // Notify MessageBox parent of updated embeds
+    setBoxKey((k) => k + 1);          // remount so MessageBox re-syncs
+    setError(null);
+  }, []);
 
   // ─── Send handler ─────────────────────────────────────────────────────────
   const handleSend = async () => {
@@ -184,7 +228,6 @@ export default function SendMessageForm({
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto flex flex-col gap-4 px-3 py-3 min-h-0"
       >
-        {/* Sentinel at TOP — becomes visible when user scrolls up, triggers older page load */}
         <div ref={sentinelRef} data-test="send-message-sentinel" className="h-1 w-full shrink-0" />
 
         {loadingMessages && hasMoreMessages && (
@@ -217,9 +260,10 @@ export default function SendMessageForm({
 
       {/* ── Composer ── */}
       <div
-        className="shrink-0 flex flex-col gap-2 px-3 pb-3 pt-2 bg-bg border-t border-white/10"
+        ref={composerRef}
+        className="shrink-0 flex flex-col gap-2 px-3 pb-3 pt-2 bg-bg border-t border-white/10 relative"
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
+          if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSend();
           }
@@ -238,11 +282,34 @@ export default function SendMessageForm({
           }}
           onEmbedsResolved={setEmbeds}
           hasError={!!error}
+          // Pass externally-picked embeds so MessageBox renders their MiniPlayers
+          externalEmbeds={embeds}
         />
+
+        {pickerOpen && (
+          <TrackPlaylistPicker
+            onPick={handlePick}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
 
         {error && <p data-test="send-message-error" className="text-xs text-red-400">{error}</p>}
 
-        <div className="flex justify-end">
+        <div className="flex justify-between">
+          {user?.role === 'artist' && (
+            <button
+              type="button"
+              data-test="add-track-playlist-button"
+              onClick={() => setPickerOpen((o) => !o)}
+              className={`px-5 py-2 text-sm font-semibold text-black border rounded-lg transition-colors ${
+                pickerOpen
+                  ? 'border-white bg-white'
+                  : 'border-white bg-white hover:bg-white/85'
+              }`}
+            >
+              Add track or playlist
+            </button>
+          )}
           <button
             data-test="send-message-button"
             onClick={handleSend}

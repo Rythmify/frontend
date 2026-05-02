@@ -40,6 +40,7 @@ export default function FollowButton({
   const resolvedIsFollowing = hasToggled ? storeIsFollowing : isFollowing;
 
   const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!user || isLoading || isSelf || !userId) return;
 

@@ -98,6 +98,10 @@ export default function AlbumsPage() {
     hasMoreRef.current = albums.length < total;
   }, [albums.length, total]);
 
+  useEffect(() => {
+    return () => setFilters(null);
+  }, []);
+
   // ── Empty query ───────────────────────────────────────────────────────────
   if (!q.trim()) {
     return (
@@ -121,10 +125,6 @@ export default function AlbumsPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-  return () => setFilters(null);
-}, []);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

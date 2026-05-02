@@ -98,6 +98,10 @@ export default function SetsPage() {
     hasMoreRef.current = playlists.length < total;
   }, [playlists.length, total]);
 
+  useEffect(() => {
+    return () => setFilters(null);
+  }, []);
+
   if (!q.trim()) {
     return (
       <div className="flex items-center justify-center py-20 text-text-muted text-sm">
@@ -119,10 +123,6 @@ export default function SetsPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-  return () => setFilters(null);
-}, []);
 
   return (
     <div className="flex flex-col w-full">
