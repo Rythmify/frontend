@@ -5,9 +5,11 @@ import type { Notification } from "@/services/api/notifications/notificationsAPI
 
 const mockFetchUnreadCount = vi.hoisted(() => vi.fn());
 const mockRefreshUnreadCount = vi.hoisted(() => vi.fn());
-const socketHandlers = vi.hoisted(() => new Map<string, Function>());
+type SocketHandler = (...args: unknown[]) => void;
+
+const socketHandlers = vi.hoisted(() => new Map<string, SocketHandler>());
 const mockSocket = vi.hoisted(() => ({
-  on: vi.fn((event: string, cb: Function) => socketHandlers.set(event, cb)),
+  on: vi.fn((event: string, cb: SocketHandler) => socketHandlers.set(event, cb)),
   off: vi.fn((event: string) => socketHandlers.delete(event)),
 }));
 
