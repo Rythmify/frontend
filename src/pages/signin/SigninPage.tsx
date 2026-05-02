@@ -281,12 +281,12 @@ function SigninFlow() {
       <p className="text-md font-semibold text-text-secondary w-full">
         By clicking on any of the "Continue" buttons below, you agree to
         Rythmify's{" "}
-        <a href="/terms" className="text-text-link hover:text-text-link-hover">
+        <a href="https://help.soundcloud.com/hc/en-us/sections/46266771825691" className="text-text-link hover:text-text-link-hover">
           Terms of Use
         </a>{" "}
         and acknowledge our{" "}
         <a
-          href="/privacy"
+          href="https://help.soundcloud.com/hc/en-us/sections/46266771825691"
           className="text-text-link hover:text-text-link-hover"
         >
           Privacy Policy
@@ -353,7 +353,7 @@ function SigninFlow() {
           Continue
         </button>
         <a
-          href="/help"
+          href="https://help.soundcloud.com/hc/en-us/sections/46266771825691"
           className="text-text-link hover:text-text-link-hover text-md"
         >
           Need help?

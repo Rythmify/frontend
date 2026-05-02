@@ -6,6 +6,7 @@ import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
 import CardOverlay from "@/components/UI/CardOverlay/CardOverlay";
+import CoverImage from "@/components/UI/CoverImage";
 
 interface Props {
   mix: CuratedHomeMixPreview;
@@ -63,14 +64,12 @@ export default function CuratedMixCard({
     >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {coverSrc && (
-          <img
-            src={coverSrc}
-            alt={mix.title}
-            className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
-            data-test="curated-mix-card-image"
-          />
-        )}
+        <CoverImage
+          src={coverSrc}
+          alt={mix.title}
+          className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
+          data-test="curated-mix-card-image"
+        />
 
         {/* Title badge */}
         <div

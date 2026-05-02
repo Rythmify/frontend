@@ -32,13 +32,13 @@ const TABS: { key: InsightsTab; badge?: React.ReactNode }[] = [
 
 export function InsightsTabs({ active, onChange }: Props) {
   return (
-    <div className="flex items-center gap-6 mb-6">
+    <div className="flex items-center gap-4 md:gap-6 mb-6 overflow-x-auto scrollbar-hide">
       {TABS.map(({ key, badge }) => (
         <button
           key={key}
           type="button"
           onClick={() => onChange(key)}
-          className={`flex items-center gap-2 pb-3 text-lg tracking-tighter font-semibold transition-colors cursor-pointer border-b-2 ${
+          className={`shrink-0 flex items-center gap-2 pb-3 text-base md:text-lg tracking-tighter font-semibold transition-colors cursor-pointer border-b-2 ${
             active === key
               ? "border-white text-white"
               : "border-transparent text-text hover:text-text-hover"

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import CoverImage from "@/components/UI/CoverImage";
 import type { Track } from "@/services/api/upload/track.service";
 import { formatDuration, formatDate } from "./utils";
 
@@ -40,14 +41,8 @@ export function TrackRow({ track, selected, onToggle, onEdit, onAddToPlaylist, o
       />
 
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-14 h-14 shrink-0 rounded-sm bg-input-bg overflow-hidden flex items-center justify-center">
-          {track.cover_image ? (
-            <img src={track.cover_image} alt={track.title} className="w-full h-full object-cover" />
-          ) : (
-            <svg viewBox="0 0 24 24" className="w-6 h-6 text-text-hover" fill="currentColor">
-              <path d="m10 16.5 6-4.5-6-4.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8" />
-            </svg>
-          )}
+        <div className="w-14 h-14 shrink-0 rounded-sm overflow-hidden">
+          <CoverImage src={track.cover_image} alt={track.title} className="w-full h-full object-cover" />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2">

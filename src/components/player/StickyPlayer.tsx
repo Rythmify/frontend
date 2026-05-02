@@ -13,6 +13,7 @@ import QueuePanel from "./QueuePanel";
 import { FaHeart, FaUserPlus, FaUserCheck } from "react-icons/fa";
 import { MdQueueMusic } from "react-icons/md";
 import FollowButton from "../UI/FollowButton";
+import CoverImage from "@/components/UI/CoverImage";
 
 export default function StickyPlayer() {
   const {
@@ -64,16 +65,16 @@ export default function StickyPlayer() {
       />
       {/* 7. Artwork + Track Info — far right */}
       <div className="flex items-center gap-2 shrink-0 w-40">
-        {currentTrack.coverUrl && (
-          <Link to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}/${currentTrack.trackSlug || currentTrack.id}`}>
-            <img
-              data-test="player-track-artwork"
+        <Link to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}/${currentTrack.trackSlug || currentTrack.id}`}>
+          <div className="w-10 h-10 rounded overflow-hidden shrink-0">
+            <CoverImage
               src={currentTrack.coverUrl}
               alt={currentTrack.title}
-              className="w-10 h-10 rounded object-cover shrink-0 hover:opacity-80 transition-opacity"
+              className="w-full h-full object-cover hover:opacity-80 transition-opacity"
+              data-test="player-track-artwork"
             />
-          </Link>
-        )}
+          </div>
+        </Link>
         <div className="flex flex-col min-w-0">
           <Link
             to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}/${currentTrack.trackSlug || currentTrack.id}`}

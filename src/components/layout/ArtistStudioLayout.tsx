@@ -154,9 +154,9 @@ const ArtistStudioLayout = () => {
           <UploadQuotaBar />
         </div>
 
-        <div className="rounded-2xl border border-[#2a2a2a] py-8 px-10 mb-6">
-          <div className="flex items-center gap-3 mb-5">
-            <h2 className="text-white font-extrabold tracking-tighter text-3xl">
+        <div className="rounded-2xl border border-[#2a2a2a] py-6 px-4 md:py-8 md:px-10 mb-6">
+          <div className="flex flex-wrap items-center gap-2 mb-5">
+            <h2 className="text-white font-extrabold tracking-tighter text-2xl md:text-3xl">
               Artist Studio
             </h2>
             <span className="text-text text-sm mt-1">
@@ -164,22 +164,22 @@ const ArtistStudioLayout = () => {
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             {/* Numeric stats */}
-            <div className="flex items-center me-10 gap-8">
+            <div className="flex items-center gap-4 md:gap-8 overflow-x-auto scrollbar-hide pb-1">
               <StatItem value={totalPlays} label="Plays" />
-              <div className="h-8 w-px bg-[#2a2a2a]" />
+              <div className="h-8 w-px shrink-0 bg-[#2a2a2a]" />
               <StatItem value={totalReposts} label="Reposts" />
-              <div className="h-8 w-px bg-[#2a2a2a]" />
+              <div className="h-8 w-px shrink-0 bg-[#2a2a2a]" />
               <StatItem value={0} label="Downloads" />
-              <div className="h-8 w-px bg-[#2a2a2a]" />
+              <div className="h-8 w-px shrink-0 bg-[#2a2a2a]" />
               <StatItem value={totalLikes} label="Likes" />
-              <div className="h-8 w-px bg-[#2a2a2a]" />
+              <div className="h-8 w-px shrink-0 bg-[#2a2a2a]" />
               <StatItem value={totalComments} label="Comments" />
             </div>
 
             {/* Icon stats */}
-            <div className="flex w-1/2 relative top-2 justify-between items-center gap-6">
+            <div className="flex flex-wrap gap-6 lg:w-1/2 lg:relative lg:top-2 lg:justify-between items-center">
               <IconStat
                 to="/you/insights"
                 label="Insights"

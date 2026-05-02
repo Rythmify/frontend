@@ -292,7 +292,7 @@ export default function SearchPage() {
 
   return (
     <FiltersContext.Provider value={{ setFilters }}>
-      <div data-test="search-page" className="flex flex-col lg:flex-row gap-0 lg:gap-8">
+      <div data-test="search-page" className="container px-4 md:px-8 lg:px-12 xl:px-20 flex flex-col lg:flex-row gap-0 lg:gap-8">
         {/* Mobile Menu Toggle */}
         <div className="lg:hidden sticky top-0 z-40 bg-black border-b border-white/5 px-4 py-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-text truncate">

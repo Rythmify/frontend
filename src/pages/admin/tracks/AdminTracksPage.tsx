@@ -16,6 +16,7 @@ import {
   adminToggleTrackVisibility,
 } from "@/services/api/admin.service";
 import axiosInstance from "@/services/api/axiosInstance";
+import CoverImage from "@/components/UI/CoverImage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface AdminTrack {
@@ -435,13 +436,7 @@ const AdminTracksPage = () => {
               <div key={track.id} className="grid grid-cols-[auto_1fr_150px_90px_90px_100px_80px] gap-4 px-6 py-5 items-center hover:bg-white/2 transition-colors">
                 {/* Cover */}
                 <div className="relative w-13 h-13 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
-                  {track.cover_image ? (
-                    <img src={track.cover_image} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music size={16} className="text-[#555]" />
-                    </div>
-                  )}
+                  <CoverImage src={track.cover_image} alt={track.title} className="w-full h-full object-cover" />
                   <div className="absolute top-0.5 left-0.5">
                     <StatusDot track={track} />
                   </div>
