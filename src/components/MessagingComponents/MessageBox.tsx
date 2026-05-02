@@ -167,6 +167,7 @@ export function MessageBox({
         data-test="message-input"
         value={value}
         onChange={handleChange}
+        autoFocus
         rows={4}
         className={`w-full resize-y bg-[#2a2a2a] border text-white text-sm px-3 py-2 rounded focus:outline-none caret-[#f50] ${
           hasError ? "border-red-500" : "border-[#444] focus:border-[#666]"
