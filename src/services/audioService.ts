@@ -105,9 +105,16 @@ usePlayerStore.subscribe((state, prev) => {
 
     loadedAudioTrackId = state.currentTrack.id;
     const targetTime = state.currentTime;
+    const url = (state.currentTrack.audioUrl || "").trim();
 
     audio.pause();
-    audio.src = state.currentTrack.audioUrl;
+    // Blocked or missing URLs: keep element empty so we never request a bad src.
+    if (!url) {
+      audio.removeAttribute("src");
+      return;
+    }
+
+    audio.src = url;
     audio.load();
 
     // Seek to the preserved position once metadata is ready.

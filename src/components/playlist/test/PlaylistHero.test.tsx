@@ -86,7 +86,10 @@ describe("PlaylistHero", () => {
       </MemoryRouter>,
     );
     expect(screen.getByText("Related Tracks: Seed Title")).toBeInTheDocument();
-    expect(screen.getByText("Made for Mariam")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Made for Mariam" })).toHaveAttribute(
+      "href",
+      "/artist-x",
+    );
 
     render(
       <MemoryRouter>
@@ -99,7 +102,10 @@ describe("PlaylistHero", () => {
       </MemoryRouter>,
     );
     expect(screen.getByText("artist-x's Station")).toBeInTheDocument();
-    expect(screen.getByText("Artist Station")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Artist Station" })).toHaveAttribute(
+      "href",
+      "/artist-x",
+    );
   });
 
   it("uses the explicit genre label and hides the upload button prop", async () => {

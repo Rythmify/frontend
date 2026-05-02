@@ -640,3 +640,45 @@ export async function getSuggestions(
   );
   return data.data;
 }
+
+ 
+export interface UserPlaylist {
+  playlist_id: string;
+  owner_user_id: string;
+  name: string;
+  slug: string | null;
+  description: string | null;
+  is_public: boolean;
+  cover_image: string | null;
+  track_count: number;
+  like_count: number;
+  repost_count: number;
+  created_at: string;
+  updated_at: string;
+}
+ 
+export interface UserPlaylistsResponse {
+  data: UserPlaylist[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+  };
+  message: string;
+}
+ 
+// ─── ADD this function to conversationApi.ts ─────────────────────────────────
+ 
+// GET /users/:userId/playlists
+export const fetchUserPlaylists = async (
+  userId: string,
+  limit: number = 20,
+  offset: number = 0,
+): Promise<UserPlaylistsResponse> => {
+  const response = await axiosInstance.get<UserPlaylistsResponse>(
+    `/users/${userId}/playlists`,
+    { params: { limit, offset } },
+  );
+  return response.data;
+};
+ 

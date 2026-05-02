@@ -51,7 +51,13 @@ export function mapTrack(t: any): Track {
       t.user?.displayName ??
       t.user?.username ??
       "Unknown",
-    artistUsername: t.user?.username ?? t.artist_username ?? t.username ?? "unknown",
+    artistUsername:
+      t.user?.username ??
+      t.artist_username ??
+      t.artistUsername ??
+      t.username ??
+      t.user_id ??
+      "unknown",
     // Search backend returns cover_image; other contexts return coverUrl
     coverUrl: t.cover_image ?? t.coverUrl ?? "",
     // Search backend returns stream_url; other contexts return audioUrl
@@ -66,6 +72,7 @@ export function mapTrack(t: any): Track {
     waveformData: [],
     isPrivate: t.is_private ?? t.isPrivate ?? false,
     trackSlug: t.slug ?? t.track_slug ?? t.trackSlug ?? String(t.id ?? ""),
+    artistId: String(t.artist_id ?? t.artistId ?? t.user?.id ?? t.user_id ?? ""),
   };
 }
 

@@ -4,9 +4,10 @@ interface ProgressBarProps {
   currentTime: number;
   duration: number;
   onSeek: (time: number) => void;
+  disabled?: boolean;
 }
 
-export default function ProgressBar({ currentTime, duration, onSeek }: ProgressBarProps) {
+export default function ProgressBar({ currentTime, duration, onSeek, disabled = false }: ProgressBarProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
@@ -30,6 +31,7 @@ export default function ProgressBar({ currentTime, duration, onSeek }: ProgressB
   );
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (disabled) return;
     e.preventDefault();
     isDragging.current = true;
     onSeek(getTimeFromEvent(e));
@@ -69,7 +71,7 @@ export default function ProgressBar({ currentTime, duration, onSeek }: ProgressB
         ref={trackRef}
         data-test="player-seek-track"
         onMouseDown={handleMouseDown}
-        className="flex-1 h-[3px] rounded-full cursor-pointer relative group bg-[#333]"
+        className={`flex-1 h-[3px] rounded-full relative group bg-[#333] ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
       >
         {/* Played — orange */}
         <div

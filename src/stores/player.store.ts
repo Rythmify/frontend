@@ -3,17 +3,29 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { Track } from "../types/track";
 import { useAuthStore } from "./auth.store";
 import { savePlayerState, getPlayerState } from "../services/api/playback.service";
+import { getPlaybackState, resolvePlaybackAudioUrl } from "../utils/playbackAccess";
+
+// Backend rejects saves without a real track_id; skip when nothing is playing.
+const TRACK_ID_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Debounced helper to avoid spamming the backend
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 function debouncedSave(userId: string, state: PlayerState) {
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
+    const trackId = state.currentTrack?.id;
+    if (!trackId || !TRACK_ID_UUID_RE.test(String(trackId))) return;
+
+    const queue = state.queue
+      .map((t) => t.id)
+      .filter((id) => id && TRACK_ID_UUID_RE.test(String(id)));
+
     savePlayerState({
-      trackId: state.currentTrack?.id,
+      trackId,
       positionSeconds: state.currentTime,
       volume: state.volume,
-      queue: state.queue.map((t) => t.id),
+      queue,
     });
   }, 2000);
 }
@@ -108,6 +120,7 @@ export const usePlayerStore = create<PlayerState>()(
         const index = newQueue.findIndex((t) => t.id === track.id);
         const isSameTrack = get().currentTrack?.id === track.id;
         const { isShuffle } = get();
+        const canPlayThisTrack = getPlaybackState(track) !== "blocked";
 
         if (isSameTrack) {
           const newIndex = index >= 0 ? index : get().queueIndex;
@@ -143,12 +156,13 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       playContext: async (sourceType, sourceId, fallbackTrack, startTime, activeSourceId) => {
-        // Optimistically play the track immediately
+        const canPlayFallback = getPlaybackState(fallbackTrack) !== "blocked";
+        // Optimistically load the track; respect geo / tier blocking (no audio URL).
         set({
           currentTrack: fallbackTrack,
           queue: [fallbackTrack],
           queueIndex: 0,
-          isPlaying: true,
+          isPlaying: canPlayFallback,
           currentTime: startTime || 0,
           activeSourceId: activeSourceId ?? null,
         });
@@ -164,20 +178,39 @@ export const usePlayerStore = create<PlayerState>()(
           
           if (res && res.queue) {
             // Map backend queue format to frontend Track[]
-            const mappedQueue = res.queue.map(q => ({
-               id: q.track_id || q.id,
-               title: q.track_title || q.title || "Unknown Title",
-               artistName: q.artist_name || q.artistName || "Unknown Artist",
-               artistUsername: q.artist_username || q.username || q.artistUsername || "unknown",
-               audioUrl: q.stream_url || q.audioUrl || "",
-               coverUrl: q.cover_image || q.coverUrl || "",
-               duration: String(q.duration || 0),
-               waveformData: q.waveformData || [],
-               playCount: q.playCount || 0,
-               likeCount: q.likeCount || 0,
-               repostCount: q.repostCount || 0,
-               commentCount: q.commentCount || 0,
-            } as Track));
+            const mappedQueue = res.queue.map((q) => {
+              const base = {
+                id: String(q.track_id || q.id),
+                title: q.track_title || q.title || "Unknown Title",
+                artistName: q.artist_name || q.artistName || "Unknown Artist",
+                artistUsername: q.artist_username || q.username || q.artistUsername || "unknown",
+                coverUrl: q.cover_image || q.coverUrl || "",
+                duration: String(q.duration || 0),
+                waveformData: q.waveformData || [],
+                playCount: q.playCount || 0,
+                likeCount: q.likeCount || 0,
+                repostCount: q.repostCount || 0,
+                commentCount: q.commentCount || 0,
+                streamUrl:
+                  typeof q.stream_url === "string" && q.stream_url
+                    ? q.stream_url
+                    : typeof q.audio_url === "string" && q.audio_url
+                      ? q.audio_url
+                      : undefined,
+                previewUrl:
+                  typeof q.preview_url === "string" && q.preview_url
+                    ? q.preview_url
+                    : undefined,
+                isGeoBlocked: q.is_geo_blocked === true,
+                playbackRestrictionReason: q.playback_restriction_reason ?? null,
+                enableAppPlayback: q.enable_app_playback !== false,
+                trackSlug: q.track_slug || q.slug || String(q.track_id || q.id),
+              };
+              return {
+                ...base,
+                audioUrl: resolvePlaybackAudioUrl(base),
+              } as Track;
+            });
             
             const qIndex = Math.max(0, mappedQueue.findIndex(t => String(t.id) === String(fallbackTrack.id)));
             const { isShuffle } = get();
