@@ -2,7 +2,7 @@ import axiosInstance from '../axiosInstance';
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
-export type NotificationType = 'follow' | 'like' | 'repost' | 'comment' | 'new_post_by_followed';
+export type NotificationType = 'follow' | 'like' | 'repost' | 'comment' | 'new_post_by_followed'|'artist_pro_activated';
 
 export interface NotificationActor {
   id: string;

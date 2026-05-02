@@ -37,6 +37,8 @@ const buildActionText = (n: Notification): string => {
       return `commented "${n.resource_details?.content ?? ''}" on your track`
     case 'new_post_by_followed':
       return `posted a new ${rType} `
+    case 'artist_pro_activated':
+      return 'You have been upgraded to premium 😉'
     default:
       return ''
   }
@@ -118,20 +120,22 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
   const handleCellClick = async () => {
     if (!n.is_read) {
       try {
-       await markOneAsRead(n.id) 
+        await markOneAsRead(n.id)
         onMarkRead?.(n.id)
       } catch {
         // non-critical — still navigate
       }
     }
+
+    if (n.type === 'artist_pro_activated') return
+
     if (n.type === 'follow') {
       navigate(`/${n.actor.username}`)
-    } else if (n.resource_type==="track"||n.resource_type==="comment") {
+    } else if (n.resource_type === 'track' || n.resource_type === 'comment') {
       navigate(`/track/${n.resource_id}`)
-    } else if (n.resource_type==="playlist") {
+    } else if (n.resource_type === 'playlist') {
       navigate(`/${n.actor.username}/sets/${n.resource_id}`)
     }
-   
   }
 
   return (
@@ -156,9 +160,15 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
         {/* Text */}
         <div data-test={`notification-content-${n.id}`} className={styles.content}>
           <p className={styles.textRow}>
-            <span data-test={`notification-username-${n.id}`} className={styles.username}>{n.actor.display_name}</span>
+            {n.type !== 'artist_pro_activated' && (
+              <span data-test={`notification-username-${n.id}`} className={styles.username}>
+                {n.actor.display_name}
+              </span>
+            )}
             {'  '}
-            <span data-test={`notification-action-text-${n.id}`} className={styles.actionText}>{buildActionText(n)}</span>
+            <span data-test={`notification-action-text-${n.id}`} className={styles.actionText}>
+              {buildActionText(n)}
+            </span>
           </p>
           <div data-test={`notification-time-${n.id}`} className={styles.timeRow}>
             <i className={styles.timeIcon} />
@@ -181,7 +191,7 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
           )}
 
           {/* more button */}
-          {showActions && (
+          {showActions && n.type !== 'artist_pro_activated' && (
             <div data-test={`notification-menu-wrapper-${n.id}`} className={styles.dropdownWrapper}>
               <button
                 data-test={`notification-menu-btn-${n.id}`}
