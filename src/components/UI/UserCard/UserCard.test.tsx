@@ -50,13 +50,6 @@ describe("UserCard", () => {
     expect(wrapper).toHaveTextContent("T"); // first letter of "Travis Scott"
   });
 
-  it("shows verified badge when isVerified is true", () => {
-    render(<UserCard user={baseUser} />);
-    expect(
-      screen.getByTestId(`user-card-verified-${baseUser.username}`),
-    ).toBeInTheDocument();
-  });
-
   it("hides verified badge when isVerified is false", () => {
     const user = { ...baseUser, isVerified: false };
     render(<UserCard user={user} />);

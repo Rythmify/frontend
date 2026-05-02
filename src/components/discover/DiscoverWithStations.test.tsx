@@ -59,7 +59,7 @@ describe("DiscoverWithStations", () => {
   });
 
   it("renders the section container", () => {
-    render(<DiscoverWithStations stations={[]} />);
+    render(<DiscoverWithStations stations={[makeStation("s1")]} />);
     expect(screen.getByTestId("section-discover-with-stations")).toBeInTheDocument();
   });
 

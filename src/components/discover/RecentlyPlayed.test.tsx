@@ -84,6 +84,9 @@ describe("RecentlyPlayed", () => {
   });
 
   it("renders the section container", () => {
+    vi.mocked(useHistoryStore).mockReturnValue({
+      entries: [makeTrackEntry("t1")],
+    } as any);
     render(<RecentlyPlayed />);
     expect(screen.getByTestId("section-recently-played")).toBeInTheDocument();
   });
@@ -178,9 +181,7 @@ describe("RecentlyPlayed", () => {
 
   it("does not crash when getRecentlyPlayed rejects", async () => {
     vi.mocked(getRecentlyPlayed).mockRejectedValue(new Error("Network error"));
-    render(<RecentlyPlayed />);
-    await waitFor(() =>
-      expect(screen.getByTestId("section-recently-played")).toBeInTheDocument(),
-    );
+    expect(() => render(<RecentlyPlayed />)).not.toThrow();
+    await waitFor(() => expect(getRecentlyPlayed).toHaveBeenCalled());
   });
 });

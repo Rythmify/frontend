@@ -69,8 +69,8 @@ describe("MadeForYouCard", () => {
     vi.mocked(useNavigate).mockReturnValue(vi.fn());
     vi.mocked(usePlayerStore).mockReturnValue(makeStore() as any);
     vi.mocked(useLikesStore).mockReturnValue({
-      isPlaylistLiked: vi.fn().mockReturnValue(false),
-      togglePlaylist: vi.fn(),
+      isMixLiked: vi.fn().mockReturnValue(false),
+      toggleMix: vi.fn(),
     } as any);
     vi.mocked(useHistoryStore).mockReturnValue({
       addMadeForYou: vi.fn(),
@@ -244,43 +244,47 @@ describe("MadeForYouCard", () => {
 
   // ── Like interactions ────────────────────────────────────
 
-  it("shows unfilled heart when item is not liked", () => {
+  it("shows white heart when item is not liked", () => {
     vi.mocked(useLikesStore).mockReturnValue({
-      isPlaylistLiked: vi.fn().mockReturnValue(false),
-      togglePlaylist: vi.fn(),
-    } as any);
-    render(<MadeForYouCard item={baseItem} />);
-    const icon = screen.getByTestId("button-like").querySelector("i");
-    expect(icon?.className).toContain("fa-regular");
-    expect(icon?.className).toContain("fa-heart");
-  });
-
-  it("shows filled heart when item is liked", () => {
-    vi.mocked(useLikesStore).mockReturnValue({
-      isPlaylistLiked: vi.fn().mockReturnValue(true),
-      togglePlaylist: vi.fn(),
+      isMixLiked: vi.fn().mockReturnValue(false),
+      toggleMix: vi.fn(),
     } as any);
     render(<MadeForYouCard item={baseItem} />);
     const icon = screen.getByTestId("button-like").querySelector("i");
     expect(icon?.className).toContain("fa-solid");
     expect(icon?.className).toContain("fa-heart");
+    expect(icon?.className).toContain("text-white");
+    expect(icon?.className).not.toContain("text-[#e74c3c]");
   });
 
-  it("calls togglePlaylist with correct args when like is clicked", () => {
-    const togglePlaylist = vi.fn();
+  it("shows red heart when item is liked", () => {
     vi.mocked(useLikesStore).mockReturnValue({
-      isPlaylistLiked: vi.fn().mockReturnValue(false),
-      togglePlaylist,
+      isMixLiked: vi.fn().mockReturnValue(true),
+      toggleMix: vi.fn(),
+    } as any);
+    render(<MadeForYouCard item={baseItem} />);
+    const icon = screen.getByTestId("button-like").querySelector("i");
+    expect(icon?.className).toContain("fa-solid");
+    expect(icon?.className).toContain("fa-heart");
+    expect(icon?.className).toContain("text-[#e74c3c]");
+  });
+
+  it("calls toggleMix with correct args when like is clicked", () => {
+    const toggleMix = vi.fn();
+    vi.mocked(useLikesStore).mockReturnValue({
+      isMixLiked: vi.fn().mockReturnValue(false),
+      toggleMix,
     } as any);
 
     render(<MadeForYouCard item={baseItem} />);
     fireEvent.click(screen.getByTestId("button-like"));
 
-    expect(togglePlaylist).toHaveBeenCalledWith({
+    expect(toggleMix).toHaveBeenCalledWith({
       id: baseItem.id,
       title: baseItem.title,
-      owner: baseItem.subtitle,
-      coverUrl: baseItem.coverUrl,
+      cover_image: baseItem.coverUrl,
+      link_to: `/discover/sets/new-for-you/${baseItem.madeKind}/${baseItem.id}`,
+      kind: baseItem.madeKind,
     });
   });
 

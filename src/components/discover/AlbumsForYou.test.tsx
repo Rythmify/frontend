@@ -59,9 +59,11 @@ describe("AlbumsForYou", () => {
   });
 
   it("renders the section container", async () => {
-    vi.mocked(getAlbumsForYou).mockResolvedValue({ data: [] } as any);
+    vi.mocked(getAlbumsForYou).mockResolvedValue({ data: [makeAlbum("a1")] } as any);
     render(<AlbumsForYou />);
-    expect(screen.getByTestId("section-albums-for-you")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId("section-albums-for-you")).toBeInTheDocument(),
+    );
   });
 
   it("renders the 'Albums for you' carousel title", async () => {
@@ -116,9 +118,7 @@ describe("AlbumsForYou", () => {
   it("does not call seedAlbums when API returns empty array", async () => {
     vi.mocked(getAlbumsForYou).mockResolvedValue({ data: [] } as any);
     render(<AlbumsForYou />);
-    await waitFor(() =>
-      expect(screen.getByTestId("section-albums-for-you")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(getAlbumsForYou).toHaveBeenCalled());
     expect(mockSeedAlbums).not.toHaveBeenCalled();
   });
 });
