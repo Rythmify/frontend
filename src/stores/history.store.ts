@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { writeListeningHistory } from "@/services/api/discover.service";
+import { createUserScopedStorage } from "@/stores/userScopedStorage";
 import type { Track } from "@/types/track";
 import type { Station } from "@/types/station";
 import type { PersonalMix } from "@/services/api/discover.service";
@@ -174,6 +175,6 @@ export const useHistoryStore = create<HistoryStore>()(
           .entries.filter((e) => e.type === "station")
           .map((e) => (e as { type: "station"; item: Station; playedAt: string }).item),
     }),
-    { name: "rythmify-history", version: 1 },
+    { name: "rythmify-history", version: 1, storage: createUserScopedStorage("history") },
   ),
 );
