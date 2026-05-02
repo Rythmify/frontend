@@ -7,26 +7,22 @@ import { savePlayerState, getPlayerState } from "../services/api/playback.servic
 // Debounced helper to avoid spamming the backend
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 function debouncedSave(userId: string, state: PlayerState) {
+  if (!state.currentTrack?.id) return;
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
     savePlayerState({
       trackId: state.currentTrack?.id,
       positionSeconds: state.currentTime,
       volume: state.volume,
-      queue: state.queue.map((t) => t.id),
+      queue: state.queue
+        .filter((t) => t?.id != null)
+        .map((t) => t.id),
     });
   }, 2000);
 }
 
-// Dynamic import for audioService to avoid circular dependencies
-let _seekAudio: ((time: number) => void) | null = null;
-function getSeekAudio() {
-  if (!_seekAudio) {
-    import("../services/audioService").then((m) => {
-      _seekAudio = m.seekAudio;
-    });
-  }
-  return _seekAudio;
+function getSeekAudio(): (time: number) => void {
+  return (window as any).__seekAudio;
 }
 
 interface PlayerState {
@@ -146,20 +142,22 @@ export const usePlayerStore = create<PlayerState>()(
           
           if (res && res.queue) {
             // Map backend queue format to frontend Track[]
-            const mappedQueue = res.queue.map(q => ({
-               id: q.track_id || q.id,
-               title: q.track_title || q.title || "Unknown Title",
-               artistName: q.artist_name || q.artistName || "Unknown Artist",
-               artistUsername: q.artist_username || q.username || q.artistUsername || "unknown",
-               audioUrl: q.stream_url || q.audioUrl || "",
-               coverUrl: q.cover_image || q.coverUrl || "",
-               duration: String(q.duration || 0),
-               waveformData: q.waveformData || [],
-               playCount: q.playCount || 0,
-               likeCount: q.likeCount || 0,
-               repostCount: q.repostCount || 0,
-               commentCount: q.commentCount || 0,
-            } as Track));
+              const mappedQueue = res.queue
+                .filter((q: any) => q != null && (q.track_id || q.id))
+                .map((q: any) => ({
+                    id: q.track_id || q.id,
+                    title: q.track_title || q.title || "Unknown Title",
+                    artistName: q.artist_name || q.artistName || "Unknown Artist",
+                    artistUsername: q.artist_username || q.username || q.artistUsername || "unknown",
+                    audioUrl: q.stream_url || q.audioUrl || "",
+                    coverUrl: q.cover_image || q.coverUrl || "",
+                    duration: String(q.duration || 0),
+                    waveformData: q.waveformData || [],
+                    playCount: q.playCount || 0,
+                    likeCount: q.likeCount || 0,
+                    repostCount: q.repostCount || 0,
+                    commentCount: q.commentCount || 0,
+                  } as Track));
             
             const qIndex = mappedQueue.findIndex(t => String(t.id) === String(fallbackTrack.id));
             
@@ -237,13 +235,9 @@ export const usePlayerStore = create<PlayerState>()(
         });
       },
 
+      // ✅ Replace with
       seek: (time) => {
-        const seekFn = getSeekAudio();
-        if (seekFn) {
-          seekFn(time);
-        } else {
-          set({ currentTime: time });
-        }
+        getSeekAudio()?.(time);
       },
 
       seekTo: (time) => {

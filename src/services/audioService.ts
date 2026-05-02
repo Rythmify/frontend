@@ -88,48 +88,45 @@ export function setTrackLoadedLocally(trackId: string | null) {
 // Wire store -> audio directly via subscribe (no React, no useEffect)
 usePlayerStore.subscribe((state, prev) => {
 
-  // New track 
-  // Only fires when the track id genuinely changes (not a same-track seek).
-  if (state.currentTrack && state.currentTrack.id !== loadedAudioTrackId) {
-    // Kill the old WaveSurfer instance synchronously before we change audio.src.
-    // ONLY if the global instance belongs to a different track.
-    if (globalWaveSurfer && globalWaveSurferTrackId !== state.currentTrack.id) {
-      try {
-        globalWaveSurfer.destroy();
-      } catch (e) {
-        // Ignore destruction errors
-      }
-      globalWaveSurfer = null;
-      globalWaveSurferTrackId = null;
-    }
 
-    loadedAudioTrackId = state.currentTrack.id;
-    const targetTime = state.currentTime;
+    if (state.currentTrack && state.currentTrack.id !== loadedAudioTrackId) {
+        if (globalWaveSurfer && globalWaveSurferTrackId !== state.currentTrack.id) {
+          try { globalWaveSurfer.destroy(); } catch (e) {}
+          globalWaveSurfer = null;
+          globalWaveSurferTrackId = null;
+        }
 
-    audio.pause();
-    audio.src = state.currentTrack.audioUrl;
-    audio.load();
+        loadedAudioTrackId = state.currentTrack.id;
+        const targetTime = state.currentTime;
+
+        audio.pause();
+        // Only set src if audio doesn't already have this track loaded
+        // (WaveSurfer may have already set it via the media backend)
+        if (!audio.src || !audio.src.includes(state.currentTrack.audioUrl)) {
+          audio.src = state.currentTrack.audioUrl;
+          audio.load();
+        }
 
     // Seek to the preserved position once metadata is ready.
-    const onLoaded = () => {
-      if (targetTime > 0) {
-        audio.currentTime = targetTime;
+      const onLoaded = () => {
+          if (targetTime > 0) {
+            audio.currentTime = targetTime;
+          }
+          audio.removeEventListener("loadedmetadata", onLoaded);
+        };
+
+        if (audio.readyState >= 1) {
+          onLoaded();
+        } else {
+          audio.addEventListener("loadedmetadata", onLoaded);
+        }
+
+        if (state.isPlaying) {
+          notifyOtherTabs();
+          audio.play().catch(() => {});
+        }
+        return;
       }
-      audio.removeEventListener("loadedmetadata", onLoaded);
-    };
-
-    if (audio.readyState >= 1) {
-      onLoaded();
-    } else {
-      audio.addEventListener("loadedmetadata", onLoaded);
-    }
-
-    if (state.isPlaying) {
-      notifyOtherTabs();
-      audio.play().catch(() => { });
-    }
-    return;
-  }
 
   if (state.isPlaying !== prev.isPlaying) {
     if (state.isPlaying) {
@@ -184,8 +181,15 @@ audio.addEventListener("ended", () => {
  * Sets audio.currentTime directly and marks a seek as in-progress so the
  * store subscriber won't fire audio.play() and interrupt the operation.
  */
+
 export function seekAudio(time: number) {
   markSeekInProgress();
-  audio.currentTime = time;
-  usePlayerStore.getState().seekTo(time);
+  if (globalWaveSurfer && globalWaveSurferTrackId === usePlayerStore.getState().currentTrack?.id) {
+    globalWaveSurfer.setTime(time);
+  } else {
+    audio.currentTime = time;
+  }
+  // Don't call seekTo — it pollutes the store and causes isPlaying side effects
 }
+
+(window as any).__seekAudio = seekAudio;
