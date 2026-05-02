@@ -8,7 +8,7 @@
  * every service call.
  */
 
-const DEFAULT_PLAYBACK_COUNTRY_CODE = "US";
+const DEFAULT_PLAYBACK_COUNTRY_CODE = "EG";
 const PLAYBACK_COUNTRY_OVERRIDE_KEY = "playback_country_code";
 
 let playbackCountryCode = DEFAULT_PLAYBACK_COUNTRY_CODE;
