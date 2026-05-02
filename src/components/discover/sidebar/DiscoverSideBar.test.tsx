@@ -122,23 +122,22 @@ describe("DiscoverSidebar", () => {
 
   it("renders the artist tools section", () => {
     render(<DiscoverSidebar />);
-    expect(
-      screen.getByTestId("discover-sidebar-artist-tools"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("mock-artist-tools-card")).toBeInTheDocument();
   });
 
-  it("renders the suggested artists section", () => {
+  it("renders the suggested artists section", async () => {
+    vi.mocked(getSuggestedArtists).mockResolvedValue({
+      data: [{ id: "a1", display_name: "Artist 1", follower_count: 100 }],
+    } as any);
     render(<DiscoverSidebar />);
-    expect(
-      screen.getByTestId("discover-sidebar-suggested-artists"),
-    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId("mock-artist-list-section")).toBeInTheDocument(),
+    );
   });
 
   it("renders the go mobile section", () => {
     render(<DiscoverSidebar />);
-    expect(
-      screen.getByTestId("discover-sidebar-go-mobile"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("mock-go-mobile")).toBeInTheDocument();
   });
 
   // ── Liked tracks ─────────────────────────────────────────
@@ -155,9 +154,7 @@ describe("DiscoverSidebar", () => {
       selector({ likedTracks: [makeTrack("t1")] }),
     );
     render(<DiscoverSidebar />);
-    expect(
-      screen.getByTestId("discover-sidebar-liked-tracks"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("mock-track-item-t1")).toBeInTheDocument();
   });
 
   // ── Listening history ────────────────────────────────────
@@ -178,9 +175,7 @@ describe("DiscoverSidebar", () => {
       }),
     );
     render(<DiscoverSidebar />);
-    expect(
-      screen.getByTestId("discover-sidebar-listening-history"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("mock-track-item-t1")).toBeInTheDocument();
   });
 
   it("shows history section when API returns listening history", async () => {
@@ -189,9 +184,7 @@ describe("DiscoverSidebar", () => {
     } as any);
     render(<DiscoverSidebar />);
     await waitFor(() =>
-      expect(
-        screen.getByTestId("discover-sidebar-listening-history"),
-      ).toBeInTheDocument(),
+      expect(screen.getByTestId("mock-track-item-api-t1")).toBeInTheDocument(),
     );
   });
 

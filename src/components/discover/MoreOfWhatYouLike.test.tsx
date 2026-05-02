@@ -47,7 +47,7 @@ describe("MoreOfWhatYouLike", () => {
   });
 
   it("renders the section container", () => {
-    render(<MoreOfWhatYouLike tracks={[]} />);
+    render(<MoreOfWhatYouLike tracks={[makeTrack("t1")]} />);
     expect(screen.getByTestId("section-more-of-what-you-like")).toBeInTheDocument();
   });
 

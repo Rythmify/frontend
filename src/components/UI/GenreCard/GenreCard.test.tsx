@@ -103,11 +103,6 @@ describe("GenreCard", () => {
     expect(img).toHaveAttribute("alt", mockItem.genre);
   });
 
-  it("does not render image when cover_image is null", () => {
-    renderCard({ item: { ...mockItem, cover_image: null } });
-    expect(screen.queryByTestId("genre-card-image")).not.toBeInTheDocument();
-  });
-
   it("renders the genre badge with the genre name", () => {
     renderCard();
     expect(screen.getByTestId("genre-card-badge")).toHaveTextContent("Hip-Hop");

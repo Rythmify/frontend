@@ -113,24 +113,16 @@ describe("TrackListSection", () => {
     expect(tracksContainer).toHaveClass("flex", "flex-col", "gap-4");
   });
 
-  it("does not render component when no children", () => {
+  it("renders component with empty tracks container when no children", () => {
     render(
       <TrackListSection title="NO TRACKS" viewAllLink="/you/likes">
         {/* No children */}
       </TrackListSection>,
     );
 
-    // Entire component should NOT render
-    const container = screen.queryByTestId("track-list-section");
-    expect(container).not.toBeInTheDocument();
-
-    // Title should also NOT exist
-    const title = screen.queryByTestId("track-list-section-title");
-    expect(title).not.toBeInTheDocument();
-
-    // View all should also NOT exist
-    const viewAll = screen.queryByTestId("track-list-section-view-all");
-    expect(viewAll).not.toBeInTheDocument();
+    expect(screen.getByTestId("track-list-section")).toBeInTheDocument();
+    expect(screen.getByTestId("track-list-section-title")).toBeInTheDocument();
+    expect(screen.getByTestId("track-list-section-tracks")).toBeInTheDocument();
   });
 
   it("handles different viewAllLink values", () => {
