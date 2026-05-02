@@ -4,6 +4,7 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import type { Track } from "../../../../types/track";
 import type { MockUser } from "../../../../services/mocks/users";
 import FollowButton from "@/components/UI/FollowButton";
+import CoverImage from "@/components/UI/CoverImage";
 
 interface TrackSidebarProps {
   track: Track;
@@ -83,8 +84,8 @@ export default function TrackSidebar({ track, featuredArtists, relatedTracks = [
                 className="flex gap-3 group cursor-pointer"
               >
                 <div className="relative w-12 h-12 shrink-0">
-                  <img
-                    src={t.coverUrl || `https://picsum.photos/seed/${t.id}/80/80`}
+                  <CoverImage
+                    src={t.coverUrl}
                     alt={t.title}
                     className="w-full h-full object-cover rounded shadow-sm group-hover:opacity-80 transition-opacity"
                   />

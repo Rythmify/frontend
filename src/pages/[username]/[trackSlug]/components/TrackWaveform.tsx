@@ -11,6 +11,7 @@ import {
   audio,
   seekAudio,
   setGlobalWaveSurfer,
+  setTrackLoadedLocally,
 } from "../../../../services/audioService";
 import { getTrackWaveform } from "../../../../services/track.service";
 import { usePlayerStore } from "../../../../stores/player.store";
@@ -41,132 +42,136 @@ const TrackWaveform = forwardRef<
     },
   }));
 
-  useEffect(() => {
-    let ws: WaveSurfer | null = null;
-    let isMounted = true;
 
-    const initWaveform = async () => {
-      if (!waveformRef.current) return;
+    const isInitializedRef = useRef(false);
 
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+    useEffect(() => {
+      let isMounted = true;
+      isInitializedRef.current = false;
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, 100);
-      gradient.addColorStop(0, "#656666");
-      gradient.addColorStop(0.7, "#656666");
-      gradient.addColorStop(0.71, "#ffffff");
-      gradient.addColorStop(0.72, "#ffffff");
-      gradient.addColorStop(0.73, "#B1B1B1");
-      gradient.addColorStop(1, "#B1B1B1");
+      const initWaveform = async () => {
+        if (!waveformRef.current || isInitializedRef.current) return;
+        isInitializedRef.current = true;
 
-      const progressGradient = ctx.createLinearGradient(0, 0, 0, 100);
-      progressGradient.addColorStop(0, "#F6B094");
-      progressGradient.addColorStop(0.7, "#F6B094");
-      progressGradient.addColorStop(0.71, "#ffffff");
-      progressGradient.addColorStop(0.72, "#ffffff");
-      progressGradient.addColorStop(0.73, "#EB4926");
-      progressGradient.addColorStop(1, "#EE772F");
-
-      const peaks =
-        Array.isArray(track.waveformData) && track.waveformData.length > 0
-          ? track.waveformData
-          : await getTrackWaveform(track.id);
-      if (!isMounted) return;
-
-      let parsedDur = 0;
-      if (track.duration && typeof track.duration === "string") {
-        const parts = track.duration.split(":");
-        if (parts.length === 2) {
-          parsedDur = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        if (waveSurferRef.current) {
+          try { waveSurferRef.current.destroy(); } catch { /* ok */ }
+          waveSurferRef.current = null;
         }
-      }
+        waveformRef.current.innerHTML = "";
 
-      // FIX: always use MediaElement backend tied to the shared audio element.
-      // Never pass `url` here — that makes WaveSurfer own a second audio source
-      // which conflicts with the global player.
-      ws = WaveSurfer.create({
-        container: waveformRef.current,
-        waveColor: gradient,
-        progressColor: progressGradient,
-        barWidth: 2,
-        barGap: 1,
-        barRadius: 2,
-        backend: "MediaElement",
-        media: audio,
-        peaks: peaks.length > 0 ? [peaks] : undefined,
-        duration: parsedDur > 0 ? parsedDur : undefined,
-        // FIX: do NOT pass `url` — it causes WaveSurfer to load a second audio
-        // context that fights the global <audio> element owned by audioService.
-      });
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-      waveSurferRef.current = ws;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 100);
+        gradient.addColorStop(0, "#656666");
+        gradient.addColorStop(0.7, "#656666");
+        gradient.addColorStop(0.71, "#ffffff");
+        gradient.addColorStop(0.72, "#ffffff");
+        gradient.addColorStop(0.73, "#B1B1B1");
+        gradient.addColorStop(1, "#B1B1B1");
 
-      // FIX: only register as the global waveform if this track is ALREADY the
-      // active track in the player. If another track is playing (e.g. user came
-      // from the feed) we must NOT steal the global reference — that would break
-      // the currently-playing TrackCard waveform.
-      const playerState = usePlayerStore.getState();
-      if (
-        !playerState.currentTrack ||
-        playerState.currentTrack.id === track.id
-      ) {
-        setGlobalWaveSurfer(ws, track.id);
-      }
+        const progressGradient = ctx.createLinearGradient(0, 0, 0, 100);
+        progressGradient.addColorStop(0, "#F6B094");
+        progressGradient.addColorStop(0.7, "#F6B094");
+        progressGradient.addColorStop(0.71, "#ffffff");
+        progressGradient.addColorStop(0.72, "#ffffff");
+        progressGradient.addColorStop(0.73, "#EB4926");
+        progressGradient.addColorStop(1, "#EE772F");
 
-      const formatTime = (seconds: number) => {
-        const minutes = Math.floor(seconds / 60);
-        const sec = Math.round(seconds) % 60;
-        return `${minutes}:${sec.toString().padStart(2, "0")}`;
+        const peaks =
+          Array.isArray(track.waveformData) && track.waveformData.length > 0
+            ? track.waveformData
+            : await getTrackWaveform(track.id);
+
+        if (!isMounted || !waveformRef.current) return;
+
+        let parsedDur = 0;
+        if (track.duration && typeof track.duration === "string") {
+          const parts = track.duration.split(":");
+          if (parts.length === 2) {
+            parsedDur = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+          }
+        }
+
+        const playerState = usePlayerStore.getState();
+        const isThisTrackActive =
+          !playerState.currentTrack || playerState.currentTrack.id === track.id;
+
+        const ws = WaveSurfer.create({
+          container: waveformRef.current,
+          waveColor: gradient,
+          progressColor: progressGradient,
+          barWidth: 2,
+          barGap: 1,
+          barRadius: 2,
+          ...(isThisTrackActive
+            ? { backend: "MediaElement" as const, media: audio }
+            : {}),
+          peaks: peaks.length > 0 ? [peaks] : undefined,
+          duration: parsedDur > 0 ? parsedDur : undefined,
+        });
+
+        waveSurferRef.current = ws;
+
+        if (isThisTrackActive) {
+          setTrackLoadedLocally(null);
+          setGlobalWaveSurfer(ws, track.id);
+        }
+
+        const formatTime = (seconds: number) => {
+          const minutes = Math.floor(seconds / 60);
+          const sec = Math.round(seconds) % 60;
+          return `${minutes}:${sec.toString().padStart(2, "0")}`;
+        };
+
+        ws.on("decode", (duration) => {
+          if (durationRef.current) durationRef.current.textContent = formatTime(duration);
+        });
+        ws.on("timeupdate", (currentTime) => {
+          if (timeRef.current) timeRef.current.textContent = formatTime(currentTime);
+        });
+        ws.on("interaction", (newTime: number) => {
+          lastInteractionTimeRef.current = newTime;
+          seekAudio(newTime);
+        });
+        ws.on("error", () => {});
       };
 
-      ws.on("decode", (duration) => {
-        if (durationRef.current) {
-          durationRef.current.textContent = formatTime(duration);
+      initWaveform();
+
+      const unsubscribe = usePlayerStore.subscribe((state, prev) => {
+        const justBecameActive =
+          state.currentTrack?.id === track.id &&
+          prev.currentTrack?.id !== track.id &&
+          prev.currentTrack !== undefined;
+
+        if (justBecameActive) {
+          isInitializedRef.current = false; // allow re-init
+          initWaveform();
         }
       });
 
-      ws.on("timeupdate", (currentTime) => {
-        if (timeRef.current) {
-          timeRef.current.textContent = formatTime(currentTime);
+      return () => {
+        isMounted = false;
+        unsubscribe();
+        if (waveSurferRef.current) {
+          try { waveSurferRef.current.destroy(); } catch { /* ok */ }
+          waveSurferRef.current = null;
         }
-      });
-
-      // FIX: on waveform click, only seek — never call ws.play() or audio.play().
-      // Playback is controlled exclusively by the store → audioService pipeline.
-      // WaveSurfer's built-in "interaction" event fires before our onClick, so we
-      // suppress it here and let the div's onClick bubble up to onPlayPause.
-      ws.on("interaction", (newTime: number) => {
-        lastInteractionTimeRef.current = newTime;
-        seekAudio(newTime);
-      });
-
-      ws.on("error", () => {});
-    };
-
-    initWaveform();
-
-    return () => {
-      isMounted = false;
-      if (ws) {
-        try {
-          ws.destroy();
-        } catch {
-          /* ok */
-        }
-      }
-      waveSurferRef.current = null;
-    };
-  }, [track.audioUrl, track.id]);
-
+      };
+    }, [track.audioUrl, track.id]);
   return (
     <div data-test="track-waveform-component">
       <div
         data-test="track-waveform-interactive-area"
         style={{ position: "relative", cursor: "pointer", width: "100%" }}
         onClick={() => {
-          onPlayPause?.(lastInteractionTimeRef.current ?? undefined);
-          lastInteractionTimeRef.current = null;
+          if (lastInteractionTimeRef.current !== null) {
+            lastInteractionTimeRef.current = null;
+            return;
+          }
+          onPlayPause?.();
         }}
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}

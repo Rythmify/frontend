@@ -81,7 +81,7 @@ describe("PrivacyPage", () => {
 
     const toggle = getToggleForText("Show when I'm a First or Top Fan");
 
-    expect(toggle.className).toContain("bg-[var(--color-accent)]");
+    expect(toggle.className).toContain("bg-accent");
     fireEvent.click(toggle);
 
     await waitFor(() => {
@@ -91,7 +91,7 @@ describe("PrivacyPage", () => {
     });
 
     await waitFor(() => {
-      expect(toggle.className).toContain("bg-[var(--color-accent)]");
+      expect(toggle.className).toContain("bg-accent");
     });
   });
 });

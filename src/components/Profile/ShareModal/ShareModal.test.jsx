@@ -98,6 +98,14 @@ describe("ShareModal", () => {
 
   it("calls onClose when close button is clicked", () => {
     render(<ShareModal url={testUrl} onClose={mockOnClose} />);
+    expect(screen.getByTestId("share-modal-close")).toHaveClass("top-14");
+    expect(screen.getByTestId("share-modal-close")).toHaveClass("right-4");
+    expect(screen.getByTestId("share-modal-close")).toHaveClass(
+      "bg-bg-actionbutton",
+    );
+    expect(screen.getByTestId("share-modal-close")).toHaveClass(
+      "text-text-secondary",
+    );
     fireEvent.click(screen.getByTestId("share-modal-close"));
     expect(mockOnClose).toHaveBeenCalled();
   });
