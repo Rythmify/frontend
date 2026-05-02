@@ -64,12 +64,8 @@ jobs:
       - name: Smoke check frontend
         run: |
           sleep 5
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://rythmify.duckdns.org)
-          if [ "$STATUS" != "200" ]; then
-            echo "Frontend smoke check FAILED — HTTP $STATUS"
-            exit 1
-          fi
-          echo "Frontend smoke check passed — HTTP $STATUS"
+          curl -fsS https://rythmify.duckdns.org/ -o /dev/null
+          echo "Frontend smoke check passed."
 
       - name: Clean up SSH key
         if: always()
