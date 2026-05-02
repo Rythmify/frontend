@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import ArtistToolsCard from "./ArtistToolsCard";
 import TrackItem from "@/components/UI/TrackItem";
 import TrackListSection from "@/components/UI/TrackListSection/TrackListSection";
@@ -18,26 +18,6 @@ import type { Track } from "@/types/track";
 
 const DiscoverSidebar = () => {
   const asideRef = useRef<HTMLElement>(null);
-
-  useLayoutEffect(() => {
-    const aside = asideRef.current;
-    if (!aside) return;
-
-    const update = () => {
-      aside.style.top = `${window.innerHeight - aside.offsetHeight}px`;
-    };
-
-    update();
-
-    const ro = new ResizeObserver(update);
-    ro.observe(aside);
-    window.addEventListener("resize", update, { passive: true });
-
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", update);
-    };
-  }, []);
 
   const [suggestedArtists, setSuggestedArtists] = useState<
     ReturnType<typeof mapSuggestedArtistToArtistCard>[]
@@ -101,7 +81,7 @@ const DiscoverSidebar = () => {
     <aside
       ref={asideRef}
       data-test="discover-sidebar"
-      className="flex flex-col gap-6 w-full sticky"
+      className="flex flex-col gap-6 w-full sticky top-0"
     >
       <ArtistToolsCard />
 
@@ -114,31 +94,35 @@ const DiscoverSidebar = () => {
         />
       )}
 
-      {likedTracks.length > 0 && (
-        <TrackListSection
-          title={`${likedTracks.length} LIKES`}
-          viewAllLink="/you/likes"
-        >
-          {likedTracks.slice(0, 3).map((track) => (
+      <TrackListSection
+        title={likedTracks.length > 0 ? `${likedTracks.length} LIKES` : "LIKES"}
+        viewAllLink="/you/likes"
+      >
+        {likedTracks.length > 0 ? (
+          likedTracks.slice(0, 3).map((track) => (
             <TrackItem key={String(track.id)} {...toItem(track)} />
-          ))}
-        </TrackListSection>
-      )}
+          ))
+        ) : (
+          <p className="text-text-secondary text-xs">No liked tracks yet</p>
+        )}
+      </TrackListSection>
 
-      {historyTracks.length > 0 && (
-        <TrackListSection
-          title="LISTENING HISTORY"
-          viewAllLink="/you/history"
-        >
-          {historyTracks.map((track) => (
+      <TrackListSection
+        title="LISTENING HISTORY"
+        viewAllLink="/you/history"
+      >
+        {historyTracks.length > 0 ? (
+          historyTracks.map((track) => (
             <TrackItem
               key={String(track.id)}
               {...toItem(track)}
               initialLiked={false}
             />
-          ))}
-        </TrackListSection>
-      )}
+          ))
+        ) : (
+          <p className="text-text-secondary text-xs">Start listening now</p>
+        )}
+      </TrackListSection>
 
       <GoMobileSection />
     </aside>
