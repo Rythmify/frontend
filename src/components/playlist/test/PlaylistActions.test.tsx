@@ -36,10 +36,17 @@ vi.mock("../DeleteConfirmModal", () => ({
 }));
 
 const mockNavigate = vi.fn();
+const mockAddToQueue = vi.fn();
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
   return { ...actual, useNavigate: () => mockNavigate };
 });
+
+vi.mock("@/stores/player.store", () => ({
+  usePlayerStore: vi.fn(() => ({
+    addToQueue: mockAddToQueue,
+  })),
+}));
 
 const mockPlaylist = {
   playlist_id: "pl-1",
@@ -79,6 +86,17 @@ describe("PlaylistActions", () => {
     expect(screen.getByTestId("share-popup")).toBeInTheDocument();
   });
 
+  it("closes the share popup from the modal", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistActions playlist={mockPlaylist} />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByTestId("button-share"));
+    fireEvent.click(screen.getByText("Close"));
+    expect(screen.queryByTestId("share-popup")).not.toBeInTheDocument();
+  });
+
   it("opens edit modal when Edit is clicked", () => {
     render(
       <MemoryRouter>
@@ -112,6 +130,17 @@ describe("PlaylistActions", () => {
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
 
+  it("closes delete modal without navigating when closed", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistActions playlist={mockPlaylist} />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByTestId("button-delete"));
+    fireEvent.click(screen.getByText("Close"));
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
   it("toggles like state when Like button is clicked", () => {
     const toggle = vi.fn();
     vi.mocked(useLikesStore).mockReturnValue({
@@ -137,5 +166,41 @@ describe("PlaylistActions", () => {
     );
     fireEvent.click(screen.getByTestId("button-copy-link"));
     expect(writeText).toHaveBeenCalledWith(window.location.href);
+  });
+
+  it("adds all tracks to next up when clicked", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistActions
+          playlist={{
+            ...mockPlaylist,
+            tracks: [
+              {
+                track_id: "t1",
+                title: "Alpha",
+                artist_name: "Artist",
+                artist_username: "artist",
+                duration: 120,
+                is_public: true,
+              },
+            ],
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByTestId("button-add-next-up"));
+    expect(mockAddToQueue).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not add to next up when the playlist is empty", () => {
+    render(
+      <MemoryRouter>
+        <PlaylistActions playlist={{ ...mockPlaylist, tracks: [] }} />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByTestId("button-add-next-up"));
+    expect(mockAddToQueue).not.toHaveBeenCalled();
   });
 });

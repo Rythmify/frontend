@@ -24,6 +24,8 @@ const AlbumsForYou = () => {
       .catch();
   }, [seedAlbums]);
 
+  if (!albums.length) return null;
+
   return (
     <div data-test="section-albums-for-you">
       <HorizontalCarousel title="Albums for you" data-section="albums-for-you">

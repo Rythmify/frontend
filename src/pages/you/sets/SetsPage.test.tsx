@@ -8,6 +8,8 @@ import {
   getLikedPlaylists,
   getMyPlaylists,
 } from "@/services/api/playlist/playlist.service";
+import { useAuthStore } from "@/stores/auth.store";
+import { useLikesStore } from "@/stores/likes.store";
 
 vi.mock("@/services/api/playlist/playlist.service", () => ({
   getMyPlaylists: vi.fn(),
@@ -16,6 +18,14 @@ vi.mock("@/services/api/playlist/playlist.service", () => ({
 
 vi.mock("@/services/api/discover.service", () => ({
   getHome: vi.fn(),
+}));
+
+vi.mock("@/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
+
+vi.mock("@/stores/likes.store", () => ({
+  useLikesStore: vi.fn(),
 }));
 
 vi.mock("@/components/discover/HorizontalCarousel", () => ({
@@ -29,9 +39,16 @@ vi.mock("@/components/UI/PlaylistCard/PlaylistCard", () => ({
       data-liked={String(item.isLiked)}
       data-private={String(item.isPrivate)}
       data-cover={item.coverUrl ?? ""}
+      data-owner-username={item.ownerUsername ?? ""}
     >
       {item.title}
     </div>
+  ),
+}));
+
+vi.mock("@/components/UI/card/Card", () => ({
+  default: ({ track }: any) => (
+    <div data-test="track-card">{track?.title ?? "track"}</div>
   ),
 }));
 
@@ -236,6 +253,15 @@ const homeData = {
 describe("SetsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuthStore).mockReturnValue({
+      user: { id: "owner-1", username: "owner", displayName: "Owner" },
+    } as any);
+    vi.mocked(useLikesStore).mockImplementation((selector: any) =>
+      selector({
+        seedFromHomeData: vi.fn(),
+        likedRadioTracks: [],
+      }),
+    );
     vi.mocked(getHome).mockResolvedValue(homeData as any);
   });
 
@@ -321,14 +347,18 @@ describe("SetsPage", () => {
     );
 
     fireEvent.click(screen.getByTestId("filter-created"));
-    expect(screen.getAllByTestId("playlist-card")).toHaveLength(2);
+    await waitFor(() =>
+      expect(screen.getAllByTestId("playlist-card")).toHaveLength(2),
+    );
     expect(screen.queryByText("Liked Jam")).not.toBeInTheDocument();
     expect(screen.queryByTestId("mix-card")).not.toBeInTheDocument();
     expect(screen.queryByTestId("made-for-you-card")).not.toBeInTheDocument();
     expect(screen.queryByTestId("genre-card")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("filter-liked"));
-    expect(screen.getAllByTestId("playlist-card")).toHaveLength(2);
+    await waitFor(() =>
+      expect(screen.getAllByTestId("playlist-card")).toHaveLength(2),
+    );
     expect(screen.queryByText("Created Mix")).not.toBeInTheDocument();
     expect(screen.getAllByTestId("mix-card")).toHaveLength(1);
     expect(screen.getAllByTestId("made-for-you-card")).toHaveLength(1);
@@ -354,9 +384,11 @@ describe("SetsPage", () => {
       target: { value: "does-not-match" },
     });
 
-    expect(
-      screen.getByText(/No playlists match your search/i),
-    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByText(/No playlists match your search/i),
+      ).toBeInTheDocument(),
+    );
   });
 
   it("shows the load error when playlists fail to fetch", async () => {
@@ -374,6 +406,44 @@ describe("SetsPage", () => {
       expect(
         screen.getByText(/Failed to load your library/i),
       ).toBeInTheDocument(),
+    );
+  });
+
+  it("uses the current user username for owned playlists", async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue(mockResponse([createdPlaylist]) as any);
+    vi.mocked(getLikedPlaylists).mockResolvedValue(mockResponse([]) as any);
+    vi.mocked(getHome).mockResolvedValue(homeData as any);
+
+    render(
+      <MemoryRouter>
+        <SetsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Created Mix")).toHaveAttribute(
+        "data-owner-username",
+        "owner",
+      ),
+    );
+  });
+
+  it("refetches when the playlist-updated event fires", async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue(mockResponse([createdPlaylist]) as any);
+    vi.mocked(getLikedPlaylists).mockResolvedValue(mockResponse([]) as any);
+    vi.mocked(getHome).mockResolvedValue(homeData as any);
+
+    render(
+      <MemoryRouter>
+        <SetsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText("Created Mix")).toBeInTheDocument());
+    const homeCallsAfterMount = vi.mocked(getHome).mock.calls.length;
+    window.dispatchEvent(new Event("playlist-updated"));
+    await waitFor(() =>
+      expect(vi.mocked(getHome).mock.calls.length).toBeGreaterThan(homeCallsAfterMount),
     );
   });
 });

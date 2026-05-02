@@ -11,12 +11,12 @@ import {
   getCuratedMixByIdFromHome,
   type CuratedHomeMixPreview,
 } from "@/services/api/discover.service";
+import { getFeaturedArtists } from "@/services/featuredArtists.service";
 import { usePlayerStore } from "../../../stores/player.store";
 import type { MockUser } from "../../../services/mocks/users";
 import TrackList from "../../../components/playlist/TrackList";
 import GuestPageFooter from "@/components/Upload/GuestPageFooter";
 import { useAuthStore } from "@/stores/auth.store";
-import { getUserById, type PublicUser } from "@/services/user.service";
 import { getRelatedTracks } from "@/services/track.service";
 import type { Track } from "@/types/track";
 
@@ -59,18 +59,6 @@ function mixToPlaylistDetails(
           play_count: track.playCount,
         }) as PlaylistTrackItem & { audio_url?: string; play_count?: number },
     ),
-  };
-}
-
-function toFeaturedArtist(user: PublicUser, trackCount: number): MockUser {
-  return {
-    id: user.id as unknown as number,
-    username: user.username ?? user.display_name,
-    displayName: user.display_name,
-    avatarUrl: user.profile_picture ?? "https://picsum.photos/seed/default/100/100",
-    followerCount: user.followers_count ?? 0,
-    trackCount,
-    isFollowing: false,
   };
 }
 
@@ -123,13 +111,9 @@ function CuratedForYouSlugPage() {
 
         setPlaylist(mixToPlaylistDetails(mix, referenceTrack, tracks, currentUserId));
 
-        const artist = referenceTrack.artistId
-          ? await getUserById(referenceTrack.artistId).catch(() => null)
-          : null;
+        const artists = await getFeaturedArtists([referenceTrack], user);
 
         if (cancelled) return;
-
-        const artists = artist ? [toFeaturedArtist(artist, 1)] : [];
 
         setFeaturedArtists(artists);
       } catch (err) {

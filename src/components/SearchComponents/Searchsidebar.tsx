@@ -22,17 +22,16 @@ export default function SearchSidebar({ query, filters }: SearchSidebarProps) {
   const activePath = TABS.find((t) => location.pathname === t.path)?.path ?? "/search";
 
   const handleTabClick = (path: string) => {
-    if (path === activePath) return;
     const qs = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : "";
     navigate(`${path}${qs}`);
   };
 
   return (
-    <aside className="flex flex-col gap-4 lg:gap-6 w-full lg:w-[220px] lg:shrink-0">
+    <aside data-test="search-sidebar" className="flex flex-col gap-4 lg:gap-6 w-full lg:w-[220px] lg:shrink-0">
 
       {/* Heading */}
       {query.trim() && (
-        <h1 className="text-base lg:text-lg font-bold text-text leading-snug hidden lg:block">
+        <h1 data-test="search-sidebar-title" className="text-base lg:text-lg font-bold text-text leading-snug hidden lg:block">
           Search results for{" "}
           <span className="text-text-hover">"{query}"</span>
         </h1>
@@ -45,6 +44,7 @@ export default function SearchSidebar({ query, filters }: SearchSidebarProps) {
           return (
             <button
               key={tab.path}
+              data-test={`search-tab-${tab.label.toLowerCase().replace(/\s+/g, "-")}`}
               onClick={() => handleTabClick(tab.path)}
               disabled={isActive}
               className={`

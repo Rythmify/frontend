@@ -12,6 +12,8 @@ interface MessageInputProps {
   onIsEmptyChange?: (isEmpty: boolean) => void
   onEmbedsResolved?: (embeds: ResolvedEmbed[]) => void
   hasError?: boolean
+  externalEmbeds?: ResolvedEmbed[]
+  onSubmit?: () => void
 }
 
 const URL_REGEX = /https?:\/\/[^\s"'<>]+/g
@@ -21,11 +23,26 @@ export function MessageBox({
   onIsEmptyChange,
   onEmbedsResolved,
   hasError,
+  externalEmbeds,
+  onSubmit,
 }: MessageInputProps) {
   const [value, setValue]   = useState("")
-  const [embeds, setEmbeds] = useState<ResolvedEmbed[]>([])
+  const [internalEmbeds, setInternalEmbeds] = useState<ResolvedEmbed[]>([])
   const debounceRef         = useRef<ReturnType<typeof setTimeout> | null>(null)
   const resolvedUrlsRef     = useRef<Map<string, ResolvedEmbed | null>>(new Map())
+  const controlled          = externalEmbeds !== undefined
+  const currentEmbeds       = externalEmbeds ?? internalEmbeds
+
+  const mergeEmbeds = (base: ResolvedEmbed[], next: ResolvedEmbed[]) => {
+    const map = new Map<string, ResolvedEmbed>()
+    for (const embed of base) {
+      map.set(`${embed.type}:${embed.id}`, embed)
+    }
+    for (const embed of next) {
+      map.set(`${embed.type}:${embed.id}`, embed)
+    }
+    return Array.from(map.values())
+  }
 
   const stripEmbedUrls = (text: string, activeEmbeds: ResolvedEmbed[]) => {
     let stripped = text
@@ -33,6 +50,7 @@ export function MessageBox({
     // (same URL twice = removed twice)
     const urlCounts = new Map<string, number>()
     for (const embed of activeEmbeds) {
+      if (!embed.sourceUrl) continue
       urlCounts.set(embed.sourceUrl, (urlCounts.get(embed.sourceUrl) ?? 0) + 1)
     }
     for (const [url, count] of urlCounts.entries()) {
@@ -47,25 +65,30 @@ export function MessageBox({
 
   // FIX 1: remove by index so duplicate URLs only remove one entry at a time
   const removeEmbedAt = (indexToRemove: number) => {
-    const embedToRemove = embeds[indexToRemove]
+    const embedToRemove = currentEmbeds[indexToRemove]
 
-    // Remove one occurrence of the URL from the textarea
-    let removed = false
-    const newValue = value.replace(
-      new RegExp(embedToRemove.sourceUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
-      (match) => {
-        if (!removed) { removed = true; return "" }
-        return match
-      }
-    ).replace(/\s{2,}/g, " ").trim()
+    let newValue = value
+    if (embedToRemove.sourceUrl) {
+      let removed = false
+      newValue = value.replace(
+        new RegExp(embedToRemove.sourceUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+        (match) => {
+          if (!removed) { removed = true; return "" }
+          return match
+        }
+      ).replace(/\s{2,}/g, " ").trim()
+    }
 
     setValue(newValue)
 
-    const next = embeds.filter((_, i) => i !== indexToRemove)
+    const next = currentEmbeds.filter((_, i) => i !== indexToRemove)
     const cleanText = stripEmbedUrls(newValue, next)
     onValueChange?.(cleanText)
     onIsEmptyChange?.(cleanText.trim() === "" && next.length === 0)
-    setEmbeds(next)
+
+    if (!controlled) {
+      setInternalEmbeds(next)
+    }
     onEmbedsResolved?.(next)
   }
 
@@ -79,9 +102,11 @@ export function MessageBox({
     if (!matches) {
       const cleanText = text.trim()
       onValueChange?.(cleanText)
-      onIsEmptyChange?.(cleanText === "")
-      setEmbeds([])
-      onEmbedsResolved?.([])
+      onIsEmptyChange?.(cleanText === "" && currentEmbeds.length === 0)
+      if (!controlled) {
+        setInternalEmbeds([])
+      }
+      onEmbedsResolved?.(currentEmbeds)
       return
     }
 
@@ -89,7 +114,7 @@ export function MessageBox({
     // (will be recalculated after resolve settles)
     const tempClean = matches.reduce((acc, url) => acc.replace(url, ""), text).replace(/\s{2,}/g, " ").trim()
     onValueChange?.(tempClean)
-    onIsEmptyChange?.(tempClean === "" && embeds.length === 0)
+    onIsEmptyChange?.(tempClean === "" && currentEmbeds.length === 0)
 
     debounceRef.current = setTimeout(async () => {
       const results = await Promise.all(
@@ -151,12 +176,15 @@ export function MessageBox({
       )
 
       const validEmbeds = results.filter((r): r is ResolvedEmbed => r !== null)
-      setEmbeds(validEmbeds)
-      onEmbedsResolved?.(validEmbeds)
+      const nextEmbeds = controlled ? mergeEmbeds(currentEmbeds, validEmbeds) : validEmbeds
+      if (!controlled) {
+        setInternalEmbeds(validEmbeds)
+      }
+      onEmbedsResolved?.(nextEmbeds)
 
-      const cleanText = stripEmbedUrls(text, validEmbeds)
+      const cleanText = stripEmbedUrls(text, nextEmbeds)
       onValueChange?.(cleanText)
-      onIsEmptyChange?.(cleanText === "" && validEmbeds.length === 0)
+      onIsEmptyChange?.(cleanText === "" && nextEmbeds.length === 0)
     }, 600)
   }
 
@@ -167,15 +195,21 @@ export function MessageBox({
         data-test="message-input"
         value={value}
         onChange={handleChange}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault()
+            onSubmit?.()
+          }
+        }}
         rows={4}
         className={`w-full resize-y bg-[#2a2a2a] border text-white text-sm px-3 py-2 rounded focus:outline-none caret-[#f50] ${
           hasError ? "border-red-500" : "border-[#444] focus:border-[#666]"
         }`}
       />
 
-      {embeds.length > 0 && (
+      {currentEmbeds.length > 0 && (
         <div className="flex flex-col mt-1">
-          {embeds.map((embed, index) => {
+          {currentEmbeds.map((embed, index) => {
             const props =
               embed.type === "track"
                 ? {

@@ -63,6 +63,41 @@ describe("TrackList", () => {
     );
   });
 
+  it("hydrates the first track when a more-of-like seed track is provided", () => {
+    render(
+      <MemoryRouter>
+        <TrackList
+          tracks={mockTracks}
+          moreOfLikeSeedTrack={{
+            id: "seed-1",
+            title: "Hydrated Seed",
+            artistName: "Seed Artist",
+            artistUsername: "seed-artist",
+            artistId: "seed-artist-id",
+            coverUrl: "https://cdn.example.com/seed.jpg",
+            genre: "pop",
+            likeCount: 0,
+            repostCount: 0,
+            playCount: 999,
+            commentCount: 0,
+            duration: "3:15",
+            postedAt: "2026-04-17T00:00:00Z",
+            waveformData: [],
+            audioUrl: "https://cdn.example.com/seed.mp3",
+            isPrivate: false,
+            trackSlug: "hydrated-seed",
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Hydrated Seed")).toBeInTheDocument();
+    expect(screen.getByTestId("link-track-title-seed-1")).toHaveAttribute(
+      "href",
+      "/seed-artist/hydrated-seed",
+    );
+  });
+
   it("renders artist names as valid links", () => {
     render(
       <MemoryRouter>
@@ -85,13 +120,12 @@ describe("TrackList", () => {
   });
 
   it("highlights the currently playing track", () => {
-    const { container } = render(
+    const { getByTestId } = render(
       <MemoryRouter>
         <TrackList tracks={mockTracks} currentTrackId="t1" />
       </MemoryRouter>,
     );
-    const activeRow = container.querySelector(".bg-\\[\\#303030\\]");
-    expect(activeRow).toBeInTheDocument();
+    expect(getByTestId("track-Item-t1")).toHaveClass("bg-bg");
   });
 
   it("renders play counts formatted", () => {

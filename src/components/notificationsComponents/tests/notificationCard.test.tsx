@@ -1,485 +1,324 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, configure, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import NotificationCard from '../notificationCard'
-import type { Notification, NotificationResourceDetails } from '@/services/api/notifications/notificationsAPI'
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import type { Notification } from "@/services/api/notifications/notificationsAPI";
 
-// Match the project-wide convention: all elements use data-test, not data-testid
-configure({ testIdAttribute: 'data-test' })
+const mockNavigate = vi.hoisted(() => vi.fn());
+const mockMarkOneAsRead = vi.hoisted(() => vi.fn());
 
-// ─── Mocks ────────────────────────────────────────────────────────────────────
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router-dom")>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
-const mockNavigate = vi.fn()
+vi.mock("@/services/api/notifications/notificationsAPI", () => ({
+  fetchFollowStatus: vi.fn(),
+  markNotificationRead: vi.fn(),
+}));
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom')
-  return { ...actual, useNavigate: () => mockNavigate }
-})
+vi.mock("@/stores/auth.store", () => ({
+  useAuthStore: () => ({ user: { id: "me" } }),
+}));
 
-vi.mock('@/components/UI/FollowButton', () => ({
-  default: ({ username }: { username: string }) => (
-    <button data-test={`follow-btn-${username}`}>Follow</button>
+vi.mock("@/stores/notification.store", () => ({
+  useNotificationStore: () => ({ markOneAsRead: mockMarkOneAsRead }),
+}));
+
+vi.mock("@/components/UI/FollowButton", () => ({
+  default: ({ username, userId, initialIsFollowing }: any) => (
+    <button
+      data-test="follow-button"
+      data-username={username}
+      data-userid={userId}
+      data-following={String(initialIsFollowing)}
+    >
+      Follow
+    </button>
   ),
-}))
+}));
 
-vi.mock('@/services/api/notifications/notificationsAPI', () => ({
-  markNotificationRead: vi.fn().mockResolvedValue({ success: true }),
-}))
+vi.mock("@/components/UI/UserAvatar", () => ({
+  default: ({ src, name, alt, imageDataTest, fallbackDataTest }: any) => (
+    <div
+      data-test="user-avatar"
+      data-src={src ?? ""}
+      data-name={name}
+      data-alt={alt}
+      data-image-test={imageDataTest}
+      data-fallback-test={fallbackDataTest}
+    />
+  ),
+}));
 
-// Modal mock exposes onClose via a data-test button so tests can trigger it directly
-vi.mock('@/components/UI/Modal', () => ({
-  Modal: ({
-    isOpen,
-    onClose,
-    children,
-  }: {
-    isOpen: boolean
-    onClose: () => void
-    children: React.ReactNode
-  }) =>
+vi.mock("@/components/UI/Modal", () => ({
+  Modal: ({ isOpen, onClose, children }: any) => (
     isOpen ? (
       <div data-test="modal">
-        <button data-test="modal-backdrop-close" onClick={onClose}>
-          backdrop
-        </button>
+        <button data-test="modal-close" onClick={onClose}>modal close</button>
         {children}
       </div>
-    ) : null,
-}))
+    ) : null
+  ),
+}));
 
-vi.mock('@/components/UI/BlockModal', () => ({
-  BlockUserModal: ({ username, onClose, onBlocked }: any) => (
-    <div data-test="block-modal">
-      <span>{username}</span>
-      <button onClick={onClose}>close</button>
-      <button onClick={onBlocked}>blocked</button>
+vi.mock("@/components/UI/BlockModal", () => ({
+  BlockUserModal: ({ userId, username, onClose, onBlocked }: any) => (
+    <div data-test="block-modal" data-userid={userId} data-username={username}>
+      <button data-test="block-close" onClick={onClose}>close</button>
+      <button data-test="block-confirm" onClick={onBlocked}>block</button>
     </div>
   ),
-}))
+}));
 
-vi.mock('@/components/UI/ReportModal', () => ({
-  ReportModal: ({ username, onClose, onSpamSelected }: any) => (
-    <div data-test="report-modal">
-      <span>{username}</span>
-      <button onClick={onClose}>close</button>
-      <button onClick={onSpamSelected}>spam</button>
+vi.mock("@/components/UI/ReportModal", () => ({
+  ReportModal: ({ userId, username, onClose, onSpamSelected }: any) => (
+    <div data-test="report-modal" data-userid={userId} data-username={username}>
+      <button data-test="report-close" onClick={onClose}>close</button>
+      <button data-test="report-spam" onClick={onSpamSelected}>spam</button>
     </div>
   ),
-}))
+}));
 
-// ─── Factories ────────────────────────────────────────────────────────────────
+vi.mock("@/components/UI/SpamModal", () => ({
+  SpamModal: ({ userId, username, onClose }: any) => (
+    <div data-test="spam-modal" data-userid={userId} data-username={username}>
+      <button data-test="spam-close" onClick={onClose}>close</button>
+    </div>
+  ),
+}));
 
-const NOW = new Date().toISOString()
+import NotificationCard from "@/components/notificationsComponents/notificationCard";
+import { fetchFollowStatus } from "@/services/api/notifications/notificationsAPI";
 
-// NotificationActor uses `avatar`, not `profile_picture`
-const defaultActor = {
-  id: 'user-1',
-  username: 'johndoe',
-  display_name: 'John Doe',
-  avatar: null as string | null,
+const mockFetchFollowStatus = fetchFollowStatus as ReturnType<typeof vi.fn>;
+
+function notification(overrides: Partial<Notification> = {}): Notification {
+  return {
+    id: "n1",
+    type: "follow",
+    actor: {
+      id: "u1",
+      username: "alice",
+      display_name: "Alice",
+      avatar: "avatar.png",
+    },
+    resource_type: "track",
+    resource_id: "track-1",
+    resource_details: { title: "Blue Song", content: "Nice!" },
+    is_read: false,
+    created_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+    ...overrides,
+  };
 }
 
-// Helper to build a typed NotificationResourceDetails
-const makeResource = (overrides: Partial<NotificationResourceDetails> = {}): NotificationResourceDetails => ({
-  title: undefined,
-  content: undefined,
-  ...overrides,
-})
-
-// Notification uses resource_type, resource_id, resource_details — not `resource`
-const makeNotification = (overrides: Partial<Notification> = {}): Notification => ({
-  id: 'notif-1',
-  type: 'follow',
-  is_read: false,
-  created_at: NOW,
-  actor: defaultActor,
-  resource_type: null,
-  resource_id: null,
-  resource_details: null,
-  ...overrides,
-})
-
-const renderCard = (notification: Notification, showActions = true) =>
-  render(
+function renderCard(n = notification(), props: Partial<React.ComponentProps<typeof NotificationCard>> = {}) {
+  return render(
     <MemoryRouter>
-      <NotificationCard notification={notification} showActions={showActions} />
+      <NotificationCard notification={n} {...props} />
     </MemoryRouter>,
-  )
+  );
+}
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
-describe('NotificationCard', () => {
+describe("NotificationCard", () => {
   beforeEach(() => {
-    mockNavigate.mockReset()
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2024-01-01T12:00:00Z'))
-  })
+    vi.clearAllMocks();
+    vi.spyOn(Date, "now").mockReturnValue(new Date("2026-05-01T12:00:00.000Z").getTime());
+    mockFetchFollowStatus.mockResolvedValue({
+      data: {
+        is_following: true,
+        is_followed_by: false,
+        is_blocking: false,
+        is_blocked_by: false,
+      },
+    });
+    mockMarkOneAsRead.mockResolvedValue({});
+  });
 
   afterEach(() => {
-    vi.useRealTimers()
-  })
+    vi.restoreAllMocks();
+  });
 
-  // ── Static rendering ──────────────────────────────────────────────────────
+  it("renders actor avatar, name, unread marker, action text, and relative time", async () => {
+    renderCard(notification({ created_at: new Date(Date.now() - 5 * 60_000).toISOString() }));
 
-  describe('rendering', () => {
-    it('renders the notification card root', () => {
-      renderCard(makeNotification())
-      expect(screen.getByTestId('notification-card-notif-1')).toBeInTheDocument()
-    })
+    expect(screen.getByTestId("notification-card-n1")).toBeInTheDocument();
+    expect(screen.getByTestId("notification-username-n1")).toHaveTextContent("Alice");
+    expect(screen.getByTestId("notification-action-text-n1")).toHaveTextContent("started following you");
+    expect(screen.getByTestId("notification-time-n1")).toHaveTextContent("5 minutes ago");
+    expect(screen.getByTestId("user-avatar")).toHaveAttribute("data-src", "avatar.png");
+    expect(await screen.findByTestId("follow-button")).toHaveAttribute("data-following", "true");
+  });
 
-    it('renders the actor display name', () => {
-      renderCard(makeNotification())
-      expect(screen.getByTestId('notification-username-notif-1')).toHaveTextContent('John Doe')
-    })
+  it.each([
+    ["like", "liked your track \"Blue Song\""],
+    ["repost", "reposted your track \"Blue Song\""],
+    ["comment", "commented \"Nice!\" on your track"],
+    ["new_post_by_followed", "posted a new track"],
+  ] as Array<[Notification["type"], string]>)("renders %s notification text", (type, text) => {
+    renderCard(notification({ type }));
+    expect(screen.getByTestId("notification-action-text-n1")).toHaveTextContent(text);
+  });
 
-    it('renders the time element', () => {
-      renderCard(makeNotification())
-      expect(screen.getByTestId('notification-time-notif-1')).toBeInTheDocument()
-    })
+  it.each([
+    [30_000, "just now"],
+    [2 * 60 * 60_000, "2 hours ago"],
+    [2 * 24 * 60 * 60_000, "2 days ago"],
+  ])("formats a %s ms old notification as %s", (age, text) => {
+    renderCard(notification({ created_at: new Date(Date.now() - age).toISOString() }));
+    expect(screen.getByTestId("notification-time-n1")).toHaveTextContent(text);
+  });
 
-    it('renders avatar wrapper', () => {
-      renderCard(makeNotification())
-      expect(screen.getByTestId('notification-avatar-notif-1')).toBeInTheDocument()
-    })
-  })
+  it("marks unread notifications as read and navigates to a follower profile", async () => {
+    const onMarkRead = vi.fn();
+    const user = userEvent.setup();
+    renderCard(notification(), { onMarkRead });
 
-  // ── Avatar ────────────────────────────────────────────────────────────────
+    await user.click(screen.getByTestId("notification-card-n1"));
 
-  describe('avatar', () => {
-    it('renders avatar image when avatar is provided', () => {
-      const n = makeNotification({
-        actor: { ...defaultActor, avatar: 'https://example.com/pic.jpg' },
-      })
-      renderCard(n)
-      expect(screen.getByTestId('notification-avatar-img-notif-1')).toHaveAttribute(
-        'src',
-        'https://example.com/pic.jpg',
-      )
-    })
+    expect(mockMarkOneAsRead).toHaveBeenCalledWith("n1");
+    expect(onMarkRead).toHaveBeenCalledWith("n1");
+    expect(mockNavigate).toHaveBeenCalledWith("/alice");
+  });
 
-    it('renders fallback icon when avatar is null', () => {
-      renderCard(makeNotification())
-      expect(screen.getByTestId('notification-avatar-fallback-notif-1')).toBeInTheDocument()
-    })
+  it("still navigates if marking as read fails", async () => {
+    const user = userEvent.setup();
+    mockMarkOneAsRead.mockRejectedValueOnce(new Error("nope"));
+    renderCard(notification({ type: "like", resource_type: "track", resource_id: "t99" }));
 
-    it('shows unread dot overlay when is_read is false', () => {
-      renderCard(makeNotification({ is_read: false }))
-      const avatar = screen.getByTestId('notification-avatar-notif-1')
-      expect(avatar.querySelector('.bg-red-500')).toBeInTheDocument()
-    })
+    await user.click(screen.getByTestId("notification-card-n1"));
 
-    it('does NOT show unread dot when is_read is true', () => {
-      renderCard(makeNotification({ is_read: true }))
-      const avatar = screen.getByTestId('notification-avatar-notif-1')
-      expect(avatar.querySelector('.bg-red-500')).not.toBeInTheDocument()
-    })
-  })
+    expect(mockNavigate).toHaveBeenCalledWith("/track/t99");
+  });
 
-  // ── Action text ───────────────────────────────────────────────────────────
+  it("navigates playlist notifications to the actor sets page and skips read calls when already read", async () => {
+    const user = userEvent.setup();
+    renderCard(notification({ is_read: true, type: "like", resource_type: "playlist", resource_id: "p1" }));
 
-  describe('buildActionText', () => {
-    it('renders "started following you" for follow type', () => {
-      renderCard(makeNotification({ type: 'follow' }))
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'started following you',
-      )
-    })
+    await user.click(screen.getByTestId("notification-card-n1"));
 
-    it('renders liked text with track title for like type', () => {
-      renderCard(
-        makeNotification({ type: 'like', resource_details: makeResource({ title: 'My Song' }) }),
-      )
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'liked your track "My Song"',
-      )
-    })
+    expect(mockMarkOneAsRead).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith("/alice/sets/p1");
+  });
 
-    it('falls back to resource id when title is undefined for like type', () => {
-      renderCard(
-        makeNotification({ type: 'like', resource_id: 'track-42', resource_details: makeResource({ title: undefined }) }),
-      )
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'liked your track "track-42"',
-      )
-    })
+  it("opens block, report, spam, and close flows from the menu", async () => {
+    const user = userEvent.setup();
+    renderCard(notification());
 
-    it('renders reposted text with track title for repost type', () => {
-      renderCard(
-        makeNotification({ type: 'repost', resource_details: makeResource({ title: 'My Song' }) }),
-      )
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'reposted your track "My Song"',
-      )
-    })
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    await waitFor(() => expect(screen.getByTestId("notification-block-btn-n1")).not.toBeDisabled());
+    await user.click(screen.getByTestId("notification-block-btn-n1"));
+    expect(screen.getByTestId("block-modal")).toBeInTheDocument();
 
-    it('falls back to resource id when title is undefined for repost type', () => {
-      renderCard(
-        makeNotification({ type: 'repost', resource_id: 'track-7', resource_details: makeResource({ title: undefined }) }),
-      )
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'reposted your track "track-7"',
-      )
-    })
+    await user.click(screen.getByTestId("block-confirm"));
+    expect(screen.queryByTestId("block-modal")).not.toBeInTheDocument();
 
-    it('renders comment text with body for comment type', () => {
-      renderCard(
-        makeNotification({ type: 'comment', resource_details: makeResource({ content: 'Great track!' }) }),
-      )
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'commented "Great track!" on your track',
-      )
-    })
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    await user.click(screen.getByTestId("notification-report-btn-n1"));
+    expect(screen.getByTestId("report-modal")).toBeInTheDocument();
 
-    // ── ?? '' fallback branches ───────────────────────────────────────────
+    await user.click(screen.getByTestId("report-spam"));
+    expect(screen.queryByTestId("report-modal")).not.toBeInTheDocument();
+    expect(screen.getByTestId("spam-modal")).toBeInTheDocument();
+  });
 
-    it('falls back to empty string when resource_details is null for like type', () => {
-      renderCard(makeNotification({ type: 'like', resource_details: null }))
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'liked your track ""',
-      )
-    })
+  it("closes each modal from its own close callback", async () => {
+    const user = userEvent.setup();
+    renderCard(notification());
 
-    it('falls back to empty string when resource_details is null for repost type', () => {
-      renderCard(makeNotification({ type: 'repost', resource_details: null }))
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'reposted your track ""',
-      )
-    })
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    await waitFor(() => expect(screen.getByTestId("notification-block-btn-n1")).not.toBeDisabled());
+    await user.click(screen.getByTestId("notification-block-btn-n1"));
+    expect(screen.getByTestId("block-modal")).toBeInTheDocument();
+    await user.click(screen.getByTestId("block-close"));
+    expect(screen.queryByTestId("block-modal")).not.toBeInTheDocument();
 
-    it('falls back to empty string when content is undefined for comment type', () => {
-      renderCard(
-        makeNotification({ type: 'comment', resource_details: makeResource({ content: undefined }) }),
-      )
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'commented "" on your track',
-      )
-    })
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    await user.click(screen.getByTestId("notification-report-btn-n1"));
+    expect(screen.getByTestId("report-modal")).toBeInTheDocument();
+    await user.click(screen.getByTestId("report-close"));
+    expect(screen.queryByTestId("report-modal")).not.toBeInTheDocument();
 
-    it('falls back to empty string when resource_details is null for comment type', () => {
-      renderCard(makeNotification({ type: 'comment', resource_details: null }))
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent(
-        'commented "" on your track',
-      )
-    })
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    await user.click(screen.getByTestId("notification-report-btn-n1"));
+    await user.click(screen.getByTestId("report-spam"));
+    expect(screen.getByTestId("spam-modal")).toBeInTheDocument();
+    await user.click(screen.getByTestId("spam-close"));
+    expect(screen.queryByTestId("spam-modal")).not.toBeInTheDocument();
+  });
 
-    it('renders empty string for unknown type', () => {
-      renderCard(makeNotification({ type: 'unknown' as any }))
-      expect(screen.getByTestId('notification-action-text-notif-1')).toHaveTextContent('')
-    })
-  })
+  it("closes each modal from the shared modal onClose callback", async () => {
+    const user = userEvent.setup();
+    renderCard(notification());
 
-  // ── Relative time ─────────────────────────────────────────────────────────
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    await waitFor(() => expect(screen.getByTestId("notification-block-btn-n1")).not.toBeDisabled());
+    await user.click(screen.getByTestId("notification-block-btn-n1"));
+    await user.click(screen.getByTestId("modal-close"));
+    expect(screen.queryByTestId("block-modal")).not.toBeInTheDocument();
 
-  describe('formatRelativeTime', () => {
-    it('shows minutes ago for recent notifications', () => {
-      const createdAt = new Date('2024-01-01T11:45:00Z').toISOString()
-      renderCard(makeNotification({ created_at: createdAt }))
-      expect(screen.getByTestId('notification-time-notif-1')).toHaveTextContent('15 minutes ago')
-    })
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    await user.click(screen.getByTestId("notification-report-btn-n1"));
+    await user.click(screen.getByTestId("modal-close"));
+    expect(screen.queryByTestId("report-modal")).not.toBeInTheDocument();
 
-    it('shows singular hour for exactly 1 hour ago', () => {
-      const createdAt = new Date('2024-01-01T11:00:00Z').toISOString()
-      renderCard(makeNotification({ created_at: createdAt }))
-      expect(screen.getByTestId('notification-time-notif-1')).toHaveTextContent('1 hour ago')
-    })
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    await user.click(screen.getByTestId("notification-report-btn-n1"));
+    await user.click(screen.getByTestId("report-spam"));
+    await user.click(screen.getByTestId("modal-close"));
+    expect(screen.queryByTestId("spam-modal")).not.toBeInTheDocument();
+  });
 
-    it('shows plural hours for 2+ hours ago', () => {
-      const createdAt = new Date('2024-01-01T10:00:00Z').toISOString()
-      renderCard(makeNotification({ created_at: createdAt }))
-      expect(screen.getByTestId('notification-time-notif-1')).toHaveTextContent('2 hours ago')
-    })
+  it("uses fallback resource text when title and content are missing", () => {
+    renderCard(notification({
+      type: "comment",
+      resource_type: null,
+      resource_id: "fallback-id",
+      resource_details: null,
+    }));
 
-    it('shows singular day for exactly 1 day ago', () => {
-      const createdAt = new Date('2023-12-31T12:00:00Z').toISOString()
-      renderCard(makeNotification({ created_at: createdAt }))
-      expect(screen.getByTestId('notification-time-notif-1')).toHaveTextContent('1 day ago')
-    })
+    expect(screen.getByTestId("notification-action-text-n1")).toHaveTextContent('commented "" on your track');
+  });
 
-    it('shows plural days for 2+ days ago', () => {
-      const createdAt = new Date('2023-12-30T12:00:00Z').toISOString()
-      renderCard(makeNotification({ created_at: createdAt }))
-      expect(screen.getByTestId('notification-time-notif-1')).toHaveTextContent('2 days ago')
-    })
-  })
+  it("renders empty action text for unknown notification types", () => {
+    renderCard(notification({ type: "mystery" as Notification["type"] }));
+    expect(screen.getByTestId("notification-action-text-n1")).toHaveTextContent("");
+  });
 
-  // ── Navigation ────────────────────────────────────────────────────────────
+  it("unblocks directly when the actor is already blocked", async () => {
+    const user = userEvent.setup();
+    mockFetchFollowStatus.mockResolvedValueOnce({
+      data: {
+        is_following: false,
+        is_followed_by: false,
+        is_blocking: true,
+        is_blocked_by: false,
+      },
+    });
 
-  describe('navigation', () => {
-    beforeEach(() => {
-      vi.useRealTimers()
-    })
-    it('navigates to user profile on click for follow notifications', async () => {
-      renderCard(makeNotification({ type: 'follow' }))
-      fireEvent.click(screen.getByTestId('notification-card-notif-1'))
-      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/johndoe'))
-    })
+    renderCard(notification());
 
-    it('navigates to track page on click for like notifications', async () => {
-      renderCard(makeNotification({ type: 'like', resource_id: 'track-99' }))
-      fireEvent.click(screen.getByTestId('notification-card-notif-1'))
-      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-99'))
-    })
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    await waitFor(() => expect(screen.getByTestId("notification-block-btn-n1")).toHaveTextContent("Unblock Alice"));
+    await user.click(screen.getByTestId("notification-block-btn-n1"));
 
-    it('navigates to track page on click for comment notifications', async () => {
-      renderCard(makeNotification({ type: 'comment', resource_id: 'track-5' }))
-      fireEvent.click(screen.getByTestId('notification-card-notif-1'))
-      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-5'))
-    })
+    await user.click(screen.getByTestId("notification-menu-btn-n1"));
+    expect(screen.getByTestId("notification-block-btn-n1")).toHaveTextContent("Block Alice");
+  });
 
-    it('navigates to track page on click for repost notifications', async () => {
-      renderCard(makeNotification({ type: 'repost', resource_id: 'track-8', resource_details: makeResource({ title: 'Remix' }) }))
-      fireEvent.click(screen.getByTestId('notification-card-notif-1'))
-      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/tracks/track-8'))
-    })
-  })
+  it("hides actions when showActions is false and handles follow-status failure", async () => {
+    mockFetchFollowStatus.mockRejectedValueOnce(new Error("nope"));
+    renderCard(notification(), { showActions: false });
 
-  // ── Follow button ─────────────────────────────────────────────────────────
+    expect(screen.queryByTestId("notification-menu-btn-n1")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("follow-button")).toHaveAttribute("data-following", "false");
+  });
 
-  describe('FollowButton', () => {
-    it('renders FollowButton for follow type', () => {
-      renderCard(makeNotification({ type: 'follow' }))
-      expect(screen.getByTestId('follow-btn-johndoe')).toBeInTheDocument()
-    })
-
-    it('does NOT render FollowButton for like type', () => {
-      renderCard(makeNotification({ type: 'like', resource_details: makeResource({ title: 'S' }) }))
-      expect(screen.queryByTestId('follow-btn-johndoe')).not.toBeInTheDocument()
-    })
-  })
-
-  // ── 3-dots menu ───────────────────────────────────────────────────────────
-
-  describe('3-dots dropdown menu', () => {
-    it('renders the 3-dots menu button when showActions is true', () => {
-      renderCard(makeNotification())
-      expect(screen.getByTestId('notification-menu-btn-notif-1')).toBeInTheDocument()
-    })
-
-    it('does NOT render the 3-dots button when showActions is false', () => {
-      renderCard(makeNotification(), false)
-      expect(screen.queryByTestId('notification-menu-btn-notif-1')).not.toBeInTheDocument()
-    })
-
-    it('menu is hidden by default', () => {
-      renderCard(makeNotification())
-      expect(screen.queryByTestId('notification-menu-notif-1')).not.toBeInTheDocument()
-    })
-
-    it('opens the dropdown when 3-dots button is clicked', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      expect(screen.getByTestId('notification-menu-notif-1')).toBeInTheDocument()
-    })
-
-    it('toggles the dropdown closed on second click', () => {
-      renderCard(makeNotification())
-      const btn = screen.getByTestId('notification-menu-btn-notif-1')
-      fireEvent.click(btn)
-      fireEvent.click(btn)
-      expect(screen.queryByTestId('notification-menu-notif-1')).not.toBeInTheDocument()
-    })
-
-    it('shows block and report buttons in the dropdown', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      expect(screen.getByTestId('notification-block-btn-notif-1')).toBeInTheDocument()
-      expect(screen.getByTestId('notification-report-btn-notif-1')).toBeInTheDocument()
-    })
-
-    it('clicking the actions area does NOT propagate to the card row (no navigation)', () => {
-      renderCard(makeNotification({ type: 'follow' }))
-      fireEvent.click(screen.getByTestId('notification-actions-notif-1'))
-      expect(mockNavigate).not.toHaveBeenCalled()
-    })
-  })
-
-  // ── Block modal ───────────────────────────────────────────────────────────
-
-  describe('Block modal', () => {
-    it('opens block modal when block button is clicked', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-block-btn-notif-1'))
-      expect(screen.getByTestId('block-modal')).toBeInTheDocument()
-    })
-
-    it('closes menu when block button is clicked', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-block-btn-notif-1'))
-      expect(screen.queryByTestId('notification-menu-notif-1')).not.toBeInTheDocument()
-    })
-
-    it('closes block modal via onClose callback', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-block-btn-notif-1'))
-      fireEvent.click(screen.getByText('close'))
-      expect(screen.queryByTestId('block-modal')).not.toBeInTheDocument()
-    })
-
-    it('closes block modal via onBlocked callback', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-block-btn-notif-1'))
-      fireEvent.click(screen.getByText('blocked'))
-      expect(screen.queryByTestId('block-modal')).not.toBeInTheDocument()
-    })
-
-    // ── Covers line 169: Modal onClose={() => setIsBlockOpen(false)} ──────
-    it('closes block modal via Modal backdrop onClose (covers line 169)', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-block-btn-notif-1'))
-      expect(screen.getByTestId('block-modal')).toBeInTheDocument()
-      // Trigger the onClose prop passed to <Modal> directly (the backdrop close)
-      fireEvent.click(screen.getByTestId('modal-backdrop-close'))
-      expect(screen.queryByTestId('block-modal')).not.toBeInTheDocument()
-    })
-  })
-
-  // ── Report modal ──────────────────────────────────────────────────────────
-
-  describe('Report modal', () => {
-    it('opens report modal when report button is clicked', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-report-btn-notif-1'))
-      expect(screen.getByTestId('report-modal')).toBeInTheDocument()
-    })
-
-    it('closes menu when report button is clicked', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-report-btn-notif-1'))
-      expect(screen.queryByTestId('notification-menu-notif-1')).not.toBeInTheDocument()
-    })
-
-    it('closes report modal via onClose callback', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-report-btn-notif-1'))
-      fireEvent.click(screen.getByText('close'))
-      expect(screen.queryByTestId('report-modal')).not.toBeInTheDocument()
-    })
-
-    it('closes report modal via onSpamSelected callback', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-report-btn-notif-1'))
-      fireEvent.click(screen.getByText('spam'))
-      expect(screen.queryByTestId('report-modal')).not.toBeInTheDocument()
-    })
-
-    // ── Covers line 179: Modal onClose={() => setIsReportOpen(false)} ─────
-    it('closes report modal via Modal backdrop onClose (covers line 179)', () => {
-      renderCard(makeNotification())
-      fireEvent.click(screen.getByTestId('notification-menu-btn-notif-1'))
-      fireEvent.click(screen.getByTestId('notification-report-btn-notif-1'))
-      expect(screen.getByTestId('report-modal')).toBeInTheDocument()
-      // Trigger the onClose prop passed to <Modal> directly (the backdrop close)
-      fireEvent.click(screen.getByTestId('modal-backdrop-close'))
-      expect(screen.queryByTestId('report-modal')).not.toBeInTheDocument()
-    })
-  })
-})
+  it("does not fetch follow status when the actor has no id", () => {
+    renderCard(notification({ actor: { id: "", username: "ghost", display_name: "Ghost", avatar: null } }));
+    expect(mockFetchFollowStatus).not.toHaveBeenCalled();
+  });
+});

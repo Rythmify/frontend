@@ -54,8 +54,8 @@ export default function MessagesPage() {
     }
   }, [conversations, isLoading, navigate]);
 
-  if (isLoading) return <Spinner />;
-  if (error)     return <p>{error}</p>;
+  if (isLoading) return <Spinner data-test="messages-loading" />;
+  if (error)     return <p data-test="messages-error">{error}</p>;
 
   return <EmptyMessagesPage />;
 }

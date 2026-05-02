@@ -11,6 +11,7 @@ import CardOverlay, {
   AddToPlaylistIcon,
 } from "@/components/UI/CardOverlay/CardOverlay";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import CoverImage from "@/components/UI/CoverImage";
 
 const BADGE_COLORS: { bg: string; text: string }[] = [
   { bg: "#B3A2F2", text: "#000000" }, // MIX 1 — dark gray
@@ -111,14 +112,12 @@ export default function MixCard({
     >
       {/* Cover */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-input-bg">
-        {(mix.cover_image ?? mix.preview_track?.cover_image) && (
-          <img
-            src={(mix.cover_image ?? mix.preview_track?.cover_image) as string}
-            alt={mix.label ?? ""}
-            className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
-            data-test="mix-card-image"
-          />
-        )}
+        <CoverImage
+          src={mix.cover_image ?? mix.preview_track?.cover_image}
+          alt={mix.label ?? ""}
+          className="w-full h-full object-cover group-hover:brightness-75 transition-all duration-200"
+          data-test="mix-card-image"
+        />
 
         {/* MIX badge */}
         <div

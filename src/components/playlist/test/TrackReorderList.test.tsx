@@ -13,11 +13,14 @@ vi.mock("@/services/api/playlist/playlist.service", () => ({
   removeTrackFromPlaylist: vi.fn(),
 }));
 
+let lastDndContextProps: any = null;
+
 // Mock dnd-kit components to avoid pointer event complexities
 vi.mock("@dnd-kit/core", () => ({
-  DndContext: ({ children }: any) => (
-    <div data-test="dnd-context">{children}</div>
-  ),
+  DndContext: (props: any) => {
+    lastDndContextProps = props;
+    return <div data-test="dnd-context">{props.children}</div>;
+  },
   closestCenter: vi.fn(),
   PointerSensor: vi.fn(),
   useSensor: vi.fn(),
@@ -27,7 +30,12 @@ vi.mock("@dnd-kit/core", () => ({
 vi.mock("@dnd-kit/sortable", () => ({
   SortableContext: ({ children }: any) => <div>{children}</div>,
   verticalListSortingStrategy: {},
-  arrayMove: vi.fn((a) => a),
+  arrayMove: vi.fn((array, from, to) => {
+    const next = [...array];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    return next;
+  }),
   useSortable: () => ({
     attributes: {},
     listeners: {},
@@ -62,6 +70,7 @@ const initialTracks = [
 describe("TrackReorderList", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    lastDndContextProps = null;
     vi.mocked(removeTrackFromPlaylist).mockResolvedValue({
       data: { success: true },
     } as any);
@@ -166,5 +175,122 @@ describe("TrackReorderList", () => {
     fireEvent.click(screen.getAllByLabelText("Remove from playlist")[0]);
 
     await waitFor(() => expect(cb).toHaveBeenCalled());
+  });
+
+  it("handles reorder drag end and persists the new order", async () => {
+    const cb = vi.fn();
+    render(
+      <TrackReorderList
+        playlistId="p1"
+        initialTracks={initialTracks}
+        onTracksChanged={cb}
+      />,
+    );
+
+    await waitFor(() => expect(lastDndContextProps).toBeTruthy());
+    await lastDndContextProps.onDragEnd({
+      active: { id: "t1" },
+      over: { id: "t2" },
+    });
+
+    expect(reorderPlaylistTracks).toHaveBeenCalledWith("p1", [
+      { track_id: "t2", position: 1 },
+      { track_id: "t1", position: 2 },
+    ]);
+    expect(cb).toHaveBeenCalledWith([
+      expect.objectContaining({ track_id: "t2", position: 1 }),
+      expect.objectContaining({ track_id: "t1", position: 2 }),
+    ]);
+  });
+
+  it("ignores drag end when there is no target or the same item is dropped", async () => {
+    render(
+      <TrackReorderList
+        playlistId="p1"
+        initialTracks={initialTracks}
+        onTracksChanged={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(lastDndContextProps).toBeTruthy());
+    await lastDndContextProps.onDragEnd({
+      active: { id: "t1" },
+      over: null,
+    });
+    await lastDndContextProps.onDragEnd({
+      active: { id: "t1" },
+      over: { id: "t1" },
+    });
+
+    expect(reorderPlaylistTracks).not.toHaveBeenCalled();
+  });
+
+  it("reverts the local order when reorder persistence fails", async () => {
+    const cb = vi.fn();
+    vi.mocked(reorderPlaylistTracks).mockRejectedValueOnce(new Error("fail"));
+
+    render(
+      <TrackReorderList
+        playlistId="p1"
+        initialTracks={initialTracks}
+        onTracksChanged={cb}
+      />,
+    );
+
+    await waitFor(() => expect(lastDndContextProps).toBeTruthy());
+    await lastDndContextProps.onDragEnd({
+      active: { id: "t1" },
+      over: { id: "t2" },
+    });
+
+    await waitFor(() =>
+      expect(cb).toHaveBeenLastCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ track_id: "t1", position: 1 }),
+          expect.objectContaining({ track_id: "t2", position: 2 }),
+        ]),
+      ),
+    );
+  });
+
+  it("logs and recovers when track removal fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(removeTrackFromPlaylist).mockRejectedValueOnce(new Error("fail"));
+
+    render(
+      <TrackReorderList
+        playlistId="p1"
+        initialTracks={initialTracks}
+        onTracksChanged={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByLabelText("Remove from playlist")[0]);
+
+    await waitFor(() =>
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Failed to remove track:",
+        expect.any(Error),
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getAllByLabelText("Remove from playlist")[0]).toBeEnabled(),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("updates tracks even when no change callback is provided", async () => {
+    render(
+      <TrackReorderList
+        playlistId="p1"
+        initialTracks={initialTracks}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByLabelText("Remove from playlist")[0]);
+
+    await waitFor(() =>
+      expect(screen.queryByText("Song 1")).not.toBeInTheDocument(),
+    );
   });
 });

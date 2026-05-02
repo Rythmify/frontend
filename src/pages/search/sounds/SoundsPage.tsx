@@ -100,6 +100,10 @@ export default function SoundsPage() {
     hasMoreRef.current = tracks.length < total;
   }, [tracks.length, total]);
 
+  useEffect(() => {
+    return () => setFilters(null);
+  }, []);
+
   // ── Empty query ───────────────────────────────────────────────────────────
   if (!q.trim()) {
     return (
@@ -123,10 +127,6 @@ export default function SoundsPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-  return () => setFilters(null);
-}, []);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

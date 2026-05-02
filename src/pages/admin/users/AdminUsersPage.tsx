@@ -86,6 +86,7 @@ const ActionDropdown = ({ user, onSuspend, onReinstate, onWarn }: DropdownProps)
   return (
     <div ref={ref} className="relative">
       <button
+        data-test={`btn-user-actions-${user.id}`}
         onClick={() => setOpen((o) => !o)}
         className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-[#888] hover:text-white hover:bg-white/8 transition-all"
       >
@@ -95,6 +96,7 @@ const ActionDropdown = ({ user, onSuspend, onReinstate, onWarn }: DropdownProps)
       {open && (
         <div className="absolute right-0 top-full mt-1.5 z-30 w-44 bg-[#1f1f1f] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
           <button
+            data-test="btn-send-warning"
             onClick={() => { setOpen(false); onWarn(user); }}
             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-[#ccc] hover:text-yellow-400 hover:bg-yellow-500/5 transition-colors"
           >
@@ -103,6 +105,7 @@ const ActionDropdown = ({ user, onSuspend, onReinstate, onWarn }: DropdownProps)
           </button>
           {user.status === "suspended" ? (
             <button
+              data-test="btn-reinstate-account"
               onClick={() => { setOpen(false); onReinstate(user); }}
               className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-[#ccc] hover:text-green-400 hover:bg-green-500/5 transition-colors"
             >
@@ -111,6 +114,7 @@ const ActionDropdown = ({ user, onSuspend, onReinstate, onWarn }: DropdownProps)
             </button>
           ) : (
             <button
+              data-test="btn-suspend-account"
               onClick={() => { setOpen(false); onSuspend(user); }}
               className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-[#ccc] hover:text-red-400 hover:bg-red-500/5 transition-colors"
             >
@@ -151,7 +155,7 @@ const SuspendModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-        <button onClick={onClose} className="absolute top-4 right-4 text-[#555] hover:text-white">
+        <button data-test="btn-suspend-modal-close" onClick={onClose} className="absolute top-4 right-4 text-[#555] hover:text-white">
           <X size={18} />
         </button>
         <div className="flex items-center gap-3 mb-5">
@@ -165,6 +169,7 @@ const SuspendModal = ({
         </div>
         <p className="text-[#999] text-xs uppercase tracking-widest mb-2">Reason *</p>
         <textarea
+          data-test="textarea-suspend-reason"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
@@ -175,8 +180,9 @@ const SuspendModal = ({
           This will block the user from logging in and all platform activity.
         </p>
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors">Cancel</button>
+          <button data-test="btn-suspend-cancel" onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors">Cancel</button>
           <button
+            data-test="btn-suspend-confirm"
             onClick={handleConfirm}
             disabled={loading || !reason.trim()}
             className="flex-1 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors disabled:opacity-50"
@@ -223,7 +229,7 @@ const WarnModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-        <button onClick={onClose} className="absolute top-4 right-4 text-[#555] hover:text-white">
+        <button data-test="btn-warn-modal-close" onClick={onClose} className="absolute top-4 right-4 text-[#555] hover:text-white">
           <X size={18} />
         </button>
         <div className="flex items-center gap-3 mb-5">
@@ -241,6 +247,7 @@ const WarnModal = ({
           {warnReasons.map(({ value, label }) => (
             <button
               key={value}
+              data-test={`btn-warn-reason-${value}`}
               onClick={() => setReason(value)}
               className={`px-3 py-2 rounded-lg border text-xs font-medium text-left transition-all ${
                 reason === value
@@ -255,6 +262,7 @@ const WarnModal = ({
 
         <p className="text-[#999] text-xs uppercase tracking-widest mb-2">Message (optional)</p>
         <textarea
+          data-test="textarea-warn-message"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={3}
@@ -264,8 +272,9 @@ const WarnModal = ({
         />
 
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors">Cancel</button>
+          <button data-test="btn-warn-cancel" onClick={onClose} className="flex-1 py-2.5 rounded-lg bg-white/5 text-[#999] hover:text-white text-sm font-medium transition-colors">Cancel</button>
           <button
+            data-test="btn-warn-confirm"
             onClick={handleConfirm}
             disabled={loading}
             className="flex-1 py-2.5 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-medium transition-colors disabled:opacity-50"
@@ -397,7 +406,7 @@ const AdminUsersPage = () => {
           <h1 className="text-3xl font-bold text-white">User Management</h1>
           <p className="text-[#666] text-base mt-1">Suspend, reinstate, and warn platform users</p>
         </div>
-        <button onClick={fetchUsers} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#161616] border border-white/5 text-[#888] hover:text-white transition-all">
+        <button data-test="btn-refresh" onClick={fetchUsers} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#161616] border border-white/5 text-[#888] hover:text-white transition-all">
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
@@ -407,6 +416,7 @@ const AdminUsersPage = () => {
         <div className="flex items-center gap-2 flex-1 min-w-60 bg-[#161616] border border-white/8 rounded-lg px-3 py-2 focus-within:border-[#ff5500]/50 transition-colors">
           <Search size={15} className="text-[#555] flex-shrink-0" />
           <input
+            data-test="input-user-search"
             type="text"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setOffset(0); }}
@@ -414,12 +424,13 @@ const AdminUsersPage = () => {
             className="flex-1 bg-transparent text-base text-white placeholder:text-[#555] focus:outline-none"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="text-[#555] hover:text-white">
+            <button data-test="btn-clear-search" onClick={() => setSearch("")} className="text-[#555] hover:text-white">
               <X size={13} />
             </button>
           )}
         </div>
         <select
+          data-test="select-role-filter"
           value={roleFilter}
           onChange={(e) => { setRoleFilter(e.target.value); setOffset(0); }}
           className="bg-[#161616] border border-white/8 text-base text-[#ccc] rounded-lg px-3 py-2 focus:outline-none focus:border-[#ff5500]/50"
@@ -520,6 +531,7 @@ const AdminUsersPage = () => {
             </span>
             <div className="flex items-center gap-2">
               <button
+                data-test="btn-prev-page"
                 onClick={() => setOffset(Math.max(0, offset - limit))}
                 disabled={offset === 0}
                 className="px-4 py-2 rounded-lg bg-white/5 text-[#888] text-sm hover:text-white disabled:opacity-30 transition-colors"
@@ -527,6 +539,7 @@ const AdminUsersPage = () => {
                 Previous
               </button>
               <button
+                data-test="btn-next-page"
                 onClick={() => setOffset(offset + limit)}
                 disabled={offset + limit >= total}
                 className="px-4 py-2 rounded-lg bg-white/5 text-[#888] text-sm hover:text-white disabled:opacity-30 transition-colors"

@@ -8,6 +8,8 @@ interface Props {
 }
 
 const DiscoverWithStations = ({ stations }: Props) => {
+  if (!stations.length) return null;
+
   const items = stations.map(mapDiscoveryStation);
 
   return (

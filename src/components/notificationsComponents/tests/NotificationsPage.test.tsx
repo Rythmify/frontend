@@ -1,312 +1,240 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent, configure } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import NotificationsPage from '@/pages/social/notifications/NotificationsPage'
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, waitFor, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { Notification } from "@/services/api/notifications/notificationsAPI";
 
-// Match the project-wide convention: all elements use data-test, not data-testid
-configure({ testIdAttribute: 'data-test' })
+const mockFetchUnreadCount = vi.hoisted(() => vi.fn());
+const mockRefreshUnreadCount = vi.hoisted(() => vi.fn());
+type SocketHandler = (...args: unknown[]) => void;
 
-// ─── Mocks ────────────────────────────────────────────────────────────────────
+const socketHandlers = vi.hoisted(() => new Map<string, SocketHandler>());
+const mockSocket = vi.hoisted(() => ({
+  on: vi.fn((event: string, cb: SocketHandler) => socketHandlers.set(event, cb)),
+  off: vi.fn((event: string) => socketHandlers.delete(event)),
+}));
 
-const mockFetchNotifications = vi.fn()
-const mockFetchMyFollowing   = vi.fn()
-const mockFetchUnreadCount   = vi.fn()
+vi.mock("@/services/api/notifications/notificationsAPI", () => ({
+  fetchNotifications: vi.fn(),
+  fetchMyFollowing: vi.fn(),
+}));
 
-vi.mock('@/services/api/notifications/notificationsAPI', () => ({
-  fetchNotifications: (...args: any[]) => mockFetchNotifications(...args),
-  fetchMyFollowing:   (...args: any[]) => mockFetchMyFollowing(...args),
-}))
-
-vi.mock('@/stores/notification.store', () => ({
+vi.mock("@/stores/notification.store", () => ({
   useNotificationStore: () => ({
     fetchUnreadCount: mockFetchUnreadCount,
-    unreadCount: 0,
+    refreshUnreadCount: mockRefreshUnreadCount,
   }),
-}))
+}));
 
-vi.mock('@/components/notificationsComponents/notificationCard', () => ({
-  default: ({ notification }: any) => (
-    <div data-test={`notification-card-${notification.id}`}>{notification.id}</div>
+vi.mock("@/services/api/messaging/socketService", () => ({
+  getSocket: vi.fn(() => mockSocket),
+}));
+
+vi.mock("@/components/UI/Spinner", () => ({
+  default: (props: any) => <div data-test={props["data-test"] ?? "spinner"}>Loading</div>,
+}));
+
+vi.mock("@/components/UI/ArtistListSection", () => ({
+  default: ({ title, artists, viewAllLink, maxDisplay }: any) => (
+    <aside data-test="artist-list" data-count={artists.length} data-link={viewAllLink} data-max={maxDisplay}>
+      {title}
+    </aside>
   ),
-}))
+}));
 
-vi.mock('@/components/notificationsComponents/notificationHeader', () => ({
-  default: ({ selectedType, onTypeChange }: any) => (
-    <div data-test="notification-header">
-      <span data-test="selected-type">{selectedType}</span>
-      <button data-test="filter-like"    onClick={() => onTypeChange('like')}>like</button>
-      <button data-test="filter-all"     onClick={() => onTypeChange('all')}>all</button>
-      <button data-test="filter-comment" onClick={() => onTypeChange('comment')}>comment</button>
-    </div>
-  ),
-}))
-
-vi.mock('@/components/UI/Spinner', () => ({
-  default: () => <div data-test="notifications-loading" />,
-}))
-
-vi.mock('@/components/UI/ArtistListSection', () => ({
-  default: ({ artists }: any) => (
-    <div data-test="artist-list">
-      {artists.map((a: any) => <div key={a.username}>{a.username}</div>)}
-    </div>
-  ),
-}))
-
-vi.mock('@/components/UI/GoMobile', () => ({
+vi.mock("@/components/UI/GoMobile", () => ({
   default: () => <div data-test="go-mobile" />,
-}))
+}));
 
-// ─── Factories ────────────────────────────────────────────────────────────────
+vi.mock("@/components/notificationsComponents/notificationCard", () => ({
+  default: ({ notification, onMarkRead }: any) => (
+    <button data-test={`notification-card-${notification.id}`} onClick={() => onMarkRead(notification.id)}>
+      {notification.actor.display_name}:{String(notification.is_read)}
+    </button>
+  ),
+}));
 
-const makeNotification = (id: string) => ({
-  id,
-  type: 'follow',
-  is_read: false,
-  created_at: new Date().toISOString(),
-  actor: { id: 'u1', username: 'alice', display_name: 'Alice', profile_picture: null, is_verified: false },
-  resource: null,
-})
+import NotificationsPage from "@/pages/social/notifications/NotificationsPage";
+import { fetchNotifications, fetchMyFollowing } from "@/services/api/notifications/notificationsAPI";
+import { getSocket } from "@/services/api/messaging/socketService";
 
-const resolvedNotifications = (items: any[]) =>
-  Promise.resolve({ data: { items } })
+const mockFetchNotifications = fetchNotifications as ReturnType<typeof vi.fn>;
+const mockFetchMyFollowing = fetchMyFollowing as ReturnType<typeof vi.fn>;
+const mockGetSocket = getSocket as ReturnType<typeof vi.fn>;
 
-const resolvedFollowing = (items: any[]) =>
-  Promise.resolve({ data: { items } })
+function notification(id: string, is_read = false): Notification {
+  return {
+    id,
+    type: "like",
+    actor: { id: `u-${id}`, username: `user-${id}`, display_name: `User ${id}`, avatar: null },
+    resource_type: "track",
+    resource_id: `track-${id}`,
+    resource_details: { title: `Track ${id}` },
+    is_read,
+    created_at: new Date().toISOString(),
+  };
+}
 
-// ─── Render helper ────────────────────────────────────────────────────────────
+function list(items: Notification[], has_next = false) {
+  return {
+    success: true,
+    data: {
+      items,
+      pagination: {
+        page: 1,
+        per_page: 20,
+        total_items: items.length,
+        total_pages: 1,
+        has_next,
+        has_prev: false,
+      },
+    },
+  };
+}
 
-const renderPage = () =>
-  render(
-    <MemoryRouter>
-      <NotificationsPage />
-    </MemoryRouter>,
-  )
+function following(items = [{ id: "f1", username: "fan", profile_picture: "fan.png", is_verified: true }]) {
+  return {
+    success: true,
+    data: {
+      items: items.map((u) => ({ display_name: u.username, ...u })),
+      pagination: { page: 1, per_page: 4, total_items: items.length, total_pages: 1, has_next: false, has_prev: false },
+    },
+  };
+}
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
+function installIntersectionObserver() {
+  const observers: IntersectionObserverCallback[] = [];
+  const disconnect = vi.fn();
+  Object.defineProperty(window, "IntersectionObserver", {
+    writable: true,
+    value: vi.fn(function (this: IntersectionObserver, cb: IntersectionObserverCallback) {
+      return {
+        observe: vi.fn(() => observers.push(cb)),
+        disconnect,
+      };
+    }),
+  });
+  return { observers, disconnect };
+}
 
-describe('NotificationsPage', () => {
+describe("social NotificationsPage", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockFetchMyFollowing.mockResolvedValue(resolvedFollowing([]))
-    mockFetchUnreadCount.mockResolvedValue(undefined)
-  })
+    vi.clearAllMocks();
+    socketHandlers.clear();
+    installIntersectionObserver();
+    mockFetchNotifications.mockResolvedValue(list([notification("n1")]));
+    mockFetchMyFollowing.mockResolvedValue(following());
+    mockFetchUnreadCount.mockResolvedValue(undefined);
+    mockRefreshUnreadCount.mockResolvedValue(undefined);
+    mockGetSocket.mockReturnValue(mockSocket);
+  });
 
-  // ── Loading state ─────────────────────────────────────────────────────────
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-  describe('loading state', () => {
-    it('shows spinner while notifications are loading', async () => {
-      mockFetchNotifications.mockReturnValue(new Promise(() => {}))
-      renderPage()
-      expect(screen.getByTestId('notifications-loading')).toBeInTheDocument()
-    })
+  it("loads notifications, sidebar followers, unread count, and socket listener", async () => {
+    render(<NotificationsPage />);
 
-    it('hides spinner after data loads', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([makeNotification('n1')]))
-      renderPage()
-      await waitFor(() =>
-        expect(screen.queryByTestId('notifications-loading')).not.toBeInTheDocument(),
-      )
-    })
-  })
+    expect(screen.getByTestId("notifications-loading")).toBeInTheDocument();
+    expect(await screen.findByTestId("notification-card-n1")).toBeInTheDocument();
+    expect(screen.getByTestId("artist-list")).toHaveAttribute("data-count", "1");
+    expect(screen.getByTestId("go-mobile")).toBeInTheDocument();
+    expect(mockFetchNotifications).toHaveBeenCalledWith(1, 20, undefined);
+    expect(mockFetchMyFollowing).toHaveBeenCalledWith(undefined, 4, 0);
+    expect(mockFetchUnreadCount).toHaveBeenCalled();
+    expect(mockSocket.on).toHaveBeenCalledWith("notification:created", expect.any(Function));
+  });
 
-  // ── Success state ─────────────────────────────────────────────────────────
+  it("renders empty and error states", async () => {
+    mockFetchNotifications.mockResolvedValueOnce(list([]));
+    const { unmount } = render(<NotificationsPage />);
+    expect(await screen.findByTestId("notifications-empty")).toHaveTextContent("You don't have any notifications");
+    unmount();
 
-  describe('success state', () => {
-    it('renders notification list on success', async () => {
-      mockFetchNotifications.mockResolvedValue(
-        resolvedNotifications([makeNotification('n1'), makeNotification('n2')]),
-      )
-      renderPage()
-      await waitFor(() => {
-        expect(screen.getByTestId('notifications-list')).toBeInTheDocument()
-      })
-    })
+    mockFetchNotifications.mockRejectedValueOnce(new Error("network"));
+    render(<NotificationsPage />);
+    expect(await screen.findByTestId("notifications-error")).toHaveTextContent("Something went wrong.");
+  });
 
-    it('renders a card for each notification', async () => {
-      mockFetchNotifications.mockResolvedValue(
-        resolvedNotifications([makeNotification('n1'), makeNotification('n2'), makeNotification('n3')]),
-      )
-      renderPage()
-      await waitFor(() => {
-        expect(screen.getByTestId('notification-card-n1')).toBeInTheDocument()
-        expect(screen.getByTestId('notification-card-n2')).toBeInTheDocument()
-        expect(screen.getByTestId('notification-card-n3')).toBeInTheDocument()
-      })
-    })
-  })
+  it("changes filters and ignores selecting the active filter", async () => {
+    const user = userEvent.setup();
+    render(<NotificationsPage />);
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+    await screen.findByTestId("notification-card-n1");
+    await user.click(screen.getByTestId("notification-filter-btn"));
+    await user.click(screen.getByTestId("notification-filter-option-all"));
+    expect(mockFetchNotifications).toHaveBeenCalledTimes(1);
 
-  describe('empty state', () => {
-    it('shows empty message when API returns no items', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => {
-        expect(screen.getByTestId('notifications-empty')).toBeInTheDocument()
-      })
-    })
+    await user.click(screen.getByTestId("notification-filter-btn"));
+    await user.click(screen.getByTestId("notification-filter-option-follow"));
 
-    it('shows correct empty message text', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => {
-        expect(screen.getByTestId('notifications-empty')).toHaveTextContent(
-          "You don't have any notifications",
-        )
-      })
-    })
-  })
+    await waitFor(() => expect(mockFetchNotifications).toHaveBeenCalledWith(1, 20, "follow"));
+  });
 
-  // ── Error state ───────────────────────────────────────────────────────────
+  it("marks a notification as read in local state and refreshes unread count", async () => {
+    const user = userEvent.setup();
+    render(<NotificationsPage />);
 
-  describe('error state', () => {
-    it('shows error message when API throws', async () => {
-      mockFetchNotifications.mockRejectedValue(new Error('network error'))
-      renderPage()
-      await waitFor(() => {
-        expect(screen.getByTestId('notifications-error')).toBeInTheDocument()
-      })
-    })
+    await user.click(await screen.findByTestId("notification-card-n1"));
 
-    it('shows correct error message text', async () => {
-      mockFetchNotifications.mockRejectedValue(new Error('500'))
-      renderPage()
-      await waitFor(() => {
-        expect(screen.getByTestId('notifications-error')).toHaveTextContent('Something went wrong.')
-      })
-    })
-  })
+    expect(mockFetchUnreadCount).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId("notification-card-n1")).toHaveTextContent("true");
+  });
 
-  // ── Filter / type change ──────────────────────────────────────────────────
+  it("loads more notifications when the sentinel intersects", async () => {
+    const io = installIntersectionObserver();
+    mockFetchNotifications
+      .mockResolvedValueOnce(list([notification("n1")], true))
+      .mockResolvedValueOnce(list([notification("n2")], false));
 
-  describe('filter type change', () => {
-    it('starts with "all" selected', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() =>
-        expect(screen.getByTestId('selected-type')).toHaveTextContent('all'),
-      )
-    })
+    render(<NotificationsPage />);
+    await screen.findByTestId("notification-card-n1");
 
-    it('calls fetchNotifications without type param for "all"', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => {
-        expect(mockFetchNotifications).toHaveBeenCalledWith(1, 50, false, undefined)
-      })
-    })
+    act(() => {
+      io.observers.forEach((cb) =>
+        cb([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver),
+      );
+    });
 
-    it('re-fetches with type param when filter changes', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => screen.getByTestId('notifications-empty'))
+    expect(await screen.findByTestId("notification-card-n2")).toBeInTheDocument();
+    expect(mockFetchNotifications).toHaveBeenLastCalledWith(2, 20, undefined);
+  });
 
-      fireEvent.click(screen.getByTestId('filter-like'))
+  it("silently handles sidebar, load-more, and socket edge cases", async () => {
+    const io = installIntersectionObserver();
+    mockFetchMyFollowing.mockRejectedValueOnce(new Error("sidebar"));
+    mockFetchNotifications
+      .mockResolvedValueOnce(list([notification("n1")], true))
+      .mockRejectedValueOnce(new Error("more failed"))
+      .mockResolvedValueOnce(list([notification("fresh")], false));
 
-      await waitFor(() => {
-        expect(mockFetchNotifications).toHaveBeenCalledWith(1, 50, false, 'like')
-      })
-    })
+    const { unmount } = render(<NotificationsPage />);
+    await screen.findByTestId("notification-card-n1");
 
-    it('does NOT re-fetch when the same filter is selected again', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => screen.getByTestId('notifications-empty'))
+    act(() => {
+      io.observers.forEach((cb) =>
+        cb([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver),
+      );
+    });
+    await waitFor(() => expect(mockFetchNotifications).toHaveBeenCalledTimes(2));
+    expect(screen.queryByTestId("notification-card-fresh")).not.toBeInTheDocument();
 
-      const callsBefore = mockFetchNotifications.mock.calls.length
+    await act(async () => {
+      socketHandlers.get("notification:created")?.();
+    });
 
-      fireEvent.click(screen.getByTestId('filter-all'))
+    expect(await screen.findByTestId("notification-card-fresh")).toBeInTheDocument();
+    expect(mockRefreshUnreadCount).toHaveBeenCalled();
 
-      await new Promise(r => setTimeout(r, 50))
+    unmount();
+    expect(mockSocket.off).toHaveBeenCalledWith("notification:created", expect.any(Function));
+  });
 
-      expect(mockFetchNotifications.mock.calls.length).toBe(callsBefore)
-    })
+  it("works without a socket", async () => {
+    mockGetSocket.mockReturnValueOnce(null);
+    render(<NotificationsPage />);
 
-    it('updates selectedType in header when filter changes', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => screen.getByTestId('notifications-empty'))
-
-      fireEvent.click(screen.getByTestId('filter-comment'))
-
-      await waitFor(() => {
-        expect(screen.getByTestId('selected-type')).toHaveTextContent('comment')
-      })
-    })
-  })
-
-  // ── Sidebar ───────────────────────────────────────────────────────────────
-
-  describe('sidebar', () => {
-    it('renders ArtistListSection', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => expect(screen.getByTestId('artist-list')).toBeInTheDocument())
-    })
-
-    it('renders GoMobileSection', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => expect(screen.getByTestId('go-mobile')).toBeInTheDocument())
-    })
-
-    it('calls fetchMyFollowing on mount', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => expect(mockFetchMyFollowing).toHaveBeenCalled())
-    })
-
-    it('populates ArtistListSection with fetched followers', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      mockFetchMyFollowing.mockResolvedValue(
-        resolvedFollowing([
-          { username: 'bob', profile_picture: null, is_verified: true },
-          { username: 'carol', profile_picture: 'https://x.com/img.jpg', is_verified: false },
-        ]),
-      )
-      renderPage()
-      await waitFor(() => {
-        expect(screen.getByText('bob')).toBeInTheDocument()
-        expect(screen.getByText('carol')).toBeInTheDocument()
-      })
-    })
-
-    it('silently ignores fetchMyFollowing errors', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      mockFetchMyFollowing.mockRejectedValue(new Error('network'))
-      renderPage()
-      await waitFor(() => expect(screen.getByTestId('artist-list')).toBeInTheDocument())
-    })
-  })
-
-  // ── Unread count ──────────────────────────────────────────────────────────
-
-  describe('unread count', () => {
-    it('calls fetchUnreadCount on mount', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() => expect(mockFetchUnreadCount).toHaveBeenCalledTimes(1))
-    })
-  })
-
-  // ── Page structure ────────────────────────────────────────────────────────
-
-  describe('page structure', () => {
-    it('renders the root page element', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() =>
-        expect(screen.getByTestId('notifications-page')).toBeInTheDocument(),
-      )
-    })
-
-    it('renders NotificationHeader', async () => {
-      mockFetchNotifications.mockResolvedValue(resolvedNotifications([]))
-      renderPage()
-      await waitFor(() =>
-        expect(screen.getByTestId('notification-header')).toBeInTheDocument(),
-      )
-    })
-  })
-})
+    expect(await screen.findByTestId("notification-card-n1")).toBeInTheDocument();
+    expect(mockSocket.on).not.toHaveBeenCalled();
+  });
+});

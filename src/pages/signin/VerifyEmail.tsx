@@ -69,7 +69,7 @@ export default function VerifyEmail({ email, onSendAgain, onBackToLogin }: Props
         </p>
         <p className="text-text-secondary text-sm text-center">
           If you still need help, visit our{" "}
-          <a href="/help" className="text-text-link hover:text-text-link-hover">
+          <a href="https://help.soundcloud.com/hc/en-us/sections/46266771825691" className="text-text-link hover:text-text-link-hover">
             Help Center
           </a>
           .

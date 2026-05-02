@@ -45,7 +45,7 @@ describe("ShareModal", () => {
   it("shows message form when Message tab is active", () => {
     render(<ShareModal url={testUrl} onClose={mockOnClose} />);
     fireEvent.click(screen.getByTestId("share-tab-message"));
-    expect(screen.getByTestId("message-to-input")).toBeInTheDocument();
+    expect(screen.getByTestId("message-recipient-input")).toBeInTheDocument();
     expect(screen.getByTestId("message-body-input")).toBeInTheDocument();
     expect(screen.getByTestId("message-send-button")).toBeInTheDocument();
   });
@@ -111,6 +111,8 @@ describe("ShareModal", () => {
   it("message body textarea has url as default value", () => {
     render(<ShareModal url={testUrl} onClose={mockOnClose} />);
     fireEvent.click(screen.getByTestId("share-tab-message"));
-    expect(screen.getByTestId("message-body-input")).toHaveValue(testUrl);
+    expect(screen.getByTestId("message-body-input")).toHaveValue(
+      `Check this out:\n${testUrl}`,
+    );
   });
 });

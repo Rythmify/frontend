@@ -8,9 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test": "npm run test:compile && node -r ./scripts/vitest-bootstrap.cjs ./node_modules/vitest/vitest.mjs --config ../vitest.config.mjs --root .vitest-out",
+    "test:run": "npm run test:compile && node -r ./scripts/vitest-bootstrap.cjs ./node_modules/vitest/vitest.mjs run --pool threads --configLoader runner --config ../vitest.config.mjs --root .vitest-out",
+    "test:compile": "tsc -p tsconfig.vitest.json && node ./scripts/copy-vitest-css.mjs",
+    "test:coverage": "npm run test:compile && node -r ./scripts/vitest-bootstrap.cjs ./node_modules/vitest/vitest.mjs run --pool threads --configLoader runner --coverage --config ../vitest.config.mjs --root .vitest-out"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -51,6 +52,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^4.1.1",
+    "@vitest/ui": "^4.1.1",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

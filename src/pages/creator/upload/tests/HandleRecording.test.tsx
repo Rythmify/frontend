@@ -28,6 +28,7 @@ class MockMediaRecorder {
 }
 
 globalThis.MediaRecorder = MockMediaRecorder as any;
+const originalAudioContext = globalThis.AudioContext;
 
 Object.defineProperty(globalThis.navigator, "mediaDevices", {
   value: { getUserMedia: vi.fn().mockResolvedValue({}) },
@@ -84,7 +85,10 @@ const createRecorder = () => {
 
 describe("HandleRecording", () => {
   beforeEach(() => vi.clearAllMocks());
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    globalThis.AudioContext = originalAudioContext;
+  });
 
   // ── Rendering ──────────────────────────────────────────────────────────────
 
@@ -497,5 +501,123 @@ describe("HandleRecording", () => {
     await waitFor(() => expect(mockToWav).toHaveBeenCalled());
     expect(segments.setter).toHaveBeenCalled();
     expect(onFinish).toHaveBeenCalledWith(expect.any(Blob));
+  });
+
+  it("merges multiple recorded segments into a wav blob", async () => {
+    const recorder = createRecorder();
+    const segments = createStatefulSetter([
+      new Blob(["part-1"], { type: "audio/ogg" }),
+      new Blob(["part-2"], { type: "audio/ogg" }),
+    ]);
+    const onFinish = vi.fn();
+
+    const decodeAudioData = vi
+      .fn()
+      .mockResolvedValueOnce({
+        numberOfChannels: 1,
+        sampleRate: 22050,
+        length: 2,
+        getChannelData: () => Float32Array.from([0.25, -0.25]),
+      })
+      .mockResolvedValueOnce({
+        numberOfChannels: 1,
+        sampleRate: 22050,
+        length: 2,
+        getChannelData: () => Float32Array.from([0.5, 0.75]),
+      });
+
+    const createBuffer = vi.fn((channels: number, length: number) => {
+      const channelData = Array.from(
+        { length: channels },
+        () => new Float32Array(length),
+      );
+      return {
+        numberOfChannels: channels,
+        length,
+        sampleRate: 22050,
+        getChannelData: (channel: number) => channelData[channel],
+      };
+    });
+
+    const close = vi.fn().mockResolvedValue(undefined);
+
+    class MockAudioContextWithMerging {
+      sampleRate = 22050;
+      decodeAudioData = decodeAudioData;
+      createBuffer = createBuffer;
+      close = close;
+    }
+
+    globalThis.AudioContext = MockAudioContextWithMerging as any;
+
+    const props = makeProps({
+      isRecording: true,
+      isPaused: false,
+      seconds: 10,
+      currentSegmentStart: 5,
+      mediaRecorderRef: { current: recorder },
+      audioSegments: segments.getCurrent(),
+      setAudioSegments: segments.setter,
+      onFinish,
+    });
+
+    render(<HandleRecording {...props} />);
+    fireEvent.click(screen.getByTestId("stop-recording-button"));
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await waitFor(() => expect(mockToWav).toHaveBeenCalled());
+    expect(onFinish).toHaveBeenCalledWith(expect.any(Blob));
+    expect(close).toHaveBeenCalled();
+  });
+
+  it("falls back to the raw blob when merging recorded segments fails", async () => {
+    const recorder = createRecorder();
+    const segments = createStatefulSetter([
+      new Blob(["part-1"], { type: "audio/ogg" }),
+      new Blob(["part-2"], { type: "audio/ogg" }),
+    ]);
+    const onFinish = vi.fn();
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const decodeAudioData = vi.fn().mockRejectedValue(new Error("decode failed"));
+    const close = vi.fn().mockResolvedValue(undefined);
+
+    class MockAudioContextWithFailure {
+      sampleRate = 22050;
+      decodeAudioData = decodeAudioData;
+      createBuffer = vi.fn();
+      close = close;
+    }
+
+    globalThis.AudioContext = MockAudioContextWithFailure as any;
+
+    const props = makeProps({
+      isRecording: true,
+      isPaused: false,
+      seconds: 10,
+      currentSegmentStart: 5,
+      mediaRecorderRef: { current: recorder },
+      audioSegments: segments.getCurrent(),
+      setAudioSegments: segments.setter,
+      onFinish,
+    });
+
+    render(<HandleRecording {...props} />);
+    fireEvent.click(screen.getByTestId("stop-recording-button"));
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await waitFor(() => expect(mockToWav).toHaveBeenCalled());
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Failed to merge recorded segments, using fallback blob:",
+      expect.any(Error),
+    );
+    expect(close).toHaveBeenCalled();
+    expect(onFinish).toHaveBeenCalledWith(expect.any(Blob));
+    consoleSpy.mockRestore();
   });
 });

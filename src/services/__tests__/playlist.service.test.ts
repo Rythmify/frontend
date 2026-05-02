@@ -2,16 +2,31 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import axiosInstance from "../api/axiosInstance";
 import {
   addTrackToPlaylist,
+  convertPlaylist,
   createPlaylist,
   deletePlaylist,
+  getAlbumLikers,
+  getAlbumReposters,
+  getMadeForYouDaily,
+  getMadeForYouWeekly,
   getLikedPlaylists,
   getMyPlaylists,
   getPlaylist,
+  getPlaylistLikers,
   getPlaylistEmbed,
   getPlaylistShareLink,
+  getPlaylistReposters,
   getPlaylistTracks,
   getPlaylistsByUser,
+  getRadioTracks,
+  getStationTracks,
+  getTrendingByGenre,
+  formatDuration,
+  getPlaylistTotalDuration,
+  playlistExists,
+  removePlaylistRepost,
   removeTrackFromPlaylist,
+  repostPlaylist,
   reorderPlaylistTracks,
   updatePlaylist,
 } from "../api/playlist/playlist.service";
@@ -98,6 +113,7 @@ describe("playlist.service", () => {
       slug: "updated-slug",
       release_date: null,
       genre_id: null,
+      is_album_view: true,
       tags: ["tag-1", "tag-2"],
     });
 
@@ -117,9 +133,27 @@ describe("playlist.service", () => {
       ["slug", "updated-slug"],
       ["release_date", ""],
       ["genre_id", ""],
+      ["is_album_view", "true"],
       ["tags[]", "tag-1"],
       ["tags[]", "tag-2"],
     ]);
+  });
+
+  it("formatDuration formats seconds with and without hours", () => {
+    expect(formatDuration(0)).toBe("0:00");
+    expect(formatDuration(65)).toBe("1:05");
+    expect(formatDuration(3661)).toBe("1:01:01");
+    expect(formatDuration(-5)).toBe("0:00");
+  });
+
+  it("getPlaylistTotalDuration sums track durations and skips missing values", () => {
+    expect(
+      getPlaylistTotalDuration([
+        { track_id: "a", position: 1, added_at: "2025-01-01", duration: 30 },
+        { track_id: "b", position: 2, added_at: "2025-01-01" },
+        { track_id: "c", position: 3, added_at: "2025-01-01", duration: 45 },
+      ]),
+    ).toBe("1:15");
   });
 
   it("deletePlaylist deletes the playlist by id", async () => {
@@ -333,5 +367,271 @@ describe("playlist.service", () => {
 
     expect(mockedAxios.get).toHaveBeenCalledWith("/playlists/pl-1/share-link");
     expect(result.data.share_url).toBe("https://share");
+  });
+
+  it("playlistExists returns false for an empty id without calling the API", async () => {
+    await expect(playlistExists("")).resolves.toBe(false);
+    expect(mockedAxios.get).not.toHaveBeenCalled();
+  });
+
+  it("playlistExists returns true when the playlist is found", async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        data: {
+          playlist_id: "pl-1",
+          owner_user_id: "user-1",
+          name: "Playlist",
+          description: null,
+          is_public: true,
+          created_at: "2025-01-01T00:00:00Z",
+          track_count: 0,
+          like_count: 0,
+          tracks: [],
+        },
+        message: "ok",
+      },
+    } as any);
+
+    await expect(playlistExists("pl-1")).resolves.toBe(true);
+  });
+
+  it("playlistExists returns false when getPlaylist rejects", async () => {
+    mockedAxios.get.mockRejectedValueOnce(new Error("missing"));
+
+    await expect(playlistExists("pl-1")).resolves.toBe(false);
+  });
+
+  it("convertPlaylist posts the conversion payload", async () => {
+    mockedAxios.post.mockResolvedValue({
+      data: { data: { playlist_id: "pl-1" }, message: "converted" },
+    } as any);
+
+    const result = await convertPlaylist("pl-1", {
+      name: "Converted",
+      is_public: true,
+    });
+
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      "/playlists/pl-1/convert",
+      { name: "Converted", is_public: true },
+    );
+    expect(result.message).toBe("converted");
+  });
+
+  it("getStationTracks maps station data and track items", async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        station: {
+          id: "station-1",
+          artist_id: "artist-1",
+          artist_name: "Artist One",
+          images: { left: null, center: null, right: null },
+          preview_track: null,
+          track_count: 2,
+        },
+        data: [
+          {
+            id: "track-1",
+            title: "First",
+            cover_image: null,
+            duration: 120,
+            genre_name: "Hip-Hop",
+            play_count: 10,
+            like_count: 3,
+            repost_count: 1,
+            user_id: "artist-1",
+            artist_name: "Artist One",
+            stream_url: "https://stream/1",
+            created_at: "2025-01-01T00:00:00Z",
+          },
+          {
+            id: "track-2",
+            title: "Second",
+            cover_image: "cover.jpg",
+            duration: 90,
+            genre_name: "Pop",
+            play_count: 20,
+            like_count: 4,
+            repost_count: 2,
+            user_id: "artist-1",
+            artist_name: "Artist One",
+            stream_url: "https://stream/2",
+            created_at: "2025-01-02T00:00:00Z",
+          },
+        ],
+        pagination: { limit: 2, offset: 0, total: 2 },
+      },
+    } as any);
+
+    const result = await getStationTracks("artist-1");
+
+    expect(mockedAxios.get).toHaveBeenCalledWith("/home/stations/artist-1/tracks");
+    expect(result.station.name).toBe("Artist One's Station");
+    expect(result.tracks[0]).toMatchObject({
+      track_id: "track-1",
+      position: 1,
+      title: "First",
+      artist_id: "artist-1",
+      audio_url: "https://stream/1",
+    });
+  });
+
+  it("getMadeForYouDaily returns the daily mix payload", async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        data: {
+          mix_id: "mix-1",
+          title: "Daily",
+          cover_url: null,
+          tracks: [],
+        },
+      },
+    } as any);
+
+    await expect(getMadeForYouDaily()).resolves.toEqual({
+      mix_id: "mix-1",
+      title: "Daily",
+      cover_url: null,
+      tracks: [],
+    });
+  });
+
+  it("getMadeForYouWeekly returns the weekly mix payload", async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        data: {
+          mix_id: "mix-2",
+          title: "Weekly",
+          cover_url: "cover.png",
+          tracks: [],
+        },
+      },
+    } as any);
+
+    await expect(getMadeForYouWeekly()).resolves.toEqual({
+      mix_id: "mix-2",
+      title: "Weekly",
+      cover_url: "cover.png",
+      tracks: [],
+    });
+  });
+
+  it("getRadioTracks returns the radio track payload", async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        data: {
+          playlist_id: "pl-1",
+          seed_track_id: "seed-1",
+          title: "Radio",
+          description: "Desc",
+          cover_image: null,
+          reference_track: {
+            id: "seed-1",
+            title: "Seed",
+            cover_image: null,
+            duration: 100,
+            genre_name: "Rock",
+            play_count: 1,
+            like_count: 2,
+            repost_count: 3,
+            user_id: "artist-1",
+            artist_name: "Artist One",
+            stream_url: null,
+            created_at: "2025-01-01T00:00:00Z",
+          },
+          tracks: [],
+          meta: { limit: 10, offset: 0, total: 0 },
+        },
+        message: "ok",
+      },
+    } as any);
+
+    const result = await getRadioTracks("pl-1");
+
+    expect(mockedAxios.get).toHaveBeenCalledWith("/playlists/pl-1/radio-tracks");
+    expect(result.title).toBe("Radio");
+  });
+
+  it("getTrendingByGenre returns the genre payload", async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        data: {
+          genre_id: "genre-1",
+          genre_name: "Indie",
+          tracks: [],
+        },
+        message: "ok",
+      },
+    } as any);
+
+    const result = await getTrendingByGenre("genre-1", {
+      limit: 4,
+      offset: 8,
+    });
+
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      "/home/trending-by-genre/genre-1",
+      { params: { limit: 4, offset: 8 } },
+    );
+    expect(result.genre_name).toBe("Indie");
+  });
+
+  it("getPlaylistLikers and getPlaylistReposters fetch the correct endpoints", async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        data: [],
+        pagination: { limit: 5, offset: 0, total: 0 },
+      },
+    } as any);
+
+    await getPlaylistLikers("pl-1", { limit: 5 });
+    await getPlaylistReposters("pl-1", { limit: 7 });
+
+    expect(mockedAxios.get).toHaveBeenNthCalledWith(
+      1,
+      "/playlists/pl-1/likers",
+      { params: { limit: 5 } },
+    );
+    expect(mockedAxios.get).toHaveBeenNthCalledWith(
+      2,
+      "/playlists/pl-1/reposters",
+      { params: { limit: 7 } },
+    );
+  });
+
+  it("getAlbumLikers and getAlbumReposters fetch the correct endpoints", async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        data: [],
+        pagination: { limit: 5, offset: 0, total: 0 },
+      },
+    } as any);
+
+    await getAlbumLikers("album-1", { offset: 2 });
+    await getAlbumReposters("album-1", { offset: 4 });
+
+    expect(mockedAxios.get).toHaveBeenNthCalledWith(
+      1,
+      "/albums/album-1/likers",
+      { params: { offset: 2 } },
+    );
+    expect(mockedAxios.get).toHaveBeenNthCalledWith(
+      2,
+      "/albums/album-1/reposters",
+      { params: { offset: 4 } },
+    );
+  });
+
+  it("repostPlaylist and removePlaylistRepost call the repost endpoints", async () => {
+    mockedAxios.post.mockResolvedValue({ data: { ok: true } } as any);
+    mockedAxios.delete.mockResolvedValue({ data: { ok: true } } as any);
+
+    await repostPlaylist("pl-1");
+    await removePlaylistRepost("pl-1");
+
+    expect(mockedAxios.post).toHaveBeenCalledWith("/playlists/pl-1/repost");
+    expect(mockedAxios.delete).toHaveBeenCalledWith(
+      "/playlists/pl-1/repost",
+    );
   });
 });
