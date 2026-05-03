@@ -11,6 +11,16 @@ node_modules
 dist
 dist-ssr
 *.local
+coverage
+
+.claude
+.settings.local.json
+CLAUDE.md
+
+
+
+.env
+.env.local
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +32,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+src/openapi.yaml
+src/feed-discovery.md
+/.vitest-out/src

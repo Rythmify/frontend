@@ -1,7 +1,103 @@
-import React from 'react'
+import { useState, useEffect } from "react";
+import DiscoverSideBar from "@/components/discover/sidebar/DiscoverSideBar";
+import RecentlyPlayed from "@/components/discover/RecentlyPlayed";
+import AlbumsForYou from "@/components/discover/AlbumsForYou";
+import NewCrewForYou from "@/components/discover/NewCrewForYou";
+import DiscoverWithStations from "@/components/discover/DiscoverWithStations";
+import MixedForYou from "@/components/discover/MixedForYou";
+import TrendingByGenres from "@/components/discover/TrendingByGenre/TrendingByGenres";
+import MadeForYou from "@/components/discover/MadeForYou/MadeForYou";
+import MoreOfWhatYouLike from "@/components/discover/MoreOfWhatYouLike";
+import { getHome } from "@/services/api/discover.service";
+import type { HomeData } from "@/services/api/discover.service";
+import { useLikesStore } from "@/stores/likes.store";
+import { useAuthStore } from "@/stores/auth.store";
+import Spinner from "@/components/UI/Spinner";
+import PremiumPromoModal from "@/components/Premium/PremiumPromoModal";
 
-export default function DiscoverPageAuth() {
+// Resets on every page load; prevents re-showing when React Router navigates back to this page
+let promoShownThisLoad = false;
+
+const DiscoverPageAuth = () => {
+  const [homeData, setHomeData] = useState<HomeData | null>(null);
+  const [homeError, setHomeError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showPromo, setShowPromo] = useState(false);
+  const seedFromHomeData = useLikesStore((s) => s.seedFromHomeData);
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    getHome()
+      .then((data) => {
+        setHomeData(data);
+        seedFromHomeData(data);
+        setIsLoading(false);
+      })
+      .catch((err: Error) => {
+        setHomeError(err.message);
+        setIsLoading(false);
+      });
+  }, [seedFromHomeData]);
+
+  useEffect(() => {
+    if (user?.isPro || promoShownThisLoad) return;
+    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    if (nav?.type === "reload") return;
+    promoShownThisLoad = true;
+    // No cleanup returned — timer must survive StrictMode's unmount/remount cycle
+    setTimeout(() => setShowPromo(true), 4000);
+  }, []);
+
+  if (isLoading) return <Spinner />;
+
   return (
-    <div>DiscoverPageAuth</div>
-  )
-}
+    <>
+      {showPromo && <PremiumPromoModal onClose={() => setShowPromo(false)} />}
+      <div
+        className="min-h-screen w-full container px-4 md:px-8 lg:px-20 bg-bg"
+        data-test="discover-page"
+      >
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-11 p-0">
+          {/* Main Content */}
+          <div
+            className="flex flex-col gap-10 sm:gap-14 lg:gap-20 w-full lg:flex-8 min-w-0 pt-6 sm:pt-10"
+            data-test="discover-main-content"
+          >
+            {homeError && (
+              <p
+                className="text-xs text-text-secondary"
+                data-test="discover-error"
+              >
+                {homeError}
+              </p>
+            )}
+            <MoreOfWhatYouLike
+              tracks={homeData?.more_of_what_you_like?.tracks ?? []}
+            />
+            <RecentlyPlayed />
+            <MixedForYou mixes={homeData?.mixed_for_you ?? []} />
+            <AlbumsForYou />
+            <MadeForYou madeForYou={homeData?.made_for_you ?? null} />
+            <TrendingByGenres
+              genres={homeData?.trending_by_genre?.genres ?? []}
+            />
+            <DiscoverWithStations
+              stations={homeData?.discover_with_stations ?? []}
+            />
+            <NewCrewForYou />
+          </div>
+
+          {/* Sidebar — hidden below lg */}
+          <div
+            className="hidden lg:block lg:flex-2 ps-2 pt-8"
+            data-test="discover-sidebar-container"
+          >
+            <DiscoverSideBar />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default DiscoverPageAuth;

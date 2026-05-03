@@ -1,0 +1,443 @@
+import React, { useState } from "react";
+import type { User } from "@/stores/auth.store";
+import { useNavigate } from "react-router-dom";
+import FollowButton from "@/components/UI/FollowButton";
+import TrackItem from "@/components/UI/TrackItem";
+import UserAvatar from "@/components/UI/UserAvatar";
+import GoMobileSection from "@/components/UI/GoMobile";
+
+interface FollowingUser {
+  userId?: string;
+  username: string;
+  displayName?: string;
+  followers: number;
+  tracks?: number;
+  avatar?: string;
+  isVerified?: boolean;
+  isFollowing?: boolean;
+}
+
+interface FollowerUser {
+  username: string;
+  avatar?: string;
+}
+
+interface LikedTrack {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl?: string;
+  plays?: number;
+  likes?: number;
+  reposts?: number;
+  comments?: number;
+  audioUrl?: string;
+  artistId?: string;
+  artistUsername?: string;
+  trackSlug?: string;
+}
+
+interface ProfileSideBarProps {
+  user: User;
+  isOwner?: boolean;
+  stats?: {
+    followers: number;
+    following: number;
+    tracks?: number;
+    albums?: number;
+    playlists?: number;
+  };
+  likedTracks?: LikedTrack[];
+  likedTracksCount?: number;
+  following?: FollowingUser[];
+  followers?: FollowerUser[];
+  onTabChange?: (tab: string) => void;
+  onUnlike?: (id: string) => void;
+}
+
+const formatCount = (n: number = 0) => {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return n.toString();
+};
+
+const BIO_CHAR_LIMIT = 140;
+
+const normalizeLinkHref = (url: string) => {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    return `https://${trimmed.replace(/^\/+/, "")}`;
+  }
+};
+
+const ProfileSideBar: React.FC<ProfileSideBarProps> = ({
+  user,
+  isOwner = false,
+  stats = { followers: 0, following: 0, tracks: 0 },
+  likedTracks = [],
+  likedTracksCount = 0,
+  following = [],
+  followers = [],
+  onTabChange,
+  onUnlike,
+}) => {
+  const navigate = useNavigate();
+  const [bioExpanded, setBioExpanded] = useState(false);
+  const displayedLikedTracksCount =
+    likedTracksCount > 0 ? likedTracksCount : likedTracks.length;
+  const profileLinks = (user.links ?? []).filter(
+    (link) => link.url.trim() || link.title.trim(),
+  );
+  const supportLink = profileLinks.find((link) => link.isSupport);
+  const regularLinks = profileLinks.filter((link) => !link.isSupport);
+
+  const bio = user.bio ?? "";
+  const isBioLong = bio.length > BIO_CHAR_LIMIT;
+  const displayedBio = isBioLong && !bioExpanded ? `${bio.slice(0, BIO_CHAR_LIMIT)}...` : bio;
+
+  return (
+    <div className="flex-shrink-0 flex flex-col gap-9 pt-1 overflow-hidden min-w-0">
+      {supportLink && (
+        <div className="w-[300px] rounded-[4px] bg-[linear-gradient(135deg,#1b5fbf_0%,#0f3f88_100%)] p-4 text-white shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+          <p className="text-sm font-medium leading-5">
+            Show some love for your favourite artists.
+            <br />
+            Follow this link to their own support page.
+          </p>
+          <button
+            type="button"
+            className="mt-1 text-sm font-bold underline underline-offset-2 hover:opacity-80"
+          >
+            Learn more
+          </button>
+          <a
+            href={normalizeLinkHref(supportLink.url)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 flex h-9 items-center justify-center gap-2 rounded bg-white px-4 text-sm font-bold text-black hover:opacity-80 transition-colors"
+          >
+            <i className="fa-solid fa-dollar-sign text-black" />
+            <span>Support {user.displayName}</span>
+          </a>
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="flex gap-13">
+        <button
+          data-test="followers-stat"
+          className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
+          onClick={() => navigate(`/${user.username}/follower`)}
+        >
+          <span className="text-sm font-extrabold text-text-secondary">
+            Followers
+          </span>
+          <span className="text-3xl font-bold py-1.5 text-bg-inverted">
+            {formatCount(stats.followers)}
+          </span>
+        </button>
+
+        <button
+          data-test="following-stat"
+          className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
+          onClick={() => navigate(`/${user.username}/following`)}
+        >
+          <span className="text-sm font-extrabold text-text-secondary">
+            Following
+          </span>
+          <span className="text-3xl font-bold py-1.5 text-bg-inverted">
+            {formatCount(stats.following)}
+          </span>
+        </button>
+
+        <button
+          data-test="tracks-stat"
+          className="cursor-pointer flex flex-col items-start hover:opacity-70 transition-opacity"
+          onClick={() => onTabChange?.("Tracks")}
+        >
+          <span className="text-sm font-extrabold text-text-secondary">
+            Tracks
+          </span>
+          <span className="text-3xl font-bold py-1.5 text-bg-inverted">
+            {formatCount(stats.tracks)}
+          </span>
+        </button>
+      </div>
+
+      {regularLinks.length > 0 && (
+        <div className="flex flex-col gap-2 w-[320px]">
+          {regularLinks.map((link) => {
+            const label = link.title.trim() || link.url.trim();
+            const href = normalizeLinkHref(link.url);
+            const content = (
+              <>
+                <i className="fa-solid fa-globe text-text-secondary text-xs" />
+                <span className="truncate text-text-secondary">{label}</span>
+              </>
+            );
+
+            return href ? (
+              <a
+                key={link.id}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 text-sm font-bold text-bg-inverted hover:opacity-70 transition-opacity"
+              >
+                {content}
+              </a>
+            ) : (
+              <div
+                key={link.id}
+                className="flex items-center gap-2 text-sm font-bold text-bg-inverted"
+              >
+                {content}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Bio */}
+      {bio.length > 0 && (
+        <div className="flex flex-col gap-1 w-[320px]">
+          <p
+            data-test="bio-text"
+            className="text-sm text-left text-bg-inverted leading-relaxed"
+          >
+            {displayedBio}
+          </p>
+          {isBioLong && (
+            <button
+              data-test="bio-toggle"
+              onClick={() => setBioExpanded((prev) => !prev)}
+              className="text-sm font-bold text-bg-inverted text-left hover:opacity-70 transition-opacity"
+            >
+              {bioExpanded ? "Show less" : "Show more"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Liked tracks */}
+      {displayedLikedTracksCount > 0 && (
+        <div>
+          <div className="flex items-center justify-between w-full hover:opacity-70 transition-opacity">
+            <button
+              data-test="likes-button"
+              onClick={() => navigate(`/${user.username}/likes`)}
+              className="text-xs font-bold text-bg-inverted cursor-pointer hover:text-text-secondary"
+            >
+              {displayedLikedTracksCount} LIKES
+            </button>
+            <button
+              data-test="likes-view-all"
+              onClick={() => navigate(`/${user.username}/likes`)}
+              className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
+            >
+              View all
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4 w-[320px] overflow-visible">
+        {likedTracks.slice(0, 3).map((track) => (
+          <TrackItem
+            key={track.id}
+            {...track}
+            initialLiked={isOwner}
+            onUnlike={isOwner ? onUnlike : undefined}
+          />
+        ))}
+      </div>
+
+      {/* ON TOUR */}
+      {isOwner && !user.isPro && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <i className="fa-solid fa-ticket text-text-secondary" />
+            <span className="text-xs font-bold text-bg-inverted">ON TOUR</span>
+            <i className="fa-solid fa-circle-info text-text-secondary text-xs" />
+          </div>
+          <p className="text-xs text-left text-bg-inverted border-t pt-4 border-border w-[320px]">
+            With a Premium account, you can create ticketed live events on
+            Rythmify, and list existing events.
+          </p>
+          <button
+            data-test="upgrade-pro-button"
+            onClick={() => navigate("/premium")}
+            className="w-[320px] py-3 bg-bg-inverted text-bg font-semibold text-sm rounded-full hover:opacity-80 transition-colors"
+          >
+            Upgrade to Premium
+          </button>
+        </div>
+      )}
+
+      {/* Followers */}
+      {!isOwner && followers.length > 0 && (
+        <div className="flex flex-col gap-3 w-[320px]">
+          <div className="flex items-center justify-between">
+            <button
+              data-test="followers-label"
+              onClick={() => navigate(`/${user.username}/follower`)}
+              className="text-xs cursor-pointer font-bold text-bg-inverted hover:opacity-70 transition-opacity"
+            >
+              {formatCount(stats.followers)} FOLLOWERS
+            </button>
+            <button
+              data-test="followers-view-all"
+              onClick={() => navigate(`/${user.username}/follower`)}
+              className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
+            >
+              View all
+            </button>
+          </div>
+          <div className="flex max-w-full items-center flex-nowrap overflow-hidden pl-1 pr-1">
+            {followers.slice(0, 9).map((follower, index) => (
+              <UserAvatar
+                key={follower.username}
+                dataTest="follower-avatar"
+                src={follower.avatar}
+                name={follower.username}
+                alt={follower.username}
+                wrapperClassName="w-10 h-10 rounded-full overflow-hidden bg-input-bg flex-shrink-0 border-2 border-border hover:opacity-80 transition-opacity"
+                initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-sm font-bold"
+                onClick={() => navigate(`/${follower.username}`)}
+                style={{
+                  marginLeft: index === 0 ? 0 : -8,
+                  zIndex: 9 - index,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Following */}
+      {following.length > 0 && (
+        <div className="flex flex-col gap-4 w-[320px]">
+          <div className="flex items-center justify-between hover:opacity-70 transition-opacity">
+            <button
+              data-test="following-label"
+              onClick={() => navigate(`/${user.username}/following`)}
+              className="text-xs cursor-pointer font-semibold text-bg-inverted"
+            >
+              {formatCount(stats.following)} FOLLOWING
+            </button>
+            <button
+              data-test="following-view-all"
+              onClick={() => navigate(`/${user.username}/following`)}
+              className="text-xs cursor-pointer hover:underline text-text-secondary hover:text-text"
+            >
+              View all
+            </button>
+          </div>
+
+          {following.slice(0, 3).map((u) => (
+            <div
+              key={u.userId ?? u.username}
+              data-test="following-item"
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <UserAvatar
+                  dataTest="following-avatar"
+                  src={u.avatar}
+                  name={u.displayName || u.username}
+                  alt={u.displayName || u.username}
+                  wrapperClassName="w-12 h-12 cursor-pointer rounded-full overflow-hidden bg-input-bg flex-shrink-0"
+                  initialsClassName="flex h-full w-full items-center justify-center rounded-full bg-input-bg text-bg-inverted text-sm font-bold"
+                  onClick={() => navigate(`/${u.username}`)}
+                />
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1">
+                    <button
+                      data-test="following-username"
+                      onClick={() => navigate(`/${u.username}`)}
+                      className="cursor-pointer text-sm font-bold text-bg-inverted hover:opacity-70 transition-opacity"
+                    >
+                      {u.username}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-text-secondary">
+                    <button
+                      data-test="following-followers-count"
+                      onClick={() => navigate(`/${u.username}/follower`)}
+                      className="flex cursor-pointer items-center gap-0.5 hover:opacity-70 transition-opacity"
+                    >
+                      <i className="fa-solid fa-user text-[10px]" />
+                      {u.followers >= 1_000_000
+                        ? `${(u.followers / 1_000_000).toFixed(1)}M`
+                        : u.followers >= 1_000
+                          ? `${(u.followers / 1_000).toFixed(1)}K`
+                          : u.followers}
+                    </button>
+                    {u.tracks !== undefined && u.tracks > 0 && (
+                      <button
+                        data-test="following-tracks-count"
+                        onClick={() => navigate(`/${u.username}/tracks`)}
+                        className="cursor-pointer flex items-center gap-1 hover:opacity-70 transition-opacity"
+                      >
+                        <i className="fa-solid fa-bars text-[10px]" />
+                        {u.tracks}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <FollowButton
+                username={u.username}
+                userId={u.userId}
+                initialIsFollowing={u.isFollowing}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <GoMobileSection showFooter={false} />
+
+      {/* Footer */}
+      <div className="flex flex-col gap-2 w-[320px]">
+        <div className="flex flex-wrap gap-x-1 gap-y-1 text-xs text-text-secondary">
+          {[
+            "Legal",
+            "Privacy",
+            "Cookie Policy",
+            "Cookie Manager",
+            "Imprint",
+            "Artist Resources",
+            "Newsroom",
+            "Charts",
+            "Transparency Reports",
+          ].map((link, i, arr) => (
+            <span key={link} className="flex items-center gap-1">
+              <button
+                data-test={`footer-${link.toLowerCase().replace(/\s+/g, "-")}`}
+                className="cursor-pointer hover:underline hover:text-text"
+              >
+                {link}
+              </button>
+              {i < arr.length - 1 && <span>·</span>}
+            </span>
+          ))}
+        </div>
+        <div className="text-xs text-left text-text-secondary">
+          Language:{" "}
+          <button
+            data-test="language-button"
+            className="text-[#2196F3] hover:underline"
+          >
+            English (US)
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProfileSideBar;

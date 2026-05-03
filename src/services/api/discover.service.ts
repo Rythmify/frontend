@@ -1,0 +1,314 @@
+import axiosInstance from "./axiosInstance";
+
+// =============================================================================
+// TYPES — API response shapes (aligned to OpenAPI spec)
+// =============================================================================
+
+export interface DiscoveryTrack {
+  id: string;
+  title: string;
+  cover_image: string | null;
+  duration: number | null;
+  genre_name: string | null;
+  play_count: number;
+  like_count: number;
+  repost_count: number | null;
+  user_id: string;
+  artist_name: string | null; // flat string now, not a nested object
+  stream_url: string | null;
+  created_at: string;
+  is_liked_by_me?: boolean;
+}
+
+export interface PersonalMix {
+  id: string;
+  mix_id?: string;
+  label: string | null;
+  flavor: "listening_history"; // taste_profile was removed from spec
+  genre_name: string | null;
+  cover_image: string | null;
+  track_count: number;
+  generated_at: string;
+  preview_track: DiscoveryTrack;
+  is_liked_by_me?: boolean;
+}
+
+export interface CuratedMixSummary {
+  id: string;
+  label: string;
+  description: string;
+  track_count: number;
+  refreshes_at: string;
+  cover_url: string | null;
+  preview_track: DiscoveryTrack;
+  is_liked_by_me?: boolean;
+}
+
+export interface DiscoveryStation {
+  id: string;
+  artist_id: string;
+  artist_name: string;
+  images: {
+    left: string | null;
+    center: string | null;
+    right: string | null;
+  };
+  preview_track: DiscoveryTrack;
+  track_count: number;
+  is_saved?: boolean;
+}
+
+export interface EmergingArtist {
+  id: string;
+  display_name: string;
+  profile_picture: string | null;
+  top_genre: string | null;
+  play_velocity: number;
+  track_count: number;
+}
+
+export interface CuratedHomeMixPreview {
+  mix_id: string;
+  title: string;
+  cover_url: string | null;
+  preview_track: DiscoveryTrack;
+  is_liked_by_me?: boolean;
+}
+
+export interface CuratedHomeSection {
+  mixes: CuratedHomeMixPreview[];
+}
+
+export interface HomeData {
+  curated: CuratedHomeSection | null;
+  more_of_what_you_like: {
+    tracks: DiscoveryTrack[];
+    source: "personalized" | "trending_fallback";
+  } | null;
+  trending_by_genre: {
+    genres: { genre_id: string; genre_name: string; preview_track: DiscoveryTrack; is_liked?: boolean }[];
+    initial_tab: {
+      genre_id: string;
+      genre_name: string;
+      tracks: DiscoveryTrack[];
+    };
+  };
+
+  mixed_for_you: PersonalMix[];
+
+  made_for_you: {
+    daily_mix: CuratedMixSummary;
+    weekly_mix: CuratedMixSummary;
+  } | null; // null for guests
+
+  discover_with_stations: DiscoveryStation[];
+
+  artists_to_watch: EmergingArtist[];
+}
+
+export interface TrackSummary {
+  id: string;
+  title: string;
+  genre: string | null;
+  duration: number | null;
+  cover_image: string | null;
+  user_id: string;
+  artist_name?: string;
+  artist_username?: string;
+  track_slug?: string;
+  play_count: number;
+  like_count: number;
+  stream_url: string | null;
+}
+
+// GET /me/history
+export interface RecentlyPlayedEntry {
+  track: TrackSummary;
+  last_played_at: string;
+}
+
+// GET /me/listening-history
+export interface ListeningHistoryEntry {
+  id: string;
+  track: TrackSummary;
+  played_at: string;
+}
+
+export interface ListMeta {
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// GET /users/suggested
+export interface SuggestedUser {
+  id: string;
+  display_name: string;
+  username: string | null;
+  profile_picture: string | null;
+  is_verified: boolean;
+  followers_count: number;
+  mutual_count: number | null;
+  suggestion_source: "mutual" | "popular";
+  is_following: boolean;
+}
+
+// GET /users/suggested/artists
+export interface SuggestedArtist {
+  id: string;
+  display_name: string;
+  username: string | null;
+  profile_picture: string | null;
+  is_verified: boolean;
+  follower_count: number;
+  top_genre: string | null;
+  is_following: boolean;
+}
+
+// GET /home/albums-for-you
+export interface DiscoveryAlbum {
+  id: string;
+  name: string;
+  cover_image: string | null;
+  owner_id: string;
+  owner_name: string;
+  track_count: number;
+  like_count: number;
+  created_at: string;
+  preview_track: DiscoveryTrack | null;
+  is_liked_by_me?: boolean;
+}
+
+export function getAlbumPreviewTrackId(album: DiscoveryAlbum): string | null {
+  return album.preview_track?.id ?? null;
+}
+
+export type MixDetailsTrack = DiscoveryTrack;
+
+export interface MixDetailsData {
+  mix_id: string;
+  title: string;
+  cover_url: string | null;
+  tracks: MixDetailsTrack[];
+}
+
+export interface MixDetailsResponse {
+  data: MixDetailsData;
+}
+
+// =============================================================================
+// API CALLS
+// =============================================================================
+
+// GET /home — main call for the discover page
+export const getHome = async (): Promise<HomeData> => {
+  const res = await axiosInstance.get<{ data: HomeData; message: string }>(
+    "/home",
+  );
+  // res.data is the full response body — we only need res.data.data (the payload)
+  return res.data.data;
+};
+
+export const getCuratedMixByIdFromHome = async (
+  mixId: string,
+): Promise<CuratedHomeMixPreview | null> => {
+  const home = await getHome();
+  return home.curated?.mixes.find((mix) => mix.mix_id === mixId) ?? null;
+};
+
+// GET /me/history
+export const getRecentlyPlayed = async (): Promise<RecentlyPlayedEntry[]> => {
+  const res = await axiosInstance.get<{ data: RecentlyPlayedEntry[] }>(
+    "/me/history",
+  );
+  return res.data.data;
+};
+
+// GET /me/listening-history
+export const getListeningHistory = async (params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: ListeningHistoryEntry[]; pagination: ListMeta }> => {
+  const res = await axiosInstance.get<{
+    data: ListeningHistoryEntry[];
+    pagination: ListMeta;
+  }>("/me/listening-history", { params });
+  return res.data;
+};
+
+// New crew suggested for you, GET /users/suggested
+export const getSuggestedUsers = async (params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: SuggestedUser[]; pagination: ListMeta }> => {
+  const res = await axiosInstance.get<{
+    data: { items: SuggestedUser[] };
+    pagination: ListMeta;
+  }>("/users/suggested", { params });
+  return {
+    data: res.data.data.items,
+    pagination: res.data.pagination,
+  };
+};
+
+// Artist you should follow (sidebar), GET /users/suggested/artists
+export const getSuggestedArtists = async (params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: SuggestedArtist[]; pagination: ListMeta }> => {
+  const res = await axiosInstance.get<{
+    data: SuggestedArtist[];
+    pagination: ListMeta;
+  }>("/users/suggested/artists", { params });
+  return res.data;
+};
+
+// GET /home/albums-for-you
+export interface AlbumsForYouResponse {
+  data: DiscoveryAlbum[];
+  source: "followed_artists" | "global_fallback";
+  pagination: ListMeta;
+}
+
+export const getAlbumsForYou = async (params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AlbumsForYouResponse> => {
+  const res = await axiosInstance.get<AlbumsForYouResponse>("/home/albums-for-you", {
+    params: { ...params, is_album_view: true },
+  });
+  return res.data;
+};
+
+// GET /home/mixes/:mixId — personal mix details with tracks
+export const getMixTracks = async (
+  mixId: string,
+): Promise<MixDetailsData> => {
+  const res = await axiosInstance.get<MixDetailsResponse>(`/home/mixes/${mixId}`);
+  return res.data.data;
+};
+// POST /tracks/:track_id/play — record a play event (fire-and-forget)
+export const writeListeningHistory = async (
+  trackId: string,
+): Promise<void> => {
+  await axiosInstance.post(`/tracks/${trackId}/play`);
+};
+
+// to do
+// get liked tracks
+// GET /home/trending-by-genre/{genre_id}
+export const getTrendingByGenre = async (
+  genreId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<{
+  genre_id: string;
+  genre_name: string;
+  tracks: DiscoveryTrack[];
+}> => {
+  const res = await axiosInstance.get<{
+    data: { genre_id: string; genre_name: string; tracks: DiscoveryTrack[] };
+    message: string;
+  }>(`/home/trending-by-genre/${genreId}`, { params });
+  return res.data.data;
+};
+

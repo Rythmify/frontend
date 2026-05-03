@@ -1,0 +1,72 @@
+name: Frontend CD — VM Deploy
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  build-and-deploy:
+    name: Build Vite App & Deploy to VM1
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://rythmify-back.duckdns.org/api/v1
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_SITE_KEY }}
+
+      - name: Write SSH key to file
+        run: |
+          echo "${{ secrets.VM_SSH_KEY }}" > vm_key.pem
+          chmod 600 vm_key.pem
+
+      - name: Clear old dist on VM1
+        run: |
+          ssh -i vm_key.pem \
+              -o StrictHostKeyChecking=no \
+              ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+              "sudo rm -rf /var/www/rythmify/* && sudo mkdir -p /var/www/rythmify && sudo chown -R rythmify:rythmify /var/www/rythmify && sudo chmod -R 755 /var/www/rythmify"
+
+      - name: SCP dist to VM1
+        run: |
+          scp -i vm_key.pem \
+              -o StrictHostKeyChecking=no \
+              -r dist/* \
+              ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/var/www/rythmify/
+
+      - name: Fix permissions and reload Nginx
+        run: |
+          ssh -i vm_key.pem \
+              -o StrictHostKeyChecking=no \
+              ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+
+            sudo chown -R www-data:www-data /var/www/rythmify
+            sudo chmod -R 755 /var/www/rythmify
+            sudo systemctl reload nginx
+
+          EOF
+
+      - name: Smoke check frontend
+        run: |
+          sleep 5
+          curl -fsS https://rythmify.duckdns.org/ -o /dev/null
+          echo "Frontend smoke check passed."
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f vm_key.pem

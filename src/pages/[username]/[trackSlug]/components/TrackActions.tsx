@@ -1,0 +1,385 @@
+import { useState, useRef, useEffect } from "react";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import {
+  FaHeart,
+  FaListUl as FaAddToPlaylist,
+  FaEllipsisH,
+  FaGlobe,
+  FaLink,
+} from "react-icons/fa";
+import { IoSend, IoPlaySharp, IoShareOutline } from "react-icons/io5";
+import { AiOutlineRetweet } from "react-icons/ai";
+import { LuListEnd } from "react-icons/lu";
+import SharePopup from "./SharePopup";
+import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
+import DownloadButton from "@/components/UI/DownloadButton";
+import type { Track } from "../../../../types/track";
+import * as engagementService from "../../../../services/engagement.service";
+import { postComment } from "../../../../services/track.service";
+import { usePlayerStore } from "../../../../stores/player.store";
+import { useAuthStore } from "../../../../stores/auth.store";
+import { useLikesStore } from "../../../../stores/likes.store";
+import { toast } from "sonner";
+import { useNavigate, useParams } from "react-router-dom";
+
+interface TrackActionsProps {
+  track: Track;
+  isLiked?: boolean;
+  currentUserAvatar?: string;
+  onAddToNextUp?: () => void;
+  onComment?: (text: string, timestampSec: number) => void;
+}
+
+export default function TrackActions({
+  track,
+  isLiked = false,
+  onAddToNextUp,
+  onComment,
+}: TrackActionsProps) {
+  const navigate = useNavigate();
+  const { username } = useParams<{ username: string }>();
+  const { user } = useAuthStore();
+  const currentUserAvatar = user?.avatar || "https://picsum.photos/seed/rythmify/100/100";
+  
+  const { isTrackLiked, toggleTrack: globalToggleTrack, getItemStats, isTrackReposted, toggleRepost: globalToggleRepost } = useLikesStore();
+  
+  const liked = isTrackLiked(track.id);
+  const globalStats = getItemStats(track.id);
+  
+  const reposted = isTrackReposted(track.id) || (globalStats.isReposted ?? track.isReposted ?? false);
+  const likeCount = globalStats.likeCount ?? track.likeCount ?? 0;
+  const repostCount = globalStats.repostCount ?? track.repostCount ?? 0;
+  const playCount = globalStats.playCount ?? track.playCount ?? 0;
+  const [commentCount, setCommentCount] = useState(track.commentCount ?? 0);
+
+  // Sync comment count when track data changes
+  useEffect(() => {
+    setCommentCount(track.commentCount ?? 0);
+  }, [track]);
+
+  const [shareOpen, setShareOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [comment, setComment] = useState("");
+  const [addedToQueue, setAddedToQueue] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Like - uses global store
+  const handleLike = async () => {
+    globalToggleTrack(track).catch(() => {
+      toast.error("Failed to like track");
+    });
+  };
+
+  const isOwner = !!user && (user.username === track.artistUsername || user.id === track.artistId);
+
+  // Repost - calls store
+  const handleRepost = async () => {
+    if (isOwner) {
+      toast.error("You cannot repost your own track!");
+      return;
+    }
+    globalToggleRepost(track).catch(() => {
+      toast.error("Failed to repost track");
+    });
+  };
+
+  // Comment - calls MSW (/api/tracks/:id/comments)
+  const handleCommentSubmit = async () => {
+    if (!comment.trim()) return;
+    const currentTime = usePlayerStore.getState().currentTime;
+    try {
+      // Internal service call if needed, but we pass it up to the parent
+      onComment?.(comment.trim(), Math.floor(currentTime));
+      setComment("");
+    } catch {
+      console.error("Comment failed");
+    }
+  };
+
+  const formatCount = (n: number | undefined) =>
+    n == null ? "0" : n >= 1000 ? `${(n / 1000).toFixed(0)}K` : String(n);
+  const formatExact = (n: number | undefined) =>
+    n == null ? "0" : n.toLocaleString();
+
+  return (
+    <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
+      <>
+        <div data-test="track-actions-wrapper" className="flex flex-col">
+
+          {/* ── Comment Input ── */}
+          <div data-test="comment-input-row" className="flex items-center gap-3 py-3">
+            <img
+              src={currentUserAvatar}
+              alt="Your avatar"
+              className="w-9 h-9 rounded-full object-cover shrink-0"
+            />
+            <div className="flex-1 flex items-center gap-2">
+              <input
+                data-test="comment-input"
+                type="text"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
+                placeholder="Write a comment"
+                className="
+                  flex-1 bg-[#252525] text-[#ccc]
+                  placeholder:text-[#666]
+                  text-sm px-3 py-1.5 rounded-[3px]
+                  border border-[#333]
+                  outline-none focus:border-[#555]
+                  transition-colors duration-150
+                "
+              />
+              <button
+                data-test="button-submit-comment"
+                onClick={handleCommentSubmit}
+                disabled={!comment.trim()}
+                className="
+                  w-8 h-8 flex items-center justify-center shrink-0
+                  bg-[#252525] rounded-[3px]
+                  border border-[#333]
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all duration-150 cursor-pointer group
+                "
+              >
+                <IoSend className="text-sm text-[#999] group-hover:text-white transition-colors duration-150" />
+              </button>
+
+            </div>
+          </div>
+
+          {/* Action Icons + Stats*/}
+          <div
+            data-test="track-action-bar"
+            className="flex flex-row items-center justify-between py-2 mt-1"
+          >
+            <div className="flex items-center gap-3">
+
+              {/* Like */}
+              <IconButton data-test="button-like" onClick={handleLike} active={liked} tooltip="Like">
+                <FaHeart className="text-[15px]" />
+              </IconButton>
+
+              {/* Repost */}
+              <IconButton data-test="button-repost" onClick={handleRepost} active={reposted} tooltip="Repost">
+                <AiOutlineRetweet className="text-[18px]" />
+              </IconButton>
+
+              {/* Share */}
+              <IconButton data-test="button-share" onClick={() => setShareOpen(true)} tooltip="Share">
+                <IoShareOutline className="text-[18px]" />
+              </IconButton>
+
+              {/* Copy Link */}
+              <IconButton
+                data-test="button-copy-link"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success("Link copied to clipboard!");
+                }}
+                tooltip="Copy Link"
+              >
+                <FaLink className="text-[14px]" />
+              </IconButton>
+
+              <DownloadButton track={track} variant="icon" />
+
+              {/* Add to Next up */}
+              <IconButton
+                data-test="button-add-next-up"
+                onClick={() => {
+                  onAddToNextUp?.();
+                  setAddedToQueue(true);
+                  setTimeout(() => setAddedToQueue(false), 2000);
+                }}
+                active={addedToQueue}
+                tooltip={addedToQueue ? "Added to queue!" : "Add to Next up"}
+              >
+                <LuListEnd className="text-[18px]" />
+              </IconButton>
+
+              {/* More dropdown */}
+              <div ref={moreRef} className="relative">
+                <IconButton
+                  data-test="button-more"
+                  onClick={() => setMoreOpen((p) => !p)}
+                  active={moreOpen}
+                  tooltip="More"
+                >
+                  <FaEllipsisH className="text-[13px]" />
+                </IconButton>
+
+                {moreOpen && (
+                  <div
+                    data-test="dropdown-more"
+                    className="absolute left-0 top-full mt-1 bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] shadow-[var(--shadow-md)] z-50 min-w-[190px] py-1"
+                  >
+                    <DropdownItem
+                      icon={<FaAddToPlaylist />}
+                      label="Add to playlist"
+                      data-test="dropdown-item-add-playlist"
+                      onClick={() => {
+                        setShowPlaylistModal(true);
+                        setMoreOpen(false);
+                      }}
+                    />
+                    {track.isPrivate && (
+                      <DropdownItem icon={<FaGlobe />} label="Make public" data-test="dropdown-item-make-public" onClick={() => setMoreOpen(false)} />
+                    )}
+                    <div className="my-1 border-t border-[var(--color-border)]" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-4 text-[#999] text-[13px] font-medium">
+              <div className="flex items-center gap-1.5 cursor-default hover:text-white transition-colors" title={`${formatExact(playCount)} plays`}>
+                <IoPlaySharp className="text-[14px]" />
+                <span>{formatCount(playCount)}</span>
+              </div>
+              <StatWithTooltip 
+                data-test="stat-like-count" 
+                tooltip={`${formatExact(likeCount)} likes`}
+                onClick={() => navigate(`/${username || track.artistUsername}/${track.trackSlug || track.id}/likes`)}
+                clickable
+              >
+                <FaHeart className="text-[12px]" />
+                <span>{formatCount(likeCount)}</span>
+              </StatWithTooltip>
+              <StatWithTooltip 
+                data-test="stat-repost-count" 
+                tooltip={`${formatExact(repostCount)} reposts`}
+                onClick={() => navigate(`/${username || track.artistUsername}/${track.trackSlug || track.id}/reposts`)}
+                clickable
+              >
+                <AiOutlineRetweet className="text-[16px]" />
+                <span>{formatCount(repostCount)}</span>
+              </StatWithTooltip>
+              <StatWithTooltip data-test="stat-comment-count" tooltip={`${formatExact(commentCount)} comments`}>
+                <svg className="w-[14px] h-[14px]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                </svg>
+                <span>{formatCount(commentCount)}</span>
+              </StatWithTooltip>
+            </div>
+          </div>
+        </div>
+
+        {shareOpen && <SharePopup track={track} onClose={() => setShareOpen(false)} />}
+        {showPlaylistModal && (
+          <AddToPlaylistModal
+            trackId={String(track.id)}
+            trackTitle={track.title}
+            trackCoverUrl={track.coverUrl}
+            artistName={track.artistName}
+            onClose={() => setShowPlaylistModal(false)}
+          />
+        )}
+      </>
+    </Tooltip.Provider>
+  );
+}
+
+// Stat Tooltip 
+function StatWithTooltip({ children, tooltip, "data-test": dataTest, onClick, clickable }: {
+  children: React.ReactNode; tooltip: string; "data-test"?: string; onClick?: () => void; clickable?: boolean;
+}) {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <span 
+          data-test={dataTest} 
+          onClick={onClick}
+          className={`flex items-center gap-1.5 select-none transition-colors ${clickable ? "cursor-pointer hover:text-white" : "cursor-default"}`}
+        >
+          {children}
+        </span>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content side="top" sideOffset={6} className="
+          bg-[var(--color-input-bg)] border border-[var(--color-border)]
+          text-[var(--color-text-hover)] text-[11px] font-medium
+          px-2.5 py-1.5 rounded-[var(--radius-xs)] shadow-[var(--shadow-md)] z-[100]
+          data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95
+          data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95
+        ">
+          {tooltip}
+          <Tooltip.Arrow className="fill-[var(--color-border)]" />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
+
+// Icon Button 
+function IconButton({ children, onClick, active = false, tooltip, "data-test": dataTest }: {
+  children: React.ReactNode; onClick?: () => void; active?: boolean; tooltip?: string; "data-test"?: string;
+}) {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <button
+          data-test={dataTest}
+          onClick={onClick}
+          className={`
+            w-8 h-6 flex items-center justify-center
+            rounded-[3px] border transition-all duration-150 cursor-pointer group
+            ${active 
+              ? "bg-[#252525] border-[#f50] text-[#f50]" 
+              : "bg-[#252525] border-[#333] text-[#ccc] hover:border-[#555] hover:text-white"}
+          `}
+        >
+          <span className="shrink-0">
+            {children}
+          </span>
+        </button>
+      </Tooltip.Trigger>
+      {tooltip && (
+        <Tooltip.Portal>
+          <Tooltip.Content side="bottom" sideOffset={6} className="
+            bg-[var(--color-input-bg)] border border-[var(--color-border)]
+            text-[var(--color-text-hover)] text-[11px] font-medium
+            px-2.5 py-1.5 rounded-[var(--radius-xs)] shadow-[var(--shadow-md)] z-[100]
+            data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95
+            data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95
+          ">
+            {tooltip}
+            <Tooltip.Arrow className="fill-[var(--color-border)]" />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      )}
+    </Tooltip.Root>
+  );
+}
+
+// Dropdown Item 
+function DropdownItem({ icon, label, onClick, danger = false, "data-test": dataTest }: {
+  icon: React.ReactNode; label: string; onClick: () => void; danger?: boolean; "data-test"?: string;
+}) {
+  return (
+    <button
+      data-test={dataTest}
+      onClick={onClick}
+      className={`
+        w-full flex items-center gap-3 px-4 py-2.5
+        text-xs font-medium transition-colors duration-100 cursor-pointer text-left
+        ${danger ? "text-[var(--color-error)] hover:bg-red-500/10" : "text-[var(--color-text)] hover:bg-white/5 hover:text-[var(--color-text-hover)]"}
+      `}
+    >
+      <span className="text-[13px] opacity-70">{icon}</span>
+      {label}
+    </button>
+  );
+}

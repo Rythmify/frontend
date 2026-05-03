@@ -1,7 +1,10 @@
-import React from 'react'
+import { useAuthStore } from "@/stores/auth.store";
+import DiscoverPageAuth from "./DiscoverPageAuth";
+import DiscoverPageGuest from "./DiscoverPageGuest";
 
-export default function DiscoverPage() {
-  return (
-    <div>DiscoverPage</div>
-  )
-}
+const DiscoverPage = () => {
+  const { isAuthenticated } = useAuthStore();
+  return isAuthenticated ? <DiscoverPageAuth /> : <DiscoverPageGuest />;
+};
+
+export default DiscoverPage;

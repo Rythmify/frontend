@@ -1,9 +1,428 @@
-const LandingPage = () => {
-  return (
-    <div className="text-center py-20">
-      <h1 className="text-4xl font-bold">Rhythmify</h1>
-      <p className="text-text-secondary mt-4">Discover. Get Discovered.</p>
+import { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import type { Track } from "@/types/track";
+import CoverImage from "@/components/UI/CoverImage";
+import GuestPageFooter from "@/components/Upload/GuestPageFooter";
+// ── Types ──────────────────────────────────────────────────────────────
+interface SlideData {
+  headline: string;
+  subtitle: string;
+  ctas: { label: string; to: string; variant: "primary" | "secondary" }[];
+  artist: string;
+  artistLabel: string;
+  image: string;
+}
+
+// ── Slide Data ─────────────────────────────────────────────────────────
+// TODO: Replace image paths with actual artist images in /public/images/
+const slides: SlideData[] = [
+  {
+    headline: "Discover.\nGet Discovered.",
+    subtitle:
+      "Discover your next obsession, or become someone else's. Rhythmify is the only community where fans and artists come together to discover and connect through music.",
+    ctas: [{ label: "Get Started", to: "/register", variant: "primary" }],
+    artist: "DC the Don",
+    artistLabel: "Rhythmify Artist Pro",
+    image: "/images/hero-slide-1.jpg",
+  },
+  {
+    headline: "It all starts with\nan upload.",
+    subtitle:
+      "From bedrooms and broom closets to studios and stadiums, Rhythmify is where you define what's next in music. Just hit upload.",
+    ctas: [
+      { label: "Upload", to: "/upload", variant: "primary" },
+      {
+        label: "Explore Artist Pro",
+        to: "/creator/artists",
+        variant: "secondary",
+      },
+    ],
+    artist: "1900Rugrat",
+    artistLabel: "Ascending Artist",
+    image: "/images/hero-slide-2.jpg",
+  },
+  {
+    headline: "What will you\nfind today?",
+    subtitle:
+      "Rhythmify has millions of tracks from independent artists worldwide. Start listening to the artists who are defining what's next.",
+    ctas: [{ label: "Start Listening", to: "/discover", variant: "primary" }],
+    artist: "Suki Waterhouse",
+    artistLabel: "Trending Artist",
+    image: "/images/hero-slide-3.jpg",
+  },
+];
+
+const AUTOPLAY_INTERVAL = 5000;
+
+
+// ── Subcomponents ──────────────────────────────────────────────────────
+
+const TrendingTrackCard = ({ track }: { track: Track }) => (
+  <Link
+    to={`/${track.artistUsername}/${track.id}`}
+    className="group block"
+  >
+    <div className="aspect-square rounded bg-[#333] mb-2 overflow-hidden relative">
+      <CoverImage
+        src={track.coverUrl}
+        alt={track.title}
+        className="w-full h-full object-cover"
+      />
+      {/* Hover overlay with action icons */}
+      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3 gap-3">
+        <button aria-label="Like" className="text-white/80 hover:text-white text-sm">♥</button>
+        <button aria-label="Follow" className="text-white/80 hover:text-white text-sm">👤</button>
+        <button aria-label="More" className="text-white/80 hover:text-white text-sm">•••</button>
+      </div>
     </div>
+    <p className="text-sm font-medium text-white truncate">{track.title}</p>
+    <p className="text-xs text-[#999] truncate">{track.artistName}</p>
+  </Link>
+);
+
+// ── Main Component ─────────────────────────────────────────────────────
+const LandingPage = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [trendingTracks, setTrendingTracks] = useState<any[]>([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    import("@/services/feed.service").then(({ getHome }) => {
+      getHome().then((homeData) => {
+        if (homeData?.trending_by_genre?.initial_tab?.tracks) {
+          // Map backend row shape to the track shape expected by TrendingTrackCard
+          const mappedTracks = homeData.trending_by_genre.initial_tab.tracks.map((t: any) => ({
+            id: t.id,
+            title: t.title,
+            coverUrl: t.cover_image,
+            artistName: t.artist_name,
+            artistUsername: "artist", // Fallback if backend doesn't return artist_username
+            audioUrl: t.stream_url,
+          }));
+          setTrendingTracks(mappedTracks.slice(0, 10)); // Limit to max 10
+        }
+      }).catch((e) => console.error("Failed to load home data", e));
+    });
+  }, []);
+
+  const goToSlide = useCallback((index: number) => setCurrentSlide(index), []);
+
+  // Auto-advance slides
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, AUTOPLAY_INTERVAL);
+    return () => clearInterval(timer);
+  }, [isPaused]);
+
+  const slide = slides[currentSlide];
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  return (
+    <div className="w-full bg-[#121212]">
+      {/* ════════════════════════════════════════════════════════════════
+          ANNOUNCEMENT BANNER
+          ════════════════════════════════════════════════════════════ */}
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-10 bg-[#303030] px-4 py-4 sm:py-7 text-sm text-white rounded border border-gray-300/40">
+        <img
+          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0ibm9uZSI+PHBhdGggZmlsbD0iIzZDMTJEMiIgZD0ibTguMzgzIDItNiAxMmg1LjM4bC0xLjg4IDguNzc2TDIzLjYzMSA3aC02Ljg2NGwzLTVIOC4zODNaIi8+PC9zdmc+"
+          className="banner__iconImage m-get_heard hidden sm:block"
+        />
+
+        <span className="text-[#ccc] text-sm sm:text-lg text-center">
+          Uploading tracks just got way easier: upload, get heard, and get paid
+          in one seamless experience.{" "}
+          <Link
+            to="/upload"
+            className="text-[#608cf3] hover:underline font-medium"
+          >
+            Try it out
+          </Link>
+        </span>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          HERO CAROUSEL
+          ════════════════════════════════════════════════════════════ */}
+      <div
+        className="relative min-h-[420px] sm:min-h-[500px] overflow-hidden rounded-3xl bg-[#111]"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        {/* Background images — crossfade */}
+        {slides.map((s, i) => (
+          <div
+            key={i}
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-in-out"
+            style={{
+              backgroundImage: `url(${s.image})`,
+              opacity: i === currentSlide ? 1 : 0,
+            }}
+          />
+        ))}
+
+        {/* Gradient overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(17,17,17,0.92) 0%, rgba(17,17,17,0.6) 50%, rgba(17,17,17,0.1) 100%)",
+          }}
+        />
+
+        {/* ── Embedded Navbar ──────────────────────────────────────── */}
+        <div className="relative z-10 flex items-center justify-between px-8 pt-6">
+          <Link to="/" className="flex items-center gap-2">
+            {/* TODO: Replace with Rhythmify logo SVG */}
+            <i className="fa-brands fa-soundcloud text-text-hover text-3xl" />
+            <span className="text-lg font-medium tracking-wider text-white/90">
+              RHYTHMIFY
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/signin"
+              className="rounded px-4 py-2 text-md font-extrabold bg-white text-black border border-white/30 hover:text-text-secondary transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
+              to="/signin"
+              className="rounded px-4 py-2 text-md font-extrabold text-white bg-black hover:text-text-secondary transition-colors"
+            >
+              Create account
+            </Link>
+            <Link
+              to="/creator/artists"
+              className="px-2 py-2 text-md font-medium text-white/80 hover:text-white transition-colors"
+            >
+              For Artists
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Slide Content ────────────────────────────────────────── */}
+        <div className="relative z-10 flex min-h-[340px] flex-col justify-center px-10 max-w-[800px]">
+          <h1 className="mb-4 text-[60px] font-extrabold leading-[1.15] text-white whitespace-pre-line">
+            {slide.headline}
+          </h1>
+          <p className="mb-10 max-w-[800px] text-[17px] leading-relaxed text-white/80">
+            {slide.subtitle}
+          </p>
+          <div className="flex items-center gap-4">
+            {slide.ctas.map((cta, i) =>
+              cta.variant === "primary" ? (
+                <Link
+                  key={i}
+                  to={cta.to}
+                  className="rounded bg-white px-6 py-2.5 text-md font-bold text-[#111] transition-colors hover:bg-gray-200"
+                >
+                  {cta.label}
+                </Link>
+              ) : (
+                <Link
+                  key={i}
+                  to={cta.to}
+                  className="rounded border border-white/40 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:border-white"
+                >
+                  {cta.label}
+                </Link>
+              ),
+            )}
+          </div>
+        </div>
+
+        {/* Artist badge */}
+        <div className="absolute bottom-5 right-6 z-10 text-right text-white">
+          <div className="text-sm font-semibold">{slide.artist}</div>
+          <div className="text-xs text-white/70">{slide.artistLabel}</div>
+        </div>
+
+        {/* Dot indicators */}
+        <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 gap-4">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goToSlide(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`h-3 w-3 rounded-full border-[1.5px] transition-all cursor-pointer ${
+                i === currentSlide
+                  ? "border-white bg-white"
+                  : "border-white/60 bg-transparent hover:border-white"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          SEARCH ROW
+          ════════════════════════════════════════════════════════════ */}
+      <div className="flex items-center my-10 justify-center gap-4 px-5 py-7 bg-[#111]">
+        <form onSubmit={handleSearch} className="relative w-full max-w-[560px]">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search for artists, bands, tracks, podcasts"
+            className="w-full rounded border border-[#555] bg-[#111] px-4 py-2.5 pr-10 text-sm text-white outline-none focus:border-[#999] placeholder:text-[#999]"
+          />
+          <button
+            type="submit"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999] hover:text-white transition-colors"
+          >
+            <i className="fa-solid fa-magnifying-glass text-sm  font-medium" />
+          </button>
+        </form>
+        <span className="text-sm text-[#999]">or</span>
+        <Link
+          to="/upload"
+          className="whitespace-nowrap rounded border border-[#555] bg-transparent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:border-white"
+        >
+          Upload your own
+        </Link>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          TRENDING TRACKS
+          ════════════════════════════════════════════════════════════ */}
+      <div className="pb-15 gap-5 px-8">
+        <h2 className="pb-6 text-center text-lg font-medium text-white">
+          Hear what's trending for free in the Rhythmify community
+        </h2>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
+          {trendingTracks.length > 0 ? trendingTracks.map((track) => (
+            <TrendingTrackCard key={track.id} track={track} />
+          )) : (
+            <p className="text-[#999] col-span-full text-center">Loading trending tracks...</p>
+          )}
+        </div>
+
+        {/* Explore trending playlists button */}
+        <div className="flex justify-center">
+          <Link
+            to="/discover"
+            className="rounded px-8 py-3 text-xl font-bold text-black bg-white hover:border-white transition-colors"
+          >
+            Explore trending playlists
+          </Link>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          NEVER STOP LISTENING — App Promo Section
+          ════════════════════════════════════════════════════════════ */}
+      <div className="bg-[#f2f2f2]">
+        <div className="max-w-[1200px] mx-auto px-8 pt-15 flex flex-col md:flex-row items-center gap-15">
+          {/* Device mockups (left side) */}
+          <div className="flex-1 flex items-center b-0 justify-center relative ">
+            {/* Phone mockup */}
+            <img src="\images\mobile.jpg" />
+
+            {/* Desktop mockup (behind phone) */}
+          </div>
+
+          {/* Text content (right side) */}
+          <div className="flex-1 max-w-[400px]">
+            <h2 className="text-[40px] font-extrabold text-[#111] mb-2">
+              Never stop listening
+            </h2>
+            <div className="w-15 h-1 mb-6 bg-gradient-to-r from-[#ff5500] via-blue-600 to-fuchsia-700 rounded" />
+
+            <p className="text-[15px] text-black leading-relaxed mb-8">
+              Rhythmify is available on Web, iOS, Android, Sonos, Chromecast,
+              and Xbox One.
+            </p>
+            <div className="flex items-center gap-3">
+              {/* App Store badge */}
+              <a href=" https://github.com/Rythmify/cross/releases/latest/download/app-release.apk">
+                <img src="\images\app_store.png" />
+              </a>
+
+              {/* Google Play badge */}
+              <a href=" https://github.com/Rythmify/cross/releases/latest/download/rythmify-windows.zip">
+                <img src="\images\google_store.png" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          CALLING ALL CREATORS
+          ════════════════════════════════════════════════════════════ */}
+      <div className="relative w-fit">
+        <img src="/images/girl.jpg" alt="girl" className="rounded-lg" />
+
+        <div className="absolute -translate-y-1/2 top-50 left-20 flex-1 max-w-[450px]">
+          <h2 className="text-[40px] font-bold text-white mb-4">
+            Calling all creators
+          </h2>
+          <p className="text-[15px] text-[#ccc] leading-relaxed mb-8">
+            Get on Rhythmify to connect with fans, share your sounds, and grow
+            your audience. What are you waiting for?
+          </p>
+          <Link
+            to="/creator/artists"
+            className="inline-block rounded border bg-white border-white/40 px-3 py-2 text-lg font-bold text-black hover:text-white hover:bg-white/5 transition-colors"
+          >
+            Find out more
+          </Link>
+        </div>
+        <div className="bg-black absolute -translate-y-1/2 right-70 bottom-0 top-70 h-35 w-30">
+          {" "}
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          THANKS FOR LISTENING — CTA Section
+          ════════════════════════════════════════════════════════════ */}
+      <div className="py-20 px-8">
+        <div className="max-w-[600px] mx-auto text-center">
+          <h2 className="text-[32px] font-bold text-white mb-4">
+            Thanks for listening. Now join in.
+          </h2>
+          <p className="text-[15px] text-[#ccc] mb-8">
+            Save tracks, follow artists and build playlists. All for free.
+          </p>
+          <Link
+            to="/signin"
+            className="inline-block rounded-sm border border-[#555] bg-transparent px-10 py-3 text-sm font-medium text-white hover:border-white transition-colors mb-6"
+          >
+            Create account
+          </Link>
+          <div className="flex items-center justify-center gap-2 text-sm">
+            <span className="text-[#999]">Already have an account?</span>
+            <Link
+              to="/signin"
+              className="text-white font-medium hover:underline"
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          FOOTER
+          Note: If your LandingLayout already renders <Footer />,
+          remove this section to avoid duplication.
+          ════════════════════════════════════════════════════════════ */}
+   
+    <GuestPageFooter></GuestPageFooter>
+    </div>
+   
   );
 };
 
