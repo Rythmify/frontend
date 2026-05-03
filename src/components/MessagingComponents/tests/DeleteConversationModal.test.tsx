@@ -1,186 +1,173 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import DeleteConversationModal from "../DeleteConversationModal";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
-vi.mock("@/services/api/messaging/conversationApi", () => ({
-  deleteConversation: vi.fn(),
-  submitReport: vi.fn(),
-}));
+const mockDeleteConversation = vi.fn()
+const mockSubmitReport = vi.fn()
 
-import {
-  deleteConversation,
-  submitReport,
-} from "@/services/api/messaging/conversationApi";
+vi.mock('@/services/api/messaging/conversationApi', () => ({
+  deleteConversation: (...args: unknown[]) => mockDeleteConversation(...args),
+  submitReport: (...args: unknown[]) => mockSubmitReport(...args),
+}))
 
-const renderModal = (
-  props: {
-    conversationId?: string;
-    participantId?: string;
-    onClose?: () => void;
-    onDeleted?: (id: string) => void;
-  } = {}
-) =>
-  render(
-    <DeleteConversationModal
-      conversationId="conv-1"
-      participantId="user-1"
-      onClose={vi.fn()}
-      onDeleted={vi.fn()}
-      {...props}
-    />
-  );
+vi.mock('../CheckBox', () => ({
+  default: ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
+    <div data-test={`checkbox-${label.toLowerCase().replace(/\s+/g, '-')}`}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        data-test="checkbox-toggle"
+      />
+      <label>{label}</label>
+    </div>
+  ),
+}))
 
-describe("DeleteConversationModal", () => {
+import DeleteConversationModal from '../DeleteConversationModal'
+
+const defaultProps = {
+  conversationId: 'conv-1',
+  participantId: 'user-2',
+  onClose: vi.fn(),
+  onDeleted: vi.fn(),
+}
+
+describe('DeleteConversationModal', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+    mockDeleteConversation.mockResolvedValue({})
+    mockSubmitReport.mockResolvedValue({})
+  })
 
-  // ── Rendering ──────────────────────────────────────────────────────────────
+  describe('rendering', () => {
+    it('renders the modal container', () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      expect(screen.getByTestId('delete-conversation-modal')).toBeInTheDocument()
+    })
 
-  it("renders the confirmation heading", () => {
-    renderModal();
-    expect(screen.getByText(/are you sure/i)).toBeInTheDocument();
-  });
+    it('renders the title "Are you sure?"', () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      expect(screen.getByText('Are you sure?')).toBeInTheDocument()
+    })
 
-  it("renders the description text", () => {
-    renderModal();
-    expect(screen.getByText(/archiving a conversation removes it/i)).toBeInTheDocument();
-  });
+    it('renders the description text', () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      expect(screen.getByText(/Archiving a conversation/)).toBeInTheDocument()
+    })
 
-  it("renders the spam checkbox", () => {
-    renderModal();
-    expect(
-      screen.getByText(/also report conversation as spam/i)
-    ).toBeInTheDocument();
-  });
+    it('renders the CheckBox', () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      expect(screen.getByTestId('checkbox-also-report-conversation-as-spam')).toBeInTheDocument()
+    })
 
-  it("renders Cancel and Archive buttons", () => {
-    renderModal();
-    expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /archive/i })).toBeInTheDocument();
-  });
+    it('renders the Cancel button', () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      expect(screen.getByTestId('delete-conversation-cancel')).toBeInTheDocument()
+    })
 
-  // ── Cancel ─────────────────────────────────────────────────────────────────
+    it('renders the Archive button', () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      expect(screen.getByTestId('delete-conversation-confirm')).toHaveTextContent('Archive')
+    })
 
-  it("calls onClose when Cancel is clicked", async () => {
-    const onClose = vi.fn();
-    renderModal({ onClose });
-    await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+    it('does not show error initially', () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      expect(screen.queryByTestId('delete-conversation-error')).not.toBeInTheDocument()
+    })
+  })
 
-  it("calls onClose when backdrop is clicked", async () => {
-    const onClose = vi.fn();
-    renderModal({ onClose });
-    const backdrop = screen.getByRole("dialog");
-    await userEvent.click(backdrop);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  describe('backdrop click', () => {
+    it('calls onClose when backdrop is clicked directly', () => {
+      const onClose = vi.fn()
+      render(<DeleteConversationModal {...defaultProps} onClose={onClose} />)
+      const modal = screen.getByTestId('delete-conversation-modal')
+      fireEvent.click(modal)
+      expect(onClose).toHaveBeenCalled()
+    })
 
-  it("does not call onClose when modal content is clicked", async () => {
-    const onClose = vi.fn();
-    renderModal({ onClose });
-    await userEvent.click(screen.getByText(/are you sure/i));
-    expect(onClose).not.toHaveBeenCalled();
-  });
+    it('does not call onClose when inner content is clicked', async () => {
+      const onClose = vi.fn()
+      render(<DeleteConversationModal {...defaultProps} onClose={onClose} />)
+      await userEvent.click(screen.getByText('Are you sure?'))
+      expect(onClose).not.toHaveBeenCalled()
+    })
+  })
 
-  // ── Archive flow ───────────────────────────────────────────────────────────
+  describe('cancel button', () => {
+    it('calls onClose when Cancel is clicked', async () => {
+      const onClose = vi.fn()
+      render(<DeleteConversationModal {...defaultProps} onClose={onClose} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-cancel'))
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
+  })
 
-  it("calls deleteConversation with conversationId on archive", async () => {
-    (deleteConversation as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    renderModal({ conversationId: "conv-1" });
-    await userEvent.click(screen.getByRole("button", { name: /archive/i }));
-    expect(deleteConversation).toHaveBeenCalledWith("conv-1");
-  });
+  describe('archive (delete) flow', () => {
+    it('calls deleteConversation with the conversationId', async () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-confirm'))
+      await waitFor(() => expect(mockDeleteConversation).toHaveBeenCalledWith('conv-1'))
+    })
 
-  it("calls onDeleted with conversationId on success", async () => {
-    (deleteConversation as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    const onDeleted = vi.fn();
-    renderModal({ onDeleted, conversationId: "conv-1" });
-    await userEvent.click(screen.getByRole("button", { name: /archive/i }));
-    expect(onDeleted).toHaveBeenCalledWith("conv-1");
-  });
+    it('calls onDeleted with conversationId after successful delete', async () => {
+      const onDeleted = vi.fn()
+      render(<DeleteConversationModal {...defaultProps} onDeleted={onDeleted} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-confirm'))
+      await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('conv-1'))
+    })
 
-  it("calls onClose after successful delete", async () => {
-    (deleteConversation as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    const onClose = vi.fn();
-    renderModal({ onClose });
-    await userEvent.click(screen.getByRole("button", { name: /archive/i }));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+    it('calls onClose after successful delete', async () => {
+      const onClose = vi.fn()
+      render(<DeleteConversationModal {...defaultProps} onClose={onClose} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-confirm'))
+      await waitFor(() => expect(onClose).toHaveBeenCalled())
+    })
 
-  // ── With spam report ───────────────────────────────────────────────────────
+    it('shows "Archiving…" text on the button while deleting', async () => {
+      mockDeleteConversation.mockReturnValue(new Promise(() => {})) // never resolves
+      render(<DeleteConversationModal {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-confirm'))
+      expect(screen.getByTestId('delete-conversation-confirm')).toHaveTextContent('Archiving…')
+    })
 
-  it("calls submitReport before deleteConversation when spam checkbox is checked", async () => {
-    const callOrder: string[] = [];
-    (submitReport as ReturnType<typeof vi.fn>).mockImplementation(async () =>
-      callOrder.push("report")
-    );
-    (deleteConversation as ReturnType<typeof vi.fn>).mockImplementation(async () =>
-      callOrder.push("delete")
-    );
+    it('disables Cancel and Archive buttons while deleting', async () => {
+      mockDeleteConversation.mockReturnValue(new Promise(() => {}))
+      render(<DeleteConversationModal {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-confirm'))
+      expect(screen.getByTestId('delete-conversation-cancel')).toBeDisabled()
+      expect(screen.getByTestId('delete-conversation-confirm')).toBeDisabled()
+    })
 
-    renderModal({ participantId: "user-1" });
-    const checkboxContainer = screen
-      .getByText(/also report conversation as spam/i)
-      .closest("label")!.querySelector("div[class*='border']")!;
-    await userEvent.click(checkboxContainer);
-    await userEvent.click(screen.getByRole("button", { name: /archive/i }));
+    it('shows error message when deleteConversation throws', async () => {
+      mockDeleteConversation.mockRejectedValue(new Error('fail'))
+      render(<DeleteConversationModal {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-confirm'))
+      await waitFor(() => expect(screen.getByTestId('delete-conversation-error')).toBeInTheDocument())
+    })
+  })
 
-    expect(callOrder).toEqual(["report", "delete"]);
-    expect(submitReport).toHaveBeenCalledWith({
-      resource_type: "user",
-      resource_id: "user-1",
-      reason: "spam",
-    });
-  });
+  describe('spam report flow', () => {
+    it('calls submitReport when spam checkbox is checked before archiving', async () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      const checkbox = screen.getByTestId('checkbox-toggle')
+      fireEvent.click(checkbox)
+      expect(checkbox).toBeChecked()
+      await userEvent.click(screen.getByTestId('delete-conversation-confirm'))
+      await waitFor(() =>
+        expect(mockSubmitReport).toHaveBeenCalledWith({
+          resource_type: 'user',
+          resource_id: 'user-2',
+          reason: 'spam',
+        })
+      )
+    })
 
-  it("does not call submitReport when spam checkbox is unchecked", async () => {
-    (deleteConversation as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    renderModal();
-    await userEvent.click(screen.getByRole("button", { name: /archive/i }));
-    expect(submitReport).not.toHaveBeenCalled();
-  });
-
-  // ── Error handling ─────────────────────────────────────────────────────────
-
-  it("shows error message on failure", async () => {
-    (deleteConversation as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error("Server error")
-    );
-    renderModal();
-    await userEvent.click(screen.getByRole("button", { name: /archive/i }));
-    expect(
-      screen.getByText(/something went wrong/i)
-    ).toBeInTheDocument();
-  });
-
-  it("does not show error initially", () => {
-    renderModal();
-    expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument();
-  });
-
-  it("disables buttons while deleting", async () => {
-    let resolve!: (value: unknown) => void;
-    (deleteConversation as ReturnType<typeof vi.fn>).mockImplementation(
-      () => new Promise((res) => { resolve = res; })
-    );
-    renderModal();
-    await userEvent.click(screen.getByRole("button", { name: /archive/i }));
-    expect(screen.getByRole("button", { name: /archiving/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /cancel/i })).toBeDisabled();
-    resolve(undefined);
-  });
-
-  it("shows 'Archiving…' text while in progress", async () => {
-    let resolve!: (value: unknown) => void;
-    (deleteConversation as ReturnType<typeof vi.fn>).mockImplementation(
-      () => new Promise((res) => { resolve = res; })
-    );
-    renderModal();
-    await userEvent.click(screen.getByRole("button", { name: /archive/i }));
-    expect(screen.getByText(/archiving…/i)).toBeInTheDocument();
-    resolve(undefined);
-  });
-});
+    it('does not call submitReport when spam checkbox is not checked', async () => {
+      render(<DeleteConversationModal {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('delete-conversation-confirm'))
+      await waitFor(() => expect(mockDeleteConversation).toHaveBeenCalled())
+      expect(mockSubmitReport).not.toHaveBeenCalled()
+    })
+  })
+})

@@ -1,77 +1,86 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, configure } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import MessagingHeader from "../MessagingHeader";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
-configure({ testIdAttribute: "data-testid" });
-
-vi.mock("@/components/MessagingComponents/Modal", () => ({
-  Modal: ({ isOpen, children, onClose }: any) =>
+vi.mock('@/components/MessagingComponents/Modal', () => ({
+  Modal: ({ isOpen, onClose, children }: { isOpen: boolean; onClose: () => void; children: React.ReactNode }) =>
     isOpen ? (
-      <div data-testid="modal">
+      <div data-test="modal-backdrop">
+        <button data-test="modal-close-button" onClick={onClose}>Close</button>
         {children}
-        <button onClick={onClose}>Close modal</button>
       </div>
     ) : null,
-}));
+}))
 
-vi.mock("@/pages/social/messages/ModalNewMessageBody", () => ({
-  default: ({ onClose }: any) => (
-    <div data-testid="new-message-body">
-      <button onClick={onClose}>Close body</button>
+vi.mock('@/pages/social/messages/ModalNewMessageBody', () => ({
+  default: ({ onClose }: { onClose: () => void }) => (
+    <div data-test="modal-new-message-body">
+      <button onClick={onClose}>Close Modal</button>
     </div>
   ),
-}));
+}))
 
-const renderHeader = () =>
-  render(
-    <MemoryRouter>
-      <MessagingHeader />
-    </MemoryRouter>
-  );
+import MessagingHeader from '../MessagingHeader'
 
-describe("MessagingHeader", () => {
-  it("renders the Messages heading", () => {
-    renderHeader();
-    expect(
-      screen.getByRole("heading", { name: /messages/i })
-    ).toBeInTheDocument();
-  });
+describe('MessagingHeader', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-  it("renders the New button", () => {
-    renderHeader();
-    expect(screen.getByRole("button", { name: /new/i })).toBeInTheDocument();
-  });
+  describe('rendering', () => {
+    it('renders the messaging-header container', () => {
+      render(<MessagingHeader />)
+      expect(screen.getByTestId('messaging-header')).toBeInTheDocument()
+    })
 
-  it("does not show modal initially", () => {
-    renderHeader();
-    expect(screen.queryByTestId("modal")).not.toBeInTheDocument();
-  });
+    it('renders the Messages title', () => {
+      render(<MessagingHeader />)
+      expect(screen.getByText('Messages')).toBeInTheDocument()
+    })
 
-  it("opens the modal when New is clicked", async () => {
-    renderHeader();
-    await userEvent.click(screen.getByRole("button", { name: /new/i }));
-    expect(await screen.findByTestId("modal")).toBeInTheDocument();
-  });
+    it('renders the New button', () => {
+      render(<MessagingHeader />)
+      expect(screen.getByTestId('new-message-button')).toBeInTheDocument()
+    })
 
-  it("renders ModalNewMessageBody inside the modal", async () => {
-    renderHeader();
-    await userEvent.click(screen.getByRole("button", { name: /new/i }));
-    expect(await screen.findByTestId("new-message-body")).toBeInTheDocument();
-  });
+    it('does not show modal initially', () => {
+      render(<MessagingHeader />)
+      expect(screen.queryByTestId('modal-backdrop')).not.toBeInTheDocument()
+    })
+  })
 
-  it("closes the modal when onClose is called from Modal", async () => {
-    renderHeader();
-    await userEvent.click(screen.getByRole("button", { name: /new/i }));
-    await userEvent.click(await screen.findByText("Close modal"));
-    expect(screen.queryByTestId("modal")).not.toBeInTheDocument();
-  });
+  describe('interactions', () => {
+    it('opens the modal when New button is clicked', async () => {
+      render(<MessagingHeader />)
+      await userEvent.click(screen.getByTestId('new-message-button'))
+      expect(screen.getByTestId('modal-backdrop')).toBeInTheDocument()
+    })
 
-  it("closes the modal when onClose is called from ModalNewMessageBody", async () => {
-    renderHeader();
-    await userEvent.click(screen.getByRole("button", { name: /new/i }));
-    await userEvent.click(await screen.findByText("Close body"));
-    expect(screen.queryByTestId("modal")).not.toBeInTheDocument();
-  });
-});
+    it('renders ModalNewMessageBody inside the modal', async () => {
+      render(<MessagingHeader />)
+      await userEvent.click(screen.getByTestId('new-message-button'))
+      expect(screen.getByTestId('modal-new-message-body')).toBeInTheDocument()
+    })
+
+    it('closes the modal when modal close button is clicked', async () => {
+      render(<MessagingHeader />)
+      await userEvent.click(screen.getByTestId('new-message-button'))
+      expect(screen.getByTestId('modal-backdrop')).toBeInTheDocument()
+      await userEvent.click(screen.getByTestId('modal-close-button'))
+      expect(screen.queryByTestId('modal-backdrop')).not.toBeInTheDocument()
+    })
+
+    it('closes the modal when onClose is called from ModalNewMessageBody', async () => {
+      render(<MessagingHeader />)
+      await userEvent.click(screen.getByTestId('new-message-button'))
+      await userEvent.click(screen.getByText('Close Modal'))
+      expect(screen.queryByTestId('modal-backdrop')).not.toBeInTheDocument()
+    })
+
+    it('accepts optional onConversationCreated prop without crashing', () => {
+      const onCreated = vi.fn()
+      render(<MessagingHeader onConversationCreated={onCreated} />)
+      expect(screen.getByTestId('messaging-header')).toBeInTheDocument()
+    })
+  })
+})

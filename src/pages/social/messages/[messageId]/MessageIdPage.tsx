@@ -151,10 +151,9 @@ export default function MessageIdPage() {
           const existingIds = new Set(prev.map((conv) => conv.id));
           const uniqueItems = items.filter((conv) => !existingIds.has(conv.id));
           const next = [...prev, ...uniqueItems];
-          // FIX: sync ref synchronously inside the updater so the
-          // IntersectionObserver always sees the correct value on its
-          // next intersection event — no async useEffect lag.
-          syncHasMoreConvs(next.length, pagination.total_items ?? next.length);
+          // FIX: use pagination.total (not pagination.total_items) to match
+          // the backend response shape: { page, limit, total, total_pages }
+          syncHasMoreConvs(next.length, pagination.total ?? next.length);
           return next;
         });
         convPageRef.current = page;
@@ -178,7 +177,9 @@ export default function MessageIdPage() {
       .then((res) => {
         const { items, pagination } = res.data;
         setConversations(items);
-        syncHasMoreConvs(items.length, pagination.total_items ?? items.length);
+        // FIX: use pagination.total (not pagination.total_items) to match
+        // the backend response shape: { page, limit, total, total_pages }
+        syncHasMoreConvs(items.length, pagination.total ?? items.length);
         convPageRef.current = 1;
 
         if (items.length === 0) return;

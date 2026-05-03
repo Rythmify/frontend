@@ -1,146 +1,119 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { SpamModal } from "../../UI/SpamModal";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { SpamModal } from "@/components/UI/SpamModal"
+import * as conversationApi from "@/services/api/messaging/conversationApi"
 
-// ✅ Use the same alias the component uses internally
 vi.mock("@/services/api/messaging/conversationApi", () => ({
+  blockUser: vi.fn(),
   submitReport: vi.fn(),
-}));
+}))
 
-import { submitReport } from "@/services/api/messaging/conversationApi";
+const mockSubmitReport = vi.mocked(conversationApi.submitReport)
 
-const renderSpam = (
-  props: {
-    username?: string;
-    userId?: string;
-    onClose?: () => void;
-    onReported?: () => void;
-  } = {}
-) =>
-  render(
-    <SpamModal
-      username="Bob"
-      userId="user-bob"
-      onClose={vi.fn()}
-      onReported={vi.fn()}
-      {...props}
-    />
-  );
+const defaultProps = {
+  username: "spamuser",
+  userId: "user-456",
+  onClose: vi.fn(),
+  onReported: vi.fn(),
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe("SpamModal", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  // ── Rendering ──────────────────────────────────────────────────────────────
-
-  it("renders the modal container with correct data-test", () => {
-    renderSpam();
-    expect(screen.getByTestId("spam-report-modal")).toBeInTheDocument();
-  });
+  it("renders the modal with correct test id", () => {
+    render(<SpamModal {...defaultProps} />)
+    expect(screen.getByTestId("spam-report-modal")).toBeInTheDocument()
+  })
 
   it("renders the title", () => {
-    renderSpam();
-    const title = screen.getByTestId("spam-report-title");
-    expect(title).toBeInTheDocument();
-    // ✅ Scope the text check to the title element to avoid matching the button
-    expect(title).toHaveTextContent(/report spam/i);
-  });
+    render(<SpamModal {...defaultProps} />)
+    expect(screen.getByTestId("spam-report-title")).toHaveTextContent("Report Spam")
+  })
 
-  it("renders the username in the description", () => {
-    renderSpam({ username: "Alice" });
-    expect(screen.getByText(/reporting Alice for spam/i)).toBeInTheDocument();
-  });
+  it("renders reporting username in description", () => {
+    render(<SpamModal {...defaultProps} />)
+    expect(screen.getByText("Reporting spamuser for spam:")).toBeInTheDocument()
+  })
 
-  it("renders all three consequence bullets", () => {
-    renderSpam();
+  it("renders all consequence list items", () => {
+    render(<SpamModal {...defaultProps} />)
     expect(
-      screen.getByText(/removes their comments, reposts and likes/i)
-    ).toBeInTheDocument();
+      screen.getByText("Removes their comments, reposts and likes from your tracks and playlists")
+    ).toBeInTheDocument()
     expect(
-      screen.getByText(/blocks them from interacting with you/i)
-    ).toBeInTheDocument();
+      screen.getByText("Blocks them from interacting with you")
+    ).toBeInTheDocument()
     expect(
-      screen.getByText(/sends soundcloud a spam report/i)
-    ).toBeInTheDocument();
-  });
+      screen.getByText("Sends SoundCloud a spam report")
+    ).toBeInTheDocument()
+  })
 
-  it("renders the Cancel button", () => {
-    renderSpam();
-    expect(screen.getByTestId("spam-cancel-button")).toBeInTheDocument();
-  });
+  it("renders cancel and report buttons", () => {
+    render(<SpamModal {...defaultProps} />)
+    expect(screen.getByTestId("spam-cancel-button")).toBeInTheDocument()
+    expect(screen.getByTestId("spam-report-button")).toBeInTheDocument()
+    expect(screen.getByTestId("spam-report-button")).toHaveTextContent("Report spam")
+  })
 
-  it("renders the Report spam button", () => {
-    renderSpam();
-    expect(screen.getByTestId("spam-report-button")).toBeInTheDocument();
-  });
+  it("calls onClose when cancel is clicked", () => {
+    render(<SpamModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("spam-cancel-button"))
+    expect(defaultProps.onClose).toHaveBeenCalledTimes(1)
+  })
 
-  // ── Cancel ─────────────────────────────────────────────────────────────────
+  it("calls submitReport, then onReported and onClose on success", async () => {
+    mockSubmitReport.mockResolvedValueOnce(undefined as any)
 
-  it("calls onClose when Cancel is clicked", async () => {
-    const onClose = vi.fn();
-    renderSpam({ onClose });
-    await userEvent.click(screen.getByTestId("spam-cancel-button"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+    render(<SpamModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("spam-report-button"))
 
-  // ── Report flow ────────────────────────────────────────────────────────────
+    await waitFor(() => {
+      expect(mockSubmitReport).toHaveBeenCalledWith({
+        resource_type: "user",
+        resource_id: "user-456",
+        reason: "spam",
+      })
+      expect(defaultProps.onReported).toHaveBeenCalledTimes(1)
+      expect(defaultProps.onClose).toHaveBeenCalledTimes(1)
+    })
+  })
 
-  it("calls submitReport with correct payload when Report spam is clicked", async () => {
-    (submitReport as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    renderSpam({ userId: "user-bob" });
-    await userEvent.click(screen.getByTestId("spam-report-button"));
-    expect(submitReport).toHaveBeenCalledWith({
-      resource_type: "user",
-      resource_id: "user-bob",
-      reason: "spam",
-    });
-  });
+  it("shows 401 error message when submitReport throws 401", async () => {
+    mockSubmitReport.mockRejectedValueOnce({ response: { status: 401 } })
 
-  it("calls onReported and onClose on successful report", async () => {
-    (submitReport as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    const onReported = vi.fn();
-    const onClose = vi.fn();
-    renderSpam({ onReported, onClose });
-    await userEvent.click(screen.getByTestId("spam-report-button"));
-    expect(onReported).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+    render(<SpamModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("spam-report-button"))
 
-  it("shows 401 error message on auth failure", async () => {
-    (submitReport as ReturnType<typeof vi.fn>).mockRejectedValue({
-      response: { status: 401 },
-    });
-    renderSpam();
-    await userEvent.click(screen.getByTestId("spam-report-button"));
-    expect(
-      screen.getByText(/missing or invalid access token/i)
-    ).toBeInTheDocument();
-  });
+    await waitFor(() => {
+      expect(screen.getByText("Missing or invalid access token.")).toBeInTheDocument()
+    })
+  })
 
-  it("does not show error message initially", () => {
-    renderSpam();
-    expect(
-      screen.queryByText(/missing or invalid access token/i)
-    ).not.toBeInTheDocument();
-  });
+  it("does not show error initially", () => {
+    render(<SpamModal {...defaultProps} />)
+    expect(screen.queryByText("Missing or invalid access token.")).not.toBeInTheDocument()
+  })
 
-  it("does not call submitReport when userId is undefined", async () => {
-    render(<SpamModal username="Bob" onClose={vi.fn()} />);
-    await userEvent.click(screen.getByTestId("spam-report-button"));
-    expect(submitReport).not.toHaveBeenCalled();
-  });
+  it("disables buttons while loading", async () => {
+    let resolve: (v: any) => void
+    mockSubmitReport.mockReturnValueOnce(new Promise((r) => { resolve = r }))
 
-  it("disables buttons while submitting", async () => {
-    let resolve!: (value: unknown) => void;
-    (submitReport as ReturnType<typeof vi.fn>).mockImplementation(
-      () => new Promise((res) => { resolve = res; })
-    );
-    renderSpam();
-    await userEvent.click(screen.getByTestId("spam-report-button"));
-    expect(screen.getByTestId("spam-report-button")).toBeDisabled();
-    expect(screen.getByTestId("spam-cancel-button")).toBeDisabled();
-    resolve(undefined);
-  });
-});
+    render(<SpamModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("spam-report-button"))
+
+    expect(screen.getByTestId("spam-cancel-button")).toBeDisabled()
+    expect(screen.getByTestId("spam-report-button")).toBeDisabled()
+
+    resolve!(undefined)
+  })
+
+  it("does nothing if userId is missing", async () => {
+    render(<SpamModal {...defaultProps} userId={undefined} />)
+    fireEvent.click(screen.getByTestId("spam-report-button"))
+    await waitFor(() => {
+      expect(mockSubmitReport).not.toHaveBeenCalled()
+    })
+  })
+})

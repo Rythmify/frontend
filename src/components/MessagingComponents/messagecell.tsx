@@ -60,21 +60,26 @@ function EmbedCard({
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    // Map preloaded resource (optimistic send) — no network call needed
-    if (preloaded) {
-      if (isApiTrack(preloaded)) {
-        setTrack(mapTrack(preloaded));
-      } else {
-        setPlaylist(mapPlaylist(preloaded));
-      }
-      setLoading(false);
-      return;
-    }
-
-    // Lazy-load from server (messages loaded from history)
     let cancelled = false;
 
     const load = async () => {
+      // For tracks: use preloaded data optimistically only if stream_url is present.
+      // When sent via the picker, stream_url is null on the synthetic embed, so we
+      // must fetch the real resource to get a playable audioUrl.
+      if (preloaded && embedType === 'track' && isApiTrack(preloaded)) {
+        if (preloaded.stream_url) {
+          // Full data available — no network call needed
+          setTrack(mapTrack(preloaded));
+          setLoading(false);
+          return;
+        }
+        // stream_url missing (picker-built synthetic embed) — fall through to fetch
+      }
+
+      // For playlists: preloaded data from the picker won't have track stream_urls
+      // either, so always fetch fresh to get fully playable track data.
+      // (We still use preloaded title/cover for an instant partial render below.)
+
       try {
         if (embedType === 'track') {
           const res = await fetchTrack(embedId);
@@ -82,25 +87,24 @@ function EmbedCard({
         } else if (embedType === 'playlist') {
           const res = await fetchPlaylist(embedId);
           const pl = mapPlaylist(res.data);
-          
-          // Explicitly fetch all tracks to ensure we have full data (waveform, audioUrl, etc.)
+
+          // Fetch individual tracks so waveform + audioUrl are fully populated
           if (pl.tracks && pl.tracks.length > 0) {
             try {
               const fetchPromises = pl.tracks.map(async (t) => {
                 const trackId = t.id;
-                if (trackId && trackId !== "undefined" && trackId !== "") {
+                if (trackId && trackId !== 'undefined' && trackId !== '') {
                   const trackRes = await fetchTrack(trackId);
                   return mapTrack(trackRes.data);
                 }
                 return t;
               });
-              
               pl.tracks = await Promise.all(fetchPromises);
             } catch (err) {
-              console.error("Failed to fetch tracks for embedded playlist:", err);
+              console.error('Failed to fetch tracks for embedded playlist:', err);
             }
           }
-          
+
           if (!cancelled) setPlaylist(pl);
         }
       } catch {
@@ -111,10 +115,41 @@ function EmbedCard({
     };
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [embedType, embedId, preloaded]);
 
-  if (loading) return <EmbedSkeleton />;
+  // While the real data is loading, show the preloaded title/cover instantly
+  // so the user sees something right away instead of a spinner.
+  if (loading) {
+    if (preloaded && embedType === 'track' && isApiTrack(preloaded)) {
+      // Render a lightweight placeholder with the known title + cover
+      return (
+        <div className="mt-2 flex items-center gap-3 bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2">
+          {preloaded.cover_image ? (
+            <img
+              src={preloaded.cover_image}
+              alt={preloaded.title ?? ''}
+              className="w-10 h-10 rounded-sm object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-sm bg-[#2a2a2a] flex-shrink-0 animate-pulse" />
+          )}
+          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+            <span className="text-sm font-semibold text-white truncate">
+              {preloaded.title ?? 'Track'}
+            </span>
+            <span className="text-xs text-gray-400 truncate">
+              {preloaded.artist_name ?? ''}
+            </span>
+          </div>
+          <div className="w-16 h-2 bg-[#2a2a2a] rounded animate-pulse flex-shrink-0" />
+        </div>
+      );
+    }
+    return <EmbedSkeleton />;
+  }
 
   if (failed) {
     return (

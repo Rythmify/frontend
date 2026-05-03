@@ -1,139 +1,179 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import { ChatProfile } from "../ChatProfile";
-import type { Conversation, Message } from "@/services/api/messaging/conversationApi";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
-// 🔹 Mock UserAvatar
-vi.mock("@/components/UI/UserAvatar", () => ({
-  default: ({ name }: { name: string }) => <div>{name}</div>,
-}));
+vi.mock('@/components/UI/UserAvatar', () => ({
+  default: ({ src, name, alt }: { src?: string | null; name: string; alt: string }) => (
+    <div data-test="user-avatar" data-src={src ?? 'null'} data-name={name} data-alt={alt} />
+  ),
+}))
 
-// 🔹 FULL Message factory (FIXED ✅)
-const createMessage = (overrides?: Partial<Message>): Message => ({
-  id: "msg-1",
-  conversation_id: "conv-1",
-  sender_id: "user-1",
-  body: "Hello there",
-  embed_type: null,
-  embed_id: null,
-  is_read: false,
-  created_at: new Date().toISOString(),
-  ...overrides,
-});
+import { ChatProfile } from '../ChatProfile'
+import type { Conversation } from '@/services/api/messaging/conversationApi'
 
-// 🔹 Conversation factory
-const createConversation = (overrides?: Partial<Conversation>): Conversation =>
-  ({
-    id: "conv-1",
-    updated_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    unread_count: 0,
+function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
+  return {
+    id: 'conv-1',
     participant: {
-      id: "user-2",
-      username: "john",
-      display_name: "John Doe",
-      bio: "",
-      location: "",
-      gender: "",
-      role: "",
-      avatar: "avatar.png",
-      cover_photo: "",
-      is_private: false,
-      is_verified: false,
-      followers_count: 0,
-      following_count: 0,
+      id: 'user-2',
+      username: 'testuser',
+      display_name: 'Test User',
+      avatar: 'https://example.com/avatar.jpg',
+    },
+    last_message: {
+      id: 'msg-1',
+      body: 'Hello there',
+      embed_type: null,
+      embed_id: null,
+      sender_id: 'user-2',
       created_at: new Date().toISOString(),
     },
-    last_message: createMessage(),
+    unread_count: 0,
+    updated_at: new Date().toISOString(),
     ...overrides,
-  } as Conversation);
+  } as Conversation
+}
 
-describe("ChatProfile", () => {
-  it("renders participant name", () => {
-    const conv = createConversation();
+describe('ChatProfile', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
-    render(<ChatProfile conversation={conv} />);
-    expect(screen.getByTestId("chat-profile-name")).toHaveTextContent("John Doe");
-  });
+  describe('rendering', () => {
+    it('renders the chat profile container with correct data-test id', () => {
+      render(<ChatProfile conversation={makeConversation({ id: 'conv-42' })} />)
+      expect(screen.getByTestId('chat-profile-conv-42')).toBeInTheDocument()
+    })
 
-  it("renders message preview (text)", () => {
-    const conv = createConversation({
-      last_message: createMessage({ body: "Test message" }),
-    });
+    it('renders the participant display name', () => {
+      render(<ChatProfile conversation={makeConversation()} />)
+      expect(screen.getByTestId('chat-profile-name')).toHaveTextContent('Test User')
+    })
 
-    render(<ChatProfile conversation={conv} />);
-    expect(screen.getByText("Test message")).toBeInTheDocument();
-  });
+    it('renders the last message body as preview', () => {
+      render(<ChatProfile conversation={makeConversation()} />)
+      expect(screen.getByTestId('chat-profile-preview')).toHaveTextContent('Hello there')
+    })
 
-  it("renders fallback when message body is empty and no embed", () => {
-    const conv = createConversation({
-      last_message: createMessage({ body: "" }),
-    });
+    it('renders "·" when last_message is undefined', () => {
+      render(<ChatProfile conversation={makeConversation({ last_message: undefined })} />)
+      expect(screen.getByTestId('chat-profile-preview')).toHaveTextContent('·')
+    })
 
-    render(<ChatProfile conversation={conv} />);
-    expect(screen.getByText("·")).toBeInTheDocument();
-  });
+    it('renders "·" when last_message has no body and no embed_type', () => {
+      render(<ChatProfile conversation={makeConversation({ last_message: { id: 'm1', body: '', embed_type: null, embed_id: null, sender_id: 'u2', created_at: '' } as any })} />)
+      expect(screen.getByTestId('chat-profile-preview')).toHaveTextContent('·')
+    })
 
-  it("renders track embed preview", () => {
-    const conv = createConversation({
-      last_message: createMessage({ body: "", embed_type: "track" }),
-    });
+    it('renders track embed fallback when body is empty and embed_type is track', () => {
+      render(<ChatProfile conversation={makeConversation({ last_message: { id: 'm1', body: '', embed_type: 'track', embed_id: 't1', sender_id: 'u2', created_at: '' } as any })} />)
+      expect(screen.getByTestId('chat-profile-preview')).toHaveTextContent('🎵 Shared a track')
+    })
 
-    render(<ChatProfile conversation={conv} />);
-    expect(screen.getByText("🎵 Shared a track")).toBeInTheDocument();
-  });
+    it('renders playlist embed fallback when body is empty and embed_type is playlist', () => {
+      render(<ChatProfile conversation={makeConversation({ last_message: { id: 'm1', body: '', embed_type: 'playlist', embed_id: 'p1', sender_id: 'u2', created_at: '' } as any })} />)
+      expect(screen.getByTestId('chat-profile-preview')).toHaveTextContent('🎶 Shared a playlist')
+    })
 
-  it("renders playlist embed preview", () => {
-    const conv = createConversation({
-      last_message: createMessage({ body: "", embed_type: "playlist" }),
-    });
+    it('renders text body over embed type', () => {
+      render(<ChatProfile conversation={makeConversation({ last_message: { id: 'm1', body: 'Check this out', embed_type: 'track', embed_id: 't1', sender_id: 'u2', created_at: '' } as any })} />)
+      expect(screen.getByTestId('chat-profile-preview')).toHaveTextContent('Check this out')
+    })
 
-    render(<ChatProfile conversation={conv} />);
-    expect(screen.getByText("🎶 Shared a playlist")).toBeInTheDocument();
-  });
+    it('renders unread dot when unread_count > 0', () => {
+      render(<ChatProfile conversation={makeConversation({ unread_count: 3 })} />)
+      expect(screen.getByTestId('chat-profile-unread-dot')).toBeInTheDocument()
+    })
 
-  it("shows unread indicator when unread_count > 0", () => {
-    const conv = createConversation({ unread_count: 2 });
+    it('does not render unread dot when unread_count is 0', () => {
+      render(<ChatProfile conversation={makeConversation({ unread_count: 0 })} />)
+      expect(screen.queryByTestId('chat-profile-unread-dot')).not.toBeInTheDocument()
+    })
 
-    render(<ChatProfile conversation={conv} />);
-    expect(screen.getByTestId("chat-profile-unread-dot")).toBeInTheDocument();
-  });
+    it('renders UserAvatar with correct props', () => {
+      render(<ChatProfile conversation={makeConversation()} />)
+      const avatar = screen.getByTestId('user-avatar')
+      expect(avatar).toHaveAttribute('data-src', 'https://example.com/avatar.jpg')
+      expect(avatar).toHaveAttribute('data-name', 'Test User')
+    })
 
-  it("does not show unread indicator when unread_count = 0", () => {
-    const conv = createConversation({ unread_count: 0 });
+    it('renders a time string', () => {
+      render(<ChatProfile conversation={makeConversation()} />)
+      expect(screen.getByTestId('chat-profile-time')).toBeInTheDocument()
+    })
 
-    render(<ChatProfile conversation={conv} />);
-    expect(
-      screen.queryByTestId("chat-profile-unread-dot")
-    ).not.toBeInTheDocument();
-  });
+    it('applies active bg class when isActive is true', () => {
+      render(<ChatProfile conversation={makeConversation()} isActive={true} />)
+      expect(screen.getByTestId('chat-profile-conv-1')).toHaveClass('bg-[#303030]')
+    })
 
-  it("applies active class when isActive is true", () => {
-    const conv = createConversation();
+    it('applies hover class when isActive is false', () => {
+      render(<ChatProfile conversation={makeConversation()} isActive={false} />)
+      expect(screen.getByTestId('chat-profile-conv-1')).toHaveClass('hover:bg-[#303030]')
+    })
+  })
 
-    const { container } = render(
-      <ChatProfile conversation={conv} isActive />
-    );
+  describe('time display', () => {
+    it('shows "just now" for very recent timestamps', () => {
+      const recentDate = new Date(Date.now() - 30000).toISOString()
+      render(<ChatProfile conversation={makeConversation({ updated_at: recentDate })} />)
+      expect(screen.getByTestId('chat-profile-time')).toHaveTextContent('just now')
+    })
 
-    expect(container.firstChild).toHaveClass("bg-[#303030]");
-  });
+    it('shows minutes ago for timestamps a few minutes old', () => {
+      const date = new Date(Date.now() - 3 * 60 * 1000).toISOString()
+      render(<ChatProfile conversation={makeConversation({ updated_at: date })} />)
+      expect(screen.getByTestId('chat-profile-time')).toHaveTextContent('3 minutes ago')
+    })
 
-  it("calls onClick when clicked", () => {
-    const conv = createConversation();
-    const onClick = vi.fn();
+    it('shows hours ago for timestamps hours old', () => {
+      const date = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+      render(<ChatProfile conversation={makeConversation({ updated_at: date })} />)
+      expect(screen.getByTestId('chat-profile-time')).toHaveTextContent('2 hours ago')
+    })
 
-    render(<ChatProfile conversation={conv} onClick={onClick} />);
-    fireEvent.click(screen.getByTestId("chat-profile-conv-1"));
+    it('shows singular "1 hour ago" correctly', () => {
+      const date = new Date(Date.now() - 1 * 60 * 60 * 1000 - 1000).toISOString()
+      render(<ChatProfile conversation={makeConversation({ updated_at: date })} />)
+      expect(screen.getByTestId('chat-profile-time')).toHaveTextContent('1 hour ago')
+    })
 
-    expect(onClick).toHaveBeenCalled();
-  });
+    it('shows days ago for timestamps days old', () => {
+      const date = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+      render(<ChatProfile conversation={makeConversation({ updated_at: date })} />)
+      expect(screen.getByTestId('chat-profile-time')).toHaveTextContent('3 days ago')
+    })
 
-  it("renders 'just now' for recent time", () => {
-    const conv = createConversation({
-      updated_at: new Date().toISOString(),
-    });
+    it('shows weeks ago for timestamps weeks old', () => {
+      const date = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+      render(<ChatProfile conversation={makeConversation({ updated_at: date })} />)
+      expect(screen.getByTestId('chat-profile-time')).toHaveTextContent('2 weeks ago')
+    })
 
-    render(<ChatProfile conversation={conv} />);
-    expect(screen.getByText(/just now/i)).toBeInTheDocument();
-  });
-});
+    it('shows months ago for timestamps months old', () => {
+      const date = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+      render(<ChatProfile conversation={makeConversation({ updated_at: date })} />)
+      expect(screen.getByTestId('chat-profile-time')).toHaveTextContent('2 months ago')
+    })
+
+    it('shows years ago for timestamps years old', () => {
+      const date = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString()
+      render(<ChatProfile conversation={makeConversation({ updated_at: date })} />)
+      expect(screen.getByTestId('chat-profile-time')).toHaveTextContent('1 year ago')
+    })
+  })
+
+  describe('interactions', () => {
+    it('calls onClick when clicked', async () => {
+      const onClick = vi.fn()
+      render(<ChatProfile conversation={makeConversation()} onClick={onClick} />)
+      await userEvent.click(screen.getByTestId('chat-profile-conv-1'))
+      expect(onClick).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not throw when onClick is not provided', async () => {
+      render(<ChatProfile conversation={makeConversation()} />)
+      await userEvent.click(screen.getByTestId('chat-profile-conv-1'))
+    })
+  })
+})

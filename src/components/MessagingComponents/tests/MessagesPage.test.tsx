@@ -1,137 +1,207 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import MessagesPage from "@/pages/social/messages/MessagesPage";
+import { render, screen, waitFor, act } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { MemoryRouter } from "react-router-dom"
+import MessagesPage from "@/pages/social/messages/MessagesPage"
+import * as conversationApi from "../../../services/api/messaging/conversationApi"
 
-// Use alias paths so vitest intercepts the same module instance the component loads.
-// Relative paths from the test file ("/tests/") don't match what the component
-// imports from its own directory, so the real module loads instead of the mock.
+// ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock("@/services/api/messaging/conversationApi", () => ({
+vi.mock("../../../services/api/messaging/conversationApi", () => ({
   fetchConversations: vi.fn(),
-}));
+}))
 
-vi.mock("@/components/UI/Spinner", () => ({
-  // data-test not data-testid — project testIdAttribute is 'data-test'
-  default: () => <div data-test="spinner">Loading...</div>,
-}));
+vi.mock("../../../components/UI/Spinner", () => ({
+  default: (props: Record<string, unknown>) => (
+    <div data-test="messages-loading" {...props}>Loading...</div>
+  ),
+}))
 
-vi.mock("@/pages/social/messages/emptyMessagesPage", () => ({
-  // data-test not data-testid
-  default: () => <div data-test="empty-page">Empty Page</div>,
-}));
+vi.mock("./emptyMessagesPage", () => ({
+  default: () => <div data-test="empty-messages-page">No messages</div>,
+}))
 
-// Stable navigate reference declared before vi.mock so the hoisted factory
-// captures the real function, not undefined.
-const mockNavigate = vi.fn();
+const mockNavigate = vi.fn()
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return { ...actual, useNavigate: () => mockNavigate };
-});
+  const actual = await vi.importActual("react-router-dom")
+  return { ...actual, useNavigate: () => mockNavigate }
+})
 
-import { fetchConversations } from "@/services/api/messaging/conversationApi";
+// Mock axios module so isAxiosError is fully controllable per-test
+const mockIsAxiosError = vi.fn((_err: unknown): boolean => false)
+vi.mock("axios", () => ({
+  default: { isAxiosError: (err: unknown) => mockIsAxiosError(err) },
+  isAxiosError: (err: unknown) => mockIsAxiosError(err),
+}))
 
-const renderPage = () =>
-  render(
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const mockFetchConversations = vi.mocked(conversationApi.fetchConversations)
+
+const makeConversation = (id: string) => ({
+  id,
+  created_at: "2024-01-01T00:00:00Z",
+  last_message: null,
+  participants: [],
+})
+
+function renderPage() {
+  return render(
     <MemoryRouter>
       <MessagesPage />
     </MemoryRouter>
-  );
+  )
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  mockIsAxiosError.mockImplementation(() => false)
+})
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("MessagesPage", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   // ── Loading state ──────────────────────────────────────────────────────────
 
   it("shows spinner while loading", () => {
-    (fetchConversations as ReturnType<typeof vi.fn>).mockImplementation(
-      () => new Promise(() => {})
-    );
-    renderPage();
-    expect(screen.getByTestId("spinner")).toBeInTheDocument();
-  });
+    mockFetchConversations.mockReturnValueOnce(new Promise(() => {}))
+    renderPage()
+    expect(screen.getByTestId("messages-loading")).toBeInTheDocument()
+  })
 
-  // ── Empty state ────────────────────────────────────────────────────────────
+  it("does not render EmptyMessagesPage or error while loading", () => {
+    mockFetchConversations.mockReturnValueOnce(new Promise(() => {}))
+    renderPage()
+    expect(screen.queryByTestId("empty-messages-page")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("messages-error")).not.toBeInTheDocument()
+  })
 
-  it("renders EmptyMessagesPage when no conversations", async () => {
-    (fetchConversations as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { items: [] },
-    });
-    renderPage();
+  // ── Success: empty ─────────────────────────────────────────────────────────
+
+  it("renders EmptyMessagesPage when there are no conversations", async () => {
+    mockFetchConversations.mockResolvedValueOnce({ data: { items: [] } } as any)
+    renderPage()
     await waitFor(() =>
-      expect(screen.getByTestId("empty-page")).toBeInTheDocument()
-    );
-  });
+      expect(screen.getByTestId("empty-messages-page")).toBeInTheDocument()
+    )
+  })
 
-  it("does not navigate when no conversations", async () => {
-    (fetchConversations as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { items: [] },
-    });
-    renderPage();
-    await waitFor(() => screen.getByTestId("empty-page"));
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  // ── Redirect ───────────────────────────────────────────────────────────────
-
-  it("navigates to the first conversation when conversations exist", async () => {
-    (fetchConversations as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: {
-        items: [
-          { id: "conv-1", participant: { id: "user-1" } },
-          { id: "conv-2", participant: { id: "user-2" } },
-        ],
-      },
-    });
-    renderPage();
+  it("does not navigate when conversations list is empty", async () => {
+    mockFetchConversations.mockResolvedValueOnce({ data: { items: [] } } as any)
+    renderPage()
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/messages/conv-1", {
-        replace: true,
-      })
-    );
-  });
+      expect(screen.getByTestId("empty-messages-page")).toBeInTheDocument()
+    )
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
 
-  // ── Error state ────────────────────────────────────────────────────────────
+  // ── Success: with conversations ────────────────────────────────────────────
 
-  it("shows error message when fetch fails with axios error", async () => {
-    const axiosError = {
-      isAxiosError: true,
-      response: { data: { message: "Unauthorized" } },
-    };
-    vi.doMock("axios", () => ({
-      default: { isAxiosError: (e: unknown) => e === axiosError },
-      isAxiosError: (e: unknown) => e === axiosError,
-    }));
-
-    (fetchConversations as ReturnType<typeof vi.fn>).mockRejectedValue(
-      axiosError
-    );
-    renderPage();
+  it("redirects to conversations[0] with replace:true", async () => {
+    mockFetchConversations.mockResolvedValueOnce({
+      data: { items: [makeConversation("conv-1"), makeConversation("conv-2")] },
+    } as any)
+    renderPage()
     await waitFor(() =>
-      expect(screen.getByText(/unauthorized/i)).toBeInTheDocument()
-    );
-  });
+      expect(mockNavigate).toHaveBeenCalledWith("/messages/conv-1", { replace: true })
+    )
+  })
 
-  it("shows generic error when fetch fails with non-axios error", async () => {
-    (fetchConversations as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error("Network error")
-    );
-    renderPage();
+  it("calls fetchConversations with page 1 and limit 20", async () => {
+    mockFetchConversations.mockResolvedValueOnce({ data: { items: [] } } as any)
+    renderPage()
     await waitFor(() =>
-      expect(
-        screen.getByText(/an unexpected error occurred/i)
-      ).toBeInTheDocument()
-    );
-  });
+      expect(mockFetchConversations).toHaveBeenCalledWith(1, 20)
+    )
+  })
 
-  it("calls fetchConversations with page and limit", async () => {
-    (fetchConversations as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { items: [] },
-    });
-    renderPage();
-    await waitFor(() => screen.getByTestId("empty-page"));
-    expect(fetchConversations).toHaveBeenCalledWith(1, 20);
-  });
-});
+  // ── Error: axios with response message ────────────────────────────────────
+
+  it("shows the response message from an axios error", async () => {
+    mockIsAxiosError.mockImplementation(() => true)
+    mockFetchConversations.mockRejectedValueOnce({
+      response: { data: { message: "Unauthorized access" } },
+    })
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getByTestId("messages-error")).toHaveTextContent("Unauthorized access")
+    )
+  })
+
+  // ── Error: axios with no message field ────────────────────────────────────
+
+  it("falls back to default message when axios error has no response message", async () => {
+    mockIsAxiosError.mockImplementation(() => true)
+    mockFetchConversations.mockRejectedValueOnce({ response: { data: {} } })
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getByTestId("messages-error")).toHaveTextContent(
+        "Failed to load conversations."
+      )
+    )
+  })
+
+  // ── Error: axios with no response at all ──────────────────────────────────
+
+  it("falls back to default message when axios error has no response object", async () => {
+    mockIsAxiosError.mockImplementation(() => true)
+    mockFetchConversations.mockRejectedValueOnce({})
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getByTestId("messages-error")).toHaveTextContent(
+        "Failed to load conversations."
+      )
+    )
+  })
+
+  // ── Error: non-axios ──────────────────────────────────────────────────────
+
+  it("shows generic error for non-axios errors", async () => {
+    mockIsAxiosError.mockImplementation(() => false)
+    mockFetchConversations.mockRejectedValueOnce(new Error("Network failure"))
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getByTestId("messages-error")).toHaveTextContent(
+        "An unexpected error occurred."
+      )
+    )
+  })
+
+  // ── Cancellation: unmount before resolve ──────────────────────────────────
+
+  it("does not set state or navigate when component unmounts before fetch resolves", async () => {
+    let resolvePromise!: (v: any) => void
+    mockFetchConversations.mockReturnValueOnce(
+      new Promise((res) => { resolvePromise = res })
+    )
+
+    const { unmount } = renderPage()
+
+    // Unmount triggers cancelled = true in the cleanup function
+    unmount()
+
+    // Resolve after unmount — the cancelled guard should prevent all state updates
+    await act(async () => {
+      resolvePromise({ data: { items: [makeConversation("conv-unmounted")] } })
+    })
+
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it("does not set error state when component unmounts before fetch rejects", async () => {
+    let rejectPromise!: (reason?: any) => void
+    mockFetchConversations.mockReturnValueOnce(
+      new Promise((_, rej) => { rejectPromise = rej })
+    )
+
+    const { unmount } = renderPage()
+    unmount()
+
+    // Reject after unmount — cancelled guard should swallow the branch
+    await act(async () => {
+      rejectPromise(new Error("late error"))
+    })
+
+    expect(screen.queryByTestId("messages-error")).not.toBeInTheDocument()
+  })
+})
