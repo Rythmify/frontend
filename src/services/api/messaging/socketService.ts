@@ -3,6 +3,13 @@ import { io, Socket } from 'socket.io-client';
 let socket: Socket | null = null;
 let currentToken: string | null = null;
 
+function normalizeSocketBaseUrl(rawBaseUrl?: string): string {
+  const trimmedBaseUrl = rawBaseUrl?.trim().replace(/\/+$/, '') ?? '';
+  const socketBaseUrl = trimmedBaseUrl.replace(/\/api\/v1$/i, '');
+
+  return socketBaseUrl || window.location.origin;
+}
+
 // The conversation room the client is currently inside.
 // Stored here so we can re-join automatically after a reconnect.
 let activeConversationRoom: string | null = null;
@@ -20,8 +27,9 @@ export function connectSocket(token: string): void {
 
   currentToken = token;
 
-  socket = io(import.meta.env.VITE_API_BASE_URL, {
+  socket = io(normalizeSocketBaseUrl(import.meta.env.VITE_API_BASE_URL), {
     auth: { token: `Bearer ${token}` },
+    path: '/socket.io',
     transports: ['websocket'],
     reconnection: true,
     reconnectionAttempts: 10,      // increase from 5
