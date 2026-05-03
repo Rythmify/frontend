@@ -37,7 +37,7 @@ const renderForm = (props = {}) => {
   const utils = render(
     <MemoryRouter>
       <UploadDetailsForm ref={ref} {...defaultProps} {...props} />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
   return { ref, ...utils };
 };
@@ -55,29 +55,36 @@ describe("UploadDetailsForm", () => {
 
   // ── Rendering ──────────────────────────────────────────────────────────────
 
-  
   it("auto-populates title from the audio file name", () => {
     renderForm();
-    const titleInput = screen.getByTestId("upload-title-input") as HTMLInputElement;
+    const titleInput = screen.getByTestId(
+      "upload-title-input",
+    ) as HTMLInputElement;
     expect(titleInput.value).toBe("my-track");
   });
 
   it("sets title to 'Recorded Audio' when audioData is a Blob", () => {
     const blob = new Blob(["audio"], { type: "audio/wav" });
     renderForm({ audioData: blob });
-    const titleInput = screen.getByTestId("upload-title-input") as HTMLInputElement;
+    const titleInput = screen.getByTestId(
+      "upload-title-input",
+    ) as HTMLInputElement;
     expect(titleInput.value).toBe("Recorded Audio");
   });
 
   it("auto-populates track link slug from the file name", () => {
     renderForm();
-    const linkInput = screen.getByTestId("upload-track-link-input") as HTMLInputElement;
+    const linkInput = screen.getByTestId(
+      "upload-track-link-input",
+    ) as HTMLInputElement;
     expect(linkInput.value).toBe("my-track");
   });
 
   it("auto-populates artist field with the logged-in username", () => {
     renderForm();
-    const artistInput = screen.getByTestId("upload-artists-input") as HTMLInputElement;
+    const artistInput = screen.getByTestId(
+      "upload-artists-input",
+    ) as HTMLInputElement;
     expect(artistInput.value).toBe("testuser");
   });
 
@@ -98,13 +105,17 @@ describe("UploadDetailsForm", () => {
 
   it("renders public privacy option selected by default", () => {
     renderForm();
-    const publicRadio = screen.getByTestId("upload-privacy-public-radio") as HTMLInputElement;
+    const publicRadio = screen.getByTestId(
+      "upload-privacy-public-radio",
+    ) as HTMLInputElement;
     expect(publicRadio.checked).toBe(true);
   });
 
   it("renders private privacy option unselected by default", () => {
     renderForm();
-    const privateRadio = screen.getByTestId("upload-privacy-private-radio") as HTMLInputElement;
+    const privateRadio = screen.getByTestId(
+      "upload-privacy-private-radio",
+    ) as HTMLInputElement;
     expect(privateRadio.checked).toBe(false);
   });
 
@@ -125,7 +136,9 @@ describe("UploadDetailsForm", () => {
     const titleInput = screen.getByTestId("upload-title-input");
     await userEvent.clear(titleInput);
     await userEvent.type(titleInput, "Hello World");
-    const linkInput = screen.getByTestId("upload-track-link-input") as HTMLInputElement;
+    const linkInput = screen.getByTestId(
+      "upload-track-link-input",
+    ) as HTMLInputElement;
     expect(linkInput.value).toBe("hello-world");
   });
 
@@ -134,7 +147,9 @@ describe("UploadDetailsForm", () => {
     const titleInput = screen.getByTestId("upload-title-input");
     await userEvent.clear(titleInput);
     await userEvent.type(titleInput, "My New Song");
-    const linkInput = screen.getByTestId("upload-track-link-input") as HTMLInputElement;
+    const linkInput = screen.getByTestId(
+      "upload-track-link-input",
+    ) as HTMLInputElement;
     expect(linkInput.value).toBe("my-new-song");
   });
 
@@ -143,7 +158,9 @@ describe("UploadDetailsForm", () => {
     const titleInput = screen.getByTestId("upload-title-input");
     await userEvent.clear(titleInput);
     await userEvent.type(titleInput, "UPPERCASE");
-    const linkInput = screen.getByTestId("upload-track-link-input") as HTMLInputElement;
+    const linkInput = screen.getByTestId(
+      "upload-track-link-input",
+    ) as HTMLInputElement;
     expect(linkInput.value).toBe("uppercase");
   });
 
@@ -151,7 +168,9 @@ describe("UploadDetailsForm", () => {
 
   it("switches to private when private radio is clicked", async () => {
     renderForm();
-    const privateRadio = screen.getByTestId("upload-privacy-private-radio") as HTMLInputElement;
+    const privateRadio = screen.getByTestId(
+      "upload-privacy-private-radio",
+    ) as HTMLInputElement;
     await userEvent.click(privateRadio);
     expect(privateRadio.checked).toBe(true);
   });
@@ -159,7 +178,9 @@ describe("UploadDetailsForm", () => {
   it("deselects public when private is chosen", async () => {
     renderForm();
     await userEvent.click(screen.getByTestId("upload-privacy-private-radio"));
-    const publicRadio = screen.getByTestId("upload-privacy-public-radio") as HTMLInputElement;
+    const publicRadio = screen.getByTestId(
+      "upload-privacy-public-radio",
+    ) as HTMLInputElement;
     expect(publicRadio.checked).toBe(false);
   });
 
@@ -167,7 +188,9 @@ describe("UploadDetailsForm", () => {
     renderForm();
     await userEvent.click(screen.getByTestId("upload-privacy-private-radio"));
     await userEvent.click(screen.getByTestId("upload-privacy-public-radio"));
-    const publicRadio = screen.getByTestId("upload-privacy-public-radio") as HTMLInputElement;
+    const publicRadio = screen.getByTestId(
+      "upload-privacy-public-radio",
+    ) as HTMLInputElement;
     expect(publicRadio.checked).toBe(true);
   });
 
@@ -206,7 +229,7 @@ describe("UploadDetailsForm", () => {
     const { ref } = renderForm({ onSuccess });
     await ref.current!.triggerSubmit();
     await waitFor(() =>
-      expect(onSuccess).toHaveBeenCalledWith("new-track-id-123")
+      expect(onSuccess).toHaveBeenCalledWith("new-track-id-123"),
     );
   });
 
@@ -225,10 +248,10 @@ describe("UploadDetailsForm", () => {
     await userEvent.clear(titleInput);
     await ref.current!.triggerSubmit();
     await waitFor(() =>
-      expect(screen.getByTestId("upload-error-message")).toBeInTheDocument()
+      expect(screen.getByTestId("upload-error-message")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("upload-error-message")).toHaveTextContent(
-      /track title is required/i
+      /track title is required/i,
     );
   });
 
@@ -238,15 +261,15 @@ describe("UploadDetailsForm", () => {
     await act(() => ref.current!.triggerSubmit());
     expect(mockUploadTrack).not.toHaveBeenCalled();
   });
- 
+
   it("shows error when audioData is null", async () => {
     const { ref } = renderForm({ audioData: null });
     await ref.current!.triggerSubmit();
     await waitFor(() =>
-      expect(screen.getByTestId("upload-error-message")).toBeInTheDocument()
+      expect(screen.getByTestId("upload-error-message")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("upload-error-message")).toHaveTextContent(
-      /missing audio data/i
+      /missing audio data/i,
     );
   });
 
@@ -266,10 +289,10 @@ describe("UploadDetailsForm", () => {
     const { ref } = renderForm();
     await ref.current!.triggerSubmit();
     await waitFor(() =>
-      expect(screen.getByTestId("upload-error-message")).toBeInTheDocument()
+      expect(screen.getByTestId("upload-error-message")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("upload-error-message")).toHaveTextContent(
-      /upload limit reached/i
+      /upload limit reached/i,
     );
   });
 
@@ -278,9 +301,7 @@ describe("UploadDetailsForm", () => {
     const setIsLoadingParent = vi.fn();
     const { ref } = renderForm({ setIsLoadingParent });
     await ref.current!.triggerSubmit();
-    await waitFor(() =>
-      expect(setIsLoadingParent).toHaveBeenCalledWith(false)
-    );
+    await waitFor(() => expect(setIsLoadingParent).toHaveBeenCalledWith(false));
   });
 
   it("does not call onSuccess when upload fails", async () => {
@@ -291,8 +312,6 @@ describe("UploadDetailsForm", () => {
     await waitFor(() => expect(mockUploadTrack).toHaveBeenCalled());
     expect(onSuccess).not.toHaveBeenCalled();
   });
-
- 
 
   it("forwards upload progress updates from the service", async () => {
     const progress = vi.fn();
