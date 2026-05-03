@@ -108,6 +108,11 @@ vi.mock("@/components/UI/PlaylistCard/PlaylistCard", () => ({
     <div data-test={`playlist-card-${item.id}`} />
   ),
 }));
+vi.mock("@/components/playlist/PlaylistCard", () => ({
+  default: ({ playlist }: { playlist: { playlist_id: string } }) => (
+    <div data-test={`album-card-${playlist.playlist_id}`} />
+  ),
+}));
 vi.mock("@/components/UI/UserCard/UserCard", () => ({
   default: ({ user }: { user: { id: string } }) => (
     <div data-test={`user-card-${user.id}`} />
@@ -137,8 +142,6 @@ const defaultLikes = {
   likedPlaylists: [],
   likedAlbums: [],
   likedRadioTracks: [],
-  likedMixes: [],
-  likedGenres: [],
 };
 
 const defaultHistory = { entries: [] };
@@ -368,7 +371,7 @@ describe("LibraryPage", () => {
 
   it("calls getMyPlaylists (library service) on mount", async () => {
     await renderPage();
-    expect(getMyPlaylistsApi).toHaveBeenCalledTimes(1);
+    expect(getMyPlaylistsLib).toHaveBeenCalledTimes(1);
   });
 
   it("calls getMyFollowing on mount", async () => {
@@ -576,7 +579,7 @@ describe("LibraryPage", () => {
     (getMyPlaylistsApi as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network error"));
     await renderPage();
     await waitFor(() => {});
-    expect(screen.queryAllByTestId(/^playlist-card-/)).toHaveLength(0);
+    expect(screen.queryAllByTestId(/^album-card-/)).toHaveLength(0);
   });
 
   // ── Recently Played — API success path ───────────────────
@@ -615,7 +618,7 @@ describe("LibraryPage", () => {
       ],
     });
     await renderPage();
-    expect(screen.getByTestId("playlist-card-la1")).toBeInTheDocument();
+    expect(screen.getByTestId("album-card-la1")).toBeInTheDocument();
   });
 
   it("renders album cards from API when items have is_album_view true", async () => {
@@ -628,7 +631,7 @@ describe("LibraryPage", () => {
     });
     await renderPage();
     await waitFor(() => {
-      expect(screen.getByTestId("playlist-card-a1")).toBeInTheDocument();
+      expect(screen.getByTestId("album-card-a1")).toBeInTheDocument();
     });
   });
 
@@ -642,7 +645,7 @@ describe("LibraryPage", () => {
     });
     await renderPage();
     await waitFor(() => {});
-    expect(screen.queryByTestId("playlist-card-p1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("album-card-p1")).not.toBeInTheDocument();
   });
 
   it("deduplicates albums with the same id from both APIs", async () => {
@@ -651,7 +654,7 @@ describe("LibraryPage", () => {
     (getLikedPlaylists as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { items: [albumItem] } });
     await renderPage();
     await waitFor(() => {
-      const cards = screen.getAllByTestId("playlist-card-shared-album");
+      const cards = screen.getAllByTestId("album-card-shared-album");
       expect(cards).toHaveLength(1);
     });
   });
@@ -665,7 +668,7 @@ describe("LibraryPage", () => {
     });
     await renderPage();
     await waitFor(() => {
-      const cards = screen.getAllByTestId("playlist-card-dup-album");
+      const cards = screen.getAllByTestId("album-card-dup-album");
       expect(cards).toHaveLength(1);
     });
   });
