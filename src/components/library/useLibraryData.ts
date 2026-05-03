@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getRecentlyPlayed } from "@/services/api/discover.service";
 import { mapRecentlyPlayedEntry } from "@/services/api/discover.mapper";
-import { getMyFollowing } from "@/services/api/library.service";
+import { getMyPlaylists as getMyPlaylistsLib, getMyFollowing } from "@/services/api/library.service";
 import { getUserById } from "@/services/user.service";
 import {
   getMyPlaylists as getMyPlaylistsApi,
@@ -15,6 +15,7 @@ import { useLikesStore } from "@/stores/likes.store";
 import { useHistoryStore } from "@/stores/history.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { mapPlaylistToCard, mapAlbumToCard, mapFollowingToUser } from "./library.mappers";
+import { mockRecentlyPlayedTracks } from "@/services/mocks/discover";
 import type { FilterOption } from "./PlaylistFilterDropdown";
 
 const isAlbum = (p: Playlist) => p.is_album_view || p.subtype === "album";
@@ -27,13 +28,13 @@ export function useLibraryData() {
   const [playlistFilter, setPlaylistFilter] = useState<FilterOption>("All");
 
   const {
-    likedTracks,
-    likedStations,
-    likedPlaylists,
-    likedAlbums: storeLikedAlbums,
-    likedRadioTracks,
-    likedMixes,
-    likedGenres,
+    likedTracks = [],
+    likedStations = [],
+    likedPlaylists = [],
+    likedAlbums: storeLikedAlbums = [],
+    likedRadioTracks = [],
+    likedMixes = [],
+    likedGenres = [],
   } = useLikesStore();
   const { user } = useAuthStore();
   const { entries } = useHistoryStore();
@@ -61,18 +62,21 @@ export function useLibraryData() {
 
   useEffect(() => {
     const displayName = user?.displayName ?? user?.username ?? "";
+    getMyPlaylistsLib()
+      .then((items) =>
+        setPlaylists(
+          items.map((p) => mapPlaylistToCard(p as unknown as Playlist, displayName || p.owner_user_id)),
+        ),
+      )
+      .catch(() => setPlaylists([]));
+  }, []);
 
+  useEffect(() => {
     Promise.all([
       getMyPlaylistsApi({ limit: 50 }),
       getLikedPlaylists({ limit: 50 }),
     ])
       .then(([created, liked]) => {
-        setPlaylists(
-          created.data.items
-            .filter((p) => !isAlbum(p))
-            .map((p) => mapPlaylistToCard(p, displayName || p.owner_user_id)),
-        );
-
         const merged = [
           ...created.data.items.filter(isAlbum),
           ...liked.data.items.filter(isAlbum),
@@ -86,17 +90,16 @@ export function useLibraryData() {
           }),
         );
       })
-      .catch(() => {
-        setPlaylists([]);
-        setAlbums([]);
-      });
+      .catch(() => setAlbums([]));
   }, []);
 
   const recentEntries = (() => {
     const list =
       entries.length > 0
         ? entries
-        : recentlyPlayedApi.map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
+        : recentlyPlayedApi.length > 0
+          ? recentlyPlayedApi.map((t) => ({ type: "track" as const, item: t, playedAt: "" }))
+          : mockRecentlyPlayedTracks.map((t) => ({ type: "track" as const, item: t, playedAt: "" }));
 
     const seen = new Set<string>();
     return list.filter((e) => {
@@ -137,7 +140,9 @@ export function useLibraryData() {
   })();
 
   const displayedFollowing = (() => {
-    const seenUsernames = new Set(followingUsers.map((u) => u.username));
+    const followingIdSet = new Set(user?.following_ids ?? []);
+    const filtered = followingUsers.filter((u) => followingIdSet.has(u.username));
+    const seenUsernames = new Set(filtered.map((u) => u.username));
     const synthetic: User[] = (user?.following_ids ?? [])
       .filter((username) => !seenUsernames.has(username))
       .map((username, i) => ({
@@ -146,7 +151,7 @@ export function useLibraryData() {
         displayName: username,
         followers: 0,
       }));
-    return [...followingUsers, ...synthetic];
+    return [...filtered, ...synthetic];
   })();
 
   return {
