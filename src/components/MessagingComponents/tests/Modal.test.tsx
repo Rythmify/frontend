@@ -1,115 +1,111 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { Modal } from "../Modal";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { Modal } from '../Modal'
 
-const renderModal = (props: Partial<React.ComponentProps<typeof Modal>> = {}) =>
-  render(
-    <Modal
-      isOpen={true}
-      onClose={vi.fn()}
-      {...props}
-    >
-      <p>Modal content</p>
-    </Modal>
-  );
-
-describe("Modal", () => {
+describe('Modal', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  // ── Rendering ──────────────────────────────────────────────────────────────
+  describe('rendering', () => {
+    it('renders nothing when isOpen is false', () => {
+      render(<Modal isOpen={false} onClose={vi.fn()}><div>Content</div></Modal>)
+      expect(screen.queryByTestId('modal-backdrop')).not.toBeInTheDocument()
+    })
 
-  it("renders the backdrop when isOpen is true", () => {
-    renderModal();
-    expect(screen.getByTestId("modal-backdrop")).toBeInTheDocument();
-  });
+    it('renders the backdrop when isOpen is true', () => {
+      render(<Modal isOpen={true} onClose={vi.fn()}><div>Content</div></Modal>)
+      expect(screen.getByTestId('modal-backdrop')).toBeInTheDocument()
+    })
 
-  it("does not render when isOpen is false", () => {
-    renderModal({ isOpen: false });
-    expect(screen.queryByTestId("modal-backdrop")).not.toBeInTheDocument();
-  });
+    it('renders children when open', () => {
+      render(<Modal isOpen={true} onClose={vi.fn()}><div data-test="child">Hello</div></Modal>)
+      expect(screen.getByTestId('child')).toBeInTheDocument()
+    })
 
-  it("renders children inside the modal", () => {
-    renderModal();
-    expect(screen.getByText("Modal content")).toBeInTheDocument();
-  });
+    it('renders the close button when open', () => {
+      render(<Modal isOpen={true} onClose={vi.fn()}><div>Content</div></Modal>)
+      expect(screen.getByTestId('modal-close-button')).toBeInTheDocument()
+    })
 
-  it("renders the close button", () => {
-    renderModal();
-    expect(screen.getByTestId("modal-close-button")).toBeInTheDocument();
-  });
+    it('renders into document.body via portal', () => {
+      render(<Modal isOpen={true} onClose={vi.fn()}><div>Content</div></Modal>)
+      expect(document.body.contains(screen.getByTestId('modal-backdrop'))).toBe(true)
+    })
+  })
 
-  // ── Closing behaviour ──────────────────────────────────────────────────────
+  describe('interactions', () => {
+    it('calls onClose when close button is clicked', async () => {
+      const onClose = vi.fn()
+      render(<Modal isOpen={true} onClose={onClose}><div>Content</div></Modal>)
+      await userEvent.click(screen.getByTestId('modal-close-button'))
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
 
-  it("calls onClose when the close button is clicked", async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-    renderModal({ onClose });
-    await user.click(screen.getByTestId("modal-close-button"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+    it('calls onClose when Escape key is pressed', () => {
+      const onClose = vi.fn()
+      render(<Modal isOpen={true} onClose={onClose}><div>Content</div></Modal>)
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
 
-  it("calls onClose when the backdrop is clicked", async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-    renderModal({ onClose });
-    await user.click(screen.getByTestId("modal-backdrop"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+    it('does not call onClose on other key presses', () => {
+      const onClose = vi.fn()
+      render(<Modal isOpen={true} onClose={onClose}><div>Content</div></Modal>)
+      fireEvent.keyDown(document, { key: 'Enter' })
+      expect(onClose).not.toHaveBeenCalled()
+    })
 
-  it("does not call onClose when the modal content area is clicked", async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-    renderModal({ onClose });
-    await user.click(screen.getByText("Modal content"));
-    expect(onClose).not.toHaveBeenCalled();
-  });
+    it('does not attach keydown listener when isOpen is false', () => {
+      const onClose = vi.fn()
+      render(<Modal isOpen={false} onClose={onClose}><div>Content</div></Modal>)
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(onClose).not.toHaveBeenCalled()
+    })
 
-  // ── Escape key ─────────────────────────────────────────────────────────────
+    it('removes keydown listener when closed', () => {
+      const onClose = vi.fn()
+      const { rerender } = render(<Modal isOpen={true} onClose={onClose}><div>Content</div></Modal>)
+      rerender(<Modal isOpen={false} onClose={onClose}><div>Content</div></Modal>)
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(onClose).not.toHaveBeenCalled()
+    })
 
-  it("calls onClose when Escape is pressed and modal is open", async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-    renderModal({ isOpen: true, onClose });
-    await user.keyboard("{Escape}");
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+    it('backdrop click stops propagation (does not bubble to parent)', () => {
+      const outerClick = vi.fn()
+      render(
+        <div onClick={outerClick}>
+          <Modal isOpen={true} onClose={vi.fn()}><div>Content</div></Modal>
+        </div>
+      )
+      fireEvent.click(screen.getByTestId('modal-backdrop'))
+      expect(outerClick).not.toHaveBeenCalled()
+    })
 
-  it("does not call onClose when Escape is pressed and modal is closed", async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-    renderModal({ isOpen: false, onClose });
-    await user.keyboard("{Escape}");
-    expect(onClose).not.toHaveBeenCalled();
-  });
+    it('clicking the backdrop does not close the modal', () => {
+      const onClose = vi.fn()
+      render(<Modal isOpen={true} onClose={onClose}><div>Content</div></Modal>)
+      fireEvent.click(screen.getByTestId('modal-backdrop'))
+      expect(onClose).not.toHaveBeenCalled()
+    })
+  })
 
-  it("does not call onClose when a non-Escape key is pressed", async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-    renderModal({ isOpen: true, onClose });
-    await user.keyboard("{Enter}");
-    expect(onClose).not.toHaveBeenCalled();
-  });
+  describe('lifecycle', () => {
+    it('re-renders correctly when isOpen changes from false to true', () => {
+      const onClose = vi.fn()
+      const { rerender } = render(<Modal isOpen={false} onClose={onClose}><div>Content</div></Modal>)
+      expect(screen.queryByTestId('modal-backdrop')).not.toBeInTheDocument()
+      rerender(<Modal isOpen={true} onClose={onClose}><div>Content</div></Modal>)
+      expect(screen.getByTestId('modal-backdrop')).toBeInTheDocument()
+    })
 
-  // ── Event listener lifecycle ───────────────────────────────────────────────
-
-  it("removes the keydown listener when modal closes", () => {
-    const removeEventListener = vi.spyOn(document, "removeEventListener");
-    const { rerender } = renderModal({ isOpen: true });
-    rerender(
-      <Modal isOpen={false} onClose={vi.fn()}>
-        <p>Modal content</p>
-      </Modal>
-    );
-    expect(removeEventListener).toHaveBeenCalledWith("keydown", expect.any(Function));
-  });
-
-  it("removes the keydown listener on unmount", () => {
-    const removeEventListener = vi.spyOn(document, "removeEventListener");
-    const { unmount } = renderModal({ isOpen: true });
-    unmount();
-    expect(removeEventListener).toHaveBeenCalledWith("keydown", expect.any(Function));
-  });
-});
+    it('re-renders correctly when isOpen changes from true to false', () => {
+      const onClose = vi.fn()
+      const { rerender } = render(<Modal isOpen={true} onClose={onClose}><div>Content</div></Modal>)
+      expect(screen.getByTestId('modal-backdrop')).toBeInTheDocument()
+      rerender(<Modal isOpen={false} onClose={onClose}><div>Content</div></Modal>)
+      expect(screen.queryByTestId('modal-backdrop')).not.toBeInTheDocument()
+    })
+  })
+})

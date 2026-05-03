@@ -1,270 +1,862 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import ModalNewMessageBody from "@/pages/social/messages/ModalNewMessageBody";
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
+import ModalNewMessageBody from '@/pages/social/messages/ModalNewMessageBody'
+import type { RecipientResult } from '@/components/MessagingComponents/RecipientInputBox'
 
-// ── Module mocks ───────────────────────────────────────────────────────────────
-//
-// NOTE: this project sets testIdAttribute: "data-test" in its Testing Library
-// config, so getByTestId() queries for data-test (not the default data-testid).
-// All attributes in the mocks below use data-test to match that convention.
+// ─────────────────────────────────────────────────────────────────────────────
+// Mocks
+// ─────────────────────────────────────────────────────────────────────────────
 
-vi.mock("@/services/api/messaging/conversationApi", () => ({
-  startConversation: vi.fn(),
-  sendMessage: vi.fn(),
-}));
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+}))
 
-vi.mock("@/components/MessagingComponents/MessageBox", () => ({
-  MessageBox: ({
-    onValueChange,
-    onSubmit,
-    hasError,
-  }: {
-    onValueChange: (v: string) => void;
-    onIsEmptyChange: (empty: boolean) => void;
-    onEmbedsResolved: (embeds: unknown[]) => void;
-    onSubmit?: () => void;
-    hasError?: boolean;
-  }) => (
-    <div>
-      <textarea
-        data-test="message-box-input"
-        data-has-error={hasError ? "true" : "false"}
-        onChange={(e) => onValueChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            onSubmit?.();
-          }
-        }}
+const mockStartConversation = vi.fn()
+const mockSendMessage = vi.fn()
+vi.mock('@/services/api/messaging/conversationApi', () => ({
+  startConversation: (...args: unknown[]) => mockStartConversation(...args),
+  sendMessage: (...args: unknown[]) => mockSendMessage(...args),
+}))
+
+// ── MessageBox mock ──────────────────────────────────────────────────────────
+
+let latestMessageBoxProps: {
+  onValueChange: (val: string) => void
+  onIsEmptyChange: (empty: boolean) => void
+  onEmbedsResolved: (embeds: { type: string; id: string }[]) => void
+  onSubmit: () => void
+  hasError: boolean
+} | null = null
+
+vi.mock('@/components/MessagingComponents/MessageBox', () => ({
+  MessageBox: (props: typeof latestMessageBoxProps) => {
+    latestMessageBoxProps = props as typeof latestMessageBoxProps
+    return (
+      <div
+        data-testid="message-box"
+        data-has-error={String((props as { hasError: boolean }).hasError)}
       />
-    </div>
-  ),
-}));
+    )
+  },
+}))
 
-vi.mock("@/components/MessagingComponents/RecipientInputBox", () => ({
-  RecipientInputBox: ({
-    onSelect,
-    onClear,
-    error,
-  }: {
-    onSelect: (user: { id: string; display_name: string }) => void;
-    onClear: () => void;
-    error?: string | null;
-  }) => (
-    <div data-test="recipient-input-box">
-      <button
-        data-test="select-user"
-        onClick={() => onSelect({ id: "user-1", display_name: "Alice" })}
-      >
-        Select Alice
-      </button>
-      <button data-test="clear-user" onClick={onClear}>
-        Clear
-      </button>
-      {error && <p data-test="recipient-error">{error}</p>}
-    </div>
-  ),
-}));
+// ── RecipientInputBox mock ───────────────────────────────────────────────────
 
-const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return { ...actual, useNavigate: () => mockNavigate };
-});
+let latestRecipientProps: {
+  onSelect: (user: { id: string; username: string; display_name: string }) => void
+  onClear: () => void
+  error: string | null
+} | null = null
 
-import { startConversation } from "@/services/api/messaging/conversationApi";
+vi.mock('@/components/MessagingComponents/RecipientInputBox', () => ({
+  RecipientInputBox: (props: typeof latestRecipientProps) => {
+    latestRecipientProps = props as typeof latestRecipientProps
+    return (
+      <div
+        data-testid="recipient-input-box"
+        data-error={(props as { error: string | null }).error ?? ''}
+      />
+    )
+  },
+}))
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
-const renderModal = (onClose = vi.fn()) =>
-  render(
-    <MemoryRouter>
-      <ModalNewMessageBody onClose={onClose} />
-    </MemoryRouter>
-  );
+const mockOnClose = vi.fn()
+const mockOnConversationCreated = vi.fn()
 
-// Query by role so we're decoupled from whichever data attribute the Send
-// button uses, and to avoid ambiguity during the "Sending…" state change.
-const getSendButton = () => screen.getByRole("button", { name: /^send$/i });
+const defaultProps = {
+  onClose: mockOnClose,
+  onConversationCreated: mockOnConversationCreated,
+}
 
-describe("ModalNewMessageBody", () => {
+const RECIPIENT: RecipientResult = {
+  id: 'user-1',
+  username: 'johndoe',
+  display_name: 'John Doe',
+  profile_picture: null,
+}
+
+/** Build a well-formed API success response */
+function makeResponse(overrides: {
+  conversation?: { id: string } | null
+  conversation_id?: string
+  message?: { id: string; conversation_id?: string; conversationId?: string } | null
+} = {}) {
+  return {
+    data: {
+      conversation: { id: 'conv-123' },
+      conversation_id: 'conv-123',
+      message: { id: 'msg-1', conversation_id: 'conv-123' },
+      ...overrides,
+    },
+  }
+}
+
+function renderComponent(
+  props: Partial<typeof defaultProps> & { prefilledRecipient?: RecipientResult } = {}
+) {
+  latestMessageBoxProps = null
+  latestRecipientProps = null
+  return render(<ModalNewMessageBody {...defaultProps} {...props} />)
+}
+
+/** Simulate the user selecting a recipient via the RecipientInputBox callback */
+function selectRecipient(user = RECIPIENT) {
+  act(() => {
+    latestRecipientProps!.onSelect(user)
+  })
+}
+
+/** Simulate typing into MessageBox */
+function typeMessage(text: string) {
+  act(() => {
+    latestMessageBoxProps!.onValueChange(text)
+  })
+}
+
+/**
+ * Simulate embeds being resolved in MessageBox.
+ * Must be awaited so the setEmbeds state update is flushed before clickSend()
+ * fires handleSend — otherwise embeds.length is still 0 and lines 70–87 are
+ * never entered.
+ */
+async function resolveEmbeds(embeds: { type: string; id: string }[]) {
+  await act(async () => {
+    latestMessageBoxProps!.onEmbedsResolved(embeds)
+  })
+}
+
+/** Simulate the MessageBox firing onIsEmptyChange */
+function fireIsEmptyChange(empty: boolean) {
+  act(() => {
+    latestMessageBoxProps!.onIsEmptyChange(empty)
+  })
+}
+
+function clickSend() {
+  const btn = document.querySelector('[data-test="send-message-button"]') as HTMLElement
+  fireEvent.click(btn)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ModalNewMessageBody', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    (startConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: {
-        conversation: { id: "conv-1" },
-        message: { id: "msg-1", conversation_id: "conv-1" },
-      },
-    });
-  });
+    vi.clearAllMocks()
+    mockStartConversation.mockResolvedValue(makeResponse())
+    mockSendMessage.mockResolvedValue({})
+  })
 
-  // ── Rendering ────────────────────────────────────────────────────────────────
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
 
-  it("renders the heading 'New message'", () => {
-    renderModal();
-    expect(screen.getByText(/new message/i)).toBeInTheDocument();
-  });
+  // ── Initial rendering ────────────────────────────────────────────────────
 
-  it("renders 'To' label", () => {
-    renderModal();
-    expect(screen.getByText(/^To/)).toBeInTheDocument();
-  });
+  describe('initial rendering', () => {
+    it('renders the heading', () => {
+      renderComponent()
+      expect(screen.getByText('New message')).toBeInTheDocument()
+    })
 
-  it("renders 'Write your message' label", () => {
-    renderModal();
-    expect(
-      screen.getByText(/write your message and add tracks or playlists/i)
-    ).toBeInTheDocument();
-  });
+    it('renders the To label', () => {
+      renderComponent()
+      expect(screen.getByText('To')).toBeInTheDocument()
+    })
 
-  it("renders the RecipientInputBox", () => {
-    renderModal();
-    expect(screen.getByTestId("recipient-input-box")).toBeInTheDocument();
-  });
+    it('renders RecipientInputBox when no prefilledRecipient', () => {
+      renderComponent()
+      expect(screen.getByTestId('recipient-input-box')).toBeInTheDocument()
+    })
 
-  it("renders the MessageBox", () => {
-    renderModal();
-    expect(screen.getByTestId("message-box-input")).toBeInTheDocument();
-  });
+    it('renders MessageBox', () => {
+      renderComponent()
+      expect(screen.getByTestId('message-box')).toBeInTheDocument()
+    })
 
-  it("renders Send button", () => {
-    renderModal();
-    expect(getSendButton()).toBeInTheDocument();
-  });
+    it('renders the Send button', () => {
+      renderComponent()
+      expect(document.querySelector('[data-test="send-message-button"]')).toBeInTheDocument()
+    })
 
-  // ── Validation ───────────────────────────────────────────────────────────────
+    it('Send button shows "Send" text initially', () => {
+      renderComponent()
+      expect(screen.getByRole('button', { name: 'Send' })).toBeInTheDocument()
+    })
 
-  it("shows recipient error when Send is clicked without recipient", async () => {
-    renderModal();
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
-    await userEvent.click(getSendButton());
-    expect(screen.getByTestId("recipient-error")).toHaveTextContent(
-      "Enter a recipient."
-    );
-  });
+    it('MessageBox receives hasError=false initially', () => {
+      renderComponent()
+      expect(screen.getByTestId('message-box')).toHaveAttribute('data-has-error', 'false')
+    })
+  })
 
-  it("shows message error when Send is clicked without message", async () => {
-    renderModal();
-    await userEvent.click(screen.getByTestId("select-user"));
-    await userEvent.click(getSendButton());
-    expect(screen.getByText(/enter a message/i)).toBeInTheDocument();
-  });
+  // ── prefilledRecipient ───────────────────────────────────────────────────
 
-  it("shows both errors when neither recipient nor message is provided", async () => {
-    renderModal();
-    await userEvent.click(getSendButton());
-    expect(screen.getByTestId("recipient-error")).toBeInTheDocument();
-    expect(screen.getByText(/enter a message/i)).toBeInTheDocument();
-  });
+  describe('prefilledRecipient prop', () => {
+    const prefilled: RecipientResult = {
+      id: 'user-99',
+      username: 'janedoe',
+      display_name: 'Jane Doe',
+      profile_picture: null,
+    }
 
-  // ── Success flow ─────────────────────────────────────────────────────────────
+    it('shows display_name when set', () => {
+      renderComponent({ prefilledRecipient: prefilled })
+      expect(screen.getByText('Jane Doe')).toBeInTheDocument()
+    })
 
-  it("calls startConversation with correct payload on valid send", async () => {
-    renderModal();
-    await userEvent.click(screen.getByTestId("select-user"));
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello Alice");
-    await userEvent.click(getSendButton());
-    await waitFor(() =>
-      expect(startConversation).toHaveBeenCalledWith(
-        expect.objectContaining({
-          recipient_id: "user-1",
-          body: "Hello Alice",
+    it('shows username as fallback when display_name is empty', () => {
+      renderComponent({ prefilledRecipient: { ...prefilled, display_name: '' } })
+      expect(screen.getByText('janedoe')).toBeInTheDocument()
+    })
+
+    it('does not render RecipientInputBox when prefilledRecipient is set', () => {
+      renderComponent({ prefilledRecipient: prefilled })
+      expect(screen.queryByTestId('recipient-input-box')).not.toBeInTheDocument()
+    })
+
+    it('uses the prefilled recipient id in startConversation', async () => {
+      renderComponent({ prefilledRecipient: prefilled })
+      typeMessage('Hello!')
+      clickSend()
+      await waitFor(() =>
+        expect(mockStartConversation).toHaveBeenCalledWith({
+          recipient_id: 'user-99',
+          body: 'Hello!',
         })
       )
-    );
-  });
+    })
+  })
 
-  it("calls onClose after successful send", async () => {
-    const onClose = vi.fn();
-    renderModal(onClose);
-    await userEvent.click(screen.getByTestId("select-user"));
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
-    await userEvent.click(getSendButton());
-    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
-  });
+  // ── Validation ───────────────────────────────────────────────────────────
 
-  it("navigates to the returned conversation after successful send", async () => {
-    renderModal();
-    await userEvent.click(screen.getByTestId("select-user"));
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
-    await userEvent.click(getSendButton());
-    await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith("/messages/conv-1")
-    );
-  });
+  describe('validation', () => {
+    it('shows recipient error when no recipient is selected', async () => {
+      renderComponent()
+      clickSend()
+      await waitFor(() =>
+        expect(screen.getByTestId('recipient-input-box')).toHaveAttribute(
+          'data-error',
+          'Enter a recipient.'
+        )
+      )
+    })
 
-  it("does nothing when the API does not return a conversation id", async () => {
-    (startConversation as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: {
-        conversation: {},
-        message: { id: "msg-1" },
-      },
-    });
-    const onClose = vi.fn();
-    renderModal(onClose);
-    await userEvent.click(screen.getByTestId("select-user"));
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
-    await userEvent.click(getSendButton());
-    await waitFor(() => expect(startConversation).toHaveBeenCalled());
-    expect(onClose).not.toHaveBeenCalled();
-    expect(mockNavigate).not.toHaveBeenCalled();
-    expect(screen.getByTestId("message-box-input")).toHaveValue("Hello");
-  });
+    it('shows message error when no message and no embeds', async () => {
+      renderComponent()
+      selectRecipient()
+      clickSend()
+      await waitFor(() =>
+        expect(
+          screen.getByText('Enter a message or paste a track/playlist link.')
+        ).toBeInTheDocument()
+      )
+    })
 
-  it("pressing Enter performs the same action as the send button", async () => {
-    renderModal();
-    await userEvent.click(screen.getByTestId("select-user"));
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello{enter}");
-    await waitFor(() =>
-      expect(startConversation).toHaveBeenCalledWith(
-        expect.objectContaining({
-          recipient_id: "user-1",
-          body: "Hello",
+    it('shows both errors simultaneously', async () => {
+      renderComponent()
+      clickSend()
+      await waitFor(() => {
+        expect(screen.getByTestId('recipient-input-box')).toHaveAttribute(
+          'data-error',
+          'Enter a recipient.'
+        )
+        expect(
+          screen.getByText('Enter a message or paste a track/playlist link.')
+        ).toBeInTheDocument()
+      })
+    })
+
+    it('clears recipient error immediately when a recipient is selected', async () => {
+      renderComponent()
+      clickSend()
+      await waitFor(() =>
+        expect(screen.getByTestId('recipient-input-box')).toHaveAttribute(
+          'data-error',
+          'Enter a recipient.'
+        )
+      )
+      selectRecipient()
+      await waitFor(() =>
+        expect(screen.getByTestId('recipient-input-box')).toHaveAttribute('data-error', '')
+      )
+    })
+
+    it('clears message error when user types text', async () => {
+      renderComponent()
+      selectRecipient()
+      clickSend()
+      await waitFor(() =>
+        expect(
+          screen.getByText('Enter a message or paste a track/playlist link.')
+        ).toBeInTheDocument()
+      )
+      typeMessage('hello')
+      await waitFor(() =>
+        expect(
+          screen.queryByText('Enter a message or paste a track/playlist link.')
+        ).not.toBeInTheDocument()
+      )
+    })
+
+    it('passes hasError=true to MessageBox when message error is active', async () => {
+      renderComponent()
+      selectRecipient()
+      clickSend()
+      await waitFor(() =>
+        expect(screen.getByTestId('message-box')).toHaveAttribute('data-has-error', 'true')
+      )
+    })
+
+    it('allows send when no text but embeds are present', async () => {
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds([{ type: 'track', id: 'track-1' }])
+      clickSend()
+      await waitFor(() => expect(mockStartConversation).toHaveBeenCalled())
+    })
+  })
+
+  // ── onIsEmptyChange — line 161 ───────────────────────────────────────────
+  //
+  // Source: onIsEmptyChange={(empty) => { if (empty) setMessageError(null) }}
+  // The `if (empty)` true-branch (line 161) was previously uncovered.
+
+  describe('MessageBox onIsEmptyChange callback — line 161', () => {
+    it('clears messageError when the box becomes empty (empty=true)', async () => {
+      renderComponent()
+      selectRecipient()
+      clickSend()
+      await waitFor(() =>
+        expect(
+          screen.getByText('Enter a message or paste a track/playlist link.')
+        ).toBeInTheDocument()
+      )
+      // Fires the `if (empty)` true-branch → setMessageError(null)
+      fireIsEmptyChange(true)
+      await waitFor(() =>
+        expect(
+          screen.queryByText('Enter a message or paste a track/playlist link.')
+        ).not.toBeInTheDocument()
+      )
+    })
+
+    it('does NOT clear messageError when empty=false', async () => {
+      renderComponent()
+      selectRecipient()
+      clickSend()
+      await waitFor(() =>
+        expect(
+          screen.getByText('Enter a message or paste a track/playlist link.')
+        ).toBeInTheDocument()
+      )
+      // empty=false → condition is false → no state change
+      fireIsEmptyChange(false)
+      expect(
+        screen.getByText('Enter a message or paste a track/playlist link.')
+      ).toBeInTheDocument()
+    })
+
+    it('clears send-failure error when box becomes empty', async () => {
+      mockStartConversation.mockRejectedValue({ response: { status: 500 } })
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() =>
+        expect(
+          screen.getByText('Failed to send message. Please try again.')
+        ).toBeInTheDocument()
+      )
+      fireIsEmptyChange(true)
+      await waitFor(() =>
+        expect(
+          screen.queryByText('Failed to send message. Please try again.')
+        ).not.toBeInTheDocument()
+      )
+    })
+  })
+
+  // ── Sending – plain text (no embeds) ────────────────────────────────────
+
+  describe('sending a plain-text message', () => {
+    async function setupAndSend(text = 'Hello world') {
+      renderComponent()
+      selectRecipient()
+      typeMessage(text)
+      clickSend()
+    }
+
+    it('calls startConversation with recipient_id and trimmed body', async () => {
+      await setupAndSend('  Hello world  ')
+      await waitFor(() =>
+        expect(mockStartConversation).toHaveBeenCalledWith({
+          recipient_id: 'user-1',
+          body: 'Hello world',
         })
       )
-    );
-    expect(mockNavigate).toHaveBeenCalledWith("/messages/conv-1");
-  });
+    })
 
-  // ── Error flow ───────────────────────────────────────────────────────────────
+    it('navigates to the conversation after send', async () => {
+      await setupAndSend()
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/messages/conv-123'))
+    })
 
-  it("shows error message when startConversation fails", async () => {
-    (startConversation as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error("Server error")
-    );
-    renderModal();
-    await userEvent.click(screen.getByTestId("select-user"));
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
-    await userEvent.click(getSendButton());
-    await waitFor(() =>
-      expect(screen.getByText(/failed to send message/i)).toBeInTheDocument()
-    );
-  });
+    it('calls onClose after successful send', async () => {
+      await setupAndSend()
+      await waitFor(() => expect(mockOnClose).toHaveBeenCalled())
+    })
 
-  it("shows 'Sending…' text while in progress", async () => {
-    let resolve!: (value: unknown) => void;
-    (startConversation as ReturnType<typeof vi.fn>).mockImplementation(
-      () => new Promise((res) => { resolve = res; })
-    );
-    renderModal();
-    await userEvent.click(screen.getByTestId("select-user"));
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
-    await userEvent.click(getSendButton());
-    expect(screen.getByText(/sending…/i)).toBeInTheDocument();
-    resolve({ data: { conversation: { id: "conv-1" } } });
-  });
+    it('calls onConversationCreated with conversation and message', async () => {
+      await setupAndSend()
+      await waitFor(() =>
+        expect(mockOnConversationCreated).toHaveBeenCalledWith(
+          { id: 'conv-123' },
+          { id: 'msg-1', conversation_id: 'conv-123' }
+        )
+      )
+    })
 
-  // ── Clearing recipient ────────────────────────────────────────────────────────
+    it('does not call onConversationCreated when conversation is null', async () => {
+      mockStartConversation.mockResolvedValue(
+        makeResponse({ conversation: null, conversation_id: 'conv-999' })
+      )
+      renderComponent()
+      selectRecipient()
+      typeMessage('hello')
+      clickSend()
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/messages/conv-999'))
+      expect(mockOnConversationCreated).not.toHaveBeenCalled()
+    })
 
-  it("clears selected recipient when onClear is called", async () => {
-    renderModal();
-    await userEvent.click(screen.getByTestId("select-user"));
-    await userEvent.click(screen.getByTestId("clear-user"));
-    await userEvent.type(screen.getByTestId("message-box-input"), "Hello");
-    await userEvent.click(getSendButton());
-    expect(screen.getByTestId("recipient-error")).toBeInTheDocument();
-    expect(startConversation).not.toHaveBeenCalled();
-  });
-});
+    it('shows 403-specific error — line 118', async () => {
+      mockStartConversation.mockRejectedValue({ response: { status: 403 } })
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() =>
+        expect(screen.getByText('Unable to send message to this user.')).toBeInTheDocument()
+      )
+    })
+
+    it('shows generic error for non-403 failures — line 120', async () => {
+      mockStartConversation.mockRejectedValue({ response: { status: 500 } })
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() =>
+        expect(
+          screen.getByText('Failed to send message. Please try again.')
+        ).toBeInTheDocument()
+      )
+    })
+
+    it('shows generic error when rejection has no response object', async () => {
+      mockStartConversation.mockRejectedValue(new Error('Network error'))
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() =>
+        expect(
+          screen.getByText('Failed to send message. Please try again.')
+        ).toBeInTheDocument()
+      )
+    })
+
+    it('re-enables send button after an error', async () => {
+      mockStartConversation.mockRejectedValue({ response: { status: 500 } })
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() =>
+        expect(document.querySelector('[data-test="send-message-button"]')).not.toBeDisabled()
+      )
+    })
+
+    it('does not navigate or close on error', async () => {
+      mockStartConversation.mockRejectedValue({ response: { status: 500 } })
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() =>
+        expect(
+          screen.getByText('Failed to send message. Please try again.')
+        ).toBeInTheDocument()
+      )
+      expect(mockNavigate).not.toHaveBeenCalled()
+      expect(mockOnClose).not.toHaveBeenCalled()
+    })
+
+    it('shows Sending… while the request is in flight', async () => {
+      let resolve!: (v: unknown) => void
+      mockStartConversation.mockReturnValue(new Promise((r) => (resolve = r)))
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      expect(screen.getByRole('button', { name: 'Sending…' })).toBeInTheDocument()
+      act(() => resolve(makeResponse()))
+      await waitFor(() => expect(screen.queryByText('Sending…')).not.toBeInTheDocument())
+    })
+
+    it('disables send button while sending', async () => {
+      let resolve!: (v: unknown) => void
+      mockStartConversation.mockReturnValue(new Promise((r) => (resolve = r)))
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      expect(document.querySelector('[data-test="send-message-button"]')).toBeDisabled()
+      act(() => resolve(makeResponse()))
+      await waitFor(() =>
+        expect(document.querySelector('[data-test="send-message-button"]')).not.toBeDisabled()
+      )
+    })
+
+    it('ignores duplicate clicks while isSending=true', async () => {
+      let resolve!: (v: unknown) => void
+      mockStartConversation.mockReturnValue(new Promise((r) => (resolve = r)))
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      clickSend()
+      act(() => resolve(makeResponse()))
+      await waitFor(() => expect(mockStartConversation).toHaveBeenCalledTimes(1))
+    })
+
+    it('works without onConversationCreated prop — optional chaining', async () => {
+      render(<ModalNewMessageBody onClose={mockOnClose} />)
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/messages/conv-123'))
+      expect(mockOnClose).toHaveBeenCalled()
+    })
+
+    it('returns early without navigating when conversationId is missing from response', async () => {
+      mockStartConversation.mockResolvedValue({ data: {} })
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() => expect(mockStartConversation).toHaveBeenCalled())
+      expect(mockNavigate).not.toHaveBeenCalled()
+      expect(mockOnClose).not.toHaveBeenCalled()
+    })
+  })
+
+  // ── conversationId resolution priority (plain-text branch) ──────────────
+
+  describe('conversationId resolution – plain-text branch', () => {
+    it('prefers conversation.id', async () => {
+      mockStartConversation.mockResolvedValue(
+        makeResponse({ conversation: { id: 'pref-conv' }, conversation_id: 'other' })
+      )
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/messages/pref-conv'))
+    })
+
+    it('falls back to conversation_id when conversation is null', async () => {
+      mockStartConversation.mockResolvedValue(
+        makeResponse({ conversation: null, conversation_id: 'fallback-field' })
+      )
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() =>
+        expect(mockNavigate).toHaveBeenCalledWith('/messages/fallback-field')
+      )
+    })
+
+    it('falls back to message.conversation_id', async () => {
+      mockStartConversation.mockResolvedValue({
+        data: {
+          conversation: null,
+          conversation_id: undefined,
+          message: { id: 'msg-1', conversation_id: 'msg-conv' },
+        },
+      })
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/messages/msg-conv'))
+    })
+
+    it('falls back to message.conversationId (camelCase)', async () => {
+      mockStartConversation.mockResolvedValue({
+        data: {
+          conversation: null,
+          conversation_id: undefined,
+          message: { id: 'msg-1', conversationId: 'camel-conv' },
+        },
+      })
+      renderComponent()
+      selectRecipient()
+      typeMessage('hi')
+      clickSend()
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/messages/camel-conv'))
+    })
+  })
+
+  // ── Sending with embeds — lines 70–87 ───────────────────────────────────
+  //
+  // KEY FIX: resolveEmbeds() is now `async` and uses `await act(async () => …)`
+  // so the setEmbeds state update is fully committed before clickSend() runs.
+  // Without the await, embeds.length === 0 inside handleSend and the else-branch
+  // (lines 70–87) is never entered, leaving those lines uncovered.
+
+  describe('sending with embeds — lines 70–87', () => {
+    const single = [{ type: 'track', id: 'track-1' }]
+    const multi = [
+      { type: 'track', id: 'track-1' },
+      { type: 'playlist', id: 'pl-1' },
+      { type: 'track', id: 'track-2' },
+    ]
+
+    it('enters embed branch and calls startConversation with resource — lines 70–79', async () => {
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      clickSend()
+      await waitFor(() =>
+        expect(mockStartConversation).toHaveBeenCalledWith({
+          recipient_id: 'user-1',
+          resource: { type: 'track', id: 'track-1' },
+        })
+      )
+    })
+
+    it('includes body text when both embed and message are present', async () => {
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      typeMessage('Listen to this')
+      clickSend()
+      await waitFor(() =>
+        expect(mockStartConversation).toHaveBeenCalledWith({
+          recipient_id: 'user-1',
+          body: 'Listen to this',
+          resource: { type: 'track', id: 'track-1' },
+        })
+      )
+    })
+
+    it('calls sendMessage for each embed after the first — loop body lines 86–90', async () => {
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(multi)
+      clickSend()
+      await waitFor(() => expect(mockSendMessage).toHaveBeenCalledTimes(2))
+      expect(mockSendMessage).toHaveBeenCalledWith('conv-123', {
+        resource: { type: 'playlist', id: 'pl-1' },
+      })
+      expect(mockSendMessage).toHaveBeenCalledWith('conv-123', {
+        resource: { type: 'track', id: 'track-2' },
+      })
+    })
+
+    it('skips sendMessage loop when only one embed — false branch of line 85', async () => {
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      clickSend()
+      await waitFor(() => expect(mockStartConversation).toHaveBeenCalled())
+      expect(mockSendMessage).not.toHaveBeenCalled()
+    })
+
+    it('skips sendMessage loop when inner conversationId is null — line 85 guard=false', async () => {
+      mockStartConversation.mockResolvedValue({ data: {} })
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(multi)
+      clickSend()
+      await waitFor(() => expect(mockStartConversation).toHaveBeenCalled())
+      expect(mockSendMessage).not.toHaveBeenCalled()
+    })
+
+    // ── Inner conversationId resolution sub-branches (lines 80–84) ──────
+
+    it('uses conversation.id for inner conversationId', async () => {
+      mockStartConversation.mockResolvedValue(
+        makeResponse({ conversation: { id: 'inner-conv' }, conversation_id: 'other' })
+      )
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(multi)
+      clickSend()
+      await waitFor(() => expect(mockSendMessage).toHaveBeenCalledTimes(2))
+      expect(mockSendMessage).toHaveBeenCalledWith('inner-conv', expect.any(Object))
+    })
+
+    it('falls back to typed.data.conversation_id for inner conversationId', async () => {
+      mockStartConversation.mockResolvedValue(
+        makeResponse({ conversation: null, conversation_id: 'inner-field' })
+      )
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(multi)
+      clickSend()
+      await waitFor(() => expect(mockSendMessage).toHaveBeenCalledTimes(2))
+      expect(mockSendMessage).toHaveBeenCalledWith('inner-field', expect.any(Object))
+    })
+
+    it('falls back to firstMessage.conversation_id for inner conversationId', async () => {
+      mockStartConversation.mockResolvedValue({
+        data: {
+          conversation: null,
+          conversation_id: undefined,
+          message: { id: 'msg-1', conversation_id: 'inner-msg-conv' },
+        },
+      })
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(multi)
+      clickSend()
+      await waitFor(() => expect(mockSendMessage).toHaveBeenCalledTimes(2))
+      expect(mockSendMessage).toHaveBeenCalledWith('inner-msg-conv', expect.any(Object))
+    })
+
+    it('falls back to firstMessage.conversationId (camelCase) for inner conversationId', async () => {
+      mockStartConversation.mockResolvedValue({
+        data: {
+          conversation: null,
+          conversation_id: undefined,
+          message: { id: 'msg-1', conversationId: 'inner-camel' },
+        },
+      })
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(multi)
+      clickSend()
+      await waitFor(() => expect(mockSendMessage).toHaveBeenCalledTimes(2))
+      expect(mockSendMessage).toHaveBeenCalledWith('inner-camel', expect.any(Object))
+    })
+
+    it('navigates after embed send', async () => {
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      clickSend()
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/messages/conv-123'))
+    })
+
+    it('calls onClose after embed send', async () => {
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      clickSend()
+      await waitFor(() => expect(mockOnClose).toHaveBeenCalled())
+    })
+
+    it('calls onConversationCreated after embed send when conversation exists', async () => {
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      clickSend()
+      await waitFor(() =>
+        expect(mockOnConversationCreated).toHaveBeenCalledWith(
+          { id: 'conv-123' },
+          { id: 'msg-1', conversation_id: 'conv-123' }
+        )
+      )
+    })
+
+    it('does not call onConversationCreated when conversation is null in embed path', async () => {
+      mockStartConversation.mockResolvedValue(
+        makeResponse({ conversation: null, conversation_id: 'embed-999' })
+      )
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      clickSend()
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/messages/embed-999'))
+      expect(mockOnConversationCreated).not.toHaveBeenCalled()
+    })
+
+    it('returns early without navigating when embed conversationId is missing', async () => {
+      mockStartConversation.mockResolvedValue({ data: {} })
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      clickSend()
+      await waitFor(() => expect(mockStartConversation).toHaveBeenCalled())
+      expect(mockNavigate).not.toHaveBeenCalled()
+      expect(mockOnClose).not.toHaveBeenCalled()
+    })
+
+    it('shows 403 error on embed send failure — line 118 via embed path', async () => {
+      mockStartConversation.mockRejectedValue({ response: { status: 403 } })
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      clickSend()
+      await waitFor(() =>
+        expect(screen.getByText('Unable to send message to this user.')).toBeInTheDocument()
+      )
+    })
+
+    it('shows generic error on embed send failure', async () => {
+      mockStartConversation.mockRejectedValue({ response: { status: 500 } })
+      renderComponent()
+      selectRecipient()
+      await resolveEmbeds(single)
+      clickSend()
+      await waitFor(() =>
+        expect(
+          screen.getByText('Failed to send message. Please try again.')
+        ).toBeInTheDocument()
+      )
+    })
+  })
+
+  // ── Recipient clear ──────────────────────────────────────────────────────
+
+  describe('RecipientInputBox onClear', () => {
+    it('clears selected so the next send shows recipient error', async () => {
+      renderComponent()
+      selectRecipient()
+      act(() => {
+        latestRecipientProps!.onClear()
+      })
+      typeMessage('hello')
+      clickSend()
+      await waitFor(() =>
+        expect(screen.getByTestId('recipient-input-box')).toHaveAttribute(
+          'data-error',
+          'Enter a recipient.'
+        )
+      )
+    })
+  })
+
+  // ── MessageBox onSubmit ──────────────────────────────────────────────────
+
+  describe('MessageBox onSubmit callback', () => {
+    it('triggers handleSend from keyboard submit', async () => {
+      renderComponent()
+      selectRecipient()
+      typeMessage('keyboard submit')
+      act(() => {
+        latestMessageBoxProps!.onSubmit()
+      })
+      await waitFor(() => expect(mockStartConversation).toHaveBeenCalled())
+    })
+  })
+})

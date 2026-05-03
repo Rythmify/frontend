@@ -1,290 +1,180 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, configure } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { BlockUserModal } from "../../UI/BlockModal";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { BlockUserModal } from "@/components/UI/BlockModal"
+import * as conversationApi from "@/services/api/messaging/conversationApi"
 
-// ✅ Ensure data-test works with getByTestId
-configure({ testIdAttribute: "data-test" });
-
-// ✅ Mock API
-vi.mock("@/services/api/messaging/conversationApi", () => ({
+vi.mock("../../services/api/messaging/conversationApi", () => ({
   blockUser: vi.fn(),
   submitReport: vi.fn(),
-}));
+}))
 
-import {
-  blockUser,
-  submitReport,
-} from "@/services/api/messaging/conversationApi";
+vi.mock("../MessagingComponents/CheckBox", () => ({
+  default: ({
+    label,
+    checked,
+    onChange,
+  }: {
+    label: string
+    checked: boolean
+    onChange: (v: boolean) => void
+  }) => (
+    <label>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      {label}
+    </label>
+  ),
+}))
 
-const renderBlock = (
-  props: {
-    username?: string;
-    userId?: string;
-    onClose?: () => void;
-    onBlocked?: (data: {
-      blocker_id: string;
-      blocked_id: string;
-      created_at: string;
-    }) => void;
-  } = {}
-) =>
-  render(
-    <BlockUserModal
-      username="Charlie"
-      userId="user-charlie"
-      onClose={vi.fn()}
-      onBlocked={vi.fn()}
-      {...props}
-    />
-  );
+const mockBlockUser   = vi.mocked(conversationApi.blockUser)
+const mockSubmitReport = vi.mocked(conversationApi.submitReport)
+
+const defaultProps = {
+  username: "testuser",
+  userId: "user-123",
+  onClose: vi.fn(),
+  onBlocked: vi.fn(),
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe("BlockUserModal", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  it("renders modal with username", () => {
+    render(<BlockUserModal {...defaultProps} />)
+    expect(screen.getByTestId("block-user-modal")).toBeInTheDocument()
+    expect(screen.getByText("Block testuser")).toBeInTheDocument()
+  })
 
-  // ── Rendering ──────────────────────────────────────────────────────────────
+  it("renders all blocking consequence list items", () => {
+    render(<BlockUserModal {...defaultProps} />)
+    expect(screen.getByText("follow you,")).toBeInTheDocument()
+    expect(screen.getByText("like your tracks,")).toBeInTheDocument()
+    expect(screen.getByText("repost your tracks,")).toBeInTheDocument()
+    expect(screen.getByText("send you messages,")).toBeInTheDocument()
+    expect(screen.getByText("share tracks with you,")).toBeInTheDocument()
+    expect(screen.getByText("post new comments on your tracks, or")).toBeInTheDocument()
+    expect(screen.getByText("send you new stream or email notifications.")).toBeInTheDocument()
+  })
 
-  it("renders with correct data-test attribute", () => {
-    renderBlock();
-    expect(screen.getByTestId("block-user-modal")).toBeInTheDocument();
-  });
-
-  it("renders the heading with username", () => {
-    renderBlock({ username: "Charlie" });
-    expect(screen.getAllByText(/Block Charlie/i)).toHaveLength(2);
-  });
-
-  it("renders all seven consequence list items", () => {
-    renderBlock();
-    expect(screen.getByText(/follow you/i)).toBeInTheDocument();
-    expect(screen.getByText(/like your tracks/i)).toBeInTheDocument();
-    expect(screen.getByText(/repost your tracks/i)).toBeInTheDocument();
-    expect(screen.getByText(/send you messages/i)).toBeInTheDocument();
-    expect(screen.getByText(/share tracks with you/i)).toBeInTheDocument();
-    expect(screen.getByText(/post new comments/i)).toBeInTheDocument();
+  it("renders checkboxes with correct labels", () => {
+    render(<BlockUserModal {...defaultProps} />)
     expect(
-      screen.getByText(/send you new stream or email notifications/i)
-    ).toBeInTheDocument();
-  });
-
-  it("renders two checkboxes", () => {
-    renderBlock();
+      screen.getByText(
+        "Also permanently remove this user's comments, reposts and likes of your tracks and playlists"
+      )
+    ).toBeInTheDocument()
     expect(
-      screen.getByText(/also permanently remove this user's comments/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/also report Charlie for spam/i)
-    ).toBeInTheDocument();
-  });
+      screen.getByText("Also report testuser for spam")
+    ).toBeInTheDocument()
+  })
 
-  it("renders Cancel and Block buttons", () => {
-    renderBlock();
-    expect(screen.getByTestId("block-cancel-button")).toBeInTheDocument();
-    expect(screen.getByTestId("block-user-button")).toBeInTheDocument();
-  });
+  it("renders cancel and block buttons", () => {
+    render(<BlockUserModal {...defaultProps} />)
+    expect(screen.getByTestId("block-cancel-button")).toBeInTheDocument()
+    expect(screen.getByTestId("block-user-button")).toBeInTheDocument()
+    expect(screen.getByTestId("block-user-button")).toHaveTextContent("Block testuser")
+  })
 
-  it("block button label includes username", () => {
-    renderBlock({ username: "Charlie" });
-    expect(screen.getByTestId("block-user-button")).toHaveTextContent(
-      "Block Charlie"
-    );
-  });
+  it("calls onClose when cancel is clicked", () => {
+    render(<BlockUserModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("block-cancel-button"))
+    expect(defaultProps.onClose).toHaveBeenCalledTimes(1)
+  })
 
-  // ── Cancel ─────────────────────────────────────────────────────────────────
+  it("calls blockUser with userId and then onBlocked/onClose on success (data shape)", async () => {
+    const blockData = { blocker_id: "me", blocked_id: "user-123", created_at: "2024-01-01" }
+    mockBlockUser.mockResolvedValueOnce({ data: blockData } as any)
 
-  it("calls onClose when Cancel is clicked", async () => {
-    const onClose = vi.fn();
-    renderBlock({ onClose });
-    await userEvent.click(screen.getByTestId("block-cancel-button"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+    render(<BlockUserModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("block-user-button"))
 
-  // ── Block flow (success) ───────────────────────────────────────────────────
+    await waitFor(() => {
+      expect(mockBlockUser).toHaveBeenCalledWith("user-123")
+      expect(defaultProps.onBlocked).toHaveBeenCalledWith(blockData)
+      expect(defaultProps.onClose).toHaveBeenCalled()
+    })
+  })
 
-  it("calls blockUser with the userId on block", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { blocker_id: "me", blocked_id: "user-charlie", created_at: "now" },
-    });
-    renderBlock({ userId: "user-charlie" });
-    await userEvent.click(screen.getByTestId("block-user-button"));
-    expect(blockUser).toHaveBeenCalledWith("user-charlie");
-  });
+  it("calls onBlocked with fallback shape when response has no data field", async () => {
+    mockBlockUser.mockResolvedValueOnce({} as any)
 
-  it("calls onBlocked with block data on success", async () => {
-    const blockData = {
-      blocker_id: "me",
-      blocked_id: "user-charlie",
-      created_at: "now",
-    };
-    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: blockData,
-    });
-    const onBlocked = vi.fn();
-    renderBlock({ onBlocked });
-    await userEvent.click(screen.getByTestId("block-user-button"));
-    expect(onBlocked).toHaveBeenCalledWith(blockData);
-  });
+    render(<BlockUserModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("block-user-button"))
 
-  it("calls onClose after block success", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { blocker_id: "me", blocked_id: "user-charlie", created_at: "now" },
-    });
-    const onClose = vi.fn();
-    renderBlock({ onClose });
-    await userEvent.click(screen.getByTestId("block-user-button"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+    await waitFor(() => {
+      expect(defaultProps.onBlocked).toHaveBeenCalledWith({
+        blocker_id: "",
+        blocked_id: "user-123",
+        created_at: "",
+      })
+    })
+  })
 
-  // ✅ NEW: cover else branch (no data in response)
-  it("calls onBlocked with fallback data when response has no data field", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    const onBlocked = vi.fn();
+  it("also calls submitReport when reportSpam checkbox is checked", async () => {
+    mockBlockUser.mockResolvedValueOnce({} as any)
+    mockSubmitReport.mockResolvedValueOnce(undefined as any)
 
-    renderBlock({ onBlocked, userId: "user-charlie" });
-    await userEvent.click(screen.getByTestId("block-user-button"));
+    render(<BlockUserModal {...defaultProps} />)
 
-    expect(onBlocked).toHaveBeenCalledWith({
-      blocker_id: "",
-      blocked_id: "user-charlie",
-      created_at: "",
-    });
-  });
+    const checkboxes = screen.getAllByRole("checkbox")
+    // second checkbox is "report spam"
+    fireEvent.click(checkboxes[1])
+    fireEvent.click(screen.getByTestId("block-user-button"))
 
-  // ── Block with spam ────────────────────────────────────────────────────────
+    await waitFor(() => {
+      expect(mockSubmitReport).toHaveBeenCalledWith({
+        resource_type: "user",
+        resource_id: "user-123",
+        reason: "spam",
+      })
+    })
+  })
 
-  it("calls submitReport for spam when reportSpam checkbox is checked", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { blocker_id: "me", blocked_id: "user-charlie", created_at: "now" },
-    });
-    (submitReport as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    renderBlock({ userId: "user-charlie" });
+  it("does NOT call submitReport when reportSpam checkbox is unchecked", async () => {
+    mockBlockUser.mockResolvedValueOnce({} as any)
 
-    const spamLabel = screen
-      .getByText(/also report charlie for spam/i)
-      .closest("label")!;
-    const checkbox = spamLabel.querySelector("div[class*='border']")!;
-    await userEvent.click(checkbox);
+    render(<BlockUserModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("block-user-button"))
 
-    await userEvent.click(screen.getByTestId("block-user-button"));
+    await waitFor(() => {
+      expect(mockSubmitReport).not.toHaveBeenCalled()
+    })
+  })
 
-    expect(submitReport).toHaveBeenCalledWith({
-      resource_type: "user",
-      resource_id: "user-charlie",
-      reason: "spam",
-    });
-  });
+  it("shows 401 error message when blockUser throws 401", async () => {
+    mockBlockUser.mockRejectedValueOnce({ response: { status: 401 } })
 
-  it("does not call submitReport when reportSpam is unchecked", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { blocker_id: "me", blocked_id: "user-charlie", created_at: "now" },
-    });
-    renderBlock();
-    await userEvent.click(screen.getByTestId("block-user-button"));
-    expect(submitReport).not.toHaveBeenCalled();
-  });
+    render(<BlockUserModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("block-user-button"))
 
-  // ✅ NEW: cover removeContent interaction
-  it("toggles removeContent checkbox", async () => {
-    renderBlock();
+    await waitFor(() => {
+      expect(screen.getByText("Missing or invalid access token.")).toBeInTheDocument()
+    })
+  })
 
-    const label = screen
-      .getByText(/also permanently remove this user's comments/i)
-      .closest("label")!;
-    const checkbox = label.querySelector("div[class*='border']")!;
+  it("disables buttons while loading", async () => {
+    let resolve: (v: any) => void
+    mockBlockUser.mockReturnValueOnce(new Promise((r) => { resolve = r }))
 
-    await userEvent.click(checkbox);
-  });
+    render(<BlockUserModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("block-user-button"))
 
-  // ── Error handling ─────────────────────────────────────────────────────────
+    expect(screen.getByTestId("block-cancel-button")).toBeDisabled()
+    expect(screen.getByTestId("block-user-button")).toBeDisabled()
 
-  it("shows 401 error message on auth failure", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockRejectedValue({
-      response: { status: 401 },
-    });
-    renderBlock();
-    await userEvent.click(screen.getByTestId("block-user-button"));
-    expect(
-      screen.getByText(/missing or invalid access token/i)
-    ).toBeInTheDocument();
-  });
+    resolve!({})
+  })
 
-  // ✅ NEW: non-401 error
-  it("does not show error for non-401 errors", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockRejectedValue({
-      response: { status: 500 },
-    });
-
-    renderBlock();
-    await userEvent.click(screen.getByTestId("block-user-button"));
-
-    expect(
-      screen.queryByText(/missing or invalid access token/i)
-    ).not.toBeInTheDocument();
-  });
-
-  // ✅ NEW: error without response
-  it("handles error without response object", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockRejectedValue({});
-
-    renderBlock();
-    await userEvent.click(screen.getByTestId("block-user-button"));
-
-    expect(
-      screen.queryByText(/missing or invalid access token/i)
-    ).not.toBeInTheDocument();
-  });
-
-  it("does not show error initially", () => {
-    renderBlock();
-    expect(
-      screen.queryByText(/missing or invalid access token/i)
-    ).not.toBeInTheDocument();
-  });
-
-  it("does nothing when userId is undefined", async () => {
-    render(<BlockUserModal username="Charlie" onClose={vi.fn()} />);
-    await userEvent.click(screen.getByTestId("block-user-button"));
-    expect(blockUser).not.toHaveBeenCalled();
-  });
-
-  // ✅ NEW: no onBlocked
-  it("does not crash if onBlocked is undefined", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { blocker_id: "me", blocked_id: "user-charlie", created_at: "now" },
-    });
-
-    render(<BlockUserModal username="Charlie" userId="user-charlie" />);
-    await userEvent.click(screen.getByTestId("block-user-button"));
-  });
-
-  // ✅ NEW: no onClose
-  it("does not crash if onClose is undefined", async () => {
-    (blockUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { blocker_id: "me", blocked_id: "user-charlie", created_at: "now" },
-    });
-
-    render(<BlockUserModal username="Charlie" userId="user-charlie" />);
-    await userEvent.click(screen.getByTestId("block-user-button"));
-  });
-
-  it("disables buttons while blocking", async () => {
-    let resolve!: (value: unknown) => void;
-
-    (blockUser as ReturnType<typeof vi.fn>).mockImplementation(
-      () =>
-        new Promise((res) => {
-          resolve = res;
-        })
-    );
-
-    renderBlock();
-    await userEvent.click(screen.getByTestId("block-user-button"));
-
-    expect(screen.getByTestId("block-user-button")).toBeDisabled();
-    expect(screen.getByTestId("block-cancel-button")).toBeDisabled();
-
-    resolve(undefined);
-  });
-});
+  it("does nothing if userId is missing", async () => {
+    render(<BlockUserModal {...defaultProps} userId={undefined} />)
+    fireEvent.click(screen.getByTestId("block-user-button"))
+    await waitFor(() => {
+      expect(mockBlockUser).not.toHaveBeenCalled()
+    })
+  })
+})

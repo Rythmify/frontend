@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { type Notification, markNotificationRead, fetchFollowStatus } from '@/services/api/notifications/notificationsAPI'
+import { type Notification, markNotificationRead, fetchFollowStatus, fetchComment } from '@/services/api/notifications/notificationsAPI'
 import FollowButton from '@/components/UI/FollowButton'
 import { Modal } from '@/components/UI/Modal'
 import { BlockUserModal } from '@/components/UI/BlockModal'
@@ -9,10 +9,11 @@ import { SpamModal } from '@/components/UI/SpamModal'
 import UserAvatar from '@/components/UI/UserAvatar'
 import { useAuthStore } from '@/stores/auth.store'
 import { useNotificationStore } from '@/stores/notification.store'
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatRelativeTime = (dateStr: string): string => {
- const diff    = Date.now() - new Date(dateStr).getTime();
+  const diff    = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
   const hours   = Math.floor(minutes / 60);
   const days    = Math.floor(hours / 24);
@@ -34,9 +35,11 @@ const buildActionText = (n: Notification): string => {
     case 'repost':
       return `reposted your ${rType} "${title}"`
     case 'comment':
-      return `commented "${n.resource_details?.content ?? ''}" on your ${rType}`
+      return `commented "${n.resource_details?.content ?? ''}" on your track`
     case 'new_post_by_followed':
       return `posted a new ${rType} `
+    case 'artist_pro_activated':
+      return 'You have been upgraded to premium 😉'
     default:
       return ''
   }
@@ -118,20 +121,29 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
   const handleCellClick = async () => {
     if (!n.is_read) {
       try {
-       await markOneAsRead(n.id) 
+        await markOneAsRead(n.id)
         onMarkRead?.(n.id)
       } catch {
         // non-critical — still navigate
       }
     }
+
+    if (n.type === 'artist_pro_activated') return
+
     if (n.type === 'follow') {
       navigate(`/${n.actor.username}`)
-    } else if (n.resource_type==="track") {
-      navigate(`/${n.resource_type}/${n.resource_id}`)
-    } else if (n.resource_type==="playlist") {
+    } else if (n.type === 'comment' && n.resource_id) {
+      try {
+        const res = await fetchComment(n.resource_id)
+        navigate(`/track/${res.data.track_id}`)
+      } catch {
+        // silently fail — comment may have been deleted
+      }
+    } else if (n.resource_type === 'track') {
+      navigate(`/track/${n.resource_id}`)
+    } else if (n.resource_type === 'playlist') {
       navigate(`/${n.actor.username}/sets/${n.resource_id}`)
     }
-   
   }
 
   return (
@@ -156,9 +168,15 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
         {/* Text */}
         <div data-test={`notification-content-${n.id}`} className={styles.content}>
           <p className={styles.textRow}>
-            <span data-test={`notification-username-${n.id}`} className={styles.username}>{n.actor.display_name}</span>
+            {n.type !== 'artist_pro_activated' && (
+              <span data-test={`notification-username-${n.id}`} className={styles.username}>
+                {n.actor.display_name}
+              </span>
+            )}
             {'  '}
-            <span data-test={`notification-action-text-${n.id}`} className={styles.actionText}>{buildActionText(n)}</span>
+            <span data-test={`notification-action-text-${n.id}`} className={styles.actionText}>
+              {buildActionText(n)}
+            </span>
           </p>
           <div data-test={`notification-time-${n.id}`} className={styles.timeRow}>
             <i className={styles.timeIcon} />
@@ -181,7 +199,7 @@ const NotificationCard = ({ notification: n, showActions = true, onMarkRead }: N
           )}
 
           {/* more button */}
-          {showActions && (
+          {showActions && n.type !== 'artist_pro_activated' && (
             <div data-test={`notification-menu-wrapper-${n.id}`} className={styles.dropdownWrapper}>
               <button
                 data-test={`notification-menu-btn-${n.id}`}

@@ -46,6 +46,7 @@ export interface Pagination {
   total_pages: number;
   has_next: boolean;
   has_prev: boolean;
+  total: number;
 }
 
 export interface Conversation {

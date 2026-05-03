@@ -1,279 +1,474 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import SendMessageForm from "../SendMessageForm";
-import type { Message } from "@/services/api/messaging/conversationApi";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
-// ── Mock API ───────────────────────────────────────────────────────────────────
-//
-// Vite resolves path aliases before producing module IDs, so
-// '@/services/api/messaging/conversationApi' and the component's relative
-// '../../services/api/messaging/conversationApi' both resolve to the same
-// absolute path. Using the @/ alias here is safe and avoids fragility around
-// how many '../' levels the test file sits below the source root.
+const mockSendMessage = vi.fn()
+const mockEmitMessageSent = vi.fn()
+const mockEmitStopTyping = vi.fn()
+const mockUseAuthStore = vi.fn()
+let mockObserver: { observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn>; unobserve: ReturnType<typeof vi.fn> }
+let intersectionCallback: IntersectionObserverCallback = () => {}
 
-vi.mock("@/services/api/messaging/conversationApi", () => ({
-  sendMessage: vi.fn(),
-}));
+vi.mock('@/services/api/messaging/conversationApi', () => ({
+  sendMessage: (...args: unknown[]) => mockSendMessage(...args),
+}))
 
-// ── Mock auth store ────────────────────────────────────────────────────────────
+vi.mock('@/services/api/messaging/socketService', () => ({
+  emitMessageSent: (...args: unknown[]) => mockEmitMessageSent(...args),
+  emitStopTyping: (...args: unknown[]) => mockEmitStopTyping(...args),
+}))
 
-vi.mock("@/stores/auth.store", () => ({
-  useAuthStore: (selector: (s: { user: { id: string; avatar: string } }) => unknown) =>
-    selector({ user: { id: "me", avatar: "https://example.com/me.jpg" } }),
-}));
+vi.mock('@/stores/auth.store', () => ({
+  useAuthStore: (selector: (state: { user: { id: string; displayName: string; username: string; avatar: string | null; role: string } | null }) => unknown) =>
+    mockUseAuthStore(selector),
+}))
 
-// ── Mock MessageBox ────────────────────────────────────────────────────────────
-//
-// Same alias rule applies: '@/components/MessagingComponents/MessageBox' resolves
-// to the same file as the component's relative './MessageBox'.
-
-vi.mock("@/components/MessagingComponents/MessageBox", () => ({
+vi.mock('../MessageBox', () => ({
   MessageBox: ({
     onValueChange,
     onIsEmptyChange,
+    onEmbedsResolved,
+    hasError,
   }: {
-    onValueChange: (v: string) => void;
-    onIsEmptyChange: (empty: boolean) => void;
-    onEmbedResolved: (embed: unknown) => void;
+    onValueChange?: (v: string) => void
+    onIsEmptyChange?: (e: boolean) => void
+    onEmbedsResolved?: (e: unknown[]) => void
+    hasError?: boolean
   }) => (
-    <textarea
-      data-test="message-box-input"
-      onChange={(e) => {
-        onValueChange(e.target.value);
-        onIsEmptyChange(e.target.value.trim() === "");
-      }}
-    />
+    <div data-test="message-box" data-has-error={String(hasError)}>
+      <textarea
+        data-test="message-input"
+        onChange={(e) => {
+          onValueChange?.(e.target.value)
+          onIsEmptyChange?.(e.target.value === '')
+        }}
+      />
+      <button data-test="resolve-embed" onClick={() => onEmbedsResolved?.([])}>
+        clear embeds
+      </button>
+    </div>
   ),
-}));
+}))
 
-import { sendMessage } from "@/services/api/messaging/conversationApi";
+vi.mock('../messagecell', () => ({
+  default: ({ message, displayName }: { message: { id: string; body: string }; displayName: string }) => (
+    <div data-test={`message-cell-${message.id}`} data-display={displayName}>
+      {message.body}
+    </div>
+  ),
+}))
 
-// ── Fixtures ───────────────────────────────────────────────────────────────────
+vi.mock('../TrackPlaylistPicker', () => ({
+  default: ({ onPick, onClose }: { onPick: (item: unknown) => void; onClose: () => void }) => (
+    <div data-test="track-playlist-picker">
+      <button
+        data-test="picker-pick-track"
+        onClick={() =>
+          onPick({ type: 'track', id: 't1', title: 'My Track', artistName: 'Artist', coverImage: null })
+        }
+      >
+        Pick Track
+      </button>
+      <button
+        data-test="picker-pick-playlist"
+        onClick={() =>
+          onPick({ type: 'playlist', id: 'p1', title: 'My Playlist', trackCount: 12, coverImage: null })
+        }
+      >
+        Pick Playlist
+      </button>
+      <button data-test="picker-close" onClick={onClose}>
+        Close
+      </button>
+    </div>
+  ),
+}))
 
-const makeMessage = (overrides: Partial<Message> = {}): Message => ({
-  id: "msg-1",
-  body: "Hello",
-  created_at: new Date().toISOString(),
-  sender_id: "me",
-  is_read: true,
-  ...overrides,
-} as unknown as Message);
+import SendMessageForm from '../SendMessageForm'
+import type { Message } from '@/services/api/messaging/conversationApi'
+
+function makeMessage(id: string, body: string, senderId = 'user-1'): Message {
+  return {
+    id,
+    body,
+    embed_type: null,
+    embed_id: null,
+    sender_id: senderId,
+    created_at: new Date().toISOString(),
+    conversation_id: 'conv-1',
+    is_read: false,
+  } as Message
+}
+
+function setScrollHeight(element: Element, value: number) {
+  Object.defineProperty(element, 'scrollHeight', {
+    configurable: true,
+    value,
+  })
+}
 
 const defaultProps = {
-  conversationId: "conv-1",
+  conversationId: 'conv-1',
   existingMessages: [],
   loadingMessages: false,
   hasMoreMessages: false,
   onLoadMore: vi.fn(),
   onMessageSent: vi.fn(),
-  ParticipantInfo: {
-    display_name: "Alice",
-    profile_picture: "https://example.com/alice.jpg",
-  },
-};
+  isTyping: false,
+  ParticipantInfo: { display_name: 'Bob', profile_picture: null },
+}
 
-const renderForm = (props = {}) =>
-  render(<SendMessageForm {...defaultProps} {...props} />);
-
-// Sets the textarea value synchronously — safe with or without fake timers.
-const typeIntoBox = (value: string) =>
-  fireEvent.change(screen.getByTestId("message-box-input"), {
-    target: { value },
-  });
-
-describe("SendMessageForm", () => {
+describe('SendMessageForm', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+    mockUseAuthStore.mockImplementation((selector: any) =>
+      selector({ user: { id: 'user-1', displayName: 'Alice', username: 'alice', avatar: null, role: 'listener' } })
+    )
+    mockSendMessage.mockResolvedValue({ data: makeMessage('new-msg', 'Hello') })
 
-  // ── Rendering ────────────────────────────────────────────────────────────────
+    // IntersectionObserver mock — must use `function`, not an arrow, so `new` works
+    mockObserver = { observe: vi.fn(), disconnect: vi.fn(), unobserve: vi.fn() }
+    intersectionCallback = () => {}
+    vi.stubGlobal(
+      'IntersectionObserver',
+      vi.fn(function (callback: IntersectionObserverCallback) {
+        intersectionCallback = callback
+        return mockObserver
+      })
+    )
+  })
 
-  it("renders the message label", () => {
-    renderForm();
-    expect(
-      screen.getByText(/write your message and add tracks or playlists/i)
-    ).toBeInTheDocument();
-  });
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
 
-  it("renders the MessageBox textarea", () => {
-    renderForm();
-    expect(screen.getByTestId("message-box-input")).toBeInTheDocument();
-  });
+  describe('rendering', () => {
+    it('renders the form container', () => {
+      render(<SendMessageForm {...defaultProps} />)
+      expect(screen.getByTestId('send-message-form')).toBeInTheDocument()
+    })
 
-  it("renders the Send button", () => {
-    renderForm();
-    expect(screen.getByRole("button", { name: /send/i })).toBeInTheDocument();
-  });
+    it('renders the message list area', () => {
+      render(<SendMessageForm {...defaultProps} />)
+      expect(screen.getByTestId('send-message-list')).toBeInTheDocument()
+    })
 
-  it("shows loading text when loadingMessages is true", () => {
-    renderForm({ loadingMessages: true });
-    expect(screen.getByText(/loading messages…/i)).toBeInTheDocument();
-  });
+    it('renders the MessageBox', () => {
+      render(<SendMessageForm {...defaultProps} />)
+      expect(screen.getByTestId('message-box')).toBeInTheDocument()
+    })
 
-  it("does not show loading text when loadingMessages is false", () => {
-    renderForm({ loadingMessages: false });
-    expect(screen.queryByText(/loading messages…/i)).not.toBeInTheDocument();
-  });
+    it('renders the Send button', () => {
+      render(<SendMessageForm {...defaultProps} />)
+      expect(screen.getByTestId('send-message-button')).toHaveTextContent('Send')
+    })
 
-  // ── Existing messages ─────────────────────────────────────────────────────────
+    it('renders existing messages', () => {
+      const messages = [makeMessage('m1', 'Hi'), makeMessage('m2', 'Hey')]
+      render(<SendMessageForm {...defaultProps} existingMessages={messages} />)
+      expect(screen.getByTestId('message-cell-m1')).toBeInTheDocument()
+      expect(screen.getByTestId('message-cell-m2')).toBeInTheDocument()
+    })
 
-  it("renders existing messages", () => {
-    renderForm({
-      existingMessages: [
-        makeMessage({ id: "msg-1", body: "First message", sender_id: "user-2" }),
-        makeMessage({ id: "msg-2", body: "Second message", sender_id: "me" }),
-      ],
-    });
-    expect(screen.getByText("First message")).toBeInTheDocument();
-    expect(screen.getByText("Second message")).toBeInTheDocument();
-  });
+    it('renders loading state when loadingMessages and messages are empty', () => {
+      render(<SendMessageForm {...defaultProps} loadingMessages={true} existingMessages={[]} />)
+      expect(screen.getByTestId('send-message-loading')).toBeInTheDocument()
+    })
 
-  it("shows 'Me' as display name for messages sent by current user", () => {
-    renderForm({
-      existingMessages: [makeMessage({ sender_id: "me" })],
-    });
-    expect(screen.getByText("Me")).toBeInTheDocument();
-  });
-
-  it("shows participant display name for messages from participant", () => {
-    renderForm({
-      existingMessages: [makeMessage({ sender_id: "user-alice" })],
-      ParticipantInfo: { display_name: "Alice", profile_picture: null },
-    });
-    expect(screen.getByText("Alice")).toBeInTheDocument();
-  });
-
-  it("renders no messages when existingMessages is empty", () => {
-    renderForm({ existingMessages: [] });
-    expect(screen.queryByText(/just now/i)).not.toBeInTheDocument();
-  });
-
-  // ── Validation ────────────────────────────────────────────────────────────────
-
-  it("shows 'Enter a message' error when Send is clicked with empty input", async () => {
-    renderForm();
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    expect(screen.getByText(/enter a message/i)).toBeInTheDocument();
-  });
-
-  it("does not call sendMessage when input is empty", async () => {
-    renderForm();
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    expect(sendMessage).not.toHaveBeenCalled();
-  });
-
-  it("clears error when user types a non-empty value", async () => {
-    renderForm();
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    expect(screen.getByText(/enter a message/i)).toBeInTheDocument();
-    // fireEvent fires onIsEmptyChange(false) → component calls setError(null)
-    typeIntoBox("Hello");
-    await waitFor(() =>
-      expect(screen.queryByText(/enter a message/i)).not.toBeInTheDocument()
-    );
-  });
-
-  // ── Success flow ──────────────────────────────────────────────────────────────
-
-  it("calls sendMessage with correct payload", async () => {
-    (sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: makeMessage({ body: "Hello Alice" }),
-    });
-    renderForm();
-    typeIntoBox("Hello Alice");
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    await waitFor(() =>
-      expect(sendMessage).toHaveBeenCalledWith(
-        "conv-1",
-        expect.objectContaining({ body: "Hello Alice" })
+    it('renders "Loading older messages…" when loadingMessages and hasMoreMessages', () => {
+      render(
+        <SendMessageForm
+          {...defaultProps}
+          loadingMessages={true}
+          hasMoreMessages={true}
+          existingMessages={[makeMessage('m1', 'Hi')]}
+        />
       )
-    );
-  });
+      expect(screen.getByTestId('send-message-loading-more')).toBeInTheDocument()
+    })
 
-  it("calls onMessageSent with the returned message", async () => {
-    const msg = makeMessage({ body: "Hello Alice" });
-    (sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue({ data: msg });
-    const onMessageSent = vi.fn();
-    renderForm({ onMessageSent });
-    typeIntoBox("Hello Alice");
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    await waitFor(() =>
-      expect(onMessageSent).toHaveBeenCalledWith(
-        expect.objectContaining({ body: "Hello Alice" })
+    it('renders typing indicator when isTyping is true', () => {
+      render(<SendMessageForm {...defaultProps} isTyping={true} />)
+      expect(screen.getByTestId('typing-indicator')).toBeInTheDocument()
+    })
+
+    it('does not render typing indicator when isTyping is false', () => {
+      render(<SendMessageForm {...defaultProps} isTyping={false} />)
+      expect(screen.queryByTestId('typing-indicator')).not.toBeInTheDocument()
+    })
+
+    it('does not show track/playlist picker button for non-artist user', () => {
+      render(<SendMessageForm {...defaultProps} />)
+      expect(screen.queryByTestId('add-track-playlist-button')).not.toBeInTheDocument()
+    })
+
+    it('shows track/playlist picker button for artist user', () => {
+      mockUseAuthStore.mockImplementation((selector: any) =>
+        selector({ user: { id: 'user-1', displayName: 'Alice', username: 'alice', avatar: null, role: 'artist' } })
       )
-    );
-  });
+      render(<SendMessageForm {...defaultProps} />)
+      expect(screen.getByTestId('add-track-playlist-button')).toBeInTheDocument()
+    })
+  })
 
-  it("clears the message box after successful send (boxKey increments)", async () => {
-    (sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: makeMessage(),
-    });
-    renderForm();
-    typeIntoBox("Hello");
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    await waitFor(() => expect(sendMessage).toHaveBeenCalled());
-    // boxKey change unmounts and remounts MessageBox — new textarea starts empty
-    expect(screen.getByTestId("message-box-input")).toHaveValue("");
-  });
+  describe('sending messages', () => {
+    it('shows error when Send is clicked with empty message and no embeds', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      expect(screen.getByTestId('send-message-error')).toHaveTextContent(
+        'Enter a message or paste a track/playlist link'
+      )
+    })
 
-  // ── Error handling ────────────────────────────────────────────────────────────
+    it('calls sendMessage when a message is typed and Send is clicked', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello Bob' } })
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() => expect(mockSendMessage).toHaveBeenCalledWith('conv-1', { body: 'Hello Bob' }))
+    })
 
-  it("shows 403 error when user is blocked", async () => {
-    (sendMessage as ReturnType<typeof vi.fn>).mockRejectedValue({
-      response: { status: 403 },
-    });
-    renderForm();
-    typeIntoBox("Hello");
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    await waitFor(() =>
-      expect(
-        screen.getByText(/unable to send message to this user/i)
-      ).toBeInTheDocument()
-    );
-  });
+    it('calls onMessageSent after successful send', async () => {
+      const onMessageSent = vi.fn()
+      render(<SendMessageForm {...defaultProps} onMessageSent={onMessageSent} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() => expect(onMessageSent).toHaveBeenCalled())
+    })
 
-  it("shows generic error for non-403 failures", async () => {
-    (sendMessage as ReturnType<typeof vi.fn>).mockRejectedValue({
-      response: { status: 500 },
-    });
-    renderForm();
-    typeIntoBox("Hello");
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    await waitFor(() =>
-      expect(screen.getByText(/failed to send message/i)).toBeInTheDocument()
-    );
-  });
+    it('calls emitMessageSent after successful send', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() => expect(mockEmitMessageSent).toHaveBeenCalledWith('conv-1', expect.anything()))
+    })
 
-  it("does not show error initially", () => {
-    renderForm();
-    expect(screen.queryByText(/unable to send/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/failed to send/i)).not.toBeInTheDocument();
-  });
+    it('calls emitStopTyping after sending', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() => expect(mockEmitStopTyping).toHaveBeenCalledWith('conv-1'))
+    })
 
-  // ── Sending state ─────────────────────────────────────────────────────────────
+    it('shows "Sending…" while sending', async () => {
+      mockSendMessage.mockReturnValue(new Promise(() => {}))
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      expect(screen.getByTestId('send-message-button')).toHaveTextContent('Sending…')
+    })
 
-  it("shows 'Sending…' text while request is in progress", async () => {
-    let resolve!: (v: unknown) => void;
-    (sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-      () => new Promise((res) => { resolve = res; })
-    );
-    renderForm();
-    typeIntoBox("Hello");
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    expect(screen.getByText(/sending…/i)).toBeInTheDocument();
-    resolve({ data: makeMessage() });
-  });
+    it('disables send button while sending', async () => {
+      mockSendMessage.mockReturnValue(new Promise(() => {}))
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      expect(screen.getByTestId('send-message-button')).toBeDisabled()
+    })
 
-  it("disables Send button while sending", async () => {
-    let resolve!: (v: unknown) => void;
-    (sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
-      () => new Promise((res) => { resolve = res; })
-    );
-    renderForm();
-    typeIntoBox("Hello");
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    expect(screen.getByRole("button", { name: /sending/i })).toBeDisabled();
-    resolve({ data: makeMessage() });
-  });
-});
+    it('shows generic error when sendMessage throws', async () => {
+      mockSendMessage.mockRejectedValue(new Error('fail'))
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() =>
+        expect(screen.getByTestId('send-message-error')).toHaveTextContent('Failed to send message')
+      )
+    })
+
+    it('shows 403 error message when sendMessage returns 403', async () => {
+      mockSendMessage.mockRejectedValue({ response: { status: 403 } })
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() =>
+        expect(screen.getByTestId('send-message-error')).toHaveTextContent('Unable to send message to this user.')
+      )
+    })
+
+    it('sends via Enter key in the composer', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      const composer = screen.getByTestId('message-input').closest('.shrink-0')!
+      fireEvent.keyDown(composer, { key: 'Enter', shiftKey: false })
+      await waitFor(() => expect(mockSendMessage).toHaveBeenCalled())
+    })
+
+    it('does not send via Shift+Enter in the composer', () => {
+      render(<SendMessageForm {...defaultProps} />)
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'Hello' } })
+      const composer = screen.getByTestId('message-input').closest('.shrink-0')!
+      fireEvent.keyDown(composer, { key: 'Enter', shiftKey: true })
+      expect(mockSendMessage).not.toHaveBeenCalled()
+    })
+
+    it('clears empty-message error when MessageBox reports empty content', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      expect(screen.getByTestId('send-message-error')).toBeInTheDocument()
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: 'x' } })
+      fireEvent.change(screen.getByTestId('message-input'), { target: { value: '' } })
+      expect(screen.queryByTestId('send-message-error')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('loading older messages', () => {
+    it('calls onLoadMore when the top sentinel intersects and more messages exist', () => {
+      const onLoadMore = vi.fn()
+      render(<SendMessageForm {...defaultProps} hasMoreMessages={true} onLoadMore={onLoadMore} />)
+      intersectionCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
+      expect(onLoadMore).toHaveBeenCalled()
+    })
+
+    it('does not load more when sentinel is not intersecting', () => {
+      const onLoadMore = vi.fn()
+      render(<SendMessageForm {...defaultProps} hasMoreMessages={true} onLoadMore={onLoadMore} />)
+      intersectionCallback([{ isIntersecting: false } as IntersectionObserverEntry], {} as IntersectionObserver)
+      expect(onLoadMore).not.toHaveBeenCalled()
+    })
+
+    it('does not load more while messages are already loading', () => {
+      const onLoadMore = vi.fn()
+      render(
+        <SendMessageForm
+          {...defaultProps}
+          hasMoreMessages={true}
+          loadingMessages={true}
+          existingMessages={[makeMessage('m1', 'Hi')]}
+          onLoadMore={onLoadMore}
+        />
+      )
+      intersectionCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
+      expect(onLoadMore).not.toHaveBeenCalled()
+    })
+
+    it('does not load more when there are no older messages', () => {
+      const onLoadMore = vi.fn()
+      render(<SendMessageForm {...defaultProps} hasMoreMessages={false} onLoadMore={onLoadMore} />)
+      intersectionCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
+      expect(onLoadMore).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('scroll management', () => {
+    it('scrolls to the bottom when messages load for the first time', () => {
+      const { rerender } = render(<SendMessageForm {...defaultProps} existingMessages={[]} />)
+      const list = screen.getByTestId('send-message-list')
+      setScrollHeight(list, 420)
+
+      rerender(<SendMessageForm {...defaultProps} existingMessages={[makeMessage('m1', 'Hello')]} />)
+
+      expect(list.scrollTop).toBe(420)
+    })
+
+    it('scrolls to the bottom when a newer message is appended', () => {
+      const { rerender } = render(
+        <SendMessageForm {...defaultProps} existingMessages={[makeMessage('m1', 'Hello')]} />
+      )
+      const list = screen.getByTestId('send-message-list')
+      setScrollHeight(list, 640)
+
+      rerender(
+        <SendMessageForm
+          {...defaultProps}
+          existingMessages={[makeMessage('m1', 'Hello'), makeMessage('m2', 'New message')]}
+        />
+      )
+
+      expect(list.scrollTop).toBe(640)
+    })
+
+    it('preserves scroll position when older messages are prepended', () => {
+      const onLoadMore = vi.fn()
+      const { rerender } = render(
+        <SendMessageForm
+          {...defaultProps}
+          hasMoreMessages={true}
+          existingMessages={[makeMessage('m2', 'Newest')]}
+          onLoadMore={onLoadMore}
+        />
+      )
+      const list = screen.getByTestId('send-message-list')
+      setScrollHeight(list, 300)
+
+      intersectionCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
+      setScrollHeight(list, 500)
+
+      rerender(
+        <SendMessageForm
+          {...defaultProps}
+          hasMoreMessages={true}
+          existingMessages={[makeMessage('m1', 'Older'), makeMessage('m2', 'Newest')]}
+          onLoadMore={onLoadMore}
+        />
+      )
+
+      expect(list.scrollTop).toBe(200)
+    })
+  })
+
+  describe('message display', () => {
+    it('uses Alice display name for messages sent by the current user', () => {
+      const messages = [makeMessage('m1', 'Hi from Alice', 'user-1')]
+      render(<SendMessageForm {...defaultProps} existingMessages={messages} />)
+      expect(screen.getByTestId('message-cell-m1')).toHaveAttribute('data-display', 'Alice')
+    })
+
+    it('uses participant display name for messages from others', () => {
+      const messages = [makeMessage('m1', 'Hi from Bob', 'user-2')]
+      render(<SendMessageForm {...defaultProps} existingMessages={messages} />)
+      expect(screen.getByTestId('message-cell-m1')).toHaveAttribute('data-display', 'Bob')
+    })
+  })
+
+  describe('track picker (artist only)', () => {
+    beforeEach(() => {
+      mockUseAuthStore.mockImplementation((selector: any) =>
+        selector({ user: { id: 'user-1', displayName: 'Alice', username: 'alice', avatar: null, role: 'artist' } })
+      )
+    })
+
+    it('opens picker when Add track or playlist is clicked', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('add-track-playlist-button'))
+      expect(screen.getByTestId('track-playlist-picker')).toBeInTheDocument()
+    })
+
+    it('closes picker when close is clicked inside picker', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('add-track-playlist-button'))
+      await userEvent.click(screen.getByTestId('picker-close'))
+      expect(screen.queryByTestId('track-playlist-picker')).not.toBeInTheDocument()
+    })
+
+    it('toggles picker off when button is clicked again', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('add-track-playlist-button'))
+      await userEvent.click(screen.getByTestId('add-track-playlist-button'))
+      expect(screen.queryByTestId('track-playlist-picker')).not.toBeInTheDocument()
+    })
+
+    it('sends a picked track as an embed resource', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('add-track-playlist-button'))
+      await userEvent.click(screen.getByTestId('picker-pick-track'))
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() =>
+        expect(mockSendMessage).toHaveBeenCalledWith('conv-1', {
+          resource: { type: 'track', id: 't1' },
+        })
+      )
+    })
+
+    it('sends a picked playlist as an embed resource', async () => {
+      render(<SendMessageForm {...defaultProps} />)
+      await userEvent.click(screen.getByTestId('add-track-playlist-button'))
+      await userEvent.click(screen.getByTestId('picker-pick-playlist'))
+      await userEvent.click(screen.getByTestId('send-message-button'))
+      await waitFor(() =>
+        expect(mockSendMessage).toHaveBeenCalledWith('conv-1', {
+          resource: { type: 'playlist', id: 'p1' },
+        })
+      )
+    })
+  })
+})

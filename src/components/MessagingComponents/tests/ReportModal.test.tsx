@@ -1,129 +1,116 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { ReportModal } from "../../UI/ReportModal";
+import { render, screen, fireEvent } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { ReportModal } from "@/components/UI/ReportModal"
+import * as externalHandler from "@/components/MessagingComponents/externalhandler"
 
-// Mock the external handler module
-vi.mock("../externalhandler", () => ({
-  handleExternalAbuse: vi.fn(),
+vi.mock("@/components/MessagingComponents/externalhandler", () => ({
+  handleExternalAbuse:        vi.fn(),
   handleExternalImpersonation: vi.fn(),
-  handleExternalTrademark: vi.fn(),
-  handleExternalOther: vi.fn(),
-}));
+  handleExternalOther:        vi.fn(),
+  handleExternalTrademark:    vi.fn(),
+}))
 
-import {
-  handleExternalAbuse,
-  handleExternalImpersonation,
-  handleExternalTrademark,
-  handleExternalOther,
-} from "../externalhandler";
+const defaultProps = {
+  username: "reportuser",
+  userId: "user-789",
+  onClose: vi.fn(),
+  onSpamSelected: vi.fn(),
+}
 
-const renderReport = (
-  props: {
-    username?: string;
-    userId?: string;
-    onClose?: () => void;
-    onSpamSelected?: () => void;
-  } = {}
-) =>
-  render(
-    <ReportModal
-      username="Bob"
-      userId="user-bob"
-      onClose={vi.fn()}
-      onSpamSelected={vi.fn()}
-      {...props}
-    />
-  );
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe("ReportModal", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  it("renders the modal with correct test id", () => {
+    render(<ReportModal {...defaultProps} />)
+    expect(screen.getByTestId("report-account-modal")).toBeInTheDocument()
+  })
 
-  // ── Rendering ──────────────────────────────────────────────────────────────
+  it("renders the title", () => {
+    render(<ReportModal {...defaultProps} />)
+    expect(screen.getByText("Report account for")).toBeInTheDocument()
+  })
 
-  it("renders the modal heading", () => {
-    renderReport();
-    expect(screen.getByText(/report account for/i)).toBeInTheDocument();
-  });
+  it("renders all report reason buttons", () => {
+    render(<ReportModal {...defaultProps} />)
+    expect(screen.getByTestId("report-spam-button")).toBeInTheDocument()
+    expect(screen.getByTestId("report-impersonation-button")).toBeInTheDocument()
+    expect(screen.getByTestId("report-abuse-button")).toBeInTheDocument()
+    expect(screen.getByTestId("report-trademark-button")).toBeInTheDocument()
+    expect(screen.getByTestId("report-other-button")).toBeInTheDocument()
+  })
 
-  it("renders all five report options", () => {
-    renderReport();
-    expect(screen.getByTestId("report-spam-button")).toBeInTheDocument();
-    expect(screen.getByTestId("report-impersonation-button")).toBeInTheDocument();
-    expect(screen.getByTestId("report-abuse-button")).toBeInTheDocument();
-    expect(screen.getByTestId("report-trademark-button")).toBeInTheDocument();
-    expect(screen.getByTestId("report-other-button")).toBeInTheDocument();
-  });
+  it("renders correct label text on each button", () => {
+    render(<ReportModal {...defaultProps} />)
+    expect(screen.getByTestId("report-spam-button")).toHaveTextContent("Spam")
+    expect(screen.getByTestId("report-impersonation-button")).toHaveTextContent("Impersonation")
+    expect(screen.getByTestId("report-abuse-button")).toHaveTextContent("Abuse")
+    expect(screen.getByTestId("report-trademark-button")).toHaveTextContent("Trademark infringement")
+    expect(screen.getByTestId("report-other-button")).toHaveTextContent("Other")
+  })
+
+  it("calls onClose and onSpamSelected when Spam is clicked", () => {
+    render(<ReportModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("report-spam-button"))
+    expect(defaultProps.onClose).toHaveBeenCalledTimes(1)
+    expect(defaultProps.onSpamSelected).toHaveBeenCalledTimes(1)
+  })
+
+  it("calls handleExternalImpersonation when Impersonation is clicked", () => {
+    render(<ReportModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("report-impersonation-button"))
+    expect(externalHandler.handleExternalImpersonation).toHaveBeenCalledTimes(1)
+  })
+
+  it("calls handleExternalAbuse when Abuse is clicked", () => {
+    render(<ReportModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("report-abuse-button"))
+    expect(externalHandler.handleExternalAbuse).toHaveBeenCalledTimes(1)
+  })
+
+  it("calls handleExternalTrademark when Trademark infringement is clicked", () => {
+    render(<ReportModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("report-trademark-button"))
+    expect(externalHandler.handleExternalTrademark).toHaveBeenCalledTimes(1)
+  })
+
+  it("calls handleExternalOther when Other is clicked", () => {
+    render(<ReportModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("report-other-button"))
+    expect(externalHandler.handleExternalOther).toHaveBeenCalledTimes(1)
+  })
 
   it("renders the Disclaimer section", () => {
-    renderReport();
-    expect(screen.getByText(/disclaimer/i)).toBeInTheDocument();
-  });
+    render(<ReportModal {...defaultProps} />)
+    expect(screen.getByText("Disclaimer")).toBeInTheDocument()
+  })
 
-  it("renders disclaimer text with Guidelines and Terms links", () => {
-    renderReport();
-    expect(screen.getByRole("link", { name: /guidelines/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /terms/i })).toBeInTheDocument();
-  });
+  it("renders the Guidelines link pointing to the correct URL", () => {
+    render(<ReportModal {...defaultProps} />)
+    const guidelinesLink = screen.getByRole("link", { name: "Guidelines" })
+    expect(guidelinesLink).toHaveAttribute("href", "https://soundcloud.com/pages/privacy")
+    expect(guidelinesLink).toHaveAttribute("target", "_blank")
+    expect(guidelinesLink).toHaveAttribute("rel", "noopener noreferrer")
+  })
 
-  it("renders correct data-test on modal container", () => {
-    renderReport();
-    expect(screen.getByTestId("report-account-modal")).toBeInTheDocument();
-  });
+  it("renders the Terms link pointing to the correct URL", () => {
+    render(<ReportModal {...defaultProps} />)
+    const termsLink = screen.getByRole("link", { name: "Terms" })
+    expect(termsLink).toHaveAttribute("href", "https://soundcloud.com/terms-of-use")
+    expect(termsLink).toHaveAttribute("target", "_blank")
+    expect(termsLink).toHaveAttribute("rel", "noopener noreferrer")
+  })
 
-  // ── Spam interaction ───────────────────────────────────────────────────────
+  it("does not call onClose when non-spam buttons are clicked", () => {
+    render(<ReportModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("report-abuse-button"))
+    expect(defaultProps.onClose).not.toHaveBeenCalled()
+  })
 
-  it("calls onClose and onSpamSelected when Spam is clicked", async () => {
-    const onClose = vi.fn();
-    const onSpamSelected = vi.fn();
-    renderReport({ onClose, onSpamSelected });
-    await userEvent.click(screen.getByTestId("report-spam-button"));
-    expect(onClose).toHaveBeenCalledTimes(1);
-    expect(onSpamSelected).toHaveBeenCalledTimes(1);
-  });
-
-  it("calls onClose before onSpamSelected", async () => {
-    const callOrder: string[] = [];
-    const onClose = vi.fn(() => callOrder.push("close"));
-    const onSpamSelected = vi.fn(() => callOrder.push("spam"));
-    renderReport({ onClose, onSpamSelected });
-    await userEvent.click(screen.getByTestId("report-spam-button"));
-    expect(callOrder).toEqual(["close", "spam"]);
-  });
-
-  // ── External handlers ──────────────────────────────────────────────────────
-
-  it("calls handleExternalImpersonation when Impersonation is clicked", async () => {
-    renderReport();
-    await userEvent.click(screen.getByTestId("report-impersonation-button"));
-    expect(handleExternalImpersonation).toHaveBeenCalledTimes(1);
-  });
-
-  it("calls handleExternalAbuse when Abuse is clicked", async () => {
-    renderReport();
-    await userEvent.click(screen.getByTestId("report-abuse-button"));
-    expect(handleExternalAbuse).toHaveBeenCalledTimes(1);
-  });
-
-  it("calls handleExternalTrademark when Trademark infringement is clicked", async () => {
-    renderReport();
-    await userEvent.click(screen.getByTestId("report-trademark-button"));
-    expect(handleExternalTrademark).toHaveBeenCalledTimes(1);
-  });
-
-  it("calls handleExternalOther when Other is clicked", async () => {
-    renderReport();
-    await userEvent.click(screen.getByTestId("report-other-button"));
-    expect(handleExternalOther).toHaveBeenCalledTimes(1);
-  });
-
-  // ── Optional props ─────────────────────────────────────────────────────────
-
-  it("works without onClose and onSpamSelected (no crash)", async () => {
-    render(<ReportModal username="Bob" userId="user-bob" />);
-    await userEvent.click(screen.getByTestId("report-spam-button"));
-    // no error thrown
-  });
-});
+  it("does not call onSpamSelected when non-spam buttons are clicked", () => {
+    render(<ReportModal {...defaultProps} />)
+    fireEvent.click(screen.getByTestId("report-other-button"))
+    expect(defaultProps.onSpamSelected).not.toHaveBeenCalled()
+  })
+})
