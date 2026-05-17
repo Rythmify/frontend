@@ -182,7 +182,7 @@ const LandingPage = () => {
         {/* ── Embedded Navbar ──────────────────────────────────────── */}
         <div className="relative z-10 flex items-center justify-between px-8 pt-6">
           <Link to="/" className="flex items-center gap-2">
-            {/* TODO: Replace with Rhythmify logo SVG */}
+           
             <i className="fa-brands fa-soundcloud text-text-hover text-3xl" />
             <span className="text-lg font-medium tracking-wider text-white/90">
               RHYTHMIFY
@@ -203,7 +203,7 @@ const LandingPage = () => {
               Create account
             </Link>
             <Link
-              to="/creator/artists"
+              to="/signin"
               className="px-2 py-2 text-md font-medium text-white/80 hover:text-white transition-colors"
             >
               For Artists
@@ -224,7 +224,7 @@ const LandingPage = () => {
               cta.variant === "primary" ? (
                 <Link
                   key={i}
-                  to={cta.to}
+                  to="/signin"
                   className="rounded bg-white px-6 py-2.5 text-md font-bold text-[#111] transition-colors hover:bg-gray-200"
                 >
                   {cta.label}
@@ -232,7 +232,7 @@ const LandingPage = () => {
               ) : (
                 <Link
                   key={i}
-                  to={cta.to}
+                  to="/signin"
                   className="rounded border border-white/40 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:border-white"
                 >
                   {cta.label}
@@ -374,7 +374,7 @@ const LandingPage = () => {
             your audience. What are you waiting for?
           </p>
           <Link
-            to="/creator/artists"
+            to="/discover"
             className="inline-block rounded border bg-white border-white/40 px-3 py-2 text-lg font-bold text-black hover:text-white hover:bg-white/5 transition-colors"
           >
             Find out more
