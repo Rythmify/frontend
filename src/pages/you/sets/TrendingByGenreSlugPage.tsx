@@ -263,7 +263,7 @@ function TrendingByGenreSlugPage() {
   return (
     <div
       data-test="trending-by-genre-slug-page"
-      className="flex-1 bg-bg min-h-screen px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 mx-auto w-full overflow-x-hidden"
+      className="flex-1 bg-bg min-h-screen container px-4  md:px-8 lg:px-12 xl:px-20 mx-auto w-full overflow-x-hidden"
     >
       <PlaylistHero
         key={playlist.playlist_id}
