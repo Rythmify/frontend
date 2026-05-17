@@ -1,7 +1,7 @@
 // Import audioService so its module-level code runs once and sets up everything (NOT FINISHED)
 import "../../services/audioService";
 import { seekAudio } from "../../services/audioService";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { usePlayerStore } from "../../stores/player.store";
 import { useLikesStore } from "../../stores/likes.store";
@@ -14,6 +14,7 @@ import { FaHeart, FaUserCheck, FaUserPlus } from "react-icons/fa";
 import { MdQueueMusic } from "react-icons/md";
 import FollowButton from "../UI/FollowButton";
 import CoverImage from "@/components/UI/CoverImage";
+import { getUsernameFromId } from "@/services/user.service";
 
 export default function StickyPlayer() {
   const {
@@ -30,6 +31,38 @@ export default function StickyPlayer() {
   const { user } = useAuthStore();
 
   const [queueOpen, setQueueOpen] = useState(false);
+  const [artistUsername, setArtistUsername] = useState<string>("");
+
+  useEffect(() => {
+    if (!currentTrack) return;
+    let cancelled = false;
+    const fallbackUsername = (currentTrack.artistUsername ?? "unknown").trim() || "unknown";
+
+    setArtistUsername(fallbackUsername);
+
+    if (!currentTrack.artistId?.trim()) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    (async () => {
+      try {
+        const username = await getUsernameFromId(currentTrack.artistId?.trim() ?? "1");
+        if (!cancelled) {
+          setArtistUsername(username || fallbackUsername);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtistUsername(fallbackUsername);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentTrack?.artistId, currentTrack?.artistUsername]);
 
   const isLiked = currentTrack ? isTrackLiked(currentTrack.id) : false;
   const isFollowing = currentTrack
@@ -69,7 +102,7 @@ export default function StickyPlayer() {
         {/* 7. Artwork + Track Info — far right */}
         <div className="flex items-center gap-2 shrink-0 w-40">
           <Link
-            to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}/${currentTrack.trackSlug || currentTrack.id}`}
+            to={`/${artistUsername || "share"}/${currentTrack.trackSlug || currentTrack.id}`}
           >
             <div className="w-10 h-10 rounded overflow-hidden shrink-0">
               <CoverImage
@@ -82,14 +115,14 @@ export default function StickyPlayer() {
           </Link>
           <div className="flex flex-col min-w-0">
             <Link
-              to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}/${currentTrack.trackSlug || currentTrack.id}`}
+              to={`/${artistUsername || "share"}/${currentTrack.trackSlug || currentTrack.id}`}
               data-test="player-track-title"
               className="text-white text-md font-semibold truncate leading-tight hover:text-accent transition-colors"
             >
               {currentTrack.title}
             </Link>
             <Link
-              to={`/${currentTrack.artistUsername || currentTrack.artistName || "share"}`}
+              to={`/${artistUsername}`}
               data-test="player-artist-name"
               className="text-text-muted text-[14px] truncate hover:text-white transition-colors leading-tight"
             >

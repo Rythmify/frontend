@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { FaPlay, FaPause, FaLock } from "react-icons/fa";
 import TrackWaveform, { type TrackWaveformHandle } from "./TrackWaveform";
 import type { Track } from "../../../../types/track";
-
+import { getUsernameFromId } from "../../../../services/user.service";
 import type { Comment } from "../../../../types/comment";
 
 interface TrackHeroProps {
@@ -28,6 +28,38 @@ export default function TrackHero({
   const [activeComment, setActiveComment] = useState<Comment | null>(null);
   const [showFloating, setShowFloating] = useState(false);
   const lastSecondRef = useRef<number>(-1);
+  const [artistUsername, setArtistUsername] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!track) return;
+    const fallbackUsername = (track.artistUsername ?? "unknown").trim() || "unknown";
+
+    setArtistUsername(fallbackUsername);
+
+    if (!track.artistId?.trim()) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    (async () => {
+      try {
+        const username = await getUsernameFromId(track.artistId?.trim() ?? "1");
+        if (!cancelled) {
+          setArtistUsername(username || fallbackUsername);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtistUsername(fallbackUsername);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [track?.artistId, track?.artistUsername]);
 
   const handlePlayPause = (startTime?: number) => {
     waveformRef.current?.playPause();
@@ -110,7 +142,7 @@ export default function TrackHero({
             <div className="bg-black px-2 md:px-3 inline-block">
               <Link
                 data-test="track-artist-link"
-                to={`/${track.artistUsername}`}
+                to={`/${artistUsername}`}
                 className="text-[#837979] text-[11px] md:text-sm font-bold no-underline inline-block my-0 transition-colors duration-150 hover:text-white pb-1 md:pb-2"
               >
                 {track.artistName}
