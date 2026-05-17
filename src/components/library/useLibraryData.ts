@@ -53,7 +53,7 @@ export function useLibraryData() {
           items.map(async (f) => {
             try {
               const profile = await getUserById(f.id);
-              return mapFollowingToUser({ ...f, ...profile });
+              return mapFollowingToUser({ ...f, ...profile, username: profile.username || f.username });
             } catch {
               return mapFollowingToUser(f);
             }
