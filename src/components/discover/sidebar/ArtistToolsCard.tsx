@@ -170,9 +170,9 @@ const styles = {
   `,
   ctaButton: `
     w-full
-    bg-purple-700 hover:bg-purple-600
+    bg-[#322C5B] 
     text-white text-xs my-2
-    rounded-md py-2 px-3
+    rounded-sm py-4 px-4
     flex items-center gap-2
     transition-colors duration-200
   `,
@@ -303,7 +303,7 @@ const ArtistToolsCard = () => {
           data-test="button-artist-tools-cta"
           onClick={() => navigate("/premium")}
         >
-          <i className="fa-solid fa-circle-plus text-sm"></i>
+          <i className=" text-[#6E5EE6] fa-solid fa-circle-plus text-sm"></i>
           <span>
             Unlock Artist tools
             {monthlyPrice !== null
