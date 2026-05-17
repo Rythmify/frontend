@@ -46,18 +46,30 @@ export function useLibraryData() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     getMyFollowing()
       .then((items) =>
         Promise.all(
-          items.map((f) =>
-            getUserById(f.id)
-              .then((profile) => mapFollowingToUser({ ...f, followers_count: profile.followers_count }))
-              .catch(() => mapFollowingToUser(f)),
-          ),
-        ),
+          items.map(async (f) => {
+            try {
+              const profile = await getUserById(f.id);
+              return mapFollowingToUser({ ...f, ...profile });
+            } catch {
+              return mapFollowingToUser(f);
+            }
+          })
+        )
       )
-      .then(setFollowingUsers)
-      .catch(() => setFollowingUsers([]));
+      .then((users) => {
+        if (!cancelled) setFollowingUsers(users);
+      })
+      .catch(() => {
+        if (!cancelled) setFollowingUsers([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -65,7 +77,7 @@ export function useLibraryData() {
     getMyPlaylistsLib()
       .then((items) =>
         setPlaylists(
-          items.map((p) => mapPlaylistToCard(p as unknown as Playlist, displayName || p.owner_user_id)),
+          items.map((p) => mapPlaylistToCard(p as unknown as Playlist, p.owner_user_id === user?.id ? displayName : p.owner_user_id)),
         ),
       )
       .catch(() => setPlaylists([]));
@@ -115,15 +127,57 @@ export function useLibraryData() {
     .map((e) => e.item as Track);
 
   const visiblePlaylists: PlaylistCardData[] = (() => {
-    const nonAlbumLiked = likedPlaylists.filter((p) => !p.isAlbumView);
-    if (playlistFilter === "Created") return playlists;
-    if (playlistFilter === "Liked") return nonAlbumLiked;
+    const mixIds = new Set(likedMixes.map((m) => m.mix_id ?? m.id));
+    const isExcluded = (id: string) => mixIds.has(id);
+
+    const radioMap = new Map(likedRadioTracks.map((r) => [r.playlistId, r]));
+
+    const enhancePlaylistCard = (p: PlaylistCardData): PlaylistCardData => {
+      const r = radioMap.get(p.id);
+      if (r) {
+        return {
+          ...p,
+          title: p.title.replace(/\s+Radio$/i, ""),
+          hideOwner: true,
+        };
+      }
+      return p;
+    };
+
+    const nonAlbumLiked = likedPlaylists.filter((p) => !p.isAlbumView && !isExcluded(p.id)).map(enhancePlaylistCard);
+    const nonAlbumCreated = playlists.filter((p) => !p.isAlbumView && !isExcluded(p.id)).map(enhancePlaylistCard);
+
     const seen = new Set<string>();
-    return [...playlists, ...nonAlbumLiked].filter((p) => {
+    const basePlaylists = [...nonAlbumCreated, ...nonAlbumLiked].filter((p) => {
+      if (!p.title || p.title.trim() === "") return false;
       if (seen.has(p.id)) return false;
       seen.add(p.id);
       return true;
     });
+
+    const radioPlaylists: PlaylistCardData[] = likedRadioTracks
+      .map((r) => ({
+        id: r.playlistId,
+        title: r.title.replace(/\s+Radio$/i, ""),
+        owner: user?.id ?? "",
+        coverUrl: r.coverImage,
+        isPrivate: false,
+        isLiked: true,
+        hideOwner: true,
+      }))
+      .filter((p) => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
+
+    if (playlistFilter === "Created") return nonAlbumCreated;
+    if (playlistFilter === "Liked") {
+      const likedWithTitles = nonAlbumLiked.filter((p) => p.title && p.title.trim() !== "");
+      return [...likedWithTitles, ...radioPlaylists];
+    }
+    
+    return [...basePlaylists, ...radioPlaylists];
   })();
 
   const displayedAlbums = (() => {
@@ -136,23 +190,10 @@ export function useLibraryData() {
         seen.add(p.playlist_id);
         return true;
       })
-      .map((p) => mapAlbumToCard(p, displayName || p.owner_user_id));
+      .map((p) => mapAlbumToCard(p, p.owner_user_id === user?.id ? displayName : p.owner_user_id));
   })();
 
-  const displayedFollowing = (() => {
-    const followingIdSet = new Set(user?.following_ids ?? []);
-    const filtered = followingUsers.filter((u) => followingIdSet.has(u.username));
-    const seenUsernames = new Set(filtered.map((u) => u.username));
-    const synthetic: User[] = (user?.following_ids ?? [])
-      .filter((username) => !seenUsernames.has(username))
-      .map((username, i) => ({
-        id: String(-(i + 1)),
-        username,
-        displayName: username,
-        followers: 0,
-      }));
-    return [...filtered, ...synthetic];
-  })();
+  const displayedFollowing = followingUsers;
 
   return {
     recentEntries,

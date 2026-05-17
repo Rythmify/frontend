@@ -49,7 +49,13 @@ function getPersonalMixCoverUrl(mix: PersonalMix) {
   return mix.cover_image ?? mix.preview_track.cover_image ?? null;
 }
 
-function getMadeForYouCoverUrl(mix: HomeData["made_for_you"] extends infer T ? NonNullable<T> extends { daily_mix: infer D } ? D : never : never) {
+function getMadeForYouCoverUrl(
+  mix: HomeData["made_for_you"] extends infer T
+    ? NonNullable<T> extends { daily_mix: infer D }
+      ? D
+      : never
+    : never,
+) {
   return mix.cover_url ?? mix.preview_track.cover_image ?? "";
 }
 
@@ -90,7 +96,8 @@ export default function SetsPage() {
       ]);
       setHomeData(home);
       seedFromHomeData(home);
-      const isSetPlaylist = (p: Playlist) => !p.is_album_view && p.subtype !== "album";
+      const isSetPlaylist = (p: Playlist) =>
+        !p.is_album_view && p.subtype !== "album";
       setCreatedPlaylists(created.data.items.filter(isSetPlaylist));
       setLikedPlaylists(liked.data.items.filter(isSetPlaylist));
     } catch (err) {
@@ -116,38 +123,18 @@ export default function SetsPage() {
   }, [fetchAll]);
 
   // Filter and Search Logic
-  const visiblePlaylists = useMemo(() => {
-    const match = (name: string) =>
-      name.toLowerCase().includes(filterText.toLowerCase());
-
-    let list: Playlist[] = [];
-    if (activeFilter === "Created") {
-      list = createdPlaylists;
-    } else if (activeFilter === "Liked") {
-      list = likedPlaylists;
-    } else {
-      // "All" - Merge and remove duplicates by ID
-      const merged = [...createdPlaylists, ...likedPlaylists];
-      const seen = new Set<string>();
-      list = merged.filter((p) => {
-        if (seen.has(p.playlist_id)) return false;
-        seen.add(p.playlist_id);
-        return true;
-      });
-    }
-    return list.filter((p) => match(p.name));
-  }, [activeFilter, filterText, createdPlaylists, likedPlaylists]);
 
   // Helper to map Playlist API data to PlaylistCard props
-  const mapToCardData = (p: Playlist): PlaylistCardData => ({
+  const mapToCardData = (p: Playlist | any): PlaylistCardData => ({
     id: p.playlist_id,
     title: p.name,
     owner: p.owner_user_id,
-    ownerUsername:
-      user && p.owner_user_id === user.id ? user.username : undefined,
+    ownerDisplayName: p.ownerDisplayName,
+    ownerUsername: p.ownerUsername || (user && p.owner_user_id === user.id ? user.username : undefined),
     coverUrl: p.cover_image || null,
     isPrivate: !p.is_public,
-    isLiked: likedPlaylists.some((lp) => lp.playlist_id === p.playlist_id),
+    isLiked: p.isLikedOverride ?? likedPlaylists.some((lp) => lp.playlist_id === p.playlist_id),
+    hideOwner: p.hideOwner,
   });
 
   const madeForYouItems: MadeForYouItem[] = useMemo(() => {
@@ -164,7 +151,9 @@ export default function SetsPage() {
         madeKind: "daily",
         badgeWords: ["DAILY", "DROPS"],
         badgeBg: "#1a237e",
-        previewTrack: mapDiscoveryTrack(homeData.made_for_you.daily_mix.preview_track),
+        previewTrack: mapDiscoveryTrack(
+          homeData.made_for_you.daily_mix.preview_track,
+        ),
       });
     }
 
@@ -177,7 +166,9 @@ export default function SetsPage() {
         madeKind: "weekly",
         badgeWords: ["WEEKLY", "WAVE"],
         badgeBg: "#1b5e20",
-        previewTrack: mapDiscoveryTrack(homeData.made_for_you.weekly_mix.preview_track),
+        previewTrack: mapDiscoveryTrack(
+          homeData.made_for_you.weekly_mix.preview_track,
+        ),
       });
     }
 
@@ -211,23 +202,92 @@ export default function SetsPage() {
     return [...mixedForYou, ...madeForYouItems];
   }, [homeData, madeForYouItems]);
 
+  const visiblePlaylists = useMemo(() => {
+    const match = (name: string) =>
+      name.toLowerCase().includes(filterText.toLowerCase());
+
+    const mixIds = new Set(mixItems.map((m) => m.id));
+    const isExcluded = (id: string) => mixIds.has(id);
+
+    const radioMap = new Map(likedRadioTracks.map((r) => [r.playlistId, r]));
+
+    const enhanceWithRadio = (p: Playlist): Playlist | any => {
+      const r = radioMap.get(p.playlist_id);
+      if (r) {
+        return {
+          ...p,
+          name: p.name.replace(/\s+Radio$/i, ""),
+          cover_image: r.coverImage ?? p.cover_image,
+          isLikedOverride: true,
+          hideOwner: true,
+        };
+      }
+      return p;
+    };
+
+    let list: Playlist[] = [];
+    if (activeFilter === "Created") {
+      list = createdPlaylists.filter(
+        (p) => !isExcluded(p.playlist_id) && p.name && p.name.trim() !== "",
+      ).map(enhanceWithRadio);
+    } else if (activeFilter === "Liked") {
+      list = likedPlaylists.filter(
+        (p) => !isExcluded(p.playlist_id) && p.name && p.name.trim() !== "",
+      ).map(enhanceWithRadio);
+    } else {
+      // "All" - Merge and remove duplicates by ID
+      const merged = [...createdPlaylists, ...likedPlaylists];
+      const seen = new Set<string>();
+      list = merged.filter((p) => {
+        if (!p.name || p.name.trim() === "") return false;
+        if (isExcluded(p.playlist_id)) return false;
+        if (seen.has(p.playlist_id)) return false;
+        seen.add(p.playlist_id);
+        return true;
+      }).map(enhanceWithRadio);
+    }
+
+    const filteredList = list.filter((p) => match(p.name));
+
+    const radioPlaylists: any[] = likedRadioTracks.map((r) => ({
+      playlist_id: r.playlistId,
+      name: r.title.replace(/\s+Radio$/i, ""),
+      owner_user_id: user?.id ?? "",
+      is_public: true,
+      cover_image: r.coverImage,
+      subtype: "playlist",
+      track_count: 0,
+      like_count: 1,
+      created_at: new Date().toISOString(),
+      is_album_view: false,
+      isLikedOverride: true,
+      hideOwner: true,
+    }));
+
+    // Only add radioPlaylists that are not already in the main list
+    const existingIds = new Set(filteredList.map(p => p.playlist_id));
+    const filteredRadio = radioPlaylists.filter((p) => match(p.name) && !existingIds.has(p.playlist_id));
+
+    if (activeFilter === "Created") return filteredList;
+    return [...filteredList, ...filteredRadio];
+  }, [
+    activeFilter,
+    filterText,
+    createdPlaylists,
+    likedPlaylists,
+    mixItems,
+    likedRadioTracks,
+    user,
+  ]);
+
   const visibleMixItems = useMemo(() => {
     if (activeFilter === "Created") return [];
-    return mixItems.filter((mix) => mix.title.toLowerCase().includes(filterText.toLowerCase()));
+    return mixItems.filter((mix) =>
+      mix.title.toLowerCase().includes(filterText.toLowerCase()),
+    );
   }, [activeFilter, filterText, mixItems]);
 
-  const visibleRadioItems = useMemo(() => {
-    if (activeFilter === "Created") return [];
-    const query = filterText.toLowerCase();
-    return likedRadioTracks.filter((item) => {
-      if (!query) return true;
-      return (
-        item.track.title.toLowerCase().includes(query) ||
-        item.title.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query)
-      );
-    });
-  }, [activeFilter, filterText, likedRadioTracks]);
+
 
   const isMadeForYouItem = (item: SetsCarouselItem): item is MadeForYouItem =>
     item.madeKind === "daily" || item.madeKind === "weekly";
@@ -257,7 +317,6 @@ export default function SetsPage() {
 
   const hasVisibleContent =
     visiblePlaylists.length > 0 ||
-    visibleRadioItems.length > 0 ||
     visibleMixItems.length > 0 ||
     genreItems.length > 0;
 
@@ -301,43 +360,41 @@ export default function SetsPage() {
                 ) : (
                   <MixCard
                     key={mix.id}
-                    mix={{
-                      id: mix.id,
-                      mix_id: mix.id,
-                      label: mix.title,
-                      flavor: "listening_history",
-                      genre_name: null,
-                      cover_image: mix.cover_image ?? mix.previewTrack?.coverUrl ?? null,
-                      track_count: 0,
-                      generated_at: new Date().toISOString(),
-                      preview_track: {
-                        id: mix.previewTrack?.id ?? mix.id,
-                        title: mix.previewTrack?.title ?? mix.title,
-                        cover_image: mix.previewTrack?.coverUrl ?? mix.cover_image,
-                        duration: null,
+                    mix={
+                      {
+                        id: mix.id,
+                        mix_id: mix.id,
+                        label: mix.title,
+                        flavor: "listening_history",
                         genre_name: null,
-                        play_count: 0,
-                        like_count: 0,
-                        repost_count: 0,
-                        user_id: "",
-                        artist_name: mix.previewTrack?.artistName ?? "",
-                        stream_url: mix.previewTrack?.audioUrl ?? "",
-                        created_at: mix.previewTrack?.postedAt ?? new Date().toISOString(),
-                      },
-                    } as any}
+                        cover_image:
+                          mix.cover_image ?? mix.previewTrack?.coverUrl ?? null,
+                        track_count: 0,
+                        generated_at: new Date().toISOString(),
+                        preview_track: {
+                          id: mix.previewTrack?.id ?? mix.id,
+                          title: mix.previewTrack?.title ?? mix.title,
+                          cover_image:
+                            mix.previewTrack?.coverUrl ?? mix.cover_image,
+                          duration: null,
+                          genre_name: null,
+                          play_count: 0,
+                          like_count: 0,
+                          repost_count: 0,
+                          user_id: "",
+                          artist_name: mix.previewTrack?.artistName ?? "",
+                          stream_url: mix.previewTrack?.audioUrl ?? "",
+                          created_at:
+                            mix.previewTrack?.postedAt ??
+                            new Date().toISOString(),
+                        },
+                      } as any
+                    }
                     widthClassName={CARD_WIDTH}
                   />
                 ),
               )}
-              {visibleRadioItems.map((item) => (
-                <TrackCard
-                  key={item.playlistId}
-                  track={item.track}
-                  widthClassName={CARD_WIDTH}
-                  radioLikeMode
-                  radioPlaylistId={item.playlistId}
-                />
-              ))}
+
               {genreItems.map((genre) => (
                 <GenreCard
                   key={genre.id}
@@ -348,7 +405,10 @@ export default function SetsPage() {
             </>
           </HorizontalCarousel>
         ) : (
-          <div data-test="sets-page-empty" className="flex flex-1 justify-center items-center py-20">
+          <div
+            data-test="sets-page-empty"
+            className="flex flex-1 justify-center items-center py-20"
+          >
             <p className="text-text-upload text-2xl font-bold text-center">
               {filterText
                 ? "No playlists match your search."

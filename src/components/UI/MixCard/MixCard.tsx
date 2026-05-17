@@ -154,12 +154,14 @@ export default function MixCard({
       </div>
 
       {/* Subtitle */}
-      <p
-        className="text-text-secondary text-[10px] sm:text-xs truncate"
-        data-test="mix-card-subtitle"
-      >
-        {mix.track_count} tracks
-      </p>
+      {mix.track_count > 0 && (
+        <p
+          className="text-text-secondary text-[10px] sm:text-xs truncate"
+          data-test="mix-card-subtitle"
+        >
+          {mix.track_count} tracks
+        </p>
+      )}
 
       {showPlaylistModal && (
         <AddToPlaylistModal
