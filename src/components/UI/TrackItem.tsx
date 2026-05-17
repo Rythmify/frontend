@@ -10,6 +10,7 @@ import SharePopup from "@/pages/[username]/[trackSlug]/components/SharePopup";
 import AddToPlaylistModal from "@/components/playlist/AddToPlaylistModal";
 import type { Track } from "@/types/track";
 import CoverImage from "@/components/UI/CoverImage";
+import { getUsernameFromId } from "@/services/user.service";
 
 interface TrackItemProps {
   id: string;
@@ -95,8 +96,38 @@ const TrackItem: React.FC<TrackItemProps> = ({
     }
   }, [storeHasRepostInfo, storeReposted, reposted]);
 
-  const finalArtistSlug =
-    artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-");
+  const [finalArtistSlug, setFinalArtistSlug] = useState<string>(
+    artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-")
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const fallbackSlug = artistUsername || (artist ?? "").toLowerCase().replace(/\s+/g, "-");
+    setFinalArtistSlug(fallbackSlug);
+
+    if (!artistId?.trim()) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    (async () => {
+      try {
+        const username = await getUsernameFromId(artistId.trim());
+        if (!cancelled) {
+          setFinalArtistSlug(username || fallbackSlug);
+        }
+      } catch {
+        if (!cancelled) {
+          setFinalArtistSlug(fallbackSlug);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [artistId, artistUsername, artist]);
 
   const trackPath = `/${finalArtistSlug}/${trackSlug ?? id}`;
   const trackForActions: Track = {

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { Track } from "../../../../types/track";
 import type { MockUser } from "../../../../services/mocks/users";
+import { getUsernameFromId } from "../../../../services/user.service";
 import FollowButton from "@/components/UI/FollowButton";
 import CoverImage from "@/components/UI/CoverImage";
 
@@ -14,7 +15,38 @@ interface TrackSidebarProps {
 
 export default function TrackSidebar({ track, featuredArtists, relatedTracks = [] }: TrackSidebarProps) {
   const { username: urlUsername } = useParams<{ username: string }>();
-  const artistUsername = track.artistUsername || urlUsername || "unknown";
+  const [artistUsername, setArtistUsername] = useState<string>(track.artistUsername || urlUsername || "unknown");
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!track) return;
+    const fallbackUsername = (track.artistUsername ?? "unknown").trim() || "unknown";
+
+    setArtistUsername(fallbackUsername);
+
+    if (!track.artistId?.trim()) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    (async () => {
+      try {
+        const username = await getUsernameFromId(track.artistId?.trim() ?? "1");
+        if (!cancelled) {
+          setArtistUsername(username || fallbackUsername);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtistUsername(fallbackUsername);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [track?.artistId, track?.artistUsername]);
 
   return (
     <Tooltip.Provider delayDuration={400} skipDelayDuration={100}>

@@ -85,19 +85,7 @@ export default function LibraryPage() {
         />
       </LibrarySection>
 
-      {likedRadioTracks.length > 0 && (
-        <LibrarySection title="More of what you like" data-test="library-radio">
-          {likedRadioTracks.map((item) => (
-            <TrackCard
-              key={item.playlistId}
-              track={item.track}
-              widthClassName={CARD_WIDTH}
-              radioLikeMode
-              radioPlaylistId={item.playlistId}
-            />
-          ))}
-        </LibrarySection>
-      )}
+    
 
       {/* Playlists */}
       <LibrarySection

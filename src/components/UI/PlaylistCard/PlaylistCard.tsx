@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getUserById } from "@/services/user.service";
 import { usePlayerStore } from "@/stores/player.store";
 import { useLikesStore } from "@/stores/likes.store";
 import { useAuthStore } from "@/stores/auth.store";
@@ -25,6 +26,7 @@ export type PlaylistCardData = {
   linkTo?: string;
   onLike?: (e: React.MouseEvent) => void;
   isLikedOverride?: boolean;
+  hideOwner?: boolean;
 };
 
 interface PlaylistCardProps {
@@ -46,6 +48,40 @@ export default function PlaylistCard({
 
   // Local State
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [dynamicUsername, setDynamicUsername] = useState<string>("");
+  const [dynamicDisplayName, setDynamicDisplayName] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const fallbackDisplayName = item.ownerDisplayName ?? item.ownerUsername ?? item.owner;
+    const fallbackUsername = item.ownerUsername ?? item.ownerDisplayName ?? item.owner;
+
+    if (!UUID_RE.test(item.owner) && !UUID_RE.test(item.ownerUsername ?? "")) {
+      setDynamicDisplayName(fallbackDisplayName);
+      setDynamicUsername(fallbackUsername);
+      return;
+    }
+
+    const idToFetch = UUID_RE.test(item.owner) ? item.owner : (item.ownerUsername ?? item.owner);
+    setDynamicDisplayName(fallbackDisplayName);
+    setDynamicUsername(fallbackUsername);
+
+    (async () => {
+      try {
+        const fetchedUser = await getUserById(idToFetch);
+        if (!cancelled) {
+          setDynamicDisplayName(fetchedUser.display_name || fallbackDisplayName);
+          setDynamicUsername(fetchedUser.username || fallbackUsername);
+        }
+      } catch {
+        // Fallbacks already set
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [item.ownerDisplayName, item.ownerUsername, item.owner]);
 
   // Derived State
   const liked =
@@ -58,16 +94,14 @@ export default function PlaylistCard({
     (currentTrack as any)?.context?.playlist_id === item.id;
 
   const ownerDisplay =
-    item.ownerDisplayName ??
-    (UUID_RE.test(item.owner)
-      ? (user?.displayName ?? user?.username ?? item.owner)
-      : item.ownerUsername ?? item.owner);
-    
+    !UUID_RE.test(dynamicDisplayName)
+      ? dynamicDisplayName
+      : (user?.displayName ?? user?.username ?? dynamicDisplayName);
 
   // SoundCloud navigation format: /[username]/sets/[slug]
   const playlistPath = item.isAlbumView
-    ? `/${item.ownerUsername || item.owner}/album/${item.slug || item.id}`
-    : `/${item.ownerUsername || item.owner}/sets/${item.slug || item.id}`;
+    ? `/${dynamicUsername}/album/${item.slug || item.id}`
+    : `/${dynamicUsername}/sets/${item.slug || item.id}`;
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -141,7 +175,9 @@ export default function PlaylistCard({
           )}
           <span className="truncate">{item.title}</span>
         </p>
-        <p className="text-gray-400 text-xs truncate w-full">{ownerDisplay}</p>
+        {!item.hideOwner && (
+          <p className="text-gray-400 text-xs truncate w-full">{ownerDisplay}</p>
+        )}
       </div>
 
       {showPlaylistModal && (

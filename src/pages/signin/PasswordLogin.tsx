@@ -39,7 +39,7 @@ export default function PasswordLogin({ email, onBack, onContinue, onForgotPassw
         >
           <ChevronLeft size={25} />
         </button>
-        <h4 className="text-text-hover text-center ms-25">Welcome back!</h4>
+        <h4 className="text-text-hover text-center ms-25">Sign in or create an account</h4>
       </div>
 
       <div className="grid gap-5">
